@@ -1,0 +1,16 @@
+Licensing in this repository
+============================
+
+Copyright (c) 2026 Ying Wen
+
+1. Source code, executable examples, tests, workflow/configuration files, and
+   code snippets in the tutorials are licensed under the MIT License.
+   See LICENSE-CODE.
+
+2. Original tutorial prose, explanations, exercises and diagrams in README.md,
+   tutorials/, algorithms/ and docs/ are licensed under Creative Commons
+   Attribution 4.0 International (CC BY 4.0).
+   See LICENSE-DOCS.md.
+
+3. Linked third-party papers, slides, videos, datasets, libraries, and code are
+   not relicensed by this repository. Their original terms apply.

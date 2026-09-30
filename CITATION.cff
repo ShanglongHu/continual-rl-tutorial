@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this tutorial or its teaching code, cite this repository and record the commit. Cite original papers for research claims."
+title: "Continual RL Tutorial: From Foundations to Research"
+type: software
+authors:
+  - family-names: Wen
+    given-names: Ying
+repository-code: "https://github.com/ying-wen/continual-rl-tutorial"
+url: "https://github.com/ying-wen/continual-rl-tutorial"
