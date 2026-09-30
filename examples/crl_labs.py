@@ -43,6 +43,8 @@ def bandit(seed=0, steps=4000, alpha=0.1, epsilon=0.1, switch=None, **_):
 def memory(seed=0, steps=4000, **_):
     # Balanced hidden cues make the information limit exact, not a lucky seed.
     # Here `steps` counts trials; each trial contains a cue, 10 blanks, a choice.
+    if steps < 2 or steps % 2:
+        raise ValueError('Memory requires a positive even number of trials (at least 2).')
     cues = [i % 2 for i in range(steps)]
     random.Random(seed).shuffle(cues)
     correct = {'no_memory_fixed_left':0, 'one_bit_oracle':0}
@@ -108,7 +110,7 @@ def retention(seed=0, steps=1000, **_):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('lab', choices=['bandit','memory','credit','retention'])
-    p.add_argument('--seeds', type=int, default=5)
+    p.add_argument('--seeds', type=int, help='Default: 1 for memory/retention; 5 otherwise.')
     p.add_argument('--steps', type=int, default=4000)
     p.add_argument('--alpha', type=float, default=0.1)
     p.add_argument('--epsilon', type=float, default=0.1)
@@ -118,12 +120,24 @@ def main():
     p.add_argument('--meta', type=float, default=0.01)
     p.add_argument('--out', type=Path, default=Path('crl-results.csv'))
     a = p.parse_args()
+    if a.seeds is None:
+        a.seeds = 1 if a.lab in ('memory', 'retention') else 5
+    if not all(math.isfinite(v) for v in (a.alpha, a.epsilon, a.noise, a.meta)):
+        p.error('Parameters must be finite.')
     if a.seeds < 1 or a.steps < 2 or a.dims < 2 or not 0 < a.alpha <= 1 or not 0 <= a.epsilon <= 1 or a.noise < 0 or a.meta < 0:
         p.error('Invalid experiment parameters.')
     if a.lab == 'bandit' and a.switch is not None and not 0 < a.switch < a.steps:
         p.error('--switch must lie strictly between 0 and --steps.')
+    if a.lab != 'bandit' and a.switch is not None:
+        p.error('--switch is only used by bandit.')
+    if a.lab == 'memory' and a.steps % 2:
+        p.error('Memory requires an even --steps count for balanced cue trials.')
+    if a.lab == 'retention' and a.seeds != 1:
+        p.error('Retention is deterministic; use --seeds 1, not repeated identical evidence.')
     if a.out.exists():
         p.error(f'{a.out} already exists. Choose a new output name to preserve previous results.')
+    if not a.out.parent.is_dir():
+        p.error('Output parent directory does not exist; create it first.')
     rows = [r for seed in range(a.seeds) for r in globals()[a.lab](seed=seed, **vars(a))]
     if not all(math.isfinite(r['value']) for r in rows):
         raise ValueError('Non-finite result; inspect numerical stability.')

@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+from unittest import mock
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +65,11 @@ class Documentation(unittest.TestCase):
 
 
 class Reproduction(unittest.TestCase):
+    def test_unknown_git_status_is_not_clean(self):
+        result=mock.Mock(returncode=128,stdout='')
+        with mock.patch.object(runner.subprocess,'run',return_value=result):
+            self.assertEqual(runner.git_info(),{'commit':None,'dirty':None})
+
     def test_manifest_and_all_outputs(self):
         with tempfile.TemporaryDirectory(prefix="crl-suite-") as temporary:
             out = Path(temporary)/"run"

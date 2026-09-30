@@ -6,5 +6,8 @@ venv/
 .env.*
 .DS_Store
 results/
+# Generated files from the individual chapter commands at the repository root.
+/*.csv
+/*.html
 .pytest_cache/
 .coverage

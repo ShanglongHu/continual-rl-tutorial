@@ -135,6 +135,25 @@ class CommandLine(unittest.TestCase):
                 self.assertNotEqual(completed.returncode, 0)
                 self.assertEqual(existing.read_text(), "user result")
 
+    def test_experiment_specific_defaults(self):
+        with tempfile.TemporaryDirectory(prefix="crl-default-test-") as tmp:
+            for name, seeds, alpha in [('consolidation', 1, .1), ('policy', 5, .05)]:
+                prefix=Path(tmp)/name
+                result=self.run_script(name, '--episodes', 20, '--out', prefix)
+                self.assertEqual(result.returncode,0,result.stderr)
+                with Path(str(prefix)+'.csv').open() as handle:
+                    config=json.loads(next(csv.DictReader(handle))['config'])
+                self.assertEqual(config['seeds'],seeds)
+                self.assertEqual(config['alpha'],alpha)
+
+    def test_unsupported_switch_rejected(self):
+        with tempfile.TemporaryDirectory(prefix="crl-switch-test-") as tmp:
+            for name in ('prediction','consolidation'):
+                result=self.run_script(name,'--switch',10,'--out',Path(tmp)/name)
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn('--switch is only used',result.stderr)
+            self.assertEqual(list(Path(tmp).iterdir()),[])
+
     def test_rejects_nonfinite_parameters(self):
         with tempfile.TemporaryDirectory(prefix="crl-algorithm-test-") as tmp:
             completed = self.run_script("control", "--alpha", "nan", "--out", Path(tmp)/"bad")

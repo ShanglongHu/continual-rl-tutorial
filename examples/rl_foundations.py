@@ -251,9 +251,9 @@ body{max-width:1020px;margin:36px auto;padding:0 18px;color:#24334b;background:#
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('experiment',choices=['prediction','control','policy','dyna','consolidation'])
-    p.add_argument('--seeds',type=int,default=5)
+    p.add_argument('--seeds',type=int,help='Default: 1 for consolidation; 5 otherwise.')
     p.add_argument('--episodes',type=int,default=800)
-    p.add_argument('--alpha',type=float,default=.1)
+    p.add_argument('--alpha',type=float,help='Default: 0.05 for policy; 0.1 otherwise.')
     p.add_argument('--epsilon',type=float,default=.1)
     p.add_argument('--lam',type=float,default=.8)
     p.add_argument('--switch',type=int,default=0,help='Reward reversal after this episode; 0 disables.')
@@ -261,14 +261,19 @@ def main():
     p.add_argument('--strength',type=float,default=1.)
     p.add_argument('--out',type=Path,required=True,help='Output prefix, not a CSV filename.')
     a=p.parse_args()
+    if a.seeds is None:a.seeds=1 if a.experiment=='consolidation' else 5
+    if a.alpha is None:a.alpha=.05 if a.experiment=='policy' else .1
     if a.seeds<1 or a.episodes<1 or not 0<a.alpha<=1 or not 0<a.epsilon<=1 or not 0<=a.lam<=1 or not 0<=a.switch<a.episodes or a.planning<0 or not 0<=a.strength<=10:
         p.error('Invalid parameters (epsilon must be positive in the corridor).')
     if not all(math.isfinite(v) for v in (a.alpha,a.epsilon,a.lam,a.strength)):
         p.error('Parameters must be finite.')
     if a.experiment=='consolidation' and a.seeds!=1:
         p.error('Consolidation is deterministic; use --seeds 1, not repeated identical evidence.')
+    if a.experiment in ('prediction','consolidation') and a.switch:
+        p.error('--switch is only used by control, policy and dyna.')
     csv_path,report_path=Path(str(a.out)+'.csv'),Path(str(a.out)+'.html')
     if csv_path.exists() or report_path.exists():p.error('Output already exists; choose a new prefix.')
+    if not csv_path.parent.is_dir():p.error('Output parent directory does not exist; create it first.')
     config={k:str(v) if isinstance(v,Path) else v for k,v in vars(a).items()}
     function=control if a.experiment in ('control','dyna') else globals()[a.experiment]
     rows=[r for seed in range(a.seeds) for r in function(seed=seed,**vars(a))]

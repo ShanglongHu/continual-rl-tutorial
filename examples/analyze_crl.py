@@ -116,10 +116,11 @@ def render(rows, filename):
             cells.append(f'<td>{mean_sd(values)}</td>')
         table.append(f'<tr><td>{label}</td>'+''.join(cells)+'</tr>')
     config = f"α={rows[0]['alpha']} · ε={rows[0]['epsilon']} · {len(seeds)} seeds · {total} 步 · {switch} 步后切换"
-    return '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CRL 第一个实验 · Bandit 报告</title><style>
+    return '''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRL 第一个实验 · Bandit 报告</title><link rel="icon" href="data:,"><style>
 body{font:15px/1.8 system-ui,sans-serif;color:#334155;max-width:940px;margin:40px auto;padding:0 20px;background:#f9fafc}h1{font-size:28px}h2{font-size:18px}section{background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:18px 0}svg{width:100%;font:12px system-ui;fill:#64748b}.plots{display:grid;grid-template-columns:1fr 1fr;gap:14px}.plots section{margin:0}table{border-collapse:collapse;width:100%;font-size:13px}td,th{padding:10px;text-align:left;border-bottom:1px solid #e2e8f0}.scroll{overflow:auto}p{color:#52617a}.blue{color:#2563eb}.grey{color:#8493aa}li{margin:9px 0}@media(max-width:660px){.plots{grid-template-columns:1fr}body{padding:0 12px}h1{font-size:23px}}
-</style><h1>变化以后，学习器怎样适应？</h1>''' + f'''
+@media print{body{background:white;margin:0}.plots{display:block}section{break-inside:avoid}.scroll{overflow:visible}}
+</style></head><body><main><h1>变化以后，学习器怎样适应？</h1>''' + f'''
 <p>{config}<br>输入文件：{html.escape(filename)}</p>
 <p><span class="blue">━ 常数步长</span>　<span class="grey">━ 样本平均</span>。粗线为跨 seed 均值，浅线为每个 seed；竖虚线为切换。Q 值是窗口末快照，奖励和动作比例是窗口内均值。</p>
 <div class="plots">{''.join(charts)}</div>
@@ -127,7 +128,7 @@ body{font:15px/1.8 system-ui,sans-serif;color:#334155;max-width:940px;margin:40p
 <div class="scroll"><table><thead><tr><th>阶段</th><th>样本平均 · 均值 ± SD</th><th>常数步长 · 均值 ± SD</th></tr></thead><tbody>{''.join(table)}</tbody></table></div></section>
 <section><h2>按这个顺序解释</h2><ol><li>奖励在哪里下降、恢复？两个方法在起始段与剩余段的排序一致吗？</li><li>切换后选 B 的比例是否提高？Q(B) 何时高于 Q(A)？只看奖励不能回答这两问。</li><li>改变 α 后，跟踪速度与估值波动怎样变化？均值趋势在大多数 seed 上都出现吗？</li><li>写清本实验只研究奖励反转下的估计与探索，不含深度网络、技能或记忆学习。</li></ol></section>
 <details><summary>展开每个 seed 的摘要</summary><div class="scroll"><table><thead><tr><th>Seed</th><th>方法</th><th>阶段</th><th>平均奖励</th></tr></thead><tbody>{''.join(per_seed)}</tbody></table></div></details>
-</html>'''
+</main></body></html>'''
 
 
 def main():

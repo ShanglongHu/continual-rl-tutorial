@@ -1,4 +1,5 @@
 import importlib.util
+import csv
 import math
 import subprocess
 import sys
@@ -66,6 +67,8 @@ class TeachingDiagnostics(unittest.TestCase):
             html=report.read_text()
             self.assertEqual(html.count('<svg '),4)
             self.assertIn('样本标准差，不是置信区间',html)
+            self.assertIn('<main>',html)
+            self.assertIn('@media print',html)
             self.assertNotEqual(subprocess.run(render_cmd,capture_output=True).returncode,0)
             self.assertNotEqual(subprocess.run(cmd,capture_output=True).returncode,0)
             self.assertEqual(report.read_text(),html)
@@ -80,6 +83,29 @@ class TeachingDiagnostics(unittest.TestCase):
         for seed in range(3):
             rows=labs.credit(seed=seed,steps=2000)
             self.assertTrue(all(math.isfinite(r['value']) and r['value']>=0 for r in rows))
+
+    def test_memory_requires_balanced_trials(self):
+        for steps in (0, 1, 3, -2):
+            with self.assertRaises(ValueError):
+                labs.memory(steps=steps)
+
+    def test_cli_defaults_and_invalid_parameters(self):
+        with tempfile.TemporaryDirectory(prefix='crl-cli-test-') as d:
+            for lab in ('memory', 'retention'):
+                out=Path(d)/(lab+'.csv')
+                cmd=[sys.executable,labs.__file__,lab,'--steps','100','--out',str(out)]
+                result=subprocess.run(cmd,capture_output=True,text=True)
+                self.assertEqual(result.returncode,0,result.stderr)
+                with out.open() as handle:
+                    self.assertEqual({row['seed'] for row in csv.DictReader(handle)},{'0'})
+            for args in (['memory','--steps','101'], ['retention','--seeds','2'],
+                         ['credit','--noise','nan'], ['credit','--meta','inf'],
+                         ['memory','--switch','20']):
+                out=Path(d)/'invalid.csv'
+                result=subprocess.run([sys.executable,labs.__file__,*args,'--out',str(out)],
+                                      capture_output=True,text=True)
+                self.assertNotEqual(result.returncode,0)
+                self.assertFalse(out.exists())
 
     def test_forgetting_not_inability_to_learn(self):
         rows=labs.retention(steps=1000)

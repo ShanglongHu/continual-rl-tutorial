@@ -50,7 +50,10 @@ python3 examples/crl_labs.py retention --seeds 1 --steps 1000 --out retention-de
 | retention | 旧目标退步时，新目标仍可快速学会 | 遗忘与可塑性损失不是同义词 |
 
 memory 的当前统计由平衡协议决定，retention 是确定性反例；重复相同结果不增加独立证据。
+memory 的 `--steps` 必须为偶数，使两种线索数量严格相等。memory / retention 默认只运行 1 个 seed；retention 不接受多个 seed。
 只有 bandit CSV 使用 `analyze_crl.py`；其他三个诊断保留原始 CSV。
+
+省略 `--seeds` 时，基础算法中的 consolidation 默认 1，其余默认 5；省略 `--alpha` 时 policy 默认 0.05，其余默认 0.1。`--switch` 只用于确实包含反转的 control / policy / dyna 和 bandit，不应传给其他实验。
 
 ## C. 外部深度研究代码
 

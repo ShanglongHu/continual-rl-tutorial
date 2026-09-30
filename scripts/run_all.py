@@ -23,8 +23,9 @@ def git_info():
                                 capture_output=True, check=False)
         return result.stdout.strip() if result.returncode == 0 else None
     try:
+        status = get("status", "--porcelain")
         return {"commit": get("rev-parse", "HEAD"),
-                "dirty": bool(get("status", "--porcelain"))}
+                "dirty": bool(status) if status is not None else None}
     except FileNotFoundError:
         return {"commit": None, "dirty": None}
 
