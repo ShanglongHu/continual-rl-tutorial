@@ -1,0 +1,503 @@
+{
+  "schema_version": 1,
+  "source": "https://yingwen.io/zh/continual-rl/",
+  "source_export_sha256": "6433618cd6628bf07ec33af1c1ce17256b04c8bee3961a41103754615533e74e",
+  "files": {
+    "algorithms/01-value.md": {
+      "sha256": "1b8d0c833203b267b87a794b480b94ee3fa8912162add092f141c442479c3573",
+      "source_sha256": null
+    },
+    "algorithms/02-control.md": {
+      "sha256": "0d2989b2a851f59e70d837c0c04fe3738f8a0a1f1620b31b2b796e2a659211e1",
+      "source_sha256": null
+    },
+    "algorithms/03-deep-value.md": {
+      "sha256": "0fdcc7ff95a0dd5d685d3c8b6a82989c8a324cc2b36aeb8d8fb96d4ef176f879",
+      "source_sha256": null
+    },
+    "algorithms/04-policy.md": {
+      "sha256": "28539b0af350a37c938bf9ce82ca3918852640f14c67d421be8c1a63665de8a8",
+      "source_sha256": null
+    },
+    "algorithms/05-soft-control.md": {
+      "sha256": "f16810a693fa87cde058ce8589e7fc591a808a47848fb229352c7fff96ad9cf3",
+      "source_sha256": null
+    },
+    "algorithms/06-dyna.md": {
+      "sha256": "0cb329e6ad41858fd3df1107c86af81634284edd0e9448daaa0b94d1b247965f",
+      "source_sha256": null
+    },
+    "algorithms/07-skills.md": {
+      "sha256": "510bde3742703317bd5756ee9ec938a0b3f30ed8975484532bad0b89605bce16",
+      "source_sha256": null
+    },
+    "algorithms/08-retention.md": {
+      "sha256": "e82c2ea8f4aabbb3ec509326f98f6729e37cd55f906467b04364cfb1cacb3474",
+      "source_sha256": null
+    },
+    "algorithms/09-plasticity.md": {
+      "sha256": "f0624466772ce5858c680025849f72237b7d590750623859ec5c8083df451cc2",
+      "source_sha256": null
+    },
+    "algorithms/10-streaming.md": {
+      "sha256": "44a179988885c29e914eb0d0aa282634ac47ef424147ff6c55ba7b1c4c670e3f",
+      "source_sha256": null
+    },
+    "algorithms/11-state.md": {
+      "sha256": "a36a97ad10c7a1ca5c63c44ccc85d214addff9fbaf7dae59fd8c18ccbb4f8424",
+      "source_sha256": null
+    },
+    "algorithms/12-meta.md": {
+      "sha256": "e5720ca28c5a0b2891f95c67c63a1ab9df061ce2bc4baec9bb9ad8c15db2f5b7",
+      "source_sha256": null
+    },
+    "algorithms/13-exploration.md": {
+      "sha256": "ff8f84c1bd2c2a06baa458508220b1d993acaabd65239197037528a26418f4ff",
+      "source_sha256": null
+    },
+    "algorithms/README.md": {
+      "sha256": "644333df922d8d0facd088084c85efa368d866616f9083122213aad47758385e",
+      "source_sha256": null
+    },
+    "data/algorithm-tutorials.json": {
+      "sha256": "a6f2afb614fd4e98d248fe1d250f596b24cbb2874d5e0fa3d36e56571b17880f",
+      "source_sha256": "a6f2afb614fd4e98d248fe1d250f596b24cbb2874d5e0fa3d36e56571b17880f"
+    },
+    "data/chapter-companions.json": {
+      "sha256": "a76037fbffad18f76b23dbbbd07035dab8d260c48c87b568a0b2e12017157cfc",
+      "source_sha256": "a76037fbffad18f76b23dbbbd07035dab8d260c48c87b568a0b2e12017157cfc"
+    },
+    "data/curriculum.json": {
+      "sha256": "4a7f16055d3d74e5df6108970a272b84c5793a9527a05529d940051194291586",
+      "source_sha256": "4a7f16055d3d74e5df6108970a272b84c5793a9527a05529d940051194291586"
+    },
+    "data/experiment-handbook.json": {
+      "sha256": "dfb028ad9fb9681236daacd2bb2d665d767722fdf0d01cff2eb4142e56bc0d53",
+      "source_sha256": "dfb028ad9fb9681236daacd2bb2d665d767722fdf0d01cff2eb4142e56bc0d53"
+    },
+    "data/foundations.json": {
+      "sha256": "1e1a144ad0c86e94ac9d51b4eb3abbf907fec73e293d213da44b2a624dc61f1e",
+      "source_sha256": "1e1a144ad0c86e94ac9d51b4eb3abbf907fec73e293d213da44b2a624dc61f1e"
+    },
+    "data/implementations.json": {
+      "sha256": "b63a5591fad328d40313b928675b4aa97830ee421f37c53dc1364e22e3b9cefb",
+      "source_sha256": "b63a5591fad328d40313b928675b4aa97830ee421f37c53dc1364e22e3b9cefb"
+    },
+    "data/learning-route.json": {
+      "sha256": "854c00e5e9523921e21bcf79c63b7ad94efdaede6e0b42ac4a61f668c34c2617",
+      "source_sha256": "854c00e5e9523921e21bcf79c63b7ad94efdaede6e0b42ac4a61f668c34c2617"
+    },
+    "data/library-index.json": {
+      "sha256": "d2d9590ef1616f5eaab555b5d27d6456af2abaac525d06ef1d3187923a0f93a2",
+      "source_sha256": "d2d9590ef1616f5eaab555b5d27d6456af2abaac525d06ef1d3187923a0f93a2"
+    },
+    "data/research-atlas.json": {
+      "sha256": "14563d3bc71d9ff4c8e099adddea584eabd49260f7ed4ebdeeda8151404a4308",
+      "source_sha256": "14563d3bc71d9ff4c8e099adddea584eabd49260f7ed4ebdeeda8151404a4308"
+    },
+    "data/resources.json": {
+      "sha256": "8c80547578e6747cf31dc4d48ada3a0926baf8cda055be332f0c636ceb6cd342",
+      "source_sha256": "8c80547578e6747cf31dc4d48ada3a0926baf8cda055be332f0c636ceb6cd342"
+    },
+    "data/site-export.json": {
+      "sha256": "6433618cd6628bf07ec33af1c1ce17256b04c8bee3961a41103754615533e74e",
+      "source_sha256": null
+    },
+    "data/textbook-map.json": {
+      "sha256": "b33c0ee722e366dcddfdafdc196eca12c64050ea2c2161f32bdee9c5c5c6101b",
+      "source_sha256": "b33c0ee722e366dcddfdafdc196eca12c64050ea2c2161f32bdee9c5c5c6101b"
+    },
+    "docs/advanced.md": {
+      "sha256": "1e3a758de24731d927ba8f629cd076ad1ca841d6803eadc013e8639ae4837031",
+      "source_sha256": "d22f575a56c90fbc7937ec6498df5b21feea38735e04f7e7cf088fcee624921e"
+    },
+    "docs/agent-construction.md": {
+      "sha256": "2af2900c653bd6da8cb1475c429f2e20af5e04cea06f517c4421580ac00b1d09",
+      "source_sha256": "784fbec2344e3adfa945a8eca9020a74b04bd1030170474302817f5689eb80eb"
+    },
+    "docs/algorithm-map.md": {
+      "sha256": "b87afa38c64fd6903ba2522d1dbe96238a11edaca2b15af2b97fde0ff72e93b4",
+      "source_sha256": "684b79903e6c947ad2e0d540330742c02895bf50ba420b0fc1af4f0d9b7f3435"
+    },
+    "docs/algorithm-tutorials.md": {
+      "sha256": "01eb1fa5ec7b0e8796174cdaaefe8421f40270908e35227f495e4eaec010fd15",
+      "source_sha256": "9b750405c83174b03e41de8a8ee23d9a553af264d52f9e88d485c94f961f2f34"
+    },
+    "docs/algorithms.md": {
+      "sha256": "ec5f98e7a31d93861b9f97d63c2686824dc27b46bd5722fe30e16ac6f5288623",
+      "source_sha256": "0754b7b1896f4c447a902226e1072ec4c93a2b8dea67cc74c9ae1aca670032dd"
+    },
+    "docs/average-reward.md": {
+      "sha256": "1584921b12bf858475a53fad1076bab71a973ba22036a2851e481dd5c4da4da1",
+      "source_sha256": "5b70d84224acafaca6ade8c67e01558aadd9f4f8d82b682ac7c584be1936f822"
+    },
+    "docs/chapter-companions.md": {
+      "sha256": "7179127d3a30328ffde031d38c7715cb8b6d3abd67c9bf8f68646201d9ef27b0",
+      "source_sha256": "4e730bbf819e67bf44449e826b8c7c3f9e0d4dd7636561f3e6fc5b0cb59fbd10"
+    },
+    "docs/curriculum.md": {
+      "sha256": "c1cb7cddef166766d69fa4ca34871f4753979752d698a40f311f93344d8d6761",
+      "source_sha256": "36c5328c692560fe5575b1b02f974eb9227aa9275d0939dbdd20e5a3e6fc8779"
+    },
+    "docs/experiment-handbook.md": {
+      "sha256": "e94979489136b4ac5632cf32460efaf07f0f11e2bf8dde2aed776251b2db6feb",
+      "source_sha256": "e79ed1cdb2ac6f99bd56cc495bba70483db815f6dfb82b3f4c21c3f41a0a3966"
+    },
+    "docs/experiments.md": {
+      "sha256": "2929e754b3a17438e6223676173b88cb110041ae9733f4142d6d634b0f34d91c",
+      "source_sha256": null
+    },
+    "docs/foundations.md": {
+      "sha256": "2bef66dc73d7bd949c69d6b1792ce7cb50d8718d80609164ed3d56435645da67",
+      "source_sha256": "bd8ff5f130e9ee609f0a37d316c74e44603cb18c1b51ff513493a2a552358964"
+    },
+    "docs/implementations.md": {
+      "sha256": "36e21cbef92d08817aa9e96b1bd958d93a5ba76cc02b3885d883d40e72b08b94",
+      "source_sha256": "459f4e3ca55d41464067fc93b6c587003ba7379a6ab32f9bebffa1fe0a10af6e"
+    },
+    "docs/learning-route-classic-rl.md": {
+      "sha256": "1698b64d660826afa816dabb0c77cb6dda7ec2f7fab7ad01c29699d0be19a5b6",
+      "source_sha256": "b5c865a88f73f0014e4210feb7a137e6b850d898529d771306ef733991ba2185"
+    },
+    "docs/learning-route-continual-rl.md": {
+      "sha256": "94864d5e5ccf5e7ff47719fbc0a13564298ddaff35d6d55c16d810ffd2bf177c",
+      "source_sha256": "06b150bb375df758716830df674441ef51f79a73ec137e7bcc9709a7bc04e5fe"
+    },
+    "docs/learning-route-deep-rl.md": {
+      "sha256": "60f01b9f2ab835da434d6f983f84d228f5b3c5ac62dec31910e86d727f9ce875",
+      "source_sha256": "753f85713b08942476aff05473d6bbd2d4d597910ef893b6ae86a50d70932574"
+    },
+    "docs/learning-route.md": {
+      "sha256": "60069bf6eedc589307f44ecdf97f8c345303695026a9a865f8c2640aa60f7cbf",
+      "source_sha256": "b15160d3733459571b367f85bfd4f7d7a247d4d2ed06bb575af7105b5d952843"
+    },
+    "docs/overview.md": {
+      "sha256": "a25be1aee6d8f2a838f339dbcef2ca87451ae098673e8ff35c34375a7b2beada",
+      "source_sha256": "595367f7360f296986ad5a06a6da8c98bc81cc27a97df51084f15243921e0fe3"
+    },
+    "docs/previous-intro.md": {
+      "sha256": "60beeaf5c10bb50b57ab1ee04e55720ff6f9a08a46b8e21c70ca5387c09e600b",
+      "source_sha256": "9c0e807a70832e400f3ae62d46b3eb195bcbb738c96a36b71276e16687b0cafe"
+    },
+    "docs/protocol.md": {
+      "sha256": "34a6b079dfdcc34b68a2d949ab847822f04c942a26625f01f8d259a516a7b4d1",
+      "source_sha256": "34a6b079dfdcc34b68a2d949ab847822f04c942a26625f01f8d259a516a7b4d1"
+    },
+    "docs/research-atlas.md": {
+      "sha256": "0e22dbe776af47db053a39cb6ca60def270a99154890126be2f5e2a339ab3add",
+      "source_sha256": "815bfd265b67b3772de34c069b5b9cbbc9812adc69f58776ef148647390128e7"
+    },
+    "docs/research-problems.md": {
+      "sha256": "c5d0867c746e5b483539d7a957c3b636ec4a284658686321b4e18b96dcdc8c9d",
+      "source_sha256": "c5d0867c746e5b483539d7a957c3b636ec4a284658686321b4e18b96dcdc8c9d"
+    },
+    "docs/tutorial.md": {
+      "sha256": "0cfaab61f65658be961e1220b78a1c785e30c139af4df0e3cc671b4f11a23f95",
+      "source_sha256": "0cfaab61f65658be961e1220b78a1c785e30c139af4df0e3cc671b4f11a23f95"
+    },
+    "examples/algorithm_testing_lab.py": {
+      "sha256": "9dadf01125f9ee3617cc63dec3581281755c0661d864fe1a9197adfc52b50ea9",
+      "source_sha256": "9dadf01125f9ee3617cc63dec3581281755c0661d864fe1a9197adfc52b50ea9"
+    },
+    "examples/analyze_crl.py": {
+      "sha256": "3b55cae37f8d624d8acb0fa918b576787b1de761092b6d0df13014266abfdfab",
+      "source_sha256": "3b55cae37f8d624d8acb0fa918b576787b1de761092b6d0df13014266abfdfab"
+    },
+    "examples/approximation_textbook_lab.py": {
+      "sha256": "2668e9555bd3b3e6c9605d1e9dec4e54560dd16855fe3a25c49de4e57ce2481b",
+      "source_sha256": "2668e9555bd3b3e6c9605d1e9dec4e54560dd16855fe3a25c49de4e57ce2481b"
+    },
+    "examples/control_problem_lab.py": {
+      "sha256": "257b6960a167d2112cf31f83c19dcffc40e0c966b4c3740bcd45bb7b7f4e83e8",
+      "source_sha256": "257b6960a167d2112cf31f83c19dcffc40e0c966b4c3740bcd45bb7b7f4e83e8"
+    },
+    "examples/credit_assignment_lab.py": {
+      "sha256": "e29f8ee4fe16c2059eb1bf1959a586e219fed51b864a22095b1ebfee1f09f65e",
+      "source_sha256": "e29f8ee4fe16c2059eb1bf1959a586e219fed51b864a22095b1ebfee1f09f65e"
+    },
+    "examples/crl_labs.py": {
+      "sha256": "05a73870ff4b9a2e0c8e4ac6aab1eceaa13a8166d5ea1889df4f6e337bb1e6bc",
+      "source_sha256": "05a73870ff4b9a2e0c8e4ac6aab1eceaa13a8166d5ea1889df4f6e337bb1e6bc"
+    },
+    "examples/deep_requirements.txt": {
+      "sha256": "8c02513c4f0467e3c4a3deedfb8cb03e06b681106e40e34a173c3a61cb08cc64",
+      "source_sha256": "8c02513c4f0467e3c4a3deedfb8cb03e06b681106e40e34a173c3a61cb08cc64"
+    },
+    "examples/deep_textbook_lab.py": {
+      "sha256": "deaf67c4d00fb08a82c5c8b9653bfc23cb273c2625bb01ca9c65642801414dbe",
+      "source_sha256": "deaf67c4d00fb08a82c5c8b9653bfc23cb273c2625bb01ca9c65642801414dbe"
+    },
+    "examples/deep_textbook_train.py": {
+      "sha256": "085cbfaa0ceccda4db7604c4c8b3a7b5b8544a9e9b0bba1df256eb1ca3870063",
+      "source_sha256": "085cbfaa0ceccda4db7604c4c8b3a7b5b8544a9e9b0bba1df256eb1ca3870063"
+    },
+    "examples/experiment_design_lab.py": {
+      "sha256": "ac218f33877c029c30788359f42e744385a6607addfd641666c99edd5cebc150",
+      "source_sha256": "ac218f33877c029c30788359f42e744385a6607addfd641666c99edd5cebc150"
+    },
+    "examples/formula_checks.py": {
+      "sha256": "5f0c0551459b133e0218e49efe7d10fcf2449768c8f329ab23aed3ddcf099ae1",
+      "source_sha256": "5f0c0551459b133e0218e49efe7d10fcf2449768c8f329ab23aed3ddcf099ae1"
+    },
+    "examples/foundations_detail_lab.py": {
+      "sha256": "583fa30f576aa819914790eb2495a4a194c1051272207814ee8d699279911517",
+      "source_sha256": "583fa30f576aa819914790eb2495a4a194c1051272207814ee8d699279911517"
+    },
+    "examples/gvf_lab.py": {
+      "sha256": "57026fb22f7db3023247d4b8892b1d1c55c3539e1c8f22b364aaf56b19714ea0",
+      "source_sha256": "57026fb22f7db3023247d4b8892b1d1c55c3539e1c8f22b364aaf56b19714ea0"
+    },
+    "examples/knowledge_algorithms_lab.py": {
+      "sha256": "e5ed4e1272e8c1419e5f581350f78bf04aace9baef4719d610bc47464e5d6fef",
+      "source_sha256": "e5ed4e1272e8c1419e5f581350f78bf04aace9baef4719d610bc47464e5d6fef"
+    },
+    "examples/knowledge_lab.py": {
+      "sha256": "39116c54080ea14e35043f5da42898ae4f410b5f5b56234b69a0472282e9a07f",
+      "source_sha256": "39116c54080ea14e35043f5da42898ae4f410b5f5b56234b69a0472282e9a07f"
+    },
+    "examples/lifelong_algorithms_lab.py": {
+      "sha256": "ed7bd3dfe030fbb29de0d69b66c7b3d150c5720ce722938db40de62a656bc028",
+      "source_sha256": "ed7bd3dfe030fbb29de0d69b66c7b3d150c5720ce722938db40de62a656bc028"
+    },
+    "examples/mechanisms.py": {
+      "sha256": "63b0dc57c34d792b87254000d49e33566e4b291ef248fb36a79b2ed1252636e2",
+      "source_sha256": "63b0dc57c34d792b87254000d49e33566e4b291ef248fb36a79b2ed1252636e2"
+    },
+    "examples/meta_frontier_lab.py": {
+      "sha256": "3ce98ddb5404595a0674c0b41081e4741a4373e662d1820d9c98b99b66d3e50c",
+      "source_sha256": "3ce98ddb5404595a0674c0b41081e4741a4373e662d1820d9c98b99b66d3e50c"
+    },
+    "examples/objectives_lab.py": {
+      "sha256": "1ff5eab68cc4bd98a9be490d4f4c2733046802f0c5ec219c7c8a61234beb3500",
+      "source_sha256": "1ff5eab68cc4bd98a9be490d4f4c2733046802f0c5ec219c7c8a61234beb3500"
+    },
+    "examples/rl_foundations.py": {
+      "sha256": "9e4d53421edf2a15c8e73790fd04a6d547bee1e86c79fa5dcb2fa8ed6e48dc83",
+      "source_sha256": "9e4d53421edf2a15c8e73790fd04a6d547bee1e86c79fa5dcb2fa8ed6e48dc83"
+    },
+    "examples/state_meta_lab.py": {
+      "sha256": "1bf6771c4b256792c1521601d713014c787fb162bb2b16c8b93c88169ea17095",
+      "source_sha256": "1bf6771c4b256792c1521601d713014c787fb162bb2b16c8b93c88169ea17095"
+    },
+    "examples/tabular_textbook_lab.py": {
+      "sha256": "25daa70a42101b1f04c1d898fc81b8cce8de054cc7e71d04b90c58cd64976861",
+      "source_sha256": "25daa70a42101b1f04c1d898fc81b8cce8de054cc7e71d04b90c58cd64976861"
+    },
+    "foundations/README.md": {
+      "sha256": "f86064d114beb217978104389f64617699edabdd236778b357fdae5cee9a11ab",
+      "source_sha256": null
+    },
+    "foundations/approximation/README.md": {
+      "sha256": "81adfdb1f3fd295990b352db602d59b7cf136241bba01f8e54b78842ffc1134e",
+      "source_sha256": null
+    },
+    "foundations/approximation/average-control.md": {
+      "sha256": "0b2d0b92fada77b4ee2b65206be7953f68bb9fbc2d994012614e234c2ed8a8e9",
+      "source_sha256": "c683796ec980da6e98f33b5a165905bfd03735a4f3d7097a460c034d6a084f7a"
+    },
+    "foundations/approximation/features-control.md": {
+      "sha256": "43564e3681b3301e873be491fac4bbd32bf895264d10a0cfd5204de948cadfba",
+      "source_sha256": "e61e0b84e0ab0c7e439b9d30dc81396c8681f42445219de97795af632cc24c30"
+    },
+    "foundations/approximation/off-policy.md": {
+      "sha256": "a912493fe1846b67b43151ef3c735d6898835870c41d3a17899e089750a6ee44",
+      "source_sha256": "e3756fde71240ee0af28f2545f77faa8bb43264d27575c1fdb9a3aeeb9b7edb0"
+    },
+    "foundations/approximation/policy-gradient.md": {
+      "sha256": "178de9d1e8adb32abc0171fdb54cfd0e51193e6d15379947be39421c6b0210cd",
+      "source_sha256": "164250bd1b5af04cd9743defdc30e2e618297edb43a524c81197ab70c34bd45c"
+    },
+    "foundations/approximation/prediction.md": {
+      "sha256": "534f2d6df73518d09416334f760ede1e77f35a5eb5056f081178b7d3f92694d5",
+      "source_sha256": "d61b6232b6993c8ec64bd81fd757d6e033df909d53593a7b1414f02b81bf5551"
+    },
+    "foundations/approximation/traces.md": {
+      "sha256": "21d3c947a40dbd7ad8958847f118c512dc51843042c9eae9677826512b079550",
+      "source_sha256": "8beab798244367d2251aef267eb8066280ec1caf5ba09144d3f059ff04198762"
+    },
+    "foundations/deep/README.md": {
+      "sha256": "9f5ae782052e052c1852026abd4c90fee2e142b7bec16a3511e17ff73f5c8b8d",
+      "source_sha256": null
+    },
+    "foundations/deep/deep-value.md": {
+      "sha256": "344ff9f805144268a20746b257fdc955e5db6913a18d809b5d53865213d742a0",
+      "source_sha256": "903f37440e52594e066167da0ea64d273d98552e971f95ce6b3bf99699058ca9"
+    },
+    "foundations/deep/deterministic-control.md": {
+      "sha256": "c7cfebad000c0ea4c67fb98fc0f1af33184f314bd47ed3f997b215f0b87bc96a",
+      "source_sha256": "a98f1247652b424301dffa9694f04be596144a4c31ad43a058c39a3d00ea6efd"
+    },
+    "foundations/deep/entropy-control.md": {
+      "sha256": "2fc7ab1590b3b599577e1217ec42c997e421e8a2c42971d4b47a2d9a2e4d7fed",
+      "source_sha256": "fa79ab0237c458069e1ccaa471c777eb488a1a602dcc7c0fa3d226736d76b1c9"
+    },
+    "foundations/deep/policy-gradient.md": {
+      "sha256": "ace5efd9a1c33325a4ad893679d400d568619739a62788e84733441a904ce114",
+      "source_sha256": "ee0f130a26c2a8dbe6595c9c71df7d51525915dabafa5201e4fd7eba4957edf9"
+    },
+    "foundations/deep/practice.md": {
+      "sha256": "17a513b34105f93ef18e8b22b519f74635e0d97e807d1a67071d22295e2d5571",
+      "source_sha256": "7a40958911210f73947bdfe3d9a1c54dd85e5b366266a1727473dba4c8888281"
+    },
+    "foundations/deep/trust-region.md": {
+      "sha256": "525bdcc934410e09a437964e280e0039723ee3cf630cd6f1c40d54bfb5954319",
+      "source_sha256": "615ed9aed2ae8d3ad12650b35d46d0290e229f09d1dd4a00aef14a759370d7a8"
+    },
+    "foundations/tabular/README.md": {
+      "sha256": "66ff0605005b1404349733e108ef750b3902b6e4183ca94326efac121edcc465",
+      "source_sha256": null
+    },
+    "foundations/tabular/bandits.md": {
+      "sha256": "cf8b9b2bf78e490e6941d2429ddff9abcc2510c79d498d7328a6682cf3e6dfb4",
+      "source_sha256": "9520f35e977496c112128f83d10cf295f8b9c589711a0e41ad56ceb74e924a2f"
+    },
+    "foundations/tabular/dynamic-programming.md": {
+      "sha256": "6d33148e79743170f06afac0f5b1aef9bf8bf5896b0b7c27c6b1ecf220feee66",
+      "source_sha256": "900c268758e6d93a55af378fe42b9c4cfb303cb7a8c15c7a29a5dd0a95ff5237"
+    },
+    "foundations/tabular/mdps.md": {
+      "sha256": "9827bc26a91f0312d9c13fc8a3839168f17b66c0e71793b9390fa663c09c6186",
+      "source_sha256": "bdb6a39115517b4a931866cac9f2a946a42489ed87edb47e9379e48edf79e550"
+    },
+    "foundations/tabular/monte-carlo.md": {
+      "sha256": "a515d19ab209162ce5199a3d64660fb5c27519d4b4a48a5fc34db9fbc40ee39e",
+      "source_sha256": "14140d19639cd3fa68203e0add74ec77f7fd733b6c2a74b8ba3ebfeb69d3414e"
+    },
+    "foundations/tabular/multistep.md": {
+      "sha256": "5dde5160d50ac2bc186e0a1680d0459a61b3b5e9bcc68b68d3485d4ef0840d62",
+      "source_sha256": "6971788d021ad2e745f0a0e5194691d2134ddb182853a9c780189bef5df1f618"
+    },
+    "foundations/tabular/planning.md": {
+      "sha256": "206688a3727b551dc88bd456f39e48b76e1b9cdb3a2c9256371bbefce7acef4e",
+      "source_sha256": "d103b030c5e74d0fd28438fa9ccd55a45298e424e2e6cd7a0a8675e03d8705dc"
+    },
+    "foundations/tabular/temporal-difference.md": {
+      "sha256": "b18345eadaed8cde3852ab576d02ba203ece13d75a6da328f4b5013fc844f993",
+      "source_sha256": "97eebd5a9f7e7439d1e2582094a4a4ad5685fcc67d5a43bf7647ee357b428d0b"
+    },
+    "textbook/README.md": {
+      "sha256": "9fda9f2fcf5e72335f8777e35c5f1d8f08222832c2fff8af023da71ad8679cb6",
+      "source_sha256": null
+    },
+    "textbook/architectures.md": {
+      "sha256": "4bdb8f6fcfdaeab8ff52a0af16bafa035423135f3e04d15f3200c5327ea9b655",
+      "source_sha256": "dd7e5a36cb676dfabc840c7cd7d2ae918d4d7cd0ac68a1592284eee086dd6ad3"
+    },
+    "textbook/average.md": {
+      "sha256": "0407d9c38629a16c5a9ee249847bc44f98747f3130541f1ac22dc501e37a3c6b",
+      "source_sha256": "112dea7b4a53a0b64fb2bc2e6c261e5b6c183a6a2b3cfb310bfba5fe4fb84e78"
+    },
+    "textbook/control.md": {
+      "sha256": "0d2989b2a851f59e70d837c0c04fe3738f8a0a1f1620b31b2b796e2a659211e1",
+      "source_sha256": "82ace7dbda210db204d1d449b702dbe1c16d926bc42ffb36e0130f9262717505"
+    },
+    "textbook/credit.md": {
+      "sha256": "3f539bf1acab2fbb7e1c49e5d9f5f5eb1fe71795aa048c1a4b49c4488f30cd10",
+      "source_sha256": "3c874369d8c7b4d3c5110d9f3c6bce59424b773bda6cf621bd08986aae878574"
+    },
+    "textbook/deep-value.md": {
+      "sha256": "0fdcc7ff95a0dd5d685d3c8b6a82989c8a324cc2b36aeb8d8fb96d4ef176f879",
+      "source_sha256": "64073d215f177dcd7a5f3de18c61c9be8d16818850c08835539722101702cba6"
+    },
+    "textbook/dyna.md": {
+      "sha256": "0cb329e6ad41858fd3df1107c86af81634284edd0e9448daaa0b94d1b247965f",
+      "source_sha256": "b9abdc526f07942efd66303e725c3fc95505669c59c6e46ab302974b15c68ee0"
+    },
+    "textbook/experiments.md": {
+      "sha256": "8f4e9dfa3c87bcc9bfe968c7a9806adba3f1fca183fb64dffffb55971ca4e8c2",
+      "source_sha256": "3ab2096da51708859b577e9aec2c0a9b6da3953d6fbf22165700397b1de94577"
+    },
+    "textbook/exploration.md": {
+      "sha256": "ff8f84c1bd2c2a06baa458508220b1d993acaabd65239197037528a26418f4ff",
+      "source_sha256": "069b754614d7ee0b12ce0c8a00bb6b6a4242c386fe69ff52d558ddbee73e2b00"
+    },
+    "textbook/goals.md": {
+      "sha256": "5ad5d0ab78976c80a504e0caaaeac432983cef5b3567772d9a7ebf7833b3f0f7",
+      "source_sha256": "3e9db19f925fb1490c33d1f2e27dbc2e9129b78a52ac8c00c2cede0b328e34ea"
+    },
+    "textbook/gvf.md": {
+      "sha256": "8e791efaf1a9d69532ed8d56a5129def242029446e929aea0716ad5cae33bcb0",
+      "source_sha256": "9cb74becaaff647e790c2740f3a8ed148750dd9c1d3903c9f1af6f2041b84466"
+    },
+    "textbook/meta.md": {
+      "sha256": "06e41decd9577f2cfbc2381f0d9dee18f0f26e1486ae70064536ecce64a53545",
+      "source_sha256": "977dfd8b4094187014d1d885089421649bbb23b770b0a74022ed46c57a7a318e"
+    },
+    "textbook/models.md": {
+      "sha256": "2c3aecf1b4825599f15f019dc7c53e704af993a7f41e4ae1d631b9ced2144325",
+      "source_sha256": "24fa311e52d2b43b9343b7e2b4fbc1ccb0a17abaac513d823905fd8d4a77d15c"
+    },
+    "textbook/objectives.md": {
+      "sha256": "509f6dbfc547adcade0bb1029e0b0231c3aabdbe585e93d22be55e14d06a39d4",
+      "source_sha256": "d0605ba0cfb91886152bd74aa3f1b3d0d56fa5aa4db27adc907de5b5d44ebb66"
+    },
+    "textbook/options.md": {
+      "sha256": "510bde3742703317bd5756ee9ec938a0b3f30ed8975484532bad0b89605bce16",
+      "source_sha256": "c16e7f0c894bcc621d3f8ed2ddcbb5862e76051b355ff848d7b8e674a2b983f4"
+    },
+    "textbook/planning.md": {
+      "sha256": "5aaed5911b54971eacc6c49f242236ce0aad85a68b9dde935f5a7a9a668731aa",
+      "source_sha256": "e60321748dd0a0ec5b27c5cfc614bdf4dabc643c0ec798a5b60b21dff9bf60bb"
+    },
+    "textbook/plasticity.md": {
+      "sha256": "f0624466772ce5858c680025849f72237b7d590750623859ec5c8083df451cc2",
+      "source_sha256": "dd39a279b0e554c0c35399f063d92709c8be4de71f1a61b288ee34fdbba2dac3"
+    },
+    "textbook/policy.md": {
+      "sha256": "28539b0af350a37c938bf9ce82ca3918852640f14c67d421be8c1a63665de8a8",
+      "source_sha256": "1d2ed693c0a044c3150c509dc4de4b6bd310723a02be314d6fb330292d9fb878"
+    },
+    "textbook/retention.md": {
+      "sha256": "e82c2ea8f4aabbb3ec509326f98f6729e37cd55f906467b04364cfb1cacb3474",
+      "source_sha256": "c4b50d2343e232c33d90c3c8a406d8170f089d0cf6ae5e5255d1e38337c63586"
+    },
+    "textbook/soft-control.md": {
+      "sha256": "f16810a693fa87cde058ce8589e7fc591a808a47848fb229352c7fff96ad9cf3",
+      "source_sha256": "e602b2968fa9999baa58b051cc27ee5639cb2cb13e822dad0b28a330d330ec85"
+    },
+    "textbook/state.md": {
+      "sha256": "a36a97ad10c7a1ca5c63c44ccc85d214addff9fbaf7dae59fd8c18ccbb4f8424",
+      "source_sha256": "d122f9cb8b612347b0a3cfe2a37f1fe0991d42a4cec811e1f0734db014dc5b8c"
+    },
+    "textbook/streaming.md": {
+      "sha256": "84a6cd4c5b6c4a0a39632389202d3d3274b00475d910d8cd4e26234294b21ea1",
+      "source_sha256": "258c2d3031cb5d27cb93f0fa85c89516081b4f9e38ff3a8b004a62f009b99adf"
+    },
+    "textbook/value.md": {
+      "sha256": "1b8d0c833203b267b87a794b480b94ee3fa8912162add092f141c442479c3573",
+      "source_sha256": "e6958a078156f545a3d37ab24c2d7bc9d509af7b62ce9209aab029c89b69aff7"
+    },
+    "tutorials/01-lifetime.md": {
+      "sha256": "7f7b502139c45d2df5df354185ee4d6e7907382f15e3b19917bfc4301842ea0b",
+      "source_sha256": "7f7b502139c45d2df5df354185ee4d6e7907382f15e3b19917bfc4301842ea0b"
+    },
+    "tutorials/02-tracking.md": {
+      "sha256": "c669dd3c4c382c19a00d776353a5f0dded56fd43ad72f5301fd16de66ed364a9",
+      "source_sha256": "c669dd3c4c382c19a00d776353a5f0dded56fd43ad72f5301fd16de66ed364a9"
+    },
+    "tutorials/03-plasticity.md": {
+      "sha256": "0a2c007d8f76dd337d485870c7bb5e9b06917631304d86b42da0d196b9801fb1",
+      "source_sha256": "0a2c007d8f76dd337d485870c7bb5e9b06917631304d86b42da0d196b9801fb1"
+    },
+    "tutorials/04-state.md": {
+      "sha256": "0abee617076846c6dfacd6362afa5d525b1abd3295df3b200a0033e4d788bfd8",
+      "source_sha256": "0abee617076846c6dfacd6362afa5d525b1abd3295df3b200a0033e4d788bfd8"
+    },
+    "tutorials/05-streaming.md": {
+      "sha256": "336fc53d0a13dbe8331d968ab21850229749357b9437bc55caae8a8b519d46ac",
+      "source_sha256": "336fc53d0a13dbe8331d968ab21850229749357b9437bc55caae8a8b519d46ac"
+    },
+    "tutorials/06-skills.md": {
+      "sha256": "08fbb8a701ea9caf4a30937aa0037f6b6a40984be88974bd5fd5c4115d2e399d",
+      "source_sha256": "08fbb8a701ea9caf4a30937aa0037f6b6a40984be88974bd5fd5c4115d2e399d"
+    },
+    "tutorials/07-evaluate.md": {
+      "sha256": "f21604676d5d23ddf602ecab23ccee5b9770e483c63e9d785fd294782d0437fe",
+      "source_sha256": "f21604676d5d23ddf602ecab23ccee5b9770e483c63e9d785fd294782d0437fe"
+    },
+    "tutorials/08-research.md": {
+      "sha256": "59d55dfbb174817b030fc857aa9fc463f6f33b116880681ee7487a96d609e05b",
+      "source_sha256": "59d55dfbb174817b030fc857aa9fc463f6f33b116880681ee7487a96d609e05b"
+    }
+  }
+}

@@ -1,10 +1,14 @@
-[学习首页](../README.md) · [八课入门目录](README.md)
+# 不只反应：技能、模型与规划如何积累？
 
-# 06 不只反应：技能、模型与规划如何积累？
+学会“走到门口”后，为什么还需要预测这项技能的结果？
 
-先修：Sutton & Barto Part I 中的 Dyna；没学过可先读第 8 章。建议时间：45 分钟。
+先修：Sutton & Barto Part I 中的 Dyna；没学过可先读第 8 章
 
-学习产出：解释技能、技能模型和规划三者的接口，并指出旧模型风险。
+学习目标：解释技能、技能模型和规划三者的接口，并指出旧模型风险。
+
+## 问题与例子
+
+仓库中“去充电区”是 option；“执行后 20 步左右抵达、耗电 3 单位”是 option model；在送货和充电之间选择是 planning。货架挪动后，策略、模型、规划中至少有一处要更新，且它们的时间尺度可能不同。
 
 ## 动作太短，计划会很长
 
@@ -22,16 +26,12 @@ Machado 的 eigenoptions 用状态空间的谱结构构造探索方向；success
 
 Alberta Plan 将在线预测、状态构造、子任务、技能模型和规划连成研究路线。Oak 延续经验驱动、有限资源下自主发现有用抽象的目标。你可以先验证其中一条接口：新技能出现后，模型预测和规划收益是否改善；无需先实现整个架构。
 
-## 具体例子
-
-仓库中“去充电区”是 option；“执行后 20 步左右抵达、耗电 3 单位”是 option model；在送货和充电之间选择是 planning。货架挪动后，策略、模型、规划中至少有一处要更新，且它们的时间尺度可能不同。
-
-## 术语小补丁
+### 术语小补丁
 
 - **Option**：带启动条件、内部策略和终止规则的一段行为。
 - **技能模型**：预测执行技能后的状态、累计奖励或持续时间。
 
-## 推导：为什么技能的 Bellman 目标要用 γ 的 τ 次方？
+### 推导：为什么技能的 Bellman 目标要用 γ 的 τ 次方？
 
 一项技能跨越多个基本时间步，不能一律当作一步动作。
 
@@ -55,7 +55,7 @@ $$
 
 [配套来源：Options 原论文入口](https://www.sciencedirect.com/science/article/pii/S0004370299000521)
 
-## 理解与操作练习
+### 理解与操作练习
 
 问题：“走到门口”和“预测走到门口花多少步”是同一个模型吗？
 
@@ -69,13 +69,13 @@ $$
 
 参考答案：后续价值应以 γ⁵ 折扣，并重新计算执行期间的奖励或代价。相同终点不代表两个技能同样有价值。
 
-## 思考题
+## 进一步思考
 
 一个新 option 提高了训练回报，如何判断它真的帮到了规划？
 
 参考答案：固定数据与探索预算，对比有无技能模型、有无规划，并报告规划计算量、模型误差和未见布局表现。若收益只来自更好的探索，仍有价值，但不是相同机制。
 
-## 配套资源
+## 原始材料
 
 - [Machado options：从 main.py 读懂 eigenoptions](https://github.com/mcmachado/options)
 - [Marlos C. Machado — Representation-driven Option Discovery in Reinforcement Learning](https://deeprlcourse.github.io/guests/marlos_machado/)
@@ -84,8 +84,3 @@ $$
 - [ALPS：Laplacian 表示与决策时规划](https://arxiv.org/abs/2602.05031)
 - [Laplacian Keyboard](https://arxiv.org/abs/2602.07730)
 - [The OaK Architecture](https://oaklab.ai/posts/the-oak-architecture)
-
-
----
-
-[← 上一章](05-streaming.md) · [下一章 →](07-evaluate.md)

@@ -1,23 +1,19 @@
-# 算法与代码
+# 算法阅读入口
 
-[返回学习首页](../README.md)
+[完整 CRL 教材](../textbook/README.md) · [经典与深度 RL 基础](../foundations/README.md)
 
-首次只读 01 → 02 → 04。每章按问题、公式、手算、代码、检查点和思考题组织。命令从仓库根目录运行；深度算法的短片段是机制示意，完整训练请走各章官方代码入口。
+下面保留原有十三个链接，其正文与当前教材同步：
 
-| 章节 | 内容 |
-|---|---|
-| 01 | [价值从哪里来：Bellman、MC、TD 与资格迹](01-value.md) |
-| 02 | [从预测到决策：SARSA 与 Q-learning](02-control.md) |
-| 03 | [当 Q 表放不下：DQN、Double DQN 与数据回放](03-deep-value.md) |
-| 04 | [直接改进策略：REINFORCE、actor–critic、GAE 与 PPO](04-policy.md) |
-| 05 | [连续动作与数据复用：DDPG、TD3、SAC](05-soft-control.md) |
-| 06 | [从经验多学几次：模型、Dyna 与规划](06-dyna.md) |
-| 07 | [积累可复用知识：Options、SR、Successor Features 与 GPI](07-skills.md) |
-| 08 | [怎样保留旧知识：Replay、EWC、蒸馏与参数隔离](08-retention.md) |
-| 09 | [怎样一直学得进：ReDo、Continual Backprop 与特征更新](09-plasticity.md) |
-| 10 | [每步都要及时更新：TD(λ)、IDBD、平均奖励与 Stream-X](10-streaming.md) |
-| 11 | [学什么状态：GVF、Horde、RNN 与实时递归信用](11-state.md) |
-| 12 | [让未来学得更快：迁移、Meta-RL 与自动课程](12-meta.md) |
-| 13 | [世界会变化，为什么还要探索：计数奖励、RND 与学习进展](13-exploration.md) |
-
-[第一个完整实验](../docs/first-experiment.md) · [实验与实现目录](../docs/experiments.md) · [分方向进阶阅读](../docs/advanced-reading.md)
+- [价值预测与时间差分学习](01-value.md)
+- [控制问题：策略改进与动态规划](02-control.md)
+- [深度价值学习：DQN 与 Double DQN](03-deep-value.md)
+- [策略梯度、Actor–Critic 与 PPO](04-policy.md)
+- [最大熵控制与 Soft Actor–Critic](05-soft-control.md)
+- [Dyna：模型学习与规划](06-dyna.md)
+- [Options：多步决策、技能发现与可复用行为](07-skills.md)
+- [知识保留：经验重放、参数约束与模型记忆](08-retention.md)
+- [可塑性：梯度通路、有效学习率与预测干扰](09-plasticity.md)
+- [流式强化学习：交互协议与更新稳定性](10-streaming.md)
+- [Agent state：部分可观测性、递归记忆与在线信用分配](11-state.md)
+- [学习规则的适应：在线元梯度与跨任务元学习](12-meta.md)
+- [持续探索：新奇、不确定性、学习进展与恢复](13-exploration.md)

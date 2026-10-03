@@ -18,16 +18,41 @@ spec.loader.exec_module(runner)
 
 class Documentation(unittest.TestCase):
     def pages(self):
-        return [*ROOT.glob("*.md"), *ROOT.glob("tutorials/*.md"),
-                *ROOT.glob("algorithms/*.md"), *ROOT.glob("docs/*.md")]
+        return [p for folder in ("tutorials", "algorithms", "docs", "textbook", "foundations")
+                for p in (ROOT/folder).rglob("*.md")] + list(ROOT.glob("*.md"))
 
     def test_chapter_inventory(self):
         self.assertEqual(len(list((ROOT/"tutorials").glob("[0-9][0-9]-*.md"))), 8)
         self.assertEqual(len(list((ROOT/"algorithms").glob("[0-9][0-9]-*.md"))), 13)
         for path in (ROOT/"algorithms").glob("[0-9][0-9]-*.md"):
             body = path.read_text(encoding="utf-8")
-            for marker in ("手算例子", "对照代码", "思考题", "参考答案", "原始材料与代码", "$$"):
+            for marker in ("预备知识与符号", "下载与运行", "参考文献与实现", "$$", "```python"):
                 self.assertIn(marker, body, str(path.relative_to(ROOT)))
+
+    def test_complete_textbook_and_prerequisites(self):
+        inventory=json.loads((ROOT/'data/site-export.json').read_text())
+        self.assertEqual(len(inventory['chapters']),22)
+        self.assertGreaterEqual(len(inventory['lessons']),19)
+        for chapter in inventory['chapters']:
+            path=ROOT/'textbook'/(chapter['id']+'.md')
+            self.assertTrue(path.exists())
+            self.assertGreaterEqual(path.read_text().count('\n## '),7)
+        for lesson in inventory['lessons']:
+            path=ROOT/(lesson['path'].rstrip('/')+'.md')
+            body=path.read_text()
+            self.assertGreaterEqual(body.count('\n## '),8)
+            self.assertIn('```python',body)
+            self.assertIn('$$',body)
+            self.assertTrue((ROOT/'examples'/lesson['file']).is_file())
+
+    def test_site_sync_receipt(self):
+        receipt=json.loads((ROOT/'data/site-sync.json').read_text())
+        self.assertEqual(receipt['source_export_sha256'],hashlib.sha256((ROOT/'data/site-export.json').read_bytes()).hexdigest())
+        for name,info in receipt['files'].items():
+            self.assertEqual(info['sha256'],hashlib.sha256((ROOT/name).read_bytes()).hexdigest(),name)
+        for item in json.loads((ROOT/'data/site-export.json').read_text())['files']:
+            if item['file'].endswith('.py'):
+                self.assertEqual(item['sha256'],hashlib.sha256((ROOT/item['target']).read_bytes()).hexdigest())
 
     def test_relative_file_links(self):
         fence = chr(96)*3
@@ -49,7 +74,7 @@ class Documentation(unittest.TestCase):
         for path in paths:
             body = path.read_text(encoding="utf-8")
             for marker in ("/Users/", "/private/tmp/", "127.0.0.1:", "file://", "codex://",
-                           "/zh/continual-rl/", "src/data/crl/"):
+                           "](/zh/continual-rl/", "src/data/crl/"):
                 self.assertNotIn(marker, body, str(path.relative_to(ROOT)))
 
     def test_program_commands_resolve(self):

@@ -10,10 +10,13 @@
 - 不提交个人路径、访问凭据、未获授权的数据或第三方全文。
 - 代码按 MIT、原创教程按 CC BY 4.0 提交；无法授权的材料只提供原链接。
 
+正文、章节示例和索引按[同步说明](docs/site-sync.md)从网站导出。可以提交问题、最小反例或建议补丁；维护者需将修正回写内容源，再生成仓库文件。不要手改摘要来绕过一致性检查。README、同步工具与仓库测试可直接修改。
+
 ## 检查
 
 ```sh
 python3 -m unittest discover -s tests -v
+python3 scripts/test_examples.py
 python3 scripts/run_all.py --out results/my-check
 ```
 

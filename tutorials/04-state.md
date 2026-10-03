@@ -1,10 +1,14 @@
-[学习首页](../README.md) · [八课入门目录](README.md)
+# 看不到，不等于学不会：状态与记忆
 
-# 04 看不到，不等于学不会：状态与记忆
+进门时亮过一次红灯，十步以后才要选左或右，怎么办？
 
-先修：MDP 中的状态概念；无需先学 POMDP 理论。建议时间：40 分钟 + 实验。
+先修：MDP 中的状态概念；无需先学 POMDP 理论
 
-学习产出：区分环境状态、观测、工作记忆与长期知识。
+学习目标：区分环境状态、观测、工作记忆与长期知识。
+
+## 问题与例子
+
+Python memory 实验刻意用 balanced 的随机灯色：不记忆的固定策略正确率是 1/2；保存灯色的手工策略是 1。它不是“学会记忆”的论文结果，而是检查任务信息结构是否符合你的假设。
 
 ## 当前观测不总是状态
 
@@ -22,17 +26,13 @@ GVF（general value function）把一个知识问题写成：在某种行为条�
 
 在小线索任务上确认缺少历史的基线确实失败，再进入 POPGym、Forager。比较同等状态容量的前馈、循环或预测式状态表示。若改进同时增大内存、历史长度和计算量，就不能只归因于新的状态学习方法。
 
-## 具体例子
-
-Python memory 实验刻意用 balanced 的随机灯色：不记忆的固定策略正确率是 1/2；保存灯色的手工策略是 1。它不是“学会记忆”的论文结果，而是检查任务信息结构是否符合你的假设。
-
-## 术语小补丁
+### 术语小补丁
 
 - **观测 observation**：agent 当前实际收到的输入，不一定包含决策所需的全部信息。
 - **内部状态 z**：由历史压缩得到的工作记忆；它不同于环境真实状态。
 - **参数 θ**：规定怎样更新内部状态或作出决策的可学习规则。
 
-## 推导：为什么没有历史，网络再大也猜不出灯色？
+### 推导：为什么没有历史，网络再大也猜不出灯色？
 
 先排除信息不足，再讨论优化方法。
 
@@ -56,7 +56,7 @@ $$
 
 
 
-## 理解与操作练习
+### 理解与操作练习
 
 问题：环境真实状态包含灯色，为什么当前图像仍然不足以决策？
 
@@ -70,13 +70,13 @@ $$
 
 参考答案：无记忆策略也可以按当前灯色作出正确动作。因此应先固定观测协议，才能比较记忆机制。
 
-## 思考题
+## 进一步思考
 
 固定参数 RNN 的 hidden state 改变，是学习吗？
 
 参考答案：本教程先把当次情境推断与跨经历的知识积累分开。更广的 agent 定义允许持久可更新状态承载学习；关键要说明保留什么、影响哪些未来行为。仅看到 hidden state 变化，不能直接证明长期能力增长。
 
-## 配套资源
+## 原始材料
 
 - [Horde — Sutton、Modayil、Delp、Degris、Pilarski、White、Precup，2011](https://josephmodayil.com/papers/horde-final.pdf)
 - [Recurrent Trace Units — Elelimy、Adam White、Bowling、Martha White，NeurIPS 2024](https://arxiv.org/abs/2409.01449)
@@ -85,8 +85,3 @@ $$
 - [POPGym](https://github.com/proroklab/popgym)
 - [Ida Momennejad — Guest Lecture（页面未提供直接 slides）](https://deeprlcourse.github.io/guests/ida_momennejad/)
 - [Andrej Karpathy：RNN 的直观解释](https://karpathy.github.io/2015/05/21/rnn-effectiveness/)
-
-
----
-
-[← 上一章](03-plasticity.md) · [下一章 →](05-streaming.md)

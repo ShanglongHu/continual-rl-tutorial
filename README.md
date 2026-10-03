@@ -1,105 +1,87 @@
-# Continual RL Tutorial · 持续强化学习：从基础到研究
+# Continual RL Tutorial · 强化学习：从基础到持续研究
 
 [![Teaching checks](https://github.com/ying-wen/continual-rl-tutorial/actions/workflows/test.yml/badge.svg)](https://github.com/ying-wen/continual-rl-tutorial/actions/workflows/test.yml)
 
-面向刚学过基础 RL，以及已熟悉深度 RL、准备进入持续强化学习研究的读者。
-从一个可解释的问题开始，连起算法、公式、代码和实验，最后选择一个具体研究方向。
+从表格预测与控制出发，经过函数逼近和深度强化学习，进入持续学习的目标、状态、知识、信用、技能与规划。
 
-**8 课入门 · 13 章算法 · 9 组教学实验 · Python 标准库 · 自动生成图表与复现记录**
+**19 章基础分册 · 22 章 CRL 教材 · 8 课导论 · 配套实现、数值检查与实验手册**
 
-Tutorials are currently in Chinese. Teaching code uses only the Python standard library.
-Original code: **MIT**. Original tutorial text: **CC BY 4.0**.
+[在线阅读](https://yingwen.io/zh/continual-rl/) · [基础目录](foundations/README.md) · [CRL 教材](textbook/README.md) · [实验与代码](docs/experiments.md) · [研究问题](docs/research-atlas.md)
 
-## 先选一条路线
+Tutorials are currently in Chinese. Original code is MIT; original tutorial text is CC BY 4.0. Third-party works keep their own licenses.
 
-| 你现在的起点 | 第一站 | 接着做什么 |
+## 从哪里开始
+
+| 已有基础 | 阅读顺序 | 完成时应能做什么 |
 |---|---|---|
-| 刚学过状态、动作、奖励和价值函数 | [第 1 课：为什么需要 CRL](tutorials/01-lifetime.md) → [第 2 课：跟踪变化](tutorials/02-tracking.md) | [做第一个完整实验](docs/first-experiment.md) |
-| 学过 RL，但算法之间还没连起来 | [MC / TD](algorithms/01-value.md) → [SARSA / Q-learning](algorithms/02-control.md) → [策略梯度](algorithms/04-policy.md) | 按需补 DQN、PPO、SAC、Dyna |
-| 已熟悉 DQN / PPO，想做研究 | [五份共同阅读材料](docs/quick-reading.md) → [分方向进阶阅读](docs/advanced-reading.md) | 选一个失败模式，写协议，跑最小对照 |
+| 认识状态、动作、奖励 | [表格方法 / Part I](foundations/tabular/README.md) | 从回报写出 Bellman 关系，区分预测、控制和规划，实现更新并核对数值 |
+| 学过 Sutton Part I | [函数逼近 / Part II](foundations/approximation/README.md) | 区分真梯度与半梯度，解释投影、离策略不稳定、资格迹和策略梯度 |
+| 能运行 DQN 或 PPO | [现代 DRL](foundations/deep/README.md) | 追踪 target、梯度、数据与状态的完整时序，检查训练与算法公式是否对应 |
+| 准备做 CRL 研究 | [22 章教材](textbook/README.md) → [研究地图](docs/research-atlas.md) → [实验手册](docs/experiment-handbook.md) | 为一个机制提出竞争解释，建立对照，保留完整运行并界定结论 |
 
-不要把所有章节都当先修。每章都有：问题、适用条件、公式解释、手算例子、代码对应、检查点、思考题及答案。
+Part II 不是可选的深度学习附录。状态共享参数之后，表格方法的保证不再自动成立。线性预测、特征构造、平均奖励、离策略方法、资格迹与策略梯度构成后续章节的共同基础。
 
-## 五分钟跑通代码
+每章按问题设定、必要符号、推导、执行顺序、数值例、实现、限制和练习组织。原论文与作者代码放在正文之后，供进一步核对。正文为原创解释，不是 Sutton 教材或 Spinning Up 的翻译复制。
 
-推荐 Python 3.10 或更新版本；无需 GPU、PyTorch、pip 安装或数据下载。
-Windows 若使用 `python` 或 `py -3`，替换命令中的 `python3` 即可。
+## 先运行数值与实现检查
 
-```sh
+需要 Python 3.10+。标准库教学部分无需 GPU、pip 安装或数据集下载。
+
+```bash
 git clone https://github.com/ying-wen/continual-rl-tutorial.git
 cd continual-rl-tutorial
-python3 scripts/run_all.py --quick --out results/first-run
-```
-
-打开 `results/first-run/bandit.html` 看第一个 CRL 例子；
-再看 `prediction.html`、`control.html`、`policy.html`、`dyna.html`、`consolidation.html`。
-这些都是可直接打开的独立 HTML 文件。
-
-`--quick` 只检查能否运行。完成正文实验时，使用新的目录运行完整教学配置：
-
-```sh
-python3 scripts/run_all.py --out results/teaching-run
+python3 scripts/test_examples.py
 python3 -m unittest discover -s tests -v
 ```
 
-输出包括 9 个 CSV、6 个 HTML 和 `manifest.json`。
-Manifest 记录命令、Python 版本、系统类型、Git commit、源码 SHA-256 和结果 SHA-256。
-所有脚本都保护已有结果；再次运行请换一个 `--out` 名称，不要删掉前一次结果来“修正”曲线。
+每个章节给出独立命令。所有命令按仓库根目录编写。建议先改一个断言或一条短轨迹，观察实现能否识别错误，再开始长训练。
 
-## 算法主线：CRL 改变了基础算法的什么？
+要生成原有的 CSV 与 HTML 小实验报告：
 
-```text
-价值学习：Bellman / MC / TD → SARSA / Q-learning → DQN
-策略学习：REINFORCE → actor–critic / GAE → PPO；连续控制接 TD3 / SAC
-模型与知识：Dyna → 技能与技能模型；SR / SF → 迁移
-
-放到持续的生命期中，再问：
-├─ 旧知识怎样保留？                Replay / EWC / 蒸馏
-├─ 新知识还能学进去吗？            ReDo / Continual Backprop
-├─ 每一步来得及并且稳定地更新吗？   Traces / IDBD / Stream-X
-├─ 历史怎样变成有用状态？          GVF / RNN / RTU
-└─ 下一步学什么、复用什么？        Options / Meta-RL / 课程 / 探索
+```bash
+python3 scripts/run_all.py --quick --out results/first-run
 ```
 
-这是学习依赖与方法接口，不是一条所有方法相互替代的历史链。
+打开 `results/first-run/bandit.html`。其余报告解释预测、控制、策略更新、Dyna 和保留。运行清单记录版本、源码和输出摘要。已有输出目录不能覆盖；再运行时换新目录。
 
-- [八课入门目录](tutorials/README.md)：从概念、现象到实验协议。
-- [十三章算法目录](algorithms/README.md)：从更新式到实现。
-- [实验与实现目录](docs/experiments.md)：每个命令做什么、测什么、没有实现什么。
-- [十条研究路线](docs/advanced-reading.md)：代表论文、作者、代码、benchmark、课程讲座与跨学科材料。
-- [复现约定](docs/reproducibility.md)与[实验协议模板](docs/protocol.md)。
+## 代码分为哪些层次
 
-## 这里提供什么代码？
-
-| 实验包 | 实际可运行的实现 | 输出 |
+| 层次 | 入口 | 范围 |
 |---|---|---|
-| [rl_foundations.py](examples/rl_foundations.py) | MC / TD(0) / TD(λ)、SARSA / Q-learning、REINFORCE / 一步 actor–critic、Dyna-Q、标量 replay/EWC 例子 | CSV + HTML |
-| [crl_labs.py](examples/crl_labs.py) | 奖励跟踪、记忆信息条件、线性 IDBD 信用分配、遗忘反例 | CSV |
-| [analyze_crl.py](examples/analyze_crl.py) | 将配套 bandit CSV 生成为四图报告 | HTML |
+| 表格方法 | [tabular_textbook_lab.py](examples/tabular_textbook_lab.py) | 小 MDP、bandit、DP、MC、TD、多步与规划；解析或有限轨迹核对 |
+| 函数逼近 | [approximation_textbook_lab.py](examples/approximation_textbook_lab.py) | 线性特征、半梯度、投影、离策略、平均奖励、迹和策略梯度的受控例子 |
+| 深度更新核 | [deep_textbook_lab.py](examples/deep_textbook_lab.py) | DQN、GAE、TRPO/PPO、TD3、SAC 的目标、数值与时序检查 |
+| 神经训练 | [deep_textbook_train.py](examples/deep_textbook_train.py) | 可选 PyTorch CPU；小环境中的 DQN/PPO 训练及梯度检查 |
+| CRL 机制 | [逐章实验](docs/experiments.md) | GVF、状态、平均奖励、信用、元学习、options、模型规划及长期学习机制 |
+| 实验语义 | [algorithm_testing_lab.py](examples/algorithm_testing_lab.py) | 终止与截断、策略目标、option 时钟和完整检查点状态 |
 
-DQN、PPO、SAC、ReDo、完整 CBP、RTU、RND 等章节提供推导和外部实现的读码路线，
-**本仓库没有声称实现或复现这些深度研究系统**。
-表格控制实验允许自然终止与 episode reset，不是 single-life benchmark。
-memory 是手工 oracle 诊断；consolidation 与 retention 是确定性教学反例。
+可选神经实现：
 
-## 从教学实验进入研究
+```bash
+python3 -m pip install -r examples/deep_requirements.txt
+python3 examples/deep_textbook_train.py test
+```
 
-先写一个可证伪的问题，例如“旧模型是否会延长变化后的错误价值传播”，
-再固定信息权限、计算预算、调参范围和指标。
-[第一份实验教程](docs/first-experiment.md)带你走完
-“公式 → 运行 → 看图 → 单因素对照 → 一页结论”。
+这些检查不等于 Atari、MuJoCo、单生命期持续世界或原论文性能复现。TRPO、TD3、SAC 等方法的更新核与完整训练工程分别说明。完整作者实现入口见 [实现导读](docs/implementations.md) 与各章文献。
 
-研究路线中的外部仓库有独立的依赖和许可；不要把它们全部安装到一个环境。
-本仓库的 CI 检查教学机制、文档链接和可执行流程，不给任何方法作普遍优越性保证。
+## 从学习转向研究
 
-## 贡献、来源与许可
+[研究与前沿](docs/research-atlas.md) 按问题连接机制、假设、原文、作者代码和可检验实验。[实验与算法测试手册](docs/experiment-handbook.md) 讨论对照、预算、开发与确认、统计单位、失败、恢复和持续交互。
 
-欢迎通过 Issues 报告公式、链接、运行或解释上的问题；修改前请读 [CONTRIBUTING.md](CONTRIBUTING.md)。
-引用研究结论时请引用原论文；使用本教程或代码时保留来源，并记录具体 commit。
+需要固定协议、执行小矩阵、保存全部运行并审计结果时，使用公开的 [RL Research Workbench](https://github.com/ying-wen/rl-research-workbench)。先跟做它的 [完整例子](https://github.com/ying-wen/rl-research-workbench/blob/main/docs/worked-example.md)。教程代码与 Workbench 不自动共享运行接口；新增方法需要经过适配与验证。
 
-- [来源与材料边界](docs/sources.md)
-- [代码 MIT](LICENSE-CODE)
-- [原创教程 CC BY 4.0](LICENSE-DOCS.md)
-- [许可适用范围](LICENSE)
+- [统一学习路线](docs/learning-route.md)
+- [课程、论文与学者的章节对应](docs/chapter-companions.md)
+- [实验协议](docs/protocol.md)
+- [八课 CRL 导论](tutorials/README.md)
+- [兼容原链接的算法目录](algorithms/README.md)
+
+## 内容同步与贡献
+
+网站与仓库共享公开导出清单。代码按原字节同步；Markdown 转换内部链接和运行路径。CI 核对摘要，防止网页与 GitHub 长期分叉。维护过程见 [同步说明](docs/site-sync.md)。
+
+欢迎提交可以复核的公式反例、运行失败或解释改进。请写明章节、命令、版本、期望与实际结果。修改前阅读 [贡献指南](CONTRIBUTING.md)。方法效果、实现正确和机制解释分别验收，负结果也应保留。
+
+[代码 MIT](LICENSE-CODE) · [原创教程 CC BY 4.0](LICENSE-DOCS.md) · [许可范围](LICENSE) · [来源](docs/sources.md)
 
 作者：[Ying Wen / 温颖](https://yingwen.io/)。

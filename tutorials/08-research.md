@@ -1,10 +1,14 @@
-[学习首页](../README.md) · [八课入门目录](README.md)
+# 从读懂论文到提出一个可检验的问题
 
-# 08 从读懂论文到提出一个可检验的问题
+不做“大一统智能体”，我能从哪里开始前沿研究？
 
-先修：前七课；不要求先读完全部论文。建议时间：40 分钟 + 项目规划。
+先修：前七课；不要求先读完全部论文
 
-学习产出：产出一页研究计划与可复现的实验目录。
+学习目标：产出一页研究计划与可复现的实验目录。
+
+## 问题与例子
+
+候选项目：Forager 中，固定状态维度和每步时间预算，对比短历史堆叠与预测式内部状态。先问收益来自额外信息、额外参数还是学习目标；不要一开始同时换 encoder、optimizer 和 reward。
 
 ## 先定位失败，再提出方法
 
@@ -22,23 +26,15 @@
 
 第 1 周完成教程和小实验；第 2 周读两篇核心论文并安装一个官方仓库；第 3 周复现一个最小趋势；第 4 周做失败诊断；第 5 周引入单个改动和强对照；第 6 周写结果、负结果与边界。安装困难或高方差都可能延长时间。
 
-## 具体例子
-
-候选项目：Forager 中，固定状态维度和每步时间预算，对比短历史堆叠与预测式内部状态。先问收益来自额外信息、额外参数还是学习目标；不要一开始同时换 encoder、optimizer 和 reward。
-
-## 思考题
+## 进一步思考
 
 你的方法没有超过 baseline，项目是否就失败了？
 
 参考答案：若实验排除了一个有吸引力的解释，或发现改进仅来自某项权限/预算差异，就是有用的研究证据。保存负结果、配置与完整曲线；不要只挑最好种子。
 
-## 配套资源
+## 原始材料
 
 - [Forager: a lightweight testbed for continual learning with partial observability in RL](https://arxiv.org/abs/2605.01131)
 - [Plasticine：可塑性方法实现与指标](https://github.com/RLE-Foundation/Plasticine)
 - [Oak Lab：从经验学习，而非从整理好的数据集学习](https://oaklab.ai/posts/learning-from-experience-instead-of-curated-datasets)
 - [Adam White — Reinforcement Learning Experiments that Matter!](https://deeprlcourse.github.io/guests/adam_white/)
-
----
-
-[← 上一章](07-evaluate.md) · [进阶阅读 →](../docs/advanced-reading.md)

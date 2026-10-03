@@ -1,10 +1,14 @@
-[学习首页](../README.md) · [八课入门目录](README.md)
+# 只用最新一条经验，怎样稳定地学？
 
-# 05 只用最新一条经验，怎样稳定地学？
+机器人每 20 毫秒必须行动，还能等大 batch 训练吗？
 
-先修：TD 误差；可按需补 Sutton & Barto 第 9、12、13 章。建议时间：50 分钟。
+先修：TD 误差；可按需补 Sutton & Barto 第 9、12、13 章
 
-学习产出：能画出更新顺序，区分缓冲区、trace 与模型状态。
+学习目标：能画出更新顺序，区分缓冲区、trace 与模型状态。
+
+## 问题与例子
+
+把一步切成 act → environment → reward/observation → state update → critic/actor update。记录每段耗时。一个回报更高却经常超过动作 deadline 的算法，在真实时间协议下可能不可用。
 
 ## 先对齐更新协议
 
@@ -22,17 +26,13 @@ Eligibility trace 可记成 e ← γλe + 当前特征，再用 TD 误差 δ 更
 
 先读 Stream-X 的一条 transition 如何更新，再固定官方分支 2026 与一个 commit 运行小任务。RTU / Streaming RTRL 则针对递归状态的实时信用分配；其效率来自结构限制，不能概括成所有 RNN 的精确 RTRL 都是线性的。
 
-## 具体例子
-
-把一步切成 act → environment → reward/observation → state update → critic/actor update。记录每段耗时。一个回报更高却经常超过动作 deadline 的算法，在真实时间协议下可能不可用。
-
-## 术语小补丁
+### 术语小补丁
 
 - **TD 误差 δ**：一步奖励加上下一个状态的估值，与当前估值之差。
 - **资格迹 e**：压缩过去特征对当前更新的影响，不是保存原始样本。
 - **半梯度 semi-gradient**：更新当前预测时，暂时把自举目标视为常数。
 
-## 推导：把 TD(λ) 的一步更新拆开
+### 推导：把 TD(λ) 的一步更新拆开
 
 先会手算线性预测，再阅读复杂的 streaming actor–critic。
 
@@ -68,7 +68,7 @@ $$
 
 [配套来源：Sutton & Barto · 第二版，第 2、6、12 章](http://incompleteideas.net/book/the-book-2nd.html)
 
-## 理解与操作练习
+### 理解与操作练习
 
 问题：迹保存过去影响，为什么不等于 replay buffer？
 
@@ -82,13 +82,13 @@ $$
 
 参考答案：新迹等于当前特征 (0,1)，权重只增加 (0,0.2)，退回一步 TD 更新。
 
-## 思考题
+## 进一步思考
 
 Eligibility traces、RNN hidden state、replay buffer 都算记忆，为什么要分别报告？
 
 参考答案：它们保存的对象和使用方式不同：trace 压缩信用历史，hidden state 汇总观测，replay 保存可再次训练的样本。三者都占资源，但只有后者必然涉及样本重用；具体算法还可能同时使用它们。
 
-## 配套资源
+## 原始材料
 
 - [stream-x / Streaming Deep RL](https://github.com/mohmdelsayed/streaming-drl)
 - [RTU](https://github.com/esraaelelimy/rtus)
@@ -97,8 +97,3 @@ Eligibility traces、RNN hidden state、replay buffer 都算记忆，为什么�
 - [Intentional Updates](https://arxiv.org/abs/2604.19033)
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://arxiv.org/abs/2605.24709)
 - [Oak Lab：从经验学习，而非从整理好的数据集学习](https://oaklab.ai/posts/learning-from-experience-instead-of-curated-datasets)
-
-
----
-
-[← 上一章](04-state.md) · [下一章 →](06-skills.md)
