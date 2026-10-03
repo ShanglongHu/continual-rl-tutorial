@@ -1,8 +1,12 @@
 # 经典 RL：从交互到评价与控制
 
-先建立评价与控制，再理解函数近似带来的训练问题，最后研究长期交互中的适应与知识积累。这是先修关系，不是后来的算法取代前面的算法。
+运行时，智能体与世界形成交互闭环；外部设计者选择奖励、初始化、数据权限、调参与预算。经典方法、神经表示和持续学习描述不同维度，可以共同用于同一智能体。下面按教学先修组织，不把三册视为互斥问题类，也不要求读完全部分支才开始研究。
 
-先在状态和动作数量有限、转移规律固定的问题中理解 RL。这里的重点不是记住算法名称，而是区分：问题要求优化什么、一次更新估计什么、数据由谁产生。随后用函数逼近和模型学习说明这些基本关系如何扩展。
+[领域总览与问题地图](field-framework.md) · [奖励假设与设计](../textbook/reward-design.md) · [持续控制：比较完整学习器](../textbook/control.md)
+
+基础目录包含表格方法、函数逼近与深度核心算法。深度拓展中的部分可观测、探索、回报分布、离线数据、模型、约束和多智能体是并列研究分支，可按问题选择。
+
+从可解析的有限问题学习评价、控制和规划，再研究函数逼近。有限平稳 MDP 是这里的教学起点，不是所有强化学习必须满足的世界假设；经典方法也包括平均奖励、资格迹与在线跟踪。始终分清目标、估计对象、数据来源和学习规则。
 
 学习目标：
 
@@ -43,11 +47,13 @@ python3 examples/objectives_lab.py test
 
 自测：奖励依次为 1、2、3，随后真正终止；折扣为 0.5。第一个状态的回报是多少？
 
-解答：1 + 0.5 × 2 + 0.25 × 3 = 2.75。若第三步只是采样截断，应再加 0.5³ 乘下一状态的价值估计。
+解答：1 + 0.5 × 2 + 0.25 × 3 = 2.75。若第三步只是采样截断，应再加 $0.5^3$ 乘下一状态的价值估计。
 
-完整教材：
+完整推导与问题衔接：
 
+- [MDP、回报与价值的完整推导](../foundations/tabular/mdps.md)
 - [交互、奖励与优化目标](../textbook/objectives.md)
+- [奖励假设与奖励设计](../textbook/reward-design.md)
 
 原文、课程与实现：
 
@@ -68,7 +74,7 @@ $$
 \begin{aligned}(T_\pi v)(s)&=\sum_a\pi(a\mid s)\sum_{s',r}p(s',r\mid s,a)[r+\gamma v(s')],\\(T_*v)(s)&=\max_a\sum_{s',r}p(s',r\mid s,a)[r+\gamma v(s')].\end{aligned}
 $$
 
-策略迭代求解 v = Tπv 后改善策略；价值迭代使用 vₖ₊₁ = T*vₖ。真实终止状态的余项取零。
+策略迭代求解 $v = T_πv$ 后改善策略；价值迭代使用 $v_{k+1}=T_*v_k$。真实终止状态的余项取零。
 
 ### 动手与核对
 
@@ -89,10 +95,11 @@ python3 examples/control_problem_lab.py test
 
 解答：循环策略满足 v(A)=0.9v(B)、v(B)=0.5+0.9v(A)，解为 45/19 和 50/19，均高于对应退出奖励。只比较即时奖励会漏掉循环中的长期收入。
 
-完整教材：
+完整推导与问题衔接：
 
+- [动态规划：评价、改善与最优递推](../foundations/tabular/dynamic-programming.md)
 - [价值预测与资格迹](../textbook/value.md)
-- [控制问题与广义策略迭代](../textbook/control.md)
+- [持续控制与学习智能体比较](../textbook/control.md)
 
 原文、课程与实现：
 
@@ -134,7 +141,7 @@ python3 examples/foundations_detail_lab.py test
 
 解答：MC 得到 A=0.09、B=0.1。在线 TD 在访问 A 时尚不知道 B 的价值，因此 A=0、B=0.1。后续经历会把 B 的信息传播到 A。
 
-完整教材：
+完整推导与问题衔接：
 
 - [价值预测与资格迹](../textbook/value.md)
 
@@ -178,9 +185,10 @@ python3 examples/control_problem_lab.py test
 
 解答：SARSA 为 0；Expected SARSA 为 0.9×1.8=1.62；Q-learning 为 1.8。只有先明确要评价的策略，才能判断哪个 target 合适。
 
-完整教材：
+完整推导与问题衔接：
 
-- [控制问题与广义策略迭代](../textbook/control.md)
+- [TD 控制：SARSA、Expected SARSA 与 Q-learning](../foundations/tabular/temporal-difference.md)
+- [持续控制与学习智能体比较](../textbook/control.md)
 
 原文、课程与实现：
 
@@ -222,7 +230,7 @@ python3 examples/credit_assignment_lab.py test
 
 解答：第一步误差为 0。第二步迹为 (.72,1)，误差为 1，权重变为 (.072,.1)。λ=0 时第一项仍是 0。
 
-完整教材：
+完整推导与问题衔接：
 
 - [时间信用分配与资格迹](../textbook/credit.md)
 - [价值预测与资格迹](../textbook/value.md)
@@ -267,7 +275,7 @@ python3 examples/gvf_lab.py test
 
 解答：不会。TD 权重更新与特征成正比，而预测又乘一次特征；对同一误差，局部预测变化放大 100 倍。表示尺度与步长必须一起考虑。
 
-完整教材：
+完整推导与问题衔接：
 
 - [价值预测与资格迹](../textbook/value.md)
 - [通用价值函数与预测知识](../textbook/gvf.md)
@@ -292,7 +300,7 @@ $$
 \hat y=\hat r(s,a)+\gamma\sum_{s'}\hat p(s'\mid s,a)V(s'),\qquad Q(s,a)\leftarrow Q(s,a)+\alpha[\hat y-Q(s,a)]
 $$
 
-在贪心控制中可令 V(s′)=maxₐ′Q(s′,a′)。模型生成一次随机后果时用样本替代上式求和；随机模型不应仅保留最后一次观测。
+在贪心控制中可令 $V(s^{\prime})=\max_{a^{\prime}}Q(s^{\prime},a^{\prime})$。模型生成一次随机后果时用样本替代上式求和；随机模型不应仅保留最后一次观测。
 
 ### 动手与核对
 
@@ -313,7 +321,7 @@ python3 examples/foundations_detail_lab.py test
 
 解答：只说明对应交互预算下的采样效率。还要报告模拟计算、模型训练和运行时间；如果模型错误，更多规划甚至可能更差。
 
-完整教材：
+完整推导与问题衔接：
 
 - [Dyna 与模型学习](../textbook/dyna.md)
 - [转移模型与后果模型](../textbook/models.md)
@@ -324,4 +332,4 @@ python3 examples/foundations_detail_lab.py test
 - [Sutton & Barto · Reinforcement Learning, 第二版](http://incompleteideas.net/book/the-book-2nd.html)：第 8 章：Dyna、模型误差与优先扫描。
 - [Sutton · Dyna, an integrated architecture for learning, planning, and reacting](https://doi.org/10.1145/122344.122377)：直接学习、模型学习和规划的共同架构。
 
-下一步：表格算法给每个状态或动作一个独立参数。状态很多时，这种表示无法扩展。现代 DRL 保留评价和控制的目标，却用共享的可学习表示近似它们；这会改变误差传播和稳定性。
+下一步：表格与共享参数是两种表示方式，不是两个互斥任务类别。状态很多时，可继续补函数逼近与深度方法；研究持续预测、平均奖励或单生命期控制时，也可以直接使用经典工具。以完整学习器为对象的持续控制章会重新明确目标与比较条件。

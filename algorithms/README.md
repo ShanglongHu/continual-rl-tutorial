@@ -5,7 +5,7 @@
 下面保留原有十三个链接，其正文与当前教材同步：
 
 - [价值预测与时间差分学习](01-value.md)
-- [控制问题：策略改进与动态规划](02-control.md)
+- [持续控制：比较策略与学习智能体](02-control.md)
 - [深度价值学习：DQN 与 Double DQN](03-deep-value.md)
 - [策略梯度、Actor–Critic 与 PPO](04-policy.md)
 - [最大熵控制与 Soft Actor–Critic](05-soft-control.md)

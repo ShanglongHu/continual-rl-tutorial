@@ -10,11 +10,22 @@
       {
         "url": "https://oaklab.ai/posts/learning-from-experience-instead-of-curated-datasets",
         "label": "文章"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-oak-network-idbd",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
       "meta",
-      "architectures"
+      "architectures",
+      "state",
+      "streaming",
+      "gvf",
+      "goals",
+      "options",
+      "models",
+      "planning"
     ]
   },
   {
@@ -43,10 +54,25 @@
       {
         "url": "https://oaklab.ai/posts/the-oak-architecture",
         "label": "原始入口"
+      },
+      {
+        "url": "https://oaklab.ai/",
+        "label": "Oak Lab 研究主页"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-oak-architecture",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "architectures"
+      "architectures",
+      "state",
+      "gvf",
+      "goals",
+      "options",
+      "models",
+      "planning",
+      "streaming"
     ]
   },
   {
@@ -63,8 +89,7 @@
       }
     ],
     "chapterIds": [
-      "objectives",
-      "average"
+      "objectives"
     ]
   },
   {
@@ -80,7 +105,16 @@
         "label": "原始入口"
       }
     ],
-    "chapterIds": []
+    "chapterIds": [
+      "architectures",
+      "state",
+      "gvf",
+      "goals",
+      "options",
+      "models",
+      "planning",
+      "streaming"
+    ]
   },
   {
     "id": "X-FORAGER",
@@ -97,7 +131,13 @@
     ],
     "chapterIds": [
       "state",
-      "architectures"
+      "architectures",
+      "gvf",
+      "credit",
+      "experiments",
+      "objectives",
+      "plasticity",
+      "retention"
     ]
   },
   {
@@ -114,9 +154,24 @@
       }
     ],
     "chapterIds": [
-      "objectives",
       "state",
-      "architectures"
+      "gvf",
+      "credit",
+      "experiments",
+      "objectives",
+      "architectures",
+      "plasticity",
+      "retention",
+      "value",
+      "meta",
+      "models",
+      "dyna",
+      "average",
+      "exploration",
+      "goals",
+      "options",
+      "planning",
+      "streaming"
     ]
   },
   {
@@ -130,10 +185,21 @@
       {
         "url": "https://arxiv.org/abs/2505.18347",
         "label": "论文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-agarcl",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "architectures"
+      "architectures",
+      "experiments",
+      "state",
+      "exploration",
+      "plasticity",
+      "retention",
+      "deep-value",
+      "objectives"
     ]
   },
   {
@@ -169,8 +235,11 @@
       }
     ],
     "chapterIds": [
+      "credit",
       "state",
-      "credit"
+      "gvf",
+      "value",
+      "policy"
     ]
   },
   {
@@ -218,11 +287,17 @@
       {
         "url": "https://arxiv.org/abs/2602.07730",
         "label": "论文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-laplacian-keyboard",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "goals",
-      "options"
+      "options",
+      "models",
+      "planning",
+      "goals"
     ]
   },
   {
@@ -256,7 +331,10 @@
       }
     ],
     "chapterIds": [
-      "streaming"
+      "streaming",
+      "credit",
+      "policy",
+      "soft-control"
     ]
   },
   {
@@ -345,8 +423,7 @@
       }
     ],
     "chapterIds": [
-      "value",
-      "control"
+      "value"
     ]
   },
   {
@@ -448,12 +525,18 @@
       }
     ],
     "chapterIds": [
+      "reward-design",
       "objectives",
       "value",
       "control",
       "deep-value",
       "credit",
-      "dyna"
+      "dyna",
+      "gvf",
+      "streaming",
+      "planning",
+      "state",
+      "policy"
     ]
   },
   {
@@ -505,7 +588,13 @@
       }
     ],
     "chapterIds": [
-      "objectives"
+      "objectives",
+      "control",
+      "average",
+      "experiments",
+      "architectures",
+      "plasticity",
+      "retention"
     ]
   },
   {
@@ -519,10 +608,24 @@
       {
         "url": "https://rlj.cs.umass.edu/2025/papers/Paper243.html",
         "label": "RLJ 原始记录"
+      },
+      {
+        "url": "https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_243.pdf",
+        "label": "RLC 2025 原文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-rethinking-crl-foundations",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "average"
+      "average",
+      "objectives",
+      "architectures",
+      "experiments",
+      "control",
+      "plasticity",
+      "retention"
     ]
   },
   {
@@ -582,7 +685,16 @@
     ],
     "chapterIds": [
       "objectives",
-      "average"
+      "average",
+      "control",
+      "experiments",
+      "models",
+      "dyna",
+      "gvf",
+      "state",
+      "planning",
+      "options",
+      "architectures"
     ]
   },
   {
@@ -679,7 +791,10 @@
       }
     ],
     "chapterIds": [
-      "streaming"
+      "streaming",
+      "credit",
+      "policy",
+      "soft-control"
     ]
   },
   {
@@ -803,7 +918,10 @@
       }
     ],
     "chapterIds": [
-      "plasticity"
+      "plasticity",
+      "retention",
+      "deep-value",
+      "architectures"
     ]
   },
   {
@@ -817,11 +935,15 @@
       {
         "url": "https://proceedings.mlr.press/v202/lyle23b.html",
         "label": "原文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-understanding-plasticity",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "retention",
-      "plasticity"
+      "plasticity",
+      "experiments"
     ]
   },
   {
@@ -835,11 +957,16 @@
       {
         "url": "https://proceedings.mlr.press/v202/sokar23a.html",
         "label": "原文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-redo-dormant-neurons",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "retention",
-      "plasticity"
+      "plasticity",
+      "deep-value",
+      "retention"
     ]
   },
   {
@@ -856,7 +983,6 @@
       }
     ],
     "chapterIds": [
-      "retention",
       "plasticity"
     ]
   },
@@ -891,7 +1017,11 @@
       }
     ],
     "chapterIds": [
-      "gvf"
+      "gvf",
+      "state",
+      "credit",
+      "value",
+      "meta"
     ]
   },
   {
@@ -909,10 +1039,17 @@
       {
         "url": "https://github.com/khurramjaved96/Columnar-Constructive-Networks",
         "label": "代码"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-columnar-constructive-networks",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "state"
+      "state",
+      "credit",
+      "streaming",
+      "gvf"
     ]
   },
   {
@@ -933,7 +1070,12 @@
       }
     ],
     "chapterIds": [
-      "state"
+      "state",
+      "gvf",
+      "credit",
+      "value",
+      "policy",
+      "streaming"
     ]
   },
   {
@@ -950,7 +1092,11 @@
       }
     ],
     "chapterIds": [
-      "credit"
+      "credit",
+      "state",
+      "gvf",
+      "value",
+      "policy"
     ]
   },
   {
@@ -984,7 +1130,13 @@
       }
     ],
     "chapterIds": [
-      "goals"
+      "goals",
+      "gvf",
+      "models",
+      "architectures",
+      "dyna",
+      "state",
+      "average"
     ]
   },
   {
@@ -1001,7 +1153,9 @@
       }
     ],
     "chapterIds": [
-      "goals"
+      "goals",
+      "options",
+      "models"
     ]
   },
   {
@@ -1039,7 +1193,10 @@
       }
     ],
     "chapterIds": [
-      "options"
+      "options",
+      "goals",
+      "gvf",
+      "planning"
     ]
   },
   {
@@ -1109,7 +1266,9 @@
       }
     ],
     "chapterIds": [
-      "goals"
+      "goals",
+      "options",
+      "exploration"
     ]
   },
   {
@@ -1123,11 +1282,29 @@
       {
         "url": "https://arxiv.org/abs/2202.03466",
         "label": "原文"
+      },
+      {
+        "url": "https://doi.org/10.1016/j.artint.2023.104001",
+        "label": "期刊论文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-stomp-reward-respecting",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
+      "reward-design",
       "goals",
-      "options"
+      "options",
+      "models",
+      "planning",
+      "architectures",
+      "objectives",
+      "dyna",
+      "gvf",
+      "state",
+      "average",
+      "streaming"
     ]
   },
   {
@@ -1144,8 +1321,10 @@
       }
     ],
     "chapterIds": [
-      "goals",
-      "options"
+      "options",
+      "models",
+      "planning",
+      "goals"
     ]
   },
   {
@@ -1199,10 +1378,20 @@
       {
         "url": "https://github.com/danijar/dreamerv3",
         "label": "代码"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-dreamerv3-world-models",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "models"
+      "models",
+      "state",
+      "planning",
+      "architectures",
+      "dyna",
+      "gvf",
+      "average"
     ]
   },
   {
@@ -1233,10 +1422,21 @@
       {
         "url": "https://arxiv.org/abs/2506.01622",
         "label": "原文"
+      },
+      {
+        "url": "https://david-abel.github.io/papers.html",
+        "label": "David Abel 论文目录"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-general-agents-world-models",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "planning"
+      "planning",
+      "models",
+      "goals",
+      "architectures"
     ]
   },
   {
@@ -1304,9 +1504,7 @@
       }
     ],
     "chapterIds": [
-      "objectives",
-      "state",
-      "architectures"
+      "exploration"
     ]
   },
   {
@@ -1342,11 +1540,11 @@
       }
     ],
     "chapterIds": [
-      "value",
       "control",
       "deep-value",
       "policy",
-      "soft-control"
+      "soft-control",
+      "retention"
     ]
   },
   {
@@ -1419,7 +1617,8 @@
       }
     ],
     "chapterIds": [
-      "experiments"
+      "experiments",
+      "retention"
     ]
   },
   {
@@ -1450,10 +1649,17 @@
       {
         "url": "https://proceedings.mlr.press/v267/mesbahi25a.html",
         "label": "原文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-lifetime-tuning",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "experiments"
+      "experiments",
+      "meta",
+      "architectures",
+      "control"
     ]
   },
   {
@@ -1676,8 +1882,9 @@
       }
     ],
     "chapterIds": [
-      "retention",
-      "plasticity"
+      "models",
+      "goals",
+      "architectures"
     ]
   },
   {
@@ -1829,8 +2036,7 @@
       }
     ],
     "chapterIds": [
-      "retention",
-      "plasticity"
+      "meta"
     ]
   },
   {
@@ -1851,9 +2057,14 @@
       }
     ],
     "chapterIds": [
+      "architectures",
+      "plasticity",
+      "retention",
+      "deep-value",
+      "experiments",
       "objectives",
       "state",
-      "architectures"
+      "exploration"
     ]
   },
   {
@@ -2364,10 +2575,14 @@
     ],
     "chapterIds": [
       "value",
+      "gvf",
       "control",
-      "deep-value",
-      "policy",
-      "soft-control"
+      "streaming",
+      "dyna",
+      "planning",
+      "credit",
+      "state",
+      "policy"
     ]
   },
   {
@@ -3093,9 +3308,24 @@
       }
     ],
     "chapterIds": [
-      "objectives",
       "state",
-      "architectures"
+      "gvf",
+      "credit",
+      "experiments",
+      "objectives",
+      "architectures",
+      "plasticity",
+      "retention",
+      "value",
+      "meta",
+      "models",
+      "dyna",
+      "average",
+      "exploration",
+      "goals",
+      "options",
+      "planning",
+      "streaming"
     ]
   },
   {
@@ -3141,9 +3371,14 @@
       }
     ],
     "chapterIds": [
+      "architectures",
+      "plasticity",
+      "retention",
+      "deep-value",
+      "experiments",
       "objectives",
       "state",
-      "architectures"
+      "exploration"
     ]
   },
   {
@@ -3164,7 +3399,16 @@
       }
     ],
     "chapterIds": [
-      "retention"
+      "retention",
+      "control",
+      "deep-value",
+      "policy",
+      "soft-control",
+      "models",
+      "experiments",
+      "objectives",
+      "architectures",
+      "plasticity"
     ]
   },
   {
@@ -3202,7 +3446,7 @@
       }
     ],
     "chapterIds": [
-      "experiments"
+      "retention"
     ]
   },
   {
@@ -3278,7 +3522,11 @@
       }
     ],
     "chapterIds": [
-      "state"
+      "state",
+      "gvf",
+      "credit",
+      "value",
+      "policy"
     ]
   },
   {
@@ -3341,7 +3589,17 @@
       }
     ],
     "chapterIds": [
-      "deep-value"
+      "deep-value",
+      "control",
+      "policy",
+      "soft-control",
+      "retention",
+      "streaming",
+      "credit",
+      "meta",
+      "experiments",
+      "models",
+      "plasticity"
     ]
   },
   {
@@ -3450,7 +3708,16 @@
       }
     ],
     "chapterIds": [
-      "planning"
+      "planning",
+      "goals",
+      "options",
+      "gvf",
+      "objectives",
+      "models",
+      "dyna",
+      "state",
+      "average",
+      "experiments"
     ]
   },
   {
@@ -3638,7 +3905,10 @@
       }
     ],
     "chapterIds": [
-      "options"
+      "options",
+      "goals",
+      "gvf",
+      "planning"
     ]
   },
   {
@@ -3655,7 +3925,7 @@
       }
     ],
     "chapterIds": [
-      "experiments"
+      "retention"
     ]
   },
   {
@@ -3701,7 +3971,10 @@
       }
     ],
     "chapterIds": [
-      "streaming"
+      "streaming",
+      "credit",
+      "policy",
+      "soft-control"
     ]
   },
   {
@@ -3715,10 +3988,17 @@
       {
         "url": "https://github.com/shibhansh/loss-of-plasticity",
         "label": "代码"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-continual-backpropagation",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "plasticity"
+      "plasticity",
+      "retention",
+      "architectures",
+      "deep-value"
     ]
   },
   {
@@ -3732,10 +4012,19 @@
       {
         "url": "https://github.com/esraaelelimy/rtus",
         "label": "代码"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-real-time-trace-units",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "state"
+      "state",
+      "credit",
+      "streaming",
+      "gvf",
+      "value",
+      "policy"
     ]
   },
   {
@@ -3756,7 +4045,17 @@
       }
     ],
     "chapterIds": [
-      "credit"
+      "objectives",
+      "average",
+      "architectures",
+      "control",
+      "experiments",
+      "models",
+      "dyna",
+      "gvf",
+      "state",
+      "planning",
+      "options"
     ]
   },
   {
@@ -3827,10 +4126,20 @@
       {
         "url": "https://github.com/danijar/dreamerv3",
         "label": "代码"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-dreamerv3-world-models",
+        "label": "研究问题与方法导读"
       }
     ],
     "chapterIds": [
-      "models"
+      "models",
+      "state",
+      "planning",
+      "architectures",
+      "dyna",
+      "gvf",
+      "average"
     ]
   },
   {
@@ -3868,7 +4177,11 @@
       }
     ],
     "chapterIds": [
-      "experiments"
+      "experiments",
+      "objectives",
+      "architectures",
+      "plasticity",
+      "retention"
     ]
   },
   {
@@ -4454,7 +4767,12 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-rtu",
     "chapterIds": [
-      "state"
+      "state",
+      "gvf",
+      "credit",
+      "value",
+      "policy",
+      "streaming"
     ]
   },
   {
@@ -4516,11 +4834,22 @@
       {
         "url": "https://doi.org/10.1038/s41586-025-09761-x",
         "label": "项目 / 论文依据"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-disco-rl",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-disco",
     "chapterIds": [
-      "meta"
+      "meta",
+      "architectures",
+      "experiments",
+      "value",
+      "gvf",
+      "state",
+      "credit",
+      "streaming"
     ]
   },
   {
@@ -4542,7 +4871,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-rlpark",
     "chapterIds": [
-      "gvf"
+      "gvf",
+      "value",
+      "state",
+      "meta"
     ]
   },
   {
@@ -4564,7 +4896,11 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-gvfn",
     "chapterIds": [
-      "gvf"
+      "state",
+      "gvf",
+      "credit",
+      "value",
+      "meta"
     ]
   },
   {
@@ -4675,8 +5011,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-eigenoptions",
     "chapterIds": [
+      "options",
       "goals",
-      "options"
+      "gvf",
+      "planning"
     ]
   },
   {
@@ -4744,7 +5082,6 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-diayn",
     "chapterIds": [
-      "goals",
       "options"
     ]
   },
@@ -4767,8 +5104,8 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-dads",
     "chapterIds": [
-      "goals",
-      "options"
+      "options",
+      "planning"
     ]
   },
   {
@@ -4790,7 +5127,17 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-differential",
     "chapterIds": [
-      "average"
+      "average",
+      "objectives",
+      "architectures",
+      "control",
+      "experiments",
+      "models",
+      "dyna",
+      "gvf",
+      "state",
+      "planning",
+      "options"
     ]
   },
   {
@@ -4877,11 +5224,19 @@
       {
         "url": "https://proceedings.mlr.press/v235/hisaki24a.html",
         "label": "项目 / 论文依据"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-rvi-sac-average-control",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-rvi-sac",
     "chapterIds": [
-      "average"
+      "average",
+      "control",
+      "soft-control",
+      "objectives",
+      "experiments"
     ]
   },
   {
@@ -4926,8 +5281,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/implementations/#impl-deep-continuing",
     "chapterIds": [
+      "average",
+      "control",
       "objectives",
-      "average"
+      "experiments",
+      "streaming",
+      "credit",
+      "policy",
+      "soft-control"
     ]
   },
   {
@@ -5148,7 +5509,8 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/objectives/#lesson-sources",
     "chapterIds": [
-      "objectives"
+      "objectives",
+      "credit"
     ]
   },
   {
@@ -5184,7 +5546,12 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/objectives/#lesson-sources",
     "chapterIds": [
-      "objectives"
+      "objectives",
+      "reward-design",
+      "state",
+      "control",
+      "goals",
+      "experiments"
     ]
   },
   {
@@ -5242,6 +5609,399 @@
     ]
   },
   {
+    "id": "CH-objectives-8",
+    "title": "Cassandra, Kaelbling & Littman · Acting Optimally in Partially Observable Stochastic Domains · AAAI 1994",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "隐藏 Markov 状态、观测与信念；已知模型下把信息获取和环境控制放入同一优化问题。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://cdn.aaai.org/AAAI/1994/AAAI94-157.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/objectives/#lesson-sources",
+    "chapterIds": [
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-objectives-10",
+    "title": "Kumar et al. · Continual Learning as Computationally Constrained Reinforcement Learning",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "第 2 节明确比较完整智能体的平均奖励与计算限制，同时指出平均奖励不能区分所有有限时间损失；第 3 节区分计算、信息和物理容量。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2307.04345v3",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/objectives/#lesson-sources",
+    "chapterIds": [
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-reward-design-0",
+    "title": "Singh, Lewis & Barto — Where Do Rewards Come From? (CogSci 2009)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "内在奖励、外部评价与受限智能体。原文从最优奖励框架讨论奖励来源。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://web.eecs.umich.edu/~baveja/Papers/singh-lewis-barto-2009-cogsci.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-1",
+    "title": "Sorg, Lewis & Singh — Reward Design via Online Gradient Ascent (NeurIPS 2010)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "PGRD：奖励参数通过受限决策过程影响外层表现。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper_files/paper/2010/hash/168908dd3227b8358eababa07fcaf091-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-2",
+    "title": "Zheng, Oh & Singh — On Learning Intrinsic Rewards for Policy Gradient Methods (NeurIPS 2018)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "LIRPG 原文。从外部回报沿策略更新求内在奖励梯度。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2018/hash/51de85ddd068f0bc787691d356176df9-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-3",
+    "title": "LIRPG：原论文作者实现",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "原论文脚注给出的仓库。基于历史 TensorFlow / Baselines；用独立环境核对依赖，不与本站标准库示例混用。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/Hwhitetooth/lirpg",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-4",
+    "title": "Zheng et al. — What Can Learned Intrinsic Rewards Capture? (ICML 2020)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "跨多个生命期学习内在奖励；注意内外层时域与迁移条件。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v119/zheng20b.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-5",
+    "title": "Silver, Singh, Precup & Sutton — Reward is Enough (2021)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "研究假说：奖励追求与智能能力。与奖励表示定理分开读。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://www.sciencedirect.com/science/article/pii/S0004370221000862",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-7",
+    "title": "Abel et al. — On the Expressivity of Markov Reward (NeurIPS 2021)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "不同任务描述下的奖励表达限制。状态与奖励函数的允许输入非常关键。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2111.00876",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design",
+      "objectives",
+      "state",
+      "control",
+      "goals",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-reward-design-8",
+    "title": "Ng, Harada & Russell — Policy Invariance under Reward Transformations (ICML 1999)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "势函数塑形的原始论文。阅读时明确终止、折扣和保持最优策略的条件。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://ai.stanford.edu/~ang/papers/shaping-icml99.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-9",
+    "title": "Toro Icarte et al. — Reward Machines：作者论文与代码",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "作者仓库提供奖励结构、任务与算法。适合把顺序任务从文字变成状态机。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/RodrigoToroIcarte/reward_machines",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-10",
+    "title": "Christiano et al. — Deep Reinforcement Learning from Human Preferences (2017)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "片段偏好、奖励预测与策略学习。区分真实反馈和模拟偏好实验。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1706.03741",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-11",
+    "title": "Lee, Smith & Abbeel — PEBBLE (2021)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "无监督预训练、反馈选择与经验重标记如何组合。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2106.05091",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design",
+      "objectives",
+      "state",
+      "control",
+      "goals",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-reward-design-12",
+    "title": "B-Pref / PEBBLE：研究团队官方代码",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "含 PEBBLE 训练脚本与基准。先核对依赖、标签噪声与查询预算。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/rll-research/BPref",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design",
+      "objectives",
+      "state",
+      "control",
+      "goals",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-reward-design-13",
+    "title": "imitation — Preference Comparisons 官方教程",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "学习库的文档与实现入口。不是 Christiano 等人原论文的作者仓库。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://imitation.readthedocs.io/en/latest/algorithms/preference_comparisons.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-14",
+    "title": "Ziebart et al. — Maximum Entropy Inverse Reinforcement Learning (AAAI 2008)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "原作者页面含论文和修正提示。随机动力学需继续读 maximum causal entropy。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://www.cs.cmu.edu/~bziebart/publications/maximum-entropy-inverse-reinforcement-learning.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-15",
+    "title": "Hadfield-Menell et al. — Cooperative Inverse Reinforcement Learning (2016)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "合作、目标不确定性与人的信息优势。不是把示范直接当最优动作标签。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1606.03137",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-16",
+    "title": "Hadfield-Menell et al. — Inverse Reward Design (2017)",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "手写代理奖励只是在特定训练环境中的证据，不能无条件外推。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1711.02827",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-17",
+    "title": "Everitt et al. — Reward Tampering: A Causal Influence Diagram Perspective",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "奖励函数篡改与输入篡改的因果区别。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1908.04734",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-18",
+    "title": "Google DeepMind — Specification Gaming",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "用具体失败区分规格漏洞与控制学习失败。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
+    "id": "CH-reward-design-19",
+    "title": "AI Safety Gridworlds：原始环境代码",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "小型安全诊断环境。仓库已归档；独立 performance 指标不是智能体的训练奖励。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/ai-safety-gridworlds",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "chapterIds": [
+      "reward-design"
+    ]
+  },
+  {
     "id": "CH-average-2",
     "title": "Wan, Naik & Sutton · Average-Reward Learning and Planning with Options",
     "kind": "论文",
@@ -5279,38 +6039,123 @@
   },
   {
     "id": "CH-average-6",
-    "title": "Naik et al. · Reward Centering · RLC 2024",
+    "title": "RLJ 论文记录",
     "kind": "论文",
     "topic": "objectives",
-    "description": "将共同奖励偏移与折扣价值差异分离；对照 on-policy 奖励均值与 off-policy TD 中心化。",
+    "description": "正式题名、作者与会议年份。",
     "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
     "links": [
       {
         "url": "https://rlj.cs.umass.edu/2024/papers/Paper261.html",
         "label": "原文入口"
+      },
+      {
+        "url": "https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_261.pdf",
+        "label": "RLC 2024 原文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-reward-centering-discounted",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
     "chapterIds": [
-      "average"
+      "average",
+      "value",
+      "control"
     ]
   },
   {
     "id": "CH-average-7",
-    "title": "Wan, Korenkevych & Zhu · Deep RL in Continuing Tasks · 2025",
+    "title": "作者论文",
     "kind": "论文",
     "topic": "objectives",
-    "description": "无重置、预设重置、智能体控制重置三种协议，以及 TD 中心化的深度实验和局限。",
+    "description": "三类持续协议与深度中心化实验；2025 年 arXiv 首稿。",
     "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
     "links": [
       {
         "url": "https://arxiv.org/abs/2501.06937",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-continuing-task-deep-study",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
     "chapterIds": [
-      "average"
+      "control",
+      "average",
+      "experiments",
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-average-9",
+    "title": "RLC 2024 原文",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "中心化分解、on/off-policy 区别及收敛讨论。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_261.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average",
+      "control",
+      "value"
+    ]
+  },
+  {
+    "id": "CH-average-10",
+    "title": "RLC 2024 原文",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "随机重采样、折扣联系与 Bayesian regret 假设。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_277.pdf",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://rlj.cs.umass.edu/2024/papers/Paper277.html",
+        "label": "RLJ 论文记录"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-cpsrl-continuing-exploration",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "exploration",
+      "average",
+      "control"
+    ]
+  },
+  {
+    "id": "CH-average-11",
+    "title": "RLJ 论文记录",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "作者、会议与理论结果。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2024/papers/Paper277.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average",
+      "control",
+      "exploration"
     ]
   },
   {
@@ -5328,7 +6173,8 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
     "chapterIds": [
-      "state"
+      "state",
+      "credit"
     ]
   },
   {
@@ -5400,7 +6246,11 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
     "chapterIds": [
-      "state"
+      "state",
+      "gvf",
+      "credit",
+      "value",
+      "policy"
     ]
   },
   {
@@ -5512,6 +6362,355 @@
     ]
   },
   {
+    "id": "CH-state-14",
+    "title": "NeurIPS 2024 原文",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "结合运算、inline reset、Tape-Based Batching 与实验。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://papers.nips.cc/paper_files/paper/2024/file/19f7f755908372efb25826d61959cdf9-Paper-Conference.pdf",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://arxiv.org/html/2402.09900v3",
+        "label": "作者公开版本"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-memoroids-sequence-learning",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "credit",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-state-15",
+    "title": "作者公开版本",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "附录给出不同递归模型与回报的 memoroid 写法。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2402.09900v3",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "credit",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-state-16",
+    "title": "Recurrent Reinforcement Learning with Memoroids · 作者实现",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "memory 模型、buffer、losses 与 segment_dqn/tape_dqn 对照。 论文附录原链接 memory-monoids 对应作者 Prorok Lab 的现有 memoroids 仓库；README 标明论文。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://github.com/proroklab/memoroids",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-memoroids-sequence-learning",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "credit",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-state-17",
+    "title": "作者原文",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2209.14935",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-zero-shot-forward-backward",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "state",
+      "models",
+      "goals",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-state-18",
+    "title": "作者研究平台",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "README 直接关联两篇 FB 论文；该仓库已经归档。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://github.com/facebookresearch/controllable_agent",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-zero-shot-forward-backward",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "state",
+      "models",
+      "goals",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-state-19",
+    "title": "ICLR 2026 正式原文",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "第 2–3 节和算法附录；区分 flow 时间、环境时间与近似 SR 联系。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2026/hash/48acf4b231771e693f42305b4c9b4c9f-Abstract-Conference.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-successor-flow-features",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "state",
+      "models",
+      "deep-value"
+    ]
+  },
+  {
+    "id": "CH-state-20",
+    "title": "原文链接的作者实现",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "SAC/TD3、flow 特征、对照和 sweep 配置。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://github.com/Shiien/successor-flow-representation-implementation",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-successor-flow-features",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "state",
+      "models",
+      "deep-value"
+    ]
+  },
+  {
+    "id": "CH-state-21",
+    "title": "ICML 2024 原文",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v235/park24g.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://seohong.me/projects/hilp/",
+        "label": "作者项目与公式"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-hilbert-foundation-policies",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "goals",
+      "options",
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-state-22",
+    "title": "作者项目与公式",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "时间距离与方向奖励接口。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://seohong.me/projects/hilp/",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "options",
+      "planning",
+      "goals"
+    ]
+  },
+  {
+    "id": "CH-state-23",
+    "title": "官方实现",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "hilp_zsrl 与 hilp_gcrl 对应不同实验。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://github.com/seohongpark/HILP",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-hilbert-foundation-policies",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "goals",
+      "options",
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-state-24",
+    "title": "ICML 2025 原文",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "正式发表入口；早期 ICLR 投稿页不能替代此状态。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v267/zhou25t.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-dino-wm-feature-planning",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "models",
+      "planning",
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-state-25",
+    "title": "作者项目代码",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "train.py、plan.py、数据与已公开模型检查点范围。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://github.com/gaoyuezhou/dino_wm",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-dino-wm-feature-planning",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "models",
+      "planning",
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-state-26",
+    "title": "2025 首稿",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "action-free 预训练、2-AC 后训练、真实规划与第 4.3 节限制；此处不赋予未核实会议状态。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2506.09985v1",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-vjepa2-action-conditioned",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "models",
+      "planning",
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-state-27",
+    "title": "Meta FAIR 官方实现",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。",
+    "question": "决策需要区分哪些历史？状态更新与参数学习分别改变什么？",
+    "links": [
+      {
+        "url": "https://github.com/facebookresearch/vjepa2",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-vjepa2-action-conditioned",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/state/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "models",
+      "planning",
+      "architectures"
+    ]
+  },
+  {
     "id": "CH-value-1",
     "title": "Sutton · Learning to Predict by the Methods of Temporal Differences",
     "kind": "论文",
@@ -5544,7 +6743,9 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/value/#lesson-sources",
     "chapterIds": [
-      "value"
+      "value",
+      "credit",
+      "streaming"
     ]
   },
   {
@@ -5634,7 +6835,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "chapterIds": [
-      "gvf"
+      "gvf",
+      "value",
+      "state",
+      "meta"
     ]
   },
   {
@@ -5652,7 +6856,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "chapterIds": [
-      "gvf"
+      "gvf",
+      "value",
+      "state",
+      "meta"
     ]
   },
   {
@@ -5728,51 +6935,128 @@
     ]
   },
   {
+    "id": "CH-gvf-17",
+    "title": "NeurIPS 2020 原文",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "VE 依赖策略与函数集合。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://papers.nips.cc/paper/2020/hash/3bb585ea00014b0e3ebe4c6dd165a358-Abstract.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html",
+        "label": "Proper Value Equivalence · NeurIPS 2021"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-value-equivalence-models",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "models",
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-gvf-18",
+    "title": "Proper Value Equivalence · NeurIPS 2021",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "多步算子、固定点与规划充分性；不是任意潜在网络的保证。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "models",
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-gvf-20",
+    "title": "Touati & Ollivier · Learning One Representation to Optimize All Rewards",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "FB 表示的理论出发点；探索/经验覆盖、近似误差及奖励查询约定。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2103.07945",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-gvf-21",
+    "title": "Sutton, Bowling & Pilarski · The Alberta Plan for AI Research",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "状态、预测、时间抽象与规划的研究纲领，不是完成全闭环的报告。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2208.11173",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "architectures",
+      "state",
+      "goals",
+      "options",
+      "models",
+      "planning",
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-control-0",
+    "title": "Elelimy et al. · Rethinking the Foundations for Continual Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "RLC / RLJ 2025。学习规则、策略偏离、实际历史条件下的比较及重要性采样。正文式 (1) 与 Algorithm 1 末行减法顺序不同；本章按式 (1) 约定正值为偏离优于原智能体。",
+    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_243.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
+    "chapterIds": [
+      "control",
+      "objectives",
+      "architectures",
+      "experiments"
+    ]
+  },
+  {
     "id": "CH-control-1",
-    "title": "Sutton & Barto · Chapter 4: Dynamic Programming（CMU 课程镜像）",
-    "kind": "课程与讲座",
-    "topic": "foundations",
-    "description": "4.1–4.4 的评价、改进、策略迭代与价值迭代；4.6 的 Generalized Policy Iteration 是本章的组织主线。第 3 章给出有限 MDP 与最优策略，第 6 章给出采样 TD 控制，第 13 章讨论策略梯度与 actor–critic。",
-    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
-    "links": [
-      {
-        "url": "https://www.andrew.cmu.edu/course/10-703/textbook/BartoSutton.pdf",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
-    "chapterIds": [
-      "control"
-    ]
-  },
-  {
-    "id": "CH-control-2",
-    "title": "Watkins & Dayan · Q-learning",
+    "title": "Abel et al. · A Definition of Continual Reinforcement Learning",
     "kind": "论文",
     "topic": "foundations",
-    "description": "表格动作价值学习与收敛条件。逐对无限访问和步长条件与实际常数步长演示要分别理解。",
+    "description": "NeurIPS 2023。以 agent basis 与隐式搜索形式化持续学习；“永不停止”是相对于所选 basis 的性质，不是参数一直有微小变化。",
     "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
     "links": [
       {
-        "url": "https://doi.org/10.1007/BF00992698",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
-    "chapterIds": [
-      "control"
-    ]
-  },
-  {
-    "id": "CH-control-3",
-    "title": "Sutton et al. · Policy Gradient Methods for Reinforcement Learning with Function Approximation",
-    "kind": "论文",
-    "topic": "foundations",
-    "description": "策略梯度定理以及利用动作价值或优势辅助估计策略梯度；函数逼近的保证有相应条件。",
-    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
-    "links": [
-      {
-        "url": "https://proceedings.neurips.cc/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html",
+        "url": "https://david-abel.github.io/papers/neurips2023_crl.pdf",
         "label": "原文入口"
       }
     ],
@@ -5783,20 +7067,155 @@
   },
   {
     "id": "CH-control-4",
-    "title": "van Hasselt · Double Q-learning",
+    "title": "Chen et al. · You Only Live Once: Single-Life Reinforcement Learning",
     "kind": "论文",
     "topic": "foundations",
-    "description": "从 max 与估计噪声的耦合出发，理解选择、评估为什么要拆开。",
+    "description": "NeurIPS 2022。测试期无人工重置的适应与恢复，可使用先前数据；不要把此部署协议等同于没有预训练。",
     "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
     "links": [
       {
-        "url": "https://proceedings.neurips.cc/paper/2010/hash/091d584fced301b442654dd8c23b3fc9-Abstract.html",
+        "url": "https://arxiv.org/abs/2210.08863",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
+    "chapterIds": [
+      "control",
+      "exploration",
+      "goals",
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-control-5",
+    "title": "Chen et al. · Single-Life RL 作者代码",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "QWALE 的原始实验工程，包括训练、智能体、环境与先前数据接口。代码的预训练和测试权限与本章解析反例不同。",
+    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
+    "links": [
+      {
+        "url": "https://github.com/anniesch/single-life-rl",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
+    "chapterIds": [
+      "control",
+      "exploration",
+      "goals",
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-control-6",
+    "title": "Anand & Precup · Prediction and Control in Continual Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "NeurIPS 2023。以持久与暂态价值成分连接保留和适应；是具体价值学习方法，不主张冻结策略价值已经完整评价所有学习器。",
+    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
+    "links": [
+      {
+        "url": "https://papers.neurips.cc/paper_files/paper/2023/file/c94bbbef466ab1b2cfa100e41413b3a8-Paper-Conference.pdf",
         "label": "原文入口"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
     "chapterIds": [
       "control"
+    ]
+  },
+  {
+    "id": "CH-control-7",
+    "title": "Bowling et al. · Settling the Reward Hypothesis",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "ICML 2023。历史上的偏好与奖励表示的公理条件。用于理解目标的来源；详细推导见奖励假设与设计章。",
+    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
+    "links": [
+      {
+        "url": "https://david-abel.github.io/papers/icml2023_settling_the_rh.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
+    "chapterIds": [
+      "control"
+    ]
+  },
+  {
+    "id": "CH-control-15",
+    "title": "作者论文 v3",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "训练与评价协议、back-and-forth exploration 与目标分布。",
+    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2408.09807v3",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://yangzhao-666.github.io/morefree/",
+        "label": "TMLR 作者项目页"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-morefree-reset-free-models",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
+    "chapterIds": [
+      "exploration",
+      "control",
+      "models",
+      "goals"
+    ]
+  },
+  {
+    "id": "CH-control-16",
+    "title": "TMLR 作者项目页",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "正式发表状态与作者代码链接。",
+    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
+    "links": [
+      {
+        "url": "https://yangzhao-666.github.io/morefree/",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
+    "chapterIds": [
+      "control",
+      "exploration",
+      "models",
+      "goals"
+    ]
+  },
+  {
+    "id": "CH-control-17",
+    "title": "Reset-free Reinforcement Learning with World Models · 作者实现",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "resetfree/env.py、goal_picker_wrapper.py、Dreamer/PEG 与目标条件实验。 TMLR 作者项目页明确链接的官方实现。",
+    "question": "在这个设定中，什么会持续改变？一次训练后的泛化为什么还不够？",
+    "links": [
+      {
+        "url": "https://github.com/yangzhao-666/MoReFree",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-morefree-reset-free-models",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/control/#lesson-sources",
+    "chapterIds": [
+      "exploration",
+      "control",
+      "models",
+      "goals"
     ]
   },
   {
@@ -6048,7 +7467,10 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "chapterIds": [
-      "credit"
+      "credit",
+      "value",
+      "state",
+      "policy"
     ]
   },
   {
@@ -6084,7 +7506,10 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "chapterIds": [
-      "credit"
+      "credit",
+      "value",
+      "state",
+      "policy"
     ]
   },
   {
@@ -6124,6 +7549,324 @@
     ]
   },
   {
+    "id": "CH-credit-9",
+    "title": "Precup, Sutton & Singh · Eligibility Traces for Off-Policy Policy Evaluation · ICML 2000",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "作者站点原文；重要性采样、Tree-backup与目标／行为策略的分工。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://web.eecs.umich.edu/~baveja/Papers/OffPolicy.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-10",
+    "title": "Munos等 · Safe and Efficient Off-Policy Reinforcement Learning · NeurIPS 2016",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "统一误差传播系数；Retrace算子收缩及表格评价／控制的条件。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/1606.02647",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-retrace-safe-offpolicy",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit",
+      "value",
+      "deep-value"
+    ]
+  },
+  {
+    "id": "CH-credit-11",
+    "title": "Touati等 · Convergent Tree Backup and Retrace with Function Approximation · ICML 2018",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "线性函数逼近中的不稳定反例，以及鞍点形式的梯度方法。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v80/touati18a.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-convergent-tree-retrace",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit",
+      "value",
+      "deep-value"
+    ]
+  },
+  {
+    "id": "CH-credit-12",
+    "title": "De Asis等 · Multi-Step Reinforcement Learning: A Unifying Algorithm · AAAI 2018",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "Q(σ)采样／期望混合；正文数值代码仅实现冻结on-policy几何λ混合。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/1703.01327",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-q-sigma-backups",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit",
+      "value"
+    ]
+  },
+  {
+    "id": "CH-credit-13",
+    "title": "Espeholt等 · IMPALA · ICML 2018",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "V-trace两类截断、固定点策略与actor目标；区分轨迹窗口和流式资格迹。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v80/espeholt18a.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-vtrace-impala",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit",
+      "policy",
+      "architectures",
+      "retention"
+    ]
+  },
+  {
+    "id": "CH-credit-14",
+    "title": "IMPALA作者V-trace实现 · 固定版本",
+    "kind": "代码",
+    "topic": "credit",
+    "description": "from_importance_weights：clipped_rhos、cs、反向scan、下一目标的actor优势和stop_gradient。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/scalable_agent/blob/6c0c8a701990fab9053fb338ede9c915c18fa2b1/vtrace.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit",
+      "policy",
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-credit-15",
+    "title": "White & White · A Greedy Approach to Adapting the Trace Parameter · 2016",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "状态相关λ；局部bias–variance目标；回报均值和二阶矩的在线估计。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/1607.00446",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-lambda-greedy",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit",
+      "meta",
+      "value"
+    ]
+  },
+  {
+    "id": "CH-credit-16",
+    "title": "Xu, van Hasselt & Silver · Meta-Gradient Reinforcement Learning · NeurIPS 2018",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "通过学习更新和后续评价适应回报定义；区别于同样本直接选择容易拟合的目标。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2018/hash/2715518c875999308842e3455eda2fe3-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-17",
+    "title": "van Hasselt等 · Expected Eligibility Traces · AAAI 2021",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "条件期望迹、Markov均值／逐分量方差结论、递归混合与特征混叠边界；2020年预印本。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2007.01839",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://ojs.aaai.org/index.php/AAAI/article/view/17200",
+        "label": "AAAI发表版本"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-expected-eligibility-traces",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit",
+      "state",
+      "gvf"
+    ]
+  },
+  {
+    "id": "CH-credit-18",
+    "title": "Elelimy等 · Deep Reinforcement Learning with Gradient Eligibility Traces · RLC 2025",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "广义投影目标、GTD2／TDC／TDRC三条迹；Theorem 6.1冻结双网络参数，Table 2与QRC公式中的标量H迹相对应。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2507.09087v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-19",
+    "title": "GTD资格迹作者QRC代码 · 固定版本",
+    "kind": "代码",
+    "topic": "credit",
+    "description": "update_step先共同计算主／辅助方向，再更新参数；检查完整∇δ、三条迹、正则与更新后的清迹。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://github.com/esraaelelimy/gtd_algos/blob/76293dea9b2129d55e08bfb4178618a0a26c2dd8/gtd_algos/src/algorithms/qrc.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-20",
+    "title": "Schulman等 · High-Dimensional Continuous Control Using Generalized Advantage Estimation · ICLR 2016",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "TD误差和的优势解释、bias–variance及折扣目标约定；GAE不等于完整actor迹学习协议。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/1506.02438",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-21",
+    "title": "Elelimy等 · Real-Time Recurrent Learning using Trace Units in Reinforcement Learning · NeurIPS 2024",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "特定递归结构的在线敏感度、固定参数精确导数与变参时过时问题。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2409.01449",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-22",
+    "title": "RTU作者递归实现",
+    "kind": "代码",
+    "topic": "credit",
+    "description": "FwdRealTimeNonLinearRTUs推进活动与grad_memory；自定义求导使用已存敏感度。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://github.com/esraaelelimy/rtus/blob/main/src/nets/rtus/non_linear_rtus.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-23",
+    "title": "Farr等 · Streaming RL under Partial Observability with RTRL · 2026 v2",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "2026-07-07预印本；RTU与QRC／流式AC组合、5-seed实验、masked MuJoCo负边界及需保存轨迹的敏感度诊断；未确认作者代码。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2605.24709v2",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "state",
+      "credit",
+      "streaming"
+    ]
+  },
+  {
     "id": "CH-streaming-2",
     "title": "Sharifnassab 等：Intentional Updates（ICML 2026）",
     "kind": "论文",
@@ -6134,11 +7877,19 @@
       {
         "url": "https://proceedings.mlr.press/v306/sharifnassab26a.html",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-intentional-updates",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "chapterIds": [
-      "streaming"
+      "streaming",
+      "credit",
+      "policy",
+      "meta",
+      "soft-control"
     ]
   },
   {
@@ -6224,11 +7975,17 @@
       {
         "url": "https://arxiv.org/abs/2410.14606v3",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-stream-x",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "chapterIds": [
-      "streaming"
+      "streaming",
+      "credit",
+      "plasticity"
     ]
   },
   {
@@ -6242,11 +7999,17 @@
       {
         "url": "https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-stream-x",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "chapterIds": [
-      "streaming"
+      "streaming",
+      "credit",
+      "plasticity"
     ]
   },
   {
@@ -6282,7 +8045,10 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
-      "meta"
+      "meta",
+      "credit",
+      "streaming",
+      "experiments"
     ]
   },
   {
@@ -6300,7 +8066,10 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
-      "meta"
+      "meta",
+      "credit",
+      "streaming",
+      "experiments"
     ]
   },
   {
@@ -6354,7 +8123,10 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
-      "meta"
+      "meta",
+      "credit",
+      "streaming",
+      "experiments"
     ]
   },
   {
@@ -6390,7 +8162,10 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
-      "meta"
+      "meta",
+      "credit",
+      "streaming",
+      "experiments"
     ]
   },
   {
@@ -6503,38 +8278,58 @@
   },
   {
     "id": "CH-meta-18",
-    "title": "Goldie 等：How Should We Meta-Learn RL Algorithms?（RLC 2025）",
+    "title": "RLJ 论文记录",
     "kind": "论文",
     "topic": "meta",
-    "description": "比较算法发现方法，并同时分析泛化、可解释性、采样成本与训练时间。",
+    "description": "作者与正式会议收录。",
     "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
     "links": [
       {
         "url": "https://rlj.cs.umass.edu/2025/papers/Paper218.html",
         "label": "原文入口"
+      },
+      {
+        "url": "https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_218.pdf",
+        "label": "RLC 2025 原文"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-meta-algorithm-search-comparison",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
-      "meta"
+      "meta",
+      "architectures",
+      "experiments",
+      "credit",
+      "streaming"
     ]
   },
   {
     "id": "CH-meta-19",
-    "title": "RLC 2025 算法发现比较：作者代码",
+    "title": "How Should We Meta-Learn Reinforcement Learning Algorithms? · 作者实现",
     "kind": "代码",
     "topic": "meta",
-    "description": "learning_algorithms 下按 black-box learning、LLM discovery 和两类 distillation 分目录；评价入口独立于发现过程。",
+    "description": "learning_algorithms 中各发现方法与独立 evaluation 流程。 论文提供、仓库标为官方的作者实现。",
     "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
     "links": [
       {
         "url": "https://github.com/AlexGoldie/learn-rl-algorithms",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-meta-algorithm-search-comparison",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
-      "meta"
+      "meta",
+      "architectures",
+      "experiments",
+      "credit",
+      "streaming"
     ]
   },
   {
@@ -6548,11 +8343,22 @@
       {
         "url": "https://www.nature.com/articles/s41586-025-09761-x",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-disco-rl",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
-      "meta"
+      "meta",
+      "architectures",
+      "experiments",
+      "value",
+      "gvf",
+      "state",
+      "credit",
+      "streaming"
     ]
   },
   {
@@ -6571,6 +8377,98 @@
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "chapterIds": [
       "meta"
+    ]
+  },
+  {
+    "id": "CH-meta-23",
+    "title": "NeurIPS 2024 原文",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "Algorithm 1–2、正则化联系与持续实验。",
+    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper_files/paper/2024/file/5b76d77e7095c6480ed827b85f0c2878-Paper-Conference.pdf",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://arxiv.org/html/2405.16642v3",
+        "label": "作者论文 v3"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-trac-online-regularization",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
+    "chapterIds": [
+      "meta",
+      "plasticity",
+      "retention"
+    ]
+  },
+  {
+    "id": "CH-meta-24",
+    "title": "作者论文 v3",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "区分凸理论、RL 经验结果与初期表现限制。",
+    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2405.16642v3",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
+    "chapterIds": [
+      "meta",
+      "retention",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "CH-meta-25",
+    "title": "Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning · 作者实现",
+    "kind": "代码",
+    "topic": "meta",
+    "description": "trac.py、PyTorch/JAX optimizer 包与控制/视觉实验。 作者项目页与仓库均明确标为官方实现。",
+    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
+    "links": [
+      {
+        "url": "https://github.com/ComputationalRobotics/TRAC",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-trac-online-regularization",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
+    "chapterIds": [
+      "meta",
+      "plasticity",
+      "retention"
+    ]
+  },
+  {
+    "id": "CH-meta-26",
+    "title": "RLC 2025 原文",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "比较对象、元训练/测试与多维成本。",
+    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_218.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
+    "chapterIds": [
+      "meta",
+      "architectures",
+      "experiments"
     ]
   },
   {
@@ -6606,7 +8504,9 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "chapterIds": [
-      "goals"
+      "goals",
+      "objectives",
+      "options"
     ]
   },
   {
@@ -6678,7 +8578,9 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "chapterIds": [
-      "goals"
+      "goals",
+      "models",
+      "planning"
     ]
   },
   {
@@ -6696,7 +8598,9 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "chapterIds": [
-      "goals"
+      "goals",
+      "objectives",
+      "options"
     ]
   },
   {
@@ -6710,11 +8614,18 @@
       {
         "url": "https://github.com/seohongpark/HIQL",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-hiql-hierarchical-goals",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "chapterIds": [
-      "goals"
+      "goals",
+      "options",
+      "state",
+      "objectives"
     ]
   },
   {
@@ -6746,11 +8657,17 @@
       {
         "url": "https://arxiv.org/abs/2410.20092",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-ogbench-goal-evaluation",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "chapterIds": [
-      "goals"
+      "goals",
+      "state",
+      "experiments"
     ]
   },
   {
@@ -6768,7 +8685,9 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "chapterIds": [
-      "goals"
+      "goals",
+      "objectives",
+      "options"
     ]
   },
   {
@@ -6782,11 +8701,19 @@
       {
         "url": "https://github.com/mklissa/maestromotif",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-maestromotif-semantic-skills",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "chapterIds": [
-      "goals"
+      "reward-design",
+      "goals",
+      "options",
+      "architectures",
+      "objectives"
     ]
   },
   {
@@ -6822,7 +8749,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "chapterIds": [
-      "options"
+      "options",
+      "goals",
+      "gvf",
+      "planning"
     ]
   },
   {
@@ -6908,11 +8838,22 @@
       {
         "url": "https://arxiv.org/abs/2310.10833",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-proper-laplacian-representations",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "chapterIds": [
-      "options"
+      "state",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning",
+      "dyna",
+      "models"
     ]
   },
   {
@@ -6926,11 +8867,22 @@
       {
         "url": "https://github.com/tarod13/laplacian_dual_dynamics",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-proper-laplacian-representations",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "chapterIds": [
-      "options"
+      "state",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning",
+      "dyna",
+      "models"
     ]
   },
   {
@@ -6966,7 +8918,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "chapterIds": [
-      "options"
+      "options",
+      "goals",
+      "gvf",
+      "planning"
     ]
   },
   {
@@ -6980,11 +8935,20 @@
       {
         "url": "https://github.com/seohongpark/METRA",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-metra-skills",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "chapterIds": [
-      "options"
+      "state",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning"
     ]
   },
   {
@@ -7024,6 +8988,56 @@
     ]
   },
   {
+    "id": "CH-options-24",
+    "title": "NeurIPS 2025 原文与补充材料入口",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "算法 1–3、附录 A.3 的两个最优子程序假设及代码声明；未在本教材运行补充代码。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper_files/paper/2025/hash/0ab48777def88e73b50746a6011be0b0-Abstract-Conference.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://proceedings.neurips.cc/paper/2019/file/251c5ffd6b62cc21c446c963c76cf214-Paper.pdf",
+        "label": "Option Keyboard 的经典桥梁"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-option-keyboard-basis",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
+    "chapterIds": [
+      "options",
+      "goals",
+      "models",
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-options-25",
+    "title": "Option Keyboard 的经典桥梁",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "cumulant 组合、GPE/GPI 与技能接口。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2019/file/251c5ffd6b62cc21c446c963c76cf214-Paper.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
+    "chapterIds": [
+      "options",
+      "models",
+      "architectures",
+      "goals"
+    ]
+  },
+  {
     "id": "CH-dyna-1",
     "title": "Sutton · Dyna, an integrated architecture",
     "kind": "论文",
@@ -7038,7 +9052,8 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/dyna/#lesson-sources",
     "chapterIds": [
-      "dyna"
+      "dyna",
+      "architectures"
     ]
   },
   {
@@ -7056,7 +9071,8 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/dyna/#lesson-sources",
     "chapterIds": [
-      "dyna"
+      "dyna",
+      "planning"
     ]
   },
   {
@@ -7110,7 +9126,11 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "chapterIds": [
-      "models"
+      "models",
+      "dyna",
+      "gvf",
+      "state",
+      "average"
     ]
   },
   {
@@ -7124,11 +9144,24 @@
       {
         "url": "https://arxiv.org/abs/2505.16217",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "chapterIds": [
-      "models"
+      "reward-design",
+      "models",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning",
+      "dyna",
+      "state",
+      "average"
     ]
   },
   {
@@ -7142,11 +9175,24 @@
       {
         "url": "https://github.com/httse9/Reward-Aware-Proto-Representations",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "chapterIds": [
-      "models"
+      "reward-design",
+      "models",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning",
+      "dyna",
+      "state",
+      "average"
     ]
   },
   {
@@ -7200,7 +9246,8 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "chapterIds": [
-      "models"
+      "models",
+      "planning"
     ]
   },
   {
@@ -7218,7 +9265,108 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "chapterIds": [
-      "models"
+      "models",
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-models-21",
+    "title": "NeurIPS 2023 原文",
+    "kind": "论文",
+    "topic": "models",
+    "description": "proper VE 的不足、统计摘要与 Bellman 闭合。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/b0cd0e8027309ea050951e758b70d60e-Abstract-Conference.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "chapterIds": [
+      "models",
+      "planning",
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-models-22",
+    "title": "作者实现",
+    "kind": "代码",
+    "topic": "models",
+    "description": "原文第 7 节直接链接的实验代码。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://github.com/tylerkastner/distribution-equivalence",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "chapterIds": [
+      "models",
+      "planning",
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-models-23",
+    "title": "ICLR 2024 原文",
+    "kind": "论文",
+    "topic": "models",
+    "description": "短期预测、终点价值、多任务协议。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2024/hash/cf73d57b6dcda32b293df7c2d5341f49-Abstract-Conference.html",
+        "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-tdmpc2-decision-time-model",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "chapterIds": [
+      "models",
+      "planning",
+      "architectures",
+      "deep-value"
+    ]
+  },
+  {
+    "id": "CH-models-24",
+    "title": "作者实现",
+    "kind": "代码",
+    "topic": "models",
+    "description": "训练、模型与 plan 函数分别阅读。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://github.com/nicklashansen/tdmpc2",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-tdmpc2-decision-time-model",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "chapterIds": [
+      "models",
+      "planning",
+      "architectures",
+      "deep-value",
+      "dyna",
+      "options"
     ]
   },
   {
@@ -7272,25 +9420,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "chapterIds": [
-      "planning"
-    ]
-  },
-  {
-    "id": "CH-planning-10",
-    "title": "TD-MPC2 作者实现",
-    "kind": "代码",
-    "topic": "models",
-    "description": "沿模型损失、计划函数和策略先验阅读，比较计算发生在训练时还是决策时。",
-    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
-    "links": [
-      {
-        "url": "https://github.com/nicklashansen/tdmpc2",
-        "label": "实现入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
-    "chapterIds": [
-      "planning"
+      "planning",
+      "dyna",
+      "models",
+      "options"
     ]
   },
   {
@@ -7308,7 +9441,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "chapterIds": [
-      "planning"
+      "planning",
+      "dyna",
+      "models",
+      "options"
     ]
   },
   {
@@ -7326,7 +9462,10 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "chapterIds": [
-      "planning"
+      "planning",
+      "dyna",
+      "models",
+      "options"
     ]
   },
   {
@@ -7380,25 +9519,10 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "chapterIds": [
-      "retention"
-    ]
-  },
-  {
-    "id": "CH-retention-1",
-    "title": "Espeholt et al. · IMPALA",
-    "kind": "论文",
-    "topic": "plasticity",
-    "description": "V-trace 原始推导及裁剪系数所控制的偏差、方差与目标策略。",
-    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
-    "links": [
-      {
-        "url": "https://proceedings.mlr.press/v80/espeholt18a.html",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
-    "chapterIds": [
-      "retention"
+      "retention",
+      "control",
+      "models",
+      "experiments"
     ]
   },
   {
@@ -7448,11 +9572,23 @@
       {
         "url": "https://proceedings.mlr.press/v267/fu25f.html",
         "label": "原文入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-drago-model-retention",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "chapterIds": [
-      "retention"
+      "retention",
+      "models",
+      "exploration",
+      "dyna",
+      "gvf",
+      "state",
+      "average",
+      "control",
+      "experiments"
     ]
   },
   {
@@ -7466,11 +9602,167 @@
       {
         "url": "https://github.com/YixiangSun/drago",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-drago-model-retention",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "chapterIds": [
-      "retention"
+      "retention",
+      "models",
+      "exploration",
+      "dyna",
+      "gvf",
+      "state",
+      "average",
+      "control",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-retention-10",
+    "title": "ICLR 2024 原文",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "效用定义、近似、不同 UPGD 变体与 PPO 实验。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2024/file/8e5f0591943d8dae5702af12dcdcd2f6-Paper-Conference.pdf",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://arxiv.org/abs/2404.00781",
+        "label": "作者预印本"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-upgd-utility-protection",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "chapterIds": [
+      "plasticity",
+      "retention",
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-retention-11",
+    "title": "作者预印本",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "流式监督协议与 RL 证据范围。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2404.00781",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "chapterIds": [
+      "retention",
+      "plasticity",
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-retention-12",
+    "title": "Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning · 作者实现",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "权重/特征效用实验、流式任务及 PPO 实现。 论文首页明确链接的作者仓库；README 的短实现是一个指定变体。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://github.com/mohmdelsayed/upgd",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-upgd-utility-protection",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "chapterIds": [
+      "plasticity",
+      "retention",
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-retention-13",
+    "title": "NeurIPS 2024 原文",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "目标函数、容量限制、角度/范数消融及持续任务协议。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper_files/paper/2024/file/e6df4efa20adf8ef9acb80e94072a429-Paper-Conference.pdf",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://arxiv.org/abs/2412.07224",
+        "label": "作者版本记录"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-parseval-continual-geometry",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "chapterIds": [
+      "plasticity",
+      "retention",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-retention-14",
+    "title": "作者版本记录",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "正式会议年份为 2024。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2412.07224",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "chapterIds": [
+      "retention",
+      "plasticity",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-retention-15",
+    "title": "Parseval Regularization for Continual Reinforcement Learning · 作者实现",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "PPO、任务序列、正则化与网络结构消融。 仓库明确标为 NeurIPS 2024 官方实现。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://github.com/wechu/parseval_reg",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-parseval-continual-geometry",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "chapterIds": [
+      "plasticity",
+      "retention",
+      "experiments"
     ]
   },
   {
@@ -7484,11 +9776,17 @@
       {
         "url": "https://github.com/google/dopamine/tree/master/dopamine/labs/redo",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-redo-dormant-neurons",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
     "chapterIds": [
-      "plasticity"
+      "plasticity",
+      "deep-value",
+      "retention"
     ]
   },
   {
@@ -7524,7 +9822,9 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
     "chapterIds": [
-      "plasticity"
+      "plasticity",
+      "retention",
+      "deep-value"
     ]
   },
   {
@@ -7542,7 +9842,9 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
     "chapterIds": [
-      "plasticity"
+      "plasticity",
+      "retention",
+      "deep-value"
     ]
   },
   {
@@ -7596,7 +9898,9 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "chapterIds": [
-      "exploration"
+      "exploration",
+      "goals",
+      "objectives"
     ]
   },
   {
@@ -7614,7 +9918,9 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "chapterIds": [
-      "exploration"
+      "exploration",
+      "goals",
+      "objectives"
     ]
   },
   {
@@ -7690,24 +9996,6 @@
     ]
   },
   {
-    "id": "CH-architectures-1",
-    "title": "Sutton, Bowling & Pilarski · The Alberta Plan for AI Research",
-    "kind": "论文",
-    "topic": "architectures",
-    "description": "研究纲领及子问题组合，不是完整通用 agent 的实现报告。",
-    "question": "状态、预测、目标、技能与模型哪些由人提供，哪些从经验学习？组件改进如何传递到长期行为？",
-    "links": [
-      {
-        "url": "https://arxiv.org/abs/2208.11173",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
-    "chapterIds": [
-      "architectures"
-    ]
-  },
-  {
     "id": "CH-architectures-8",
     "title": "AgarCL 作者环境",
     "kind": "代码",
@@ -7718,11 +10006,22 @@
       {
         "url": "https://github.com/machado-research/AgarCL",
         "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-agarcl",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "chapterIds": [
-      "architectures"
+      "experiments",
+      "state",
+      "exploration",
+      "plasticity",
+      "architectures",
+      "retention",
+      "deep-value",
+      "objectives"
     ]
   },
   {
@@ -7812,7 +10111,11 @@
     ],
     "detailUrl": "/zh/continual-rl/experiments/#lesson-sources",
     "chapterIds": [
-      "experiments"
+      "experiments",
+      "objectives",
+      "architectures",
+      "plasticity",
+      "retention"
     ]
   },
   {
@@ -7862,6 +10165,14 @@
       {
         "url": "https://rlj.cs.umass.edu/2024/papers/Paper197.html",
         "label": "原始文献"
+      },
+      {
+        "url": "https://arxiv.org/abs/2406.17718",
+        "label": "作者预印本"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-self-prediction-auxiliary-tasks",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/research/#research-predictive-knowledge",
@@ -7927,6 +10238,10 @@
       {
         "url": "https://github.com/sharifnassab/Intentional_RL",
         "label": "作者仓库"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-intentional-updates",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/research/#research-streaming-stability",
@@ -7934,7 +10249,8 @@
       "streaming",
       "credit",
       "policy",
-      "soft-control"
+      "soft-control",
+      "meta"
     ]
   },
   {
@@ -7968,6 +10284,10 @@
       {
         "url": "https://proceedings.iclr.cc/paper_files/paper/2025/hash/ba9e3d60610f3525717665966d86e0cd-Abstract-Conference.html",
         "label": "原始文献"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-reset-and-distill",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/research/#research-continual-control",
@@ -7978,7 +10298,9 @@
       "soft-control",
       "retention",
       "models",
-      "experiments"
+      "experiments",
+      "plasticity",
+      "meta"
     ]
   },
   {
@@ -7992,6 +10314,10 @@
       {
         "url": "https://github.com/hongjoon0805/Reset-Distill",
         "label": "作者仓库"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-reset-and-distill",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/research/#research-continual-control",
@@ -8002,7 +10328,9 @@
       "soft-control",
       "retention",
       "models",
-      "experiments"
+      "experiments",
+      "plasticity",
+      "meta"
     ]
   },
   {
@@ -8016,13 +10344,18 @@
       {
         "url": "https://github.com/bluecontra/C-CHAIN",
         "label": "作者仓库"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-c-chain-churn",
+        "label": "研究问题与方法导读"
       }
     ],
     "detailUrl": "/zh/continual-rl/research/#research-plasticity",
     "chapterIds": [
       "plasticity",
       "retention",
-      "deep-value"
+      "deep-value",
+      "experiments"
     ]
   },
   {
@@ -8031,7 +10364,7 @@
     "kind": "论文",
     "topic": "curriculum",
     "description": "ALP-GMM 用目标/环境参数附近的绝对学习进展分配训练分布。teacher 可以选择环境条件。 CoRL 2019 / PMLR 2020",
-    "question": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善可继续学习能力，则需更换机制解释。",
+    "question": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善后续学习能力，则需更换机制解释。",
     "links": [
       {
         "url": "https://arxiv.org/abs/1910.07224",
@@ -8051,7 +10384,7 @@
     "kind": "代码",
     "topic": "curriculum",
     "description": "支持 ALP-GMM 等方法的后续比较框架；不是无 teacher 的单生命期协议。",
-    "question": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善可继续学习能力，则需更换机制解释。",
+    "question": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善后续学习能力，则需更换机制解释。",
     "links": [
       {
         "url": "https://github.com/flowersteam/TeachMyAgent",
@@ -8062,47 +10395,8 @@
     "chapterIds": [
       "exploration",
       "goals",
-      "objectives"
-    ]
-  },
-  {
-    "id": "FRONTIER-single-life",
-    "title": "Chen et al. · You Only Live Once: Single-Life Reinforcement Learning",
-    "kind": "论文",
-    "topic": "curriculum",
-    "description": "研究一次部署生命期内利用先前经验完成适应与恢复，突出无法随意外部重置的限制。 NeurIPS 2022",
-    "question": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善可继续学习能力，则需更换机制解释。",
-    "links": [
-      {
-        "url": "https://arxiv.org/abs/2210.08863",
-        "label": "原始文献"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/research/#research-experience-selection",
-    "chapterIds": [
-      "exploration",
-      "goals",
-      "objectives"
-    ]
-  },
-  {
-    "id": "FRONTIER-CODE-single-life",
-    "title": "Chen et al. · You Only Live Once: Single-Life Reinforcement Learning · 作者 Single-Life RL / QWALE",
-    "kind": "代码",
-    "topic": "curriculum",
-    "description": "envs/、data/ 和 train.py 分别提供环境、先验数据及部署学习；比较时应计算预训练和先验数据。",
-    "question": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善可继续学习能力，则需更换机制解释。",
-    "links": [
-      {
-        "url": "https://github.com/anniesch/single-life-rl",
-        "label": "作者仓库"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/research/#research-experience-selection",
-    "chapterIds": [
-      "exploration",
-      "goals",
-      "objectives"
+      "objectives",
+      "options"
     ]
   },
   {
@@ -8152,11 +10446,444 @@
     "detailUrl": "/zh/continual-rl/research/#research-lifetime-objective",
     "chapterIds": [
       "objectives",
+      "control",
       "average",
       "experiments",
       "architectures",
       "plasticity",
       "retention"
+    ]
+  },
+  {
+    "id": "RECENT-real-time-trace-units",
+    "title": "Real-Time Recurrent Learning using Trace Units in Reinforcement Learning",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "RTU 使用有结构的递归连接，并维护状态关于参数的在线敏感度。复杂的递归动力学可以用实值运算实现。其关键是让状态更新与梯度迹具有相容的计算结构，减少一般 RTRL 的高阶成本；这与仅给 TD 误差加一条资格迹不同。 论文在部分可观测任务中与常见递归网络比较预测与控制表现。作者代码包含 RTU、其他递归基线、实时 actor–critic 以及部分可观测环境配置。 条件与限制：计算优势依赖特定递归参数化，不能外推为任意记忆问题上的表达能力优势。PPO 版本和严格逐步更新版本的经验协议不同，应分别比较。",
+    "question": "递归状态既要保存长时信息，又要在在线强化学习中以可控成本更新，怎样设计其递归结构？ 在同一部分可观测任务中固定隐状态维度，再比较完整运行内存和每步更新时间。检查 actor、critic 与递归状态的参数更新是否共享同一条敏感度。",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/1e616bde0438cb10cb6adf076ae7d336-Abstract-Conference.html",
+        "label": "NeurIPS 2024 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-real-time-trace-units",
+    "chapterIds": [
+      "state",
+      "credit",
+      "streaming"
+    ]
+  },
+  {
+    "id": "RECENT-nibbler-predictive-features",
+    "title": "Towards model-free RL algorithms that scale well with unstructured data",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "Nibbler 将预测问题的构造和预测结果的复用结合起来：选择局部输入、学习与奖励相关的通用价值预测，再将预测作为后续学习的特征。GVF 在这里不是一个新的优化器，而是描述“预测什么、在什么行为下预测”的问题接口。 作者在组合式合成环境中增加观测规模，报告了利用任务结构的样本效率。环境可以具有指数增长的状态组合，但学习器不必显式枚举全部状态。 条件与限制：这不是对任意高维观测的线性样本复杂度保证。局部可分解结构、候选问题与特征构造规则仍是关键条件；从该实验族迁移到视觉控制需要额外验证。",
+    "question": "大量原始观测中只有少数局部组合与奖励有关，智能体能否逐步构造有用的预测特征？ 把一条预测完整写成累积量、延续条件、目标策略和输入特征四项，再指出它如何进入主任务的价值函数。区分问题生成带来的收益与增加参数量带来的收益。",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2311.02215",
+        "label": "作者预印本"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-nibbler-predictive-features",
+    "chapterIds": [
+      "gvf",
+      "state",
+      "architectures"
+    ]
+  },
+  {
+    "id": "RECENT-deep-gradient-eligibility-traces",
+    "title": "Deep Reinforcement Learning with Gradient Eligibility Traces",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "论文从广义投影 Bellman 误差出发构造多步目标，推导带资格迹的梯度学习方法。前向视角连接多步回报与经验重放，后向视角通过递推迹分配信用。目标函数、辅助估计器和迹的更新共同决定算法，不只是选择一个较大的 λ。 作者给出多种算法并在 MuJoCo、MinAtar 等任务中比较。代码同时提供相关梯度算法与实验设置，可以把推导中的量映射到实际更新。 条件与限制：线性 GTD 的收敛条件不能自动赋予非线性实现全局收敛保证。重放版本与流式版本的数据使用预算也不能混为一谈。",
+    "question": "资格迹怎样与明确的梯度目标结合，而不是直接把线性半梯度规则搬到深度网络？ 从一段短轨迹分别计算前向多步目标和后向迹。随后对照原代码检查辅助网络、目标与主网络参数使用的是更新前还是更新后的值。",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_302.pdf",
+        "label": "RLC 2025 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces",
+    "chapterIds": [
+      "value",
+      "gvf",
+      "credit",
+      "streaming"
+    ]
+  },
+  {
+    "id": "RECENT-CODE-deep-gradient-eligibility-traces",
+    "title": "Deep Reinforcement Learning with Gradient Eligibility Traces · 作者代码",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "论文梯度算法、资格迹和实验配置。 原论文链接的作者仓库。",
+    "question": "资格迹怎样与明确的梯度目标结合，而不是直接把线性半梯度规则搬到深度网络？ 从一段短轨迹分别计算前向多步目标和后向迹。随后对照原代码检查辅助网络、目标与主网络参数使用的是更新前还是更新后的值。",
+    "links": [
+      {
+        "url": "https://github.com/esraaelelimy/gtd_algos",
+        "label": "作者实现"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces",
+    "chapterIds": [
+      "value",
+      "gvf",
+      "credit",
+      "streaming"
+    ]
+  },
+  {
+    "id": "RECENT-metra-skills",
+    "title": "METRA: Scalable Unsupervised RL with Metric-Aware Abstraction",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "METRA 学习反映时间距离的潜在表示，并让技能方向 $z$ 最大化内在奖励 $r_z=(\\phi(s')-\\phi(s))^\\top z$。邻接状态间的距离约束阻止编码器靠任意放大数值提高奖励。表示学习和技能策略相互影响，因此它不同于先固定一个表示、再单独训练 option。 论文在视觉与状态输入的运动、操纵任务中研究无监督技能学习和下游使用。作者代码包括约束优化、技能策略和相应实验配置。 条件与限制：预训练技能加下游任务不等于技能库在单次生命内持续维护。理论距离约束与源码中的均方尺度、松弛量截断需要分别对照，不能只照抄一个简化公式重现。",
+    "question": "没有外部任务奖励时，怎样发现能产生长距离、有区别状态变化的技能？ 观察表示范数、约束残差和实际位移三条曲线。若内在回报上升而位移不变，应先检查尺度和约束，而不是直接解释为探索改善。",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2024/hash/516593a423838642a2eb4e9c5b9c7f44-Abstract-Conference.html",
+        "label": "ICLR 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-metra-skills",
+    "chapterIds": [
+      "state",
+      "options",
+      "exploration"
+    ]
+  },
+  {
+    "id": "RECENT-hiql-hierarchical-goals",
+    "title": "HIQL: Offline Goal-Conditioned RL with Latent States as Actions",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "HIQL 学习目标条件价值，并以潜在状态作为高层动作。高层提出中间目标，低层输出环境动作；两层利用优势加权回归学习。时间分解让低层面对较短的控制距离，而不是要求一个策略直接消化所有远距离价值误差。 论文在离线长时域目标任务中检验层次结构，并提供原始实现。作者后来在 OGBench 中提供更统一的实现，二者适合不同用途：原实验复现和统一基线比较。 条件与限制：数据覆盖和行为分布约束仍然存在。目标采样、层级时间间隔与离线轨迹由外部流程提供，不能把效果解释为在线自主目标生成已经解决。",
+    "question": "只拿到已有轨迹时，长距离目标为什么适合拆成高层子目标和低层动作？ 对一段轨迹明确标记最终目标、中间目标和当前动作。逐一检查价值目标、优势权重和高层标签的停止梯度边界。",
+    "links": [
+      {
+        "url": "https://papers.nips.cc/paper_files/paper/2023/file/6d7c4a0727e089ed6cdd3151cbe8d8ba-Paper-Conference.pdf",
+        "label": "NeurIPS 2023 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-hiql-hierarchical-goals",
+    "chapterIds": [
+      "goals",
+      "options",
+      "state"
+    ]
+  },
+  {
+    "id": "RECENT-CODE-ogbench-goal-evaluation",
+    "title": "OGBench: Benchmarking Offline Goal-Conditioned RL · 作者代码",
+    "kind": "代码",
+    "topic": "skills",
+    "description": "离线目标环境、数据集与标准化基线。 基准作者维护的官方实现。",
+    "question": "一个目标条件算法表现不好，是长时域、轨迹拼接、视觉表示还是随机性造成的？ 先选择只改变一种困难的两个数据集，再比较 HIQL 与平坦目标策略。把观察到的差异写成可检验机制假设，而不是直接归因于“层次更好”。",
+    "links": [
+      {
+        "url": "https://github.com/seohongpark/ogbench",
+        "label": "作者实现"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-ogbench-goal-evaluation",
+    "chapterIds": [
+      "goals",
+      "state",
+      "experiments",
+      "options",
+      "gvf",
+      "planning",
+      "objectives",
+      "models",
+      "dyna",
+      "average"
+    ]
+  },
+  {
+    "id": "RECENT-maestromotif-semantic-skills",
+    "title": "MaestroMotif: Skill Design from Artificial Intelligence Feedback",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "设计者先给出技能描述。语言模型的偏好反馈被用于训练奖励模型，再用生成的代码规定技能启动、终止和组合方式；强化学习负责学习实际执行行为。这把语义先验、奖励学习和时间抽象串成了具体训练流程。 论文在 NetHack 学习环境中检验复杂技能与任务组合。作者仓库同时包含偏好、代码生成和 RL 训练模块，可以追踪自然语言到环境动作的完整依赖。 条件与限制：语义知识、技能描述和语言模型来自外部设计过程。该证据并不说明智能体仅凭自身交互就能产生同样的技能体系；偏好模型也可能与真实目标不一致。",
+    "question": "语言描述如何变成可训练的技能奖励，并进一步组织成一个层次策略？ 选择一项技能，分别列出描述、偏好标签、训练奖励、终止条件和下游用途。移除语义描述或改变奖励模型时，要单独计量额外查询与人工成本。",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2025/hash/2dc5a0faac8102fd47363795f71126ee-Abstract-Conference.html",
+        "label": "ICLR 2025 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-maestromotif-semantic-skills",
+    "chapterIds": [
+      "reward-design",
+      "goals",
+      "options",
+      "architectures"
+    ]
+  },
+  {
+    "id": "RECENT-continual-backpropagation",
+    "title": "Loss of plasticity in deep continual learning",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "Continual Backpropagation 在梯度学习之外持续生成并测试特征。它估计单元的效用和成熟度，少量替换低效用的成熟单元，并协调新单元的输入、输出和相关状态。维护新的可学习方向是一个持续过程，而不是等到任务切换后整体重启。 论文在长序列监督学习与强化学习问题中展示可塑性损失，并检验特征替换的作用。作者仓库包含 generate-and-test 与优化器状态处理。 条件与限制：有限序列上的学习保持不保证无限生命中的任意适应。替换率、效用定义与成熟度条件仍需选择；新任务学习速度和旧能力保留必须分开测量。",
+    "question": "一个长期训练的网络如何保留继续形成新特征的能力？ 逐项消融“成熟度筛选”“效用筛选”“随机替换”。比较相同替换预算，检验收益究竟来自定向回收还是一般参数扰动。",
+    "links": [
+      {
+        "url": "https://doi.org/10.1038/s41586-024-07711-7",
+        "label": "Nature 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-continual-backpropagation",
+    "chapterIds": [
+      "plasticity",
+      "retention",
+      "architectures"
+    ]
+  },
+  {
+    "id": "RECENT-c-chain-churn",
+    "title": "Mitigating Plasticity Loss in Continual Reinforcement Learning by Reducing Churn",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "C-CHAIN 抑制相对于近期参考网络的函数输出变化，降低一次更新在其他样本上造成的 churn。论文把该现象与经验神经切线核及学习动力学联系起来。正则化对象是函数变化，不是直接把所有参数锁在旧值附近。 作者在持续 Gym Control、ProcGen、DMC 和 MinAtar 序列中比较，并提供对应环境和算法代码。 条件与限制：近期函数稳定性不等于长期任务知识保留；参考样本和参考网络也占资源。若环境突然发生真实变化，过强抑制输出变化可能延迟必要适应。",
+    "question": "一次局部更新为什么会在其他输入上引发大幅预测变化，并损害后续学习？ 将 churn 按旧分布、新分布分别计算，并同时画适应速度。这样才能区分“减少无关干扰”和“阻止有用改变”。",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v267/tang25g.html",
+        "label": "ICML 2025 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-c-chain-churn",
+    "chapterIds": [
+      "plasticity",
+      "retention",
+      "experiments"
+    ]
+  },
+  {
+    "id": "RECENT-revisiting-streaming-adam",
+    "title": "Revisiting Adam for Streaming Reinforcement Learning",
+    "kind": "论文",
+    "topic": "streaming",
+    "description": "论文重新分析自适应更新的信噪比，将 Adam 的稳定项与目标导数尺度联系起来，并研究有界导数的回报分布学习及多步更新。它改变的是目标与更新的配合，而非简单沿用批量训练时的默认配置。 作者在大规模 Atari 流式实验中展示了具有竞争力的结果，并重新比较早期流式方法。正式 RLJ 入口收录为 RLC 2026 预会议论文。 条件与限制：主体实验采用经典回合式 Atari 的流式学习协议，不是任意非平稳终生适应的证据。这些结果也不否定归一化、资格迹或更新约束在其他任务中的价值。版本、调参预算和目标分布必须对齐。",
+    "question": "流式 RL 的不稳定来自 Adam 本身，还是目标导数、方差与超参数的组合？ 建立二维对照：固定目标换优化器，固定优化器换目标。将调参种子与最终测试分开，再判断改进来自哪一个因素。",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2026/papers/Paper131.html",
+        "label": "RLC 2026 论文入口"
+      },
+      {
+        "url": "https://arxiv.org/abs/2605.06764",
+        "label": "作者预印本"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-revisiting-streaming-adam",
+    "chapterIds": [
+      "streaming",
+      "deep-value",
+      "experiments"
+    ]
+  },
+  {
+    "id": "RECENT-step-size-optimization",
+    "title": "Step-size Optimization for Continual Learning",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "论文区分梯度归一化与步长优化。IDBD 类方法以 $\\alpha_i=\\exp(\\beta_i)$ 保证步长为正，并用权重对过去步长的敏感度估计改变 $\\beta_i$ 是否有利。持续学习中，静止的无关方向适合很小步长，而持续变化的有用方向需要保留追踪能力。 作者用权重翻转和带噪追踪等线性学习问题比较机制，显示相似的误差幅度可以要求相反的步长反应。 条件与限制：这些可分析任务不是深度控制上的普适优越性证据。元步长、近似敏感度与输入尺度仍会影响结果；步长自适应并没有消除全部外部设计参数。",
+    "question": "误差变大时，应该减小步长过滤噪声，还是增大步长追踪真实变化？ 分别增加观测噪声和目标漂移速度，检查步长是否采取不同反应。若只记录平均误差，就看不到噪声过滤与追踪之间的区别。",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2401.17401",
+        "label": "作者论文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-step-size-optimization",
+    "chapterIds": [
+      "meta",
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "RECENT-fame-fast-meta-learners",
+    "title": "Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "FAME 的快速学习器适应当前任务，元学习器整合此前知识。论文按旧策略的重要访问分布度量价值或策略变化，再据此构造减少遗忘的整合目标。自适应预热决定如何利用旧知识初始化或约束早期行为，以减少负迁移。 论文分析价值型和策略型版本，并在像素与连续控制任务序列中比较。作者提供官方实现，可追踪快速适应与知识整合两个阶段。 条件与限制：设定要求相同状态与动作空间、已知任务边界以及额外整合计算。这里的 meta learner 主要是知识整合模块，不应因名称就当作通过长期回报反向求导的在线元梯度算法。脑机制类比也不是神经科学实验证据。",
+    "question": "快速学习新任务和整合旧知识，能否由不同学习器承担并以明确目标连接？ 分别报告新任务前向迁移、旧任务保留和两个学习阶段的计算量。改变任务相似性，检验自适应预热是否确实避免有害旧知识。",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2026/hash/2230ffcd5da10015ce0c6ce588fc2936-Abstract-Conference.html",
+        "label": "ICLR 2026 原文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-fame-fast-meta-learners",
+    "chapterIds": [
+      "meta",
+      "retention",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "RECENT-CODE-fame-fast-meta-learners",
+    "title": "Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning · 作者代码",
+    "kind": "代码",
+    "topic": "meta",
+    "description": "FAME 的价值型、策略型持续学习实验。 论文与仓库均注明为官方实现。",
+    "question": "快速学习新任务和整合旧知识，能否由不同学习器承担并以明确目标连接？ 分别报告新任务前向迁移、旧任务保留和两个学习阶段的计算量。改变任务相似性，检验自适应预热是否确实避免有害旧知识。",
+    "links": [
+      {
+        "url": "https://github.com/datake/FAME",
+        "label": "作者实现"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-fame-fast-meta-learners",
+    "chapterIds": [
+      "meta",
+      "retention",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "RECENT-plasticity-mirror-empowerment",
+    "title": "Plasticity as the Mirror of Empowerment",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "论文用广义有向信息描述两个方向：环境对智能体的影响对应一种可塑性，智能体对环境的影响对应赋能。统一表达使二者的关系和权衡可以被形式化，而不仅用神经元休眠或短期奖励间接描述。 贡献主要是概念定义和理论关系，提供研究长期交互的新坐标。它没有把信息量指标直接等同于某个具体神经网络算法的长期回报。 条件与限制：信息论可塑性与“新目标拟合速度”不是相同估计量，也不等于参数变化越大越好。有限数据下怎样稳健估计这些信息量，需要额外方法。",
+    "question": "环境改变智能体的能力，与智能体改变环境的能力，能否放在统一的信息论框架中？ 分别举出高环境影响但低奖励、高赋能但不学习的过程。说明为什么两类能力与任务成功都需要独立评价。",
+    "links": [
+      {
+        "url": "https://papers.nips.cc/paper_files/paper/2025/hash/f04957cc30544d62386f402e1da0b001-Abstract-Conference.html",
+        "label": "NeurIPS 2025 原文"
+      },
+      {
+        "url": "https://arxiv.org/abs/2505.10361",
+        "label": "作者预印本"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-plasticity-mirror-empowerment",
+    "chapterIds": [
+      "objectives",
+      "plasticity",
+      "exploration",
+      "architectures"
+    ]
+  },
+  {
+    "id": "RECENT-continual-vla-simple-recipe",
+    "title": "Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "论文研究对预训练 VLA 进行顺序强化学习，并以低秩适配等相对简单的训练流程检验持续学习。预训练表示、可更新参数子空间和 RL 目标共同决定迁移与遗忘，不能只把结果归因于单一保留正则项。 作者在多种 VLA 与长期任务基准上比较，并提供实验代码。RLJ 的 RLC 2026 论文页与论文脚注分别给出正式入口和作者仓库。 条件与限制：预训练数据和算力属于外部资源，任务与重置协议也影响难度。该结果不意味着从零训练的网络不会遗忘，更不意味着任意无边界任务流只需微调。",
+    "question": "大规模预训练的视觉—语言—动作模型，是否仍需要复杂机制才能顺序学习控制任务？ 固定预训练模型，分别改变可训练参数量和任务顺序。报告预训练资源、每任务在线数据、回放或重置条件，再与传统 CRL 方法比较。",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2603.11653",
+        "label": "作者论文"
+      },
+      {
+        "url": "https://rlj.cs.umass.edu/2026/papers/Paper84.html",
+        "label": "RLC 2026 / RLJ 论文页"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-continual-vla-simple-recipe",
+    "chapterIds": [
+      "retention",
+      "plasticity",
+      "architectures",
+      "experiments"
+    ]
+  },
+  {
+    "id": "RECENT-CODE-continual-vla-simple-recipe",
+    "title": "Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning · 作者代码",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "预训练 VLA 的顺序 RL 训练和论文评价。 UT Austin RobIn 实验室的原论文仓库。",
+    "question": "大规模预训练的视觉—语言—动作模型，是否仍需要复杂机制才能顺序学习控制任务？ 固定预训练模型，分别改变可训练参数量和任务顺序。报告预训练资源、每任务在线数据、回放或重置条件，再与传统 CRL 方法比较。",
+    "links": [
+      {
+        "url": "https://github.com/UT-Austin-RobIn/continual-vla-rl",
+        "label": "作者实现"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-continual-vla-simple-recipe",
+    "chapterIds": [
+      "retention",
+      "plasticity",
+      "architectures",
+      "experiments"
+    ]
+  },
+  {
+    "id": "RECENT-rvi-sac-average-control",
+    "title": "RVI-SAC: Average Reward Off-Policy Deep Reinforcement Learning",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "RVI-SAC 将相对价值参照项加入 soft critic，以平均奖励的 soft policy improvement 构造 actor，并用额外 reset critic 与可学习成本控制重置频率。完整实现包含双 critic、经验重放、目标网络和温度更新。 论文给出平均奖励最大熵控制推导，并在 MuJoCo 运动任务中比较；公开实现可核对重置转移是否继续 bootstrap。 条件与限制：理论的表格或精确评价条件不自动覆盖所有神经网络训练。最大熵奖励率、外部奖励率与带 reset 成本的奖励率是三个量；不可将有限折扣 reward centering 当作同一算法。",
+    "question": "深度连续控制若最终按单位时间收益评测，训练能否直接采用平均奖励而非有限折扣？ 逐项对应 critic 参照、actor 分布、reset 指示与 reset 后状态；评价保留外部原始奖励、实际时长、重置次数和训练修正目标。",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v235/hisaki24a.html",
+        "label": "ICML 2024 正式论文"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-rvi-sac-average-control",
+    "chapterIds": [
+      "average",
+      "control",
+      "soft-control",
+      "objectives",
+      "experiments"
+    ]
+  },
+  {
+    "id": "RECENT-CODE-continuing-task-deep-study",
+    "title": "An Empirical Study of Deep Reinforcement Learning in Continuing Tasks · 作者代码",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "testbeds、Pearl 算法、experiments 配置与评测/作图。 论文对应 Meta 作者团队的研究仓库，README 明确区分三个 reset 协议。",
+    "question": "把环境作为持续的转移过程后，无重置、预设重置和智能体控制重置怎样改变学习难点？ 先固定重置转移、成本和时间，再比较目标与算法；分别评价全程学习收益、冻结策略奖励率及失败恢复。",
+    "links": [
+      {
+        "url": "https://github.com/facebookresearch/DeepRL-continuing-tasks",
+        "label": "作者实现"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-continuing-task-deep-study",
+    "chapterIds": [
+      "control",
+      "average",
+      "experiments",
+      "objectives",
+      "streaming",
+      "credit",
+      "policy",
+      "soft-control"
+    ]
+  },
+  {
+    "id": "RECENT-CODE-vtrace-impala",
+    "title": "IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures · 作者代码",
+    "kind": "代码",
+    "topic": "credit",
+    "description": "IMPALA原始TensorFlow实现与V-trace；运行需要原项目环境。 原作者团队仓库的固定版本。",
+    "question": "actor采样策略落后于learner时，如何校正状态价值与策略更新？ 独立改变策略滞后、ρ上限和c上限。记录目标策略变化与传播长度，不把两种截断都只解释为方差控制。",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/scalable_agent/tree/6c0c8a701990fab9053fb338ede9c915c18fa2b1",
+        "label": "作者实现"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#recent-vtrace-impala",
+    "chapterIds": [
+      "credit",
+      "policy",
+      "architectures"
     ]
   }
 ]

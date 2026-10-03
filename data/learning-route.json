@@ -2,13 +2,13 @@
   {
     "id": "classic-rl",
     "title": "经典 RL：从交互到评价与控制",
-    "intro": "先在状态和动作数量有限、转移规律固定的问题中理解 RL。这里的重点不是记住算法名称，而是区分：问题要求优化什么、一次更新估计什么、数据由谁产生。随后用函数逼近和模型学习说明这些基本关系如何扩展。",
+    "intro": "从可解析的有限问题学习评价、控制和规划，再研究函数逼近。有限平稳 MDP 是这里的教学起点，不是所有强化学习必须满足的世界假设；经典方法也包括平均奖励、资格迹与在线跟踪。始终分清目标、估计对象、数据来源和学习规则。",
     "outcomes": [
       "能从奖励序列写出回报，区分真实终止与采样截断。",
       "能推导固定策略的 Bellman 方程和最优递推，并实现评价—改善循环。",
       "能解释 MC、TD、控制、资格迹和函数逼近之间的依赖关系。"
     ],
-    "bridge": "表格算法给每个状态或动作一个独立参数。状态很多时，这种表示无法扩展。现代 DRL 保留评价和控制的目标，却用共享的可学习表示近似它们；这会改变误差传播和稳定性。",
+    "bridge": "表格与共享参数是两种表示方式，不是两个互斥任务类别。状态很多时，可继续补函数逼近与深度方法；研究持续预测、平均奖励或单生命期控制时，也可以直接使用经典工具。以完整学习器为对象的持续控制章会重新明确目标与比较条件。",
     "sections": [
       {
         "id": "interaction",
@@ -22,7 +22,14 @@
         "tex": "G_t=\\sum_{k=0}^{\\infty}\\gamma^kR_{t+k+1}=R_{t+1}+\\gamma G_{t+1},\\qquad v_\\pi(s)=\\mathbb E_\\pi[G_t\\mid S_t=s]",
         "formulaExplanation": "第一式把未来分成第一步和剩余部分。第二式对策略引起的所有未来取条件期望，定义价值；它还不是学习算法。",
         "chapterIds": [
-          "objectives"
+          "objectives",
+          "reward-design"
+        ],
+        "readings": [
+          {
+            "title": "MDP、回报与价值的完整推导",
+            "path": "foundations/tabular/mdps/"
+          }
         ],
         "sources": [
           {
@@ -44,7 +51,7 @@
         },
         "selfTest": {
           "question": "奖励依次为 1、2、3，随后真正终止；折扣为 0.5。第一个状态的回报是多少？",
-          "answer": "1 + 0.5 × 2 + 0.25 × 3 = 2.75。若第三步只是采样截断，应再加 0.5³ 乘下一状态的价值估计。"
+          "answer": "1 + 0.5 × 2 + 0.25 × 3 = 2.75。若第三步只是采样截断，应再加 $0.5^3$ 乘下一状态的价值估计。"
         }
       },
       {
@@ -57,10 +64,16 @@
           "策略迭代先评价当前策略，再选择该价值下的一步贪心动作。策略改善成立，是因为用新动作并继续旧策略已不差，再在后续每一步重复这种改善不会降低价值。价值迭代则不等评价完全结束，每一轮直接做最优 backup。评价与改善相互作用的共同思想称为广义策略迭代（generalized policy iteration，GPI）。这里不是迁移学习中同缩写的 generalized policy improvement。"
         ],
         "tex": "\\begin{aligned}(T_\\pi v)(s)&=\\sum_a\\pi(a\\mid s)\\sum_{s',r}p(s',r\\mid s,a)[r+\\gamma v(s')],\\\\(T_*v)(s)&=\\max_a\\sum_{s',r}p(s',r\\mid s,a)[r+\\gamma v(s')].\\end{aligned}",
-        "formulaExplanation": "策略迭代求解 v = Tπv 后改善策略；价值迭代使用 vₖ₊₁ = T*vₖ。真实终止状态的余项取零。",
+        "formulaExplanation": "策略迭代求解 $v = T_πv$ 后改善策略；价值迭代使用 $v_{k+1}=T_*v_k$。真实终止状态的余项取零。",
         "chapterIds": [
           "value",
           "control"
+        ],
+        "readings": [
+          {
+            "title": "动态规划：评价、改善与最优递推",
+            "path": "foundations/tabular/dynamic-programming/"
+          }
         ],
         "sources": [
           {
@@ -135,6 +148,12 @@
         "formulaExplanation": "下一动作要按与算法一致的时序取得。二者均需处理终止；Q-learning 的行为策略不必等于 target 中的贪心策略。",
         "chapterIds": [
           "control"
+        ],
+        "readings": [
+          {
+            "title": "TD 控制：SARSA、Expected SARSA 与 Q-learning",
+            "path": "foundations/tabular/temporal-difference/"
+          }
         ],
         "sources": [
           {
@@ -246,7 +265,7 @@
           "从这里可以理解后来的世界模型方法：模型可以是表格、神经网络或潜变量系统，规划可以是价值迭代、轨迹搜索或通过模拟经验训练策略。这些选择有共同接口，却不能只凭“用了模型”就视为同一算法。进入下一册时，应继续区分模型误差、价值误差和优化误差。"
         ],
         "tex": "\\hat y=\\hat r(s,a)+\\gamma\\sum_{s'}\\hat p(s'\\mid s,a)V(s'),\\qquad Q(s,a)\\leftarrow Q(s,a)+\\alpha[\\hat y-Q(s,a)]",
-        "formulaExplanation": "在贪心控制中可令 V(s′)=maxₐ′Q(s′,a′)。模型生成一次随机后果时用样本替代上式求和；随机模型不应仅保留最后一次观测。",
+        "formulaExplanation": "在贪心控制中可令 $V(s^{\\prime})=\\max_{a^{\\prime}}Q(s^{\\prime},a^{\\prime})$。模型生成一次随机后果时用样本替代上式求和；随机模型不应仅保留最后一次观测。",
         "chapterIds": [
           "dyna",
           "models",
@@ -280,13 +299,13 @@
   {
     "id": "deep-rl",
     "title": "现代 DRL：可学习表示与稳定控制",
-    "intro": "深度强化学习把价值、策略或模型表示为神经网络。Bellman 方程与策略目标并没有失效，但共享特征、不断变化的训练目标和策略诱导的数据分布，使表格方法的保证不能直接沿用。本册按需要解决的问题连接 DQN、actor–critic、PPO、连续控制与世界模型。",
+    "intro": "深度强化学习用神经网络表示价值、策略或模型。它与持续学习可以同时成立，也可以研究固定任务或离线数据。本册先解释 DQN、actor–critic、PPO 与连续控制的核心接口，再按部分可观测性、探索、分布、离线数据、模型、约束和多智能体等条件选择并列研究分支。",
     "outcomes": [
       "能区分 target、prediction、stop-gradient 和实际更新参数。",
       "能解释 replay、target network、Double、GAE、PPO clipping 各改变哪个环节。",
       "能把一个完整训练循环与机制小实验区分开，并定位原始实现。"
     ],
-    "bridge": "这些方法通常在指定训练预算内改善某个任务的表现。持续强化学习继续使用它们的价值与策略工具，但要进一步规定：学习状态保存多久、环境能否重置、数据是否过时，以及多年之后能否继续学。",
+    "bridge": "不必先读完所有深度研究分支才研究 CRL。选定问题后，再确定神经表示是否必要、信息与数据权限是什么，以及学习状态怎样长期保留。持续学习评价的是这些模块共同组成的完整学习器，而不只评价训练结束时的一组网络权重。",
     "sections": [
       {
         "id": "nonlinear",
@@ -373,10 +392,16 @@
           "策略梯度的采样分布依赖当前策略。对同一批旧数据无限优化 log-probability surrogate，不能保证继续沿正确的回报梯度移动。实现时还要区分用于策略梯度的回报权重和用于报告性能的 episode return。"
         ],
         "tex": "\\nabla_\\theta J=\\mathbb E_{\\tau\\sim\\pi_\\theta}\\left[\\sum_{t=0}^{T-1}\\gamma^t\\nabla_\\theta\\log\\pi_\\theta(A_t\\mid S_t)\\bigl(G_t-b(S_t)\\bigr)\\right]",
-        "formulaExplanation": "这里 J 是从固定初始分布出发的有限轨迹折扣回报，Gₜ 从时刻 t 重新计折扣。baseline 在 actor 更新中按固定数值使用；连续动作要使用联合概率密度。",
+        "formulaExplanation": "这里 J 是从固定初始分布出发的有限轨迹折扣回报，$G_t$ 从时刻 t 重新计折扣。baseline 在 actor 更新中按固定数值使用；连续动作要使用联合概率密度。",
         "chapterIds": [
           "policy",
           "control"
+        ],
+        "readings": [
+          {
+            "title": "策略梯度与优势估计的完整实现",
+            "path": "foundations/deep/policy-gradient/"
+          }
         ],
         "sources": [
           {
@@ -517,7 +542,7 @@
           "Dyna、MPC、MCTS 与 Dreamer 因此应按接口区分：Dyna 强调真实学习与模拟 backup 的结合；MPC 强调执行一小段再重规划；MCTS 把搜索预算分配到树上；Dreamer 类方法从潜在模型想象训练行为。它们可能共享部件，但不是可互换的名称。"
         ],
         "tex": "(a_0^*,\\ldots,a_{H-1}^*)\\in\\arg\\max_{a_{0:H-1}}\\mathbb E_{\\hat p}\\!\\left[\\sum_{k=0}^{H-1}\\gamma^k\\hat r_k+\\gamma^H\\hat V(z_H)\\right]",
-        "formulaExplanation": "这是有限时域 MPC 的一个形式。z 是模型状态，H 是规划长度，末端价值弥补规划截断。实际只执行 a₀，再重新估计状态并规划。",
+        "formulaExplanation": "这是有限时域 MPC 的一个形式。z 是模型状态，H 是规划长度，末端价值弥补规划截断。实际只执行 $a_0$，再重新估计状态并规划。",
         "chapterIds": [
           "dyna",
           "models",
@@ -548,7 +573,7 @@
         },
         "selfTest": {
           "question": "模型只预测下一特征的期望，能否直接用 V(E[X]) 替代 E[V(X)]？",
-          "answer": "只有特定条件下可以，例如 V 对该特征线性。若 X 等概率为 ±1，V(x)=x²，则 V(E[X])=0，而 E[V(X)]=1。"
+          "answer": "只有特定条件下可以，例如 V 对该特征线性。若 X 等概率为 ±1，$V(x)=x^2$，则 V(E[X])=0，而 E[V(X)]=1。"
         }
       },
       {
@@ -594,7 +619,7 @@
   {
     "id": "continual-rl",
     "title": "CRL：长期交互中的学习、适应与知识积累",
-    "intro": "持续强化学习不是 DQN 或 PPO 之后的一种统一更新式。它研究一个受资源限制的智能体，如何在长时间交互中持续学习并使用经验。任务切换、无重置、固定内存、可塑性和知识构建是相关但不同的问题。先明确哪些条件改变，再选择需要研究的机制。",
+    "intro": "持续强化学习研究受资源限制的完整智能体怎样在长期交互中适应环境、选择行动并积累知识。经典或深度方法都可以成为其部件。先区分运行时的智能体—世界闭环与外部设计者的奖励、初始化、调参和重置权限，再定义表现与可实现的比较者，最后选择机制。",
     "outcomes": [
       "能把“持续”写成环境、信息、reset、内存、计算与评价协议。",
       "能分开状态、预测、信用分配、流式更新和元学习，并说明它们怎样组合。",
@@ -604,16 +629,19 @@
     "sections": [
       {
         "id": "protocol",
-        "title": "1 · 从一次训练到长期学习协议",
-        "problem": "说一个任务是“持续”的时候，究竟增加了什么条件？",
+        "title": "1 · 完整学习器、目标与长期交互协议",
+        "problem": "比较的是当前策略，还是包含内部状态与更新规则的完整智能体？",
         "explanation": [
           "Continuing 指任务没有自然终点；online 指数据到来后学习；严格 streaming 通常进一步限制经验重放与逐步预算；continual 关注学习能否长期持续。这些维度互不等价。固定环境中也可能需要不断学习，分任务的基准则可能允许任意 reset。",
-          "从经典 RL 进入 CRL，先写清六项：哪些规律或任务改变，智能体能否看到变化标记，能否重置环境，哪些学习状态跨阶段保留，可用内存与计算如何随时间增长，以及最终估计什么表现。不能同时改动所有条件后只归因于一个算法部件。",
+          "比较持续学习方案时，写清六项：哪些规律或任务改变，智能体能否看到变化标记，能否重置环境，哪些内部学习状态跨阶段保留，内存与计算如何计量，以及最终估计什么表现。设计者在完整测试生命期上挑超参数，与智能体根据已到达经验更新参数，是两种不同的信息权限。",
+          "当前动作分布相同，不意味着未来学习能力相同。一个学习率为零的贪心智能体和一个持续更新的智能体可以从相同 Q 值出发，却在奖励改变后获得不同收益。价值仍可在历史和完整算法条件下定义；把历史写进状态，并不自动解决表示、覆盖与有限计算问题。",
           "长期在线效用要把学习期间的奖励也计入。平均奖励率是 continuing 问题的一种目标，折扣目标也是另一种合法选择；二者可能偏好不同策略。平均奖励的稳态存在、对初始状态的依赖和差分价值定义需要链结构条件。CRL 不要求所有任务一律改用 average reward。"
         ],
-        "tex": "J_T=\\mathbb E\\!\\left[\\frac1T\\sum_{t=0}^{T-1}R_{t+1}\\right],\\qquad \\rho_\\pi=\\lim_{T\\to\\infty}\\frac1T\\mathbb E_\\pi\\!\\left[\\sum_{t=0}^{T-1}R_{t+1}\\right]",
-        "formulaExplanation": "Jₜ 是指定有限寿命内的平均表现；ρπ 是在极限存在等条件下固定策略的长期奖励率。终点冻结策略的测试回报是第三种量。",
+        "tex": "\\begin{aligned}\\bar J_T(\\mathcal A,e)&=\\mathbb E_{\\mathcal A,e}\\!\\left[\\frac1T\\sum_{t=0}^{T-1}R_{t+1}\\right],\\\\g(\\mathcal A,e)&=\\lim_{T\\to\\infty}\\bar J_T(\\mathcal A,e)\\quad\\text{若极限存在}.\\end{aligned}",
+        "formulaExplanation": "A 包含行动规则、更新规则、内部状态与初始化；e 指定世界条件。有限生命期平均表现不要求稳态存在。一般非平稳学习过程的极限可能不存在；冻结策略的价值又是另一评价对象。",
         "chapterIds": [
+          "control",
+          "reward-design",
           "objectives",
           "average",
           "experiments"
@@ -622,12 +650,17 @@
           {
             "title": "Abel 等 · A Definition of Continual Reinforcement Learning",
             "url": "https://arxiv.org/abs/2307.11046",
-            "note": "从学习与行为类的关系定义持续学习；不把 CRL 限定为外部任务切换。"
+            "note": "相对于 agent basis 定义持续学习；不把 CRL 限定为外部任务切换。"
+          },
+          {
+            "title": "Elelimy 等 · Rethinking the Foundations for Continual Reinforcement Learning",
+            "url": "https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_243.pdf",
+            "note": "学习规则、历史依赖世界与偏离比较；与从初始世界比较总回报的含义分开。"
           },
           {
             "title": "Mesbahi 等 · Lifetime tuning is incompatible with continual reinforcement learning",
             "url": "https://proceedings.mlr.press/v267/mesbahi25a.html",
-            "note": "讨论用完整部署寿命调参的评价问题；说明开发协议为何属于 CRL 问题设定。"
+            "note": "外部设计者用完整部署寿命调参与在线因果更新的信息权限不同。"
           },
           {
             "title": "Sutton & Barto · Reinforcement Learning, 第二版",
@@ -636,14 +669,14 @@
           }
         ],
         "practice": {
-          "file": "objectives_lab.py",
-          "command": "python3 objectives_lab.py lifetime\npython3 objectives_lab.py test",
-          "check": "早期达到 .6 的策略累计回报为 6；晚期达到 1 的策略累计回报为 2，但最终冻结测试更高。",
-          "boundary": "确定性对照用于区分评价对象，不推断任何训练算法的优越性。"
+          "file": "continual_control_lab.py",
+          "command": "python3 continual_control_lab.py demo\npython3 continual_control_lab.py test",
+          "check": "相同初始贪心策略，学习率 0、0.1、1 的十步回报分别为 0、3、9；不可逆反例中从初始世界的回报差为 96，沿实际历史的局部平均差仅 .02。",
+          "boundary": "已知小世界用于检验完整学习器与不同比较标准；没有声称真实单生命期中可同时观察两个算法的反事实。"
         },
         "selfTest": {
-          "question": "两个方法最后测试回报相同，但一个前半程几乎不获奖励。若部署时训练也要付出代价，哪个指标能暴露差异？",
-          "answer": "报告整个寿命的累计或平均在线回报，并提供分窗口曲线。只看最后冻结策略会遗漏学习过程中的代价。"
+          "question": "两个智能体现在的动作分布相同，能否只用一个冻结策略价值判断未来谁更好？",
+          "answer": "不能。未来结果还依赖其更新规则、内部记忆、资源及世界条件。可以定义包含后续学习的条件价值，但不能把当前冻结策略的价值与之混为一谈。"
         }
       },
       {
@@ -771,7 +804,7 @@
       },
       {
         "id": "retention-plasticity",
-        "title": "5 · 旧知识保留与继续学习的能力",
+        "title": "5 · 知识保留与可塑性",
         "problem": "一个学了很久的网络变差，是忘记了，还是学不进了？",
         "explanation": [
           "遗忘要比较同一旧任务在新学习前后的表现。可塑性损失要比较有学习历史的网络与合适对照在同一新任务上的学习过程。两种失败可能同时发生，但测量对象不同。只报告旧任务回报，不能推断学习新任务的能力；只报告激活率，也不能替代学习曲线。",
@@ -779,7 +812,7 @@
           "一个最小诊断可以固定新任务、数据顺序、网络规模和更新预算，比较 aged、fresh 与随机替换对照。fresh 的初始化、优化器状态和超参数选择也要对齐。性能改善可能来自步长、尺度或重置优化器，不能仅凭替换神经元就归因于一种可塑性机制。"
         ],
         "tex": "F_A=J_A(\\theta_{\\rm before})-J_A(\\theta_{\\rm after}),\\qquad P_C(K)=L_C(\\theta_{\\rm aged}^{(K)})-L_C(\\theta_{\\rm fresh}^{(K)})",
-        "formulaExplanation": "Fₐ 表示旧任务收益下降；P꜀ 在匹配 K 次新任务学习后比较损失。这里用较小损失为好，正值表示 aged 学得较差；二者不能互相替代。",
+        "formulaExplanation": "$F_a$ 表示旧任务收益下降；$P_c$ 在匹配 K 次新任务学习后比较损失。这里用较小损失为好，正值表示 aged 学得较差；二者不能互相替代。",
         "chapterIds": [
           "retention",
           "plasticity"
@@ -860,7 +893,7 @@
         },
         "selfTest": {
           "question": "一个技能有时一步结束、有时三步结束。只保存平均时长，再用 γ 的平均时长次方乘终点价值，是否一般正确？",
-          "answer": "不正确。需要期望中的 γ^τ 与终点价值乘积；指数非线性，且时长可能与终点相关。正确模型保存相应的折扣终点权重。"
+          "answer": "不正确。需要期望中的 $γ^τ$ 与终点价值乘积；指数非线性，且时长可能与终点相关。正确模型保存相应的折扣终点权重。"
         }
       },
       {

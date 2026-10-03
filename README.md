@@ -2,9 +2,9 @@
 
 [![Teaching checks](https://github.com/ying-wen/continual-rl-tutorial/actions/workflows/test.yml/badge.svg)](https://github.com/ying-wen/continual-rl-tutorial/actions/workflows/test.yml)
 
-从表格预测与控制出发，经过函数逼近和深度强化学习，进入持续学习的目标、状态、知识、信用、技能与规划。
+从智能体与世界的持续交互出发，区分外部设计者提供的奖励、任务与资源。表格算法、函数逼近和深度 RL 提供工具；持续学习研究完整学习器怎样长期有效地适应。它们不是互相替代的问题类别。
 
-**19 章基础分册 · 22 章 CRL 教材 · 8 课导论 · 配套实现、数值检查与实验手册**
+**26 章基础分册 · 23 章 CRL 教材 · 8 课导论 · 配套实现、数值检查与实验手册**
 
 [在线阅读](https://yingwen.io/zh/continual-rl/) · [基础目录](foundations/README.md) · [CRL 教材](textbook/README.md) · [实验与代码](docs/experiments.md) · [研究问题](docs/research-atlas.md)
 
@@ -17,11 +17,15 @@ Tutorials are currently in Chinese. Original code is MIT; original tutorial text
 | 认识状态、动作、奖励 | [表格方法 / Part I](foundations/tabular/README.md) | 从回报写出 Bellman 关系，区分预测、控制和规划，实现更新并核对数值 |
 | 学过 Sutton Part I | [函数逼近 / Part II](foundations/approximation/README.md) | 区分真梯度与半梯度，解释投影、离策略不稳定、资格迹和策略梯度 |
 | 能运行 DQN 或 PPO | [现代 DRL](foundations/deep/README.md) | 追踪 target、梯度、数据与状态的完整时序，检查训练与算法公式是否对应 |
-| 准备做 CRL 研究 | [22 章教材](textbook/README.md) → [研究地图](docs/research-atlas.md) → [实验手册](docs/experiment-handbook.md) | 为一个机制提出竞争解释，建立对照，保留完整运行并界定结论 |
+| 准备做 CRL 研究 | [整体问题与不同观点](docs/field-framework.md) → [23 章教材](textbook/README.md) → [研究地图](docs/research-atlas.md) → [实验手册](docs/experiment-handbook.md) | 为一个机制提出竞争解释，建立对照，保留完整运行并界定结论 |
 
 Part II 不是可选的深度学习附录。状态共享参数之后，表格方法的保证不再自动成立。线性预测、特征构造、平均奖励、离策略方法、资格迹与策略梯度构成后续章节的共同基础。
 
 每章按问题设定、必要符号、推导、执行顺序、数值例、实现、限制和练习组织。原论文与作者代码放在正文之后，供进一步核对。正文为原创解释，不是 Sutton 教材或 Spinning Up 的翻译复制。
+
+深度分册含六章核心算法与七条并列分支：部分可观测、探索、价值分布、离线数据、模型、约束和多智能体。按研究需要选择，不必全部依次学完。
+
+[奖励假设与奖励设计](textbook/reward-design.md) 区分表达能力、塑形、偏好学习与安全约束。[持续控制](textbook/control.md) 进一步区分固定策略价值与整个学习生命期的评价。[近期研究](docs/recent-research.md) 按问题连接原论文、条件和作者实现。
 
 ## 先运行数值与实现检查
 

@@ -164,17 +164,20 @@ def option_episode_target(rewards, gamma, endpoint, n_states):
 
 
 def model_td_update(reward_model, endpoint_model, state, next_state, reward,
-                    beta_next, alpha=0.1, gamma=0.9, rho=1.0):
+                    beta_next, alpha=0.1, gamma=0.9, rho=1.0, terminal=False):
     """Fixed option; n is a discounted endpoint distribution, not normalized.
 
-    A terminal environment state can be represented explicitly with V=0 and
-    beta=1. All right-hand sides use pre-update values (self-loops included).
+    True environment termination forces stopping, independently of beta.
+    The explicit terminal endpoint has V=0 during planning; its discounted
+    probability mass is retained. A rollout cutoff is not true termination.
+    All right-hand sides use pre-update values (self-loops included).
     """
     old_reward, next_reward = reward_model[state], reward_model[next_state]
     old_row, next_row = endpoint_model[state][:], endpoint_model[next_state][:]
-    r_target = reward + gamma * (1.0 - beta_next) * next_reward
-    p_target = [gamma * (beta_next * float(j == next_state)
-                        + (1.0 - beta_next) * next_row[j])
+    stop = 1.0 if terminal else beta_next
+    r_target = reward + gamma * (1.0 - stop) * next_reward
+    p_target = [gamma * (stop * float(j == next_state)
+                        + (1.0 - stop) * next_row[j])
                 for j in range(len(old_row))]
     reward_model[state] = old_reward + alpha * rho * (r_target - old_reward)
     endpoint_model[state] = [v + alpha * rho * (target - v)
@@ -506,6 +509,31 @@ class MechanismTests(unittest.TestCase):
         self.assertAlmostEqual(result[0],math.log(1.6))
         self.assertAlmostEqual(result[1],math.log(2))
 
+    def test_full_termination_gradient_uses_discounted_arrivals(self):
+        # One continuing state, two options, fixed high-level policy (1/2,1/2).
+        # Option rewards are 0 and 1. Only option 0's stop logit is varied.
+        gamma, beta1, logit = .9, .3, .2
+        def solve2(a, b, c, d, x, y):
+            det = a*d-b*c
+            return ((d*x-b*y)/det, (a*y-c*x)/det)
+        def values(h):
+            beta0 = sigmoid(h)
+            # I - gamma * option transition matrix under call-and-return.
+            a, b = 1-gamma*(1-beta0/2), -gamma*beta0/2
+            c, d = -gamma*beta1/2, 1-gamma*(1-beta1/2)
+            q0, q1 = solve2(a,b,c,d,0,1)
+            # Discounted occupancy before action, starting with option 0.
+            occupancy0, _ = solve2(a,c,b,d,1,0)
+            return q0,q1,occupancy0
+        q0,q1,occupancy0 = values(logit)
+        beta0 = sigmoid(logit)
+        advantage0 = q0-(q0+q1)/2
+        gradient = -gamma*occupancy0*beta0*(1-beta0)*advantage0
+        eps = 1e-5
+        numeric = (values(logit+eps)[0]-values(logit-eps)[0])/(2*eps)
+        self.assertAlmostEqual(gradient,numeric,places=7)
+        self.assertGreater(abs(gradient/gamma-numeric),1e-3)
+
     def test_episode_model(self):
         r,p=option_episode_target([1,2],.9,2,3)
         self.assertAlmostEqual(r,2.8)
@@ -525,6 +553,20 @@ class MechanismTests(unittest.TestCase):
         model_td_update(r,p,0,0,2,.2,alpha=.5)
         self.assertAlmostEqual(r[0],1+.5*(2+.9*.8-1))
         self.assertAlmostEqual(p[0][0],.5+.5*(.9*(.2+.8*.5)-.5))
+
+    def test_model_true_terminal_overrides_option_beta(self):
+        r=[0.0,5.0];p=[[0.0,0.0],[3.0,4.0]]
+        target,end=model_td_update(r,p,0,1,1.0,0.0,alpha=1.0,terminal=True)
+        self.assertEqual(target,1.0)
+        self.assertEqual(end,[0.0,.9])
+        self.assertEqual(r[0],1.0)
+        self.assertEqual(model_backup(r[0],p[0],[10.0,0.0]),1.0)
+
+    def test_model_rollout_cutoff_keeps_continuation(self):
+        r=[0.0,5.0];p=[[0.0,0.0],[0.0,.5]]
+        target,end=model_td_update(r,p,0,1,1.0,0.0,alpha=1.0,terminal=False)
+        self.assertEqual(target,5.5)
+        self.assertEqual(end,[0.0,.45])
 
     def test_random_duration_joint(self):
         r,p=mixed_duration_model([(.5,[0],0),(.5,[0,0,0],1)],.9,2)

@@ -8,6 +8,84 @@
 - 在流式协议中实现 TD(λ)，检查痕迹与终止时序；将时间信用分配与更新稳定性分开分析。
 - 推导并比较 ObGD、StreamingOptimizer 与 Intentional Updates 的尺度机制、保证范围和失败条件。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+每次真实经验到来后及时学习，不重放历史转移，持久内存和每步计算有明确预算；该协议独立于是否允许环境重置。
+
+### 给定条件与符号
+
+- 基础预测或控制目标、新经验因果流、持久字节预算和单步时间预算。
+- 网络、资格迹、尺度统计与更新控制器；真实终止清理规则。
+
+### 需要求解的对象
+
+满足协议且可持续执行的学习更新；更新尺度局部可检查，长期预测或控制质量另行评价。
+
+### 信息与数据权限
+
+允许保存参数、优化器状态、资格迹和在线统计，不保存供再次训练的历史转移。当前奖励统计、目标计算与更新顺序都需明确。
+
+$$
+M_t=U(M_{t-1},\xi_t),\qquad \operatorname{bytes}(M_t)\le B,\qquad C_t\le C_{\max}
+$$
+
+$\xi_t$ 是刚收到的经验，$M_t$ 是全部持久学习状态，$U$ 是更新映射，$B$ 为内存预算；$C_t$ 是包括动作选择、学习与规划的本步总计算，$C_{\max}$ 为上限。历史转移不得被重取训练。基础任务目标沿用预测或控制规格，这些资源约束不是新的奖励函数。
+
+### 成立条件与解的含义
+
+- 预算包含网络、优化器、迹和统计；batch size、无GPU或常数缓存大小不单独证明协议。
+- 局部输出线性化、范数代理和逐坐标位移界的前提分别声明；终止不自动清除长期尺度统计。
+
+判断准则：日志证明每条转移使用权限与延迟，持久内存不随寿命增长；手算更新/尺度边界正确；长期实验报告非有限更新、恢复及外部收益，参数位移界不替代收益。
+
+### 适用边界
+
+- 小参数更新不保证TD误差下降、策略改善或单生命期安全。
+- 不把观测归一化和自适应统计当作无成本且不影响函数的预处理。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 改变信息或数据协议 · [时间信用分配与资格迹](credit.md)：流式预算允许迹这种统计机制，却限制长窗口、重放和完整反传。
+
+- 组合不同学习问题 · [元学习与学习规则的适应](meta.md)：预设尺度控制可逐步执行；依据后续表现学习规则还需额外敏感度和资源。
+
+- 改变信息或数据协议 · [持续控制与学习智能体比较](control.md)：完整控制比较需加入流式资源约束；无重置与无重放是两项独立权限。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+没有回放可反复纠正当前过冲；奖励、特征和迹尺度变化会放大单步更新。
+
+### 本章的核心思路
+
+用可递推统计保留信用并按声明的局部尺度限制更新，分别检验协议和任务表现。
+
+1. [以迹替代保存训练历史](streaming.md#lesson-derive)：因为预算禁止重取转移，资格迹保存过去方向统计并在新误差到来时更新。
+
+2. [定位尺度与过冲](streaming.md#lesson-scale)：因为同一名义步长随特征尺度产生不同输出变化，先在线性例上推有效步长，再辨认ObGD的范数代理条件。
+
+3. [选择可检查的尺度控制器](streaming.md#lesson-current-streamx)：因为整体代理与逐坐标边界处理的量不同，对照2026控制器的参数位移界与Intentional Updates的输出线性化。
+
+4. [按输出变化解释学习尺度](streaming.md#lesson-output-steps)：因为参数步长未直接指定预测改变，Intentional方法利用梯度内积决定局部尺度，非线性与统计近似仍需测量。
+
+结论与条件：有限增量和正稳定项下可检验逐坐标位移界；线性固定标签的输出关系只约束本次更新。Stream-X/Intentional深度组合不提供无条件长期收敛。
+
+### 相关方法改变了什么
+
+- ObGD：以TD误差与迹范数做廉价整体缩放，依赖代理尺度解释。
+
+- 逐坐标StreamingOptimizer：用衰减最大增量提供坐标位移边界，不保证输出收缩。
+
+- Intentional Updates：按局部输出变化选尺度，含预条件、迹和在线平均近似。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -439,7 +517,7 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 - 为何一个方法没有 buffer，却可能不满足固定预算？答：RTRL 的敏感性矩阵、长历史重算或无界模型增长可能消耗随规模增长的内存和时间。
 - 能否用归一化证明长期稳定？答：归一化只控制部分尺度，目标漂移、off-policy 投影、非线性与策略反馈仍然存在。
 
-动手题：在两步链加入第三个延迟状态，手算起点更新为 α(γλ)²；再将特征整体乘 10，比较固定 α、按平方缩放 α 与 ObGD。将同一样本误差改变量和长期预测误差分开画，观察它们何时不一致。
+动手题：在两步链加入第三个延迟状态，手算起点更新为 $α(γλ)^2$；再将特征整体乘 10，比较固定 α、按平方缩放 α 与 ObGD。将同一样本误差改变量和长期预测误差分开画，观察它们何时不一致。
 
 ## 本章的实验设计
 
@@ -462,6 +540,408 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 在线交互不等于严格 streaming。必须分别说明回放、批量、每步计算与持久存储。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-streaming) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=streaming) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=streaming)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+
+- [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
+- [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
+- [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
+
+#### 时间信用分配与离策略多步学习
+
+当前反馈如何修正过去的决策与预测，哪些历史信息可以压缩成迹？
+
+前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。
+
+- [Deep Reinforcement Learning with Gradient Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces)
+- [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Streaming Deep Reinforcement Learning Finally Works](https://yingwen.io/zh/continual-rl/research/#recent-stream-x)
+- [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+- [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+- [Deep Reinforcement Learning with Gradient Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces)
+- [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
+- [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
+- [Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-upgd-utility-protection)
+
+#### 新学习能力、知识保留与负迁移
+
+学得慢是失去学习能力、旧知识有害，还是必须保护的知识发生干扰？
+
+可塑性看新知识能否学会，保留看旧能力是否下降，负迁移看过去学习是否使新任务差于从头学习。网络回收、函数正则、双学习器和预训练适配对应不同机制，不应只用一个平均回报解释全部现象。
+
+- [Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-upgd-utility-protection)
+
+#### 学习规则本身的适应
+
+谁在调整学习过程，依据哪些经验，付出多少外部训练成本？
+
+在线步长元梯度、跨任务算法发现、知识整合与局部更新控制并非同一设定。逐项写清智能体内部的更新、设计者的预训练和调参，以及测试时仍能变化的量，才能判断真正的适应来自哪里。
+
+- [Step-size Optimization for Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-step-size-optimization)
+- [Learning from experience instead of curated datasets](https://yingwen.io/zh/continual-rl/research/#recent-oak-network-idbd)
+- [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+
+### Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks
+
+Khurram Javed, Haseeb Shah, Richard S. Sutton, Martha White
+
+JMLR 24 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+如果每次观测只处理一次，如何学习包含历史信息的状态，而不保存一段序列做反向传播？
+
+#### 关键机制
+
+一般递归网络的实时递归学习需要维护庞大的参数—状态敏感度。CCN 限制列之间的递归依赖，并逐步构造新特征，使敏感度可以局部计算。它通过改变网络结构和构造过程降低求导成本，而不是把任意稠密 RNN 的完整导数免费变小。
+
+#### 证据
+
+论文分析受限结构的计算性质，并在动物学习启发的预测问题和 Atari 策略评价中检验预测效率。这里的 Atari 结果主要是预测已有策略的回报，不等于从头训练完整控制智能体。
+
+#### 条件与限制
+
+结构约束、构造顺序和被冻结的旧特征共同限制函数类。监督预测和策略评价上的优势，还需要在会主动改变数据分布的控制闭环中检验。
+
+#### 阅读与实验
+
+先写出递归状态对参数的敏感度递推，再检查哪些跨列项被结构消除。比较 CCN、截断 BPTT 与 RTU 时，同时计入状态、梯度缓存和每步计算。
+
+#### 原文与相关入口
+
+- [JMLR 原文与论文入口](https://www.jmlr.org/papers/v24/23-0367.html)：从网络结构、敏感度传播与预测实验三部分阅读。
+
+### Real-Time Recurrent Learning using Trace Units in Reinforcement Learning
+
+Esraa Elelimy, Adam White, Michael Bowling, Martha White
+
+NeurIPS 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+递归状态既要保存长时信息，又要在在线强化学习中以可控成本更新，怎样设计其递归结构？
+
+#### 关键机制
+
+RTU 使用有结构的递归连接，并维护状态关于参数的在线敏感度。复杂的递归动力学可以用实值运算实现。其关键是让状态更新与梯度迹具有相容的计算结构，减少一般 RTRL 的高阶成本；这与仅给 TD 误差加一条资格迹不同。
+
+#### 证据
+
+论文在部分可观测任务中与常见递归网络比较预测与控制表现。作者代码包含 RTU、其他递归基线、实时 actor–critic 以及部分可观测环境配置。
+
+#### 条件与限制
+
+计算优势依赖特定递归参数化，不能外推为任意记忆问题上的表达能力优势。PPO 版本和严格逐步更新版本的经验协议不同，应分别比较。
+
+#### 阅读与实验
+
+在同一部分可观测任务中固定隐状态维度，再比较完整运行内存和每步更新时间。检查 actor、critic 与递归状态的参数更新是否共享同一条敏感度。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/hash/1e616bde0438cb10cb6adf076ae7d336-Abstract-Conference.html)：结构、在线导数与实验协议。
+- [作者代码](https://github.com/esraaelelimy/rtus)：从 src/nets、src/agents 和实验配置追踪递归状态到控制更新。
+
+#### 作者代码
+
+[论文作者维护的实现。](https://github.com/esraaelelimy/rtus)
+
+RTU 网络、实时学习器与论文实验配置。
+
+### Deep Reinforcement Learning with Gradient Eligibility Traces
+
+Esraa Elelimy, Brett Daley, Andrew Patterson, Marlos C. Machado, Adam White, Martha White
+
+RLC 2025 / RLJ · 2025 · 支持方法与理论
+
+#### 研究问题
+
+资格迹怎样与明确的梯度目标结合，而不是直接把线性半梯度规则搬到深度网络？
+
+#### 关键机制
+
+论文从广义投影 Bellman 误差出发构造多步目标，推导带资格迹的梯度学习方法。前向视角连接多步回报与经验重放，后向视角通过递推迹分配信用。目标函数、辅助估计器和迹的更新共同决定算法，不只是选择一个较大的 λ。
+
+#### 证据
+
+作者给出多种算法并在 MuJoCo、MinAtar 等任务中比较。代码同时提供相关梯度算法与实验设置，可以把推导中的量映射到实际更新。
+
+#### 条件与限制
+
+线性 GTD 的收敛条件不能自动赋予非线性实现全局收敛保证。重放版本与流式版本的数据使用预算也不能混为一谈。
+
+#### 阅读与实验
+
+从一段短轨迹分别计算前向多步目标和后向迹。随后对照原代码检查辅助网络、目标与主网络参数使用的是更新前还是更新后的值。
+
+#### 原文与相关入口
+
+- [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_302.pdf)：目标、算法推导与实验。
+- [作者算法库](https://github.com/esraaelelimy/gtd_algos)：论文提供的梯度 TD 与资格迹实现。
+
+#### 作者代码
+
+[原论文链接的作者仓库。](https://github.com/esraaelelimy/gtd_algos)
+
+论文梯度算法、资格迹和实验配置。
+
+### Streaming Deep Reinforcement Learning Finally Works
+
+Mohamed Elsayed, Elena Sorina Lupu, Gautham Vasan, A. Rupam Mahmood
+
+arXiv（2024 首稿；2026 v3） · 2026 · 直接研究持续学习
+
+#### 研究问题
+
+不保存经验重放、不使用目标网络或训练批次时，深度 RL 能否逐步稳定学习？
+
+#### 关键机制
+
+Stream-X 把信号归一化、表示初始化、资格迹和受控更新尺度组织为一组流式学习方法。各组件处理的是不同问题：奖励尺度、激活与梯度传播、延迟信用，以及一次更新造成的输出变化。去掉重放并不意味着这些问题会自动消失。
+
+#### 证据
+
+2026 年第三版扩展到 Atari、控制与机器人等实验，并包含持续变化设置。论文和代码经历过版本变化，比较结果时需要同时标明论文版本和算法实现。
+
+#### 条件与限制
+
+广泛任务上的流式可行性不等于所有非平稳问题都已解决。不能把旧版较弱 Adam 基线推广成对所有流式 Adam 方法的否定；后续研究专门检验了这一点。代码许可证也应独立于本教材许可证处理。
+
+#### 阅读与实验
+
+按归一化、资格迹、更新控制分别做消融，并保持每步算力一致。先验证严格一次使用经验，再研究长期变化，而不是仅把小批量大小改成一。
+
+#### 原文与相关入口
+
+- [2026 年第三版论文](https://arxiv.org/abs/2410.14606v3)：作者名单、任务范围与算法版本以该版为准。
+- [作者代码版本](https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b)：固定实现版本，避免把不同年份的更新规则混在一起。
+
+#### 作者代码
+
+[原作者仓库的固定版本。](https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b)
+
+Stream-X 算法、变换、优化器及实验；使用前阅读仓库许可证。
+
+### Intentional Updates for Streaming Reinforcement Learning
+
+Arsalan Sharifnassab, Mohamed Elsayed, Kris De Asis, A. Rupam Mahmood, Richard S. Sutton
+
+ICML 2026 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+能否先规定本次更新应产生多大作用，再反推合适的参数更新尺度？
+
+#### 关键机制
+
+Intentional 方法以局部线性近似连接参数变化和预测变化。critic 以减少一定比例的 TD 误差为目标，actor 控制策略输出变化的局部代理量；再结合资格迹和逐坐标尺度，求出这一次更新的强度。这是有目标的局部更新控制，不是对长期表现求导的元梯度。
+
+#### 证据
+
+论文给出推导和流式控制比较，ICML 2026 正式论文入口与作者实现均可用。实现将优化器与 actor–critic 交互区分开，便于检查更新时序。
+
+#### 条件与限制
+
+Taylor 近似在大更新时可能失准。采样动作上的对数概率变化不等于精确的全分布 KL 上界；熵项与 TD 误差符号也必须按原算法处理。
+
+#### 阅读与实验
+
+在一次更新前后直接测量预测变化，并与线性估计比较。分别测试正、负 TD 误差和很小梯度的情形，不要只检查参数是否有限。
+
+#### 原文与相关入口
+
+- [ICML 2026 原文](https://proceedings.mlr.press/v306/sharifnassab26a.html)：正式会议版本与更新意图的定义。
+- [作者实现](https://github.com/sharifnassab/Intentional_RL)：重点对照 optimizer.py 与 intentional_ac.py。
+
+#### 作者代码
+
+[原论文作者提供的实现。](https://github.com/sharifnassab/Intentional_RL)
+
+Intentional 更新与流式 actor–critic。
+
+### Revisiting Adam for Streaming Reinforcement Learning
+
+Florin Gogianu, Luțu Adrian-Cătălin, Razvan Pascanu
+
+RLC 2026 / RLJ 预会议版 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+流式 RL 的不稳定来自 Adam 本身，还是目标导数、方差与超参数的组合？
+
+#### 关键机制
+
+论文重新分析自适应更新的信噪比，将 Adam 的稳定项与目标导数尺度联系起来，并研究有界导数的回报分布学习及多步更新。它改变的是目标与更新的配合，而非简单沿用批量训练时的默认配置。
+
+#### 证据
+
+作者在大规模 Atari 流式实验中展示了具有竞争力的结果，并重新比较早期流式方法。正式 RLJ 入口收录为 RLC 2026 预会议论文。
+
+#### 条件与限制
+
+主体实验采用经典回合式 Atari 的流式学习协议，不是任意非平稳终生适应的证据。这些结果也不否定归一化、资格迹或更新约束在其他任务中的价值。版本、调参预算和目标分布必须对齐。
+
+#### 阅读与实验
+
+建立二维对照：固定目标换优化器，固定优化器换目标。将调参种子与最终测试分开，再判断改进来自哪一个因素。
+
+#### 原文与相关入口
+
+- [RLC 2026 论文入口](https://rlj.cs.umass.edu/2026/papers/Paper131.html)：会议收录信息与论文。
+- [作者预印本](https://arxiv.org/abs/2605.06764)：Adam 尺度分析、回报分布目标与实验协议。
+
+### Step-size Optimization for Continual Learning
+
+Thomas Degris, Khurram Javed, Arsalan Sharifnassab, Yuxin Liu, Richard S. Sutton
+
+arXiv 预印本 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+误差变大时，应该减小步长过滤噪声，还是增大步长追踪真实变化？
+
+#### 关键机制
+
+论文区分梯度归一化与步长优化。IDBD 类方法以 $\alpha_i=\exp(\beta_i)$ 保证步长为正，并用权重对过去步长的敏感度估计改变 $\beta_i$ 是否有利。持续学习中，静止的无关方向适合很小步长，而持续变化的有用方向需要保留追踪能力。
+
+#### 证据
+
+作者用权重翻转和带噪追踪等线性学习问题比较机制，显示相似的误差幅度可以要求相反的步长反应。
+
+#### 条件与限制
+
+这些可分析任务不是深度控制上的普适优越性证据。元步长、近似敏感度与输入尺度仍会影响结果；步长自适应并没有消除全部外部设计参数。
+
+#### 阅读与实验
+
+分别增加观测噪声和目标漂移速度，检查步长是否采取不同反应。若只记录平均误差，就看不到噪声过滤与追踪之间的区别。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2401.17401)：步长优化与归一化的对照实验。
+
+### Learning from experience instead of curated datasets
+
+Oak Lab
+
+Oak Lab 技术博文 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+有用信号稀疏且大量输入是噪声时，在线学习规则如何分配不同方向的更新能力？
+
+#### 关键机制
+
+博文从含稀有有效特征的线性预测问题出发，对比统一步长与 IDBD 的逐权重适应，再展示 NetworkIDBD 在非线性带噪观测中的例子。核心主张是让长期学习效果影响信用和步长分配，而不只依据当前梯度幅度归一化。
+
+#### 证据
+
+公开页面提供受控噪声特征任务和 NoisyMNIST 示例。它们是机制演示，便于理解有效信号密度与输入规模的关系。
+
+#### 条件与限制
+
+该页面不是完整 CRL 控制论文，也未给出可直接复现所有图表的完整代码和算法推导。监督噪声任务的结果不能证明一般 SGD 或所有深度 RL 都无法从经验学习。
+
+#### 阅读与实验
+
+先复现线性噪声特征问题，分开改变有效特征稀疏度与噪声维数。进入控制前，再加入策略改变数据分布这一因素。
+
+#### 原文与相关入口
+
+- [Oak Lab 原始博文](https://oaklab.ai/posts/learning-from-experience-instead-of-curated-datasets)：2026 年 7 月 13 日；受控实验、NetworkIDBD 示例与研究动机。
+
+### Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning
+
+Mohamed Elsayed, A. Rupam Mahmood
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同一网络里，哪些方向应当保护，哪些方向应当获得更强的新学习与扰动？
+
+#### 关键机制
+
+UPGD 用移除权重或特征的反事实损失变化定义效用，并以 Taylor 近似在线估计。平滑、缩放后的效用同时调制梯度与随机扰动，让近期高效用方向变化较小、低效用方向更活跃。
+
+#### 证据
+
+主体证据包括未知边界的非平稳流式监督任务；另外包含长时间 PPO 实验。两类证据应分别理解，不能把监督任务数量写成 RL 任务覆盖。
+
+#### 条件与限制
+
+近期分布上的效用不保证稀有旧知识的重要性；一阶和二阶近似、权重级和特征级版本不同。PPO 仍使用 rollout 与重复更新，不因 optimizer 在线就成为严格流式 RL。
+
+#### 阅读与实验
+
+用可精确消融的小网络检查效用估计，再拆开保护梯度、保护噪声和 weight decay 三种作用；独立报告新学习与旧功能。
+
+#### 原文与相关入口
+
+- [ICLR 2024 原文](https://proceedings.iclr.cc/paper_files/paper/2024/file/8e5f0591943d8dae5702af12dcdcd2f6-Paper-Conference.pdf)：效用定义、近似、不同 UPGD 变体与 PPO 实验。
+- [作者预印本](https://arxiv.org/abs/2404.00781)：流式监督协议与 RL 证据范围。
+
+#### 作者代码
+
+[论文首页明确链接的作者仓库；README 的短实现是一个指定变体。](https://github.com/mohmdelsayed/upgd)
+
+权重/特征效用实验、流式任务及 PPO 实现。
+
+### Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning
+
+Noah Farr, Aryaman Reddi, Carlo D’Eramo, Jan Peters
+
+arXiv预印本（2026-07-07 v2） · 2026 · 支持方法与理论
+
+#### 研究问题
+
+严格逐步更新的智能体怎样同时学习递归记忆、分配延迟信用并控制计算？
+
+#### 关键机制
+
+将RTU结构的RTRL敏感度接入QRC与流式actor–critic。敏感度给出当前输出对记忆参数的导数，资格迹再组合过去输出的回报信用；两条递推保持分工。
+
+#### 证据
+
+v2在MemoryChain、五项POPGym和masked MuJoCo上报告5-seed结果，另用KMemoryChain比较在线敏感度与当前参数重算参考，并检验Taylor修正。
+
+#### 条件与限制
+
+masked MuJoCo仍落后批量PPO。固定参数精确RTRL不代表在线变参敏感度始终等于当前参数重算；诊断保存整个episode，须计为额外评价资源。尚未确认作者公开代码。
+
+#### 阅读与实验
+
+在相同递归容量下独立改变记忆跨度、回报λ与参数步幅，同时测敏感度误差和回报。诊断改善不能单独当作控制改进证据。
+
+#### 原文与相关入口
+
+- [2026年v2原文](https://arxiv.org/html/2605.24709v2)：方法、5-seed实验、masked MuJoCo负边界与staleness诊断。
+
 
 <a id="chapter-code"></a>
 

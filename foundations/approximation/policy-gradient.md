@@ -8,6 +8,78 @@
 - 证明动作无关基线不改变梯度，并定位 critic 引入的偏差。
 - 区分普通梯度、自然梯度以及平均奖励目标的采样权重。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+用可微随机策略直接参数化动作分布，不通过对动作价值取最大值间接改变行为。
+
+### 给定条件与符号
+
+- 状态 $s\in\mathcal S$、动作 $a\in\mathcal A$；转移与奖励核 $p(s^{\prime},r\mid s,a)$。
+- 初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\le\gamma<1$；$J(\pi)=\mathbb E_{d_0,\pi,p}[\sum_{t\ge0}\gamma^tR_{t+1}]$。
+- 策略 $\pi_\theta(a\mid s)$、参数 $\theta$；完整轨迹或 on-policy 多步样本。
+
+### 需要求解的对象
+
+构造 $\nabla_\theta J(\pi_\theta)$ 的可用估计，并说明基线和 critic 如何改变估计性质。
+
+### 信息与数据权限
+
+无需知道或微分环境核；需要策略概率及其对参数的导数。
+
+$$
+\max_\theta J(\pi_\theta),\qquad \nabla_\theta J=\mathbb E\!\left[\sum_{t\ge0}\gamma^t\nabla_\theta\log\pi_\theta(A_t\mid S_t)\,G_t\right]
+$$
+
+$G_t$ 是从时刻 t 起的折扣回报。式中外层折扣对应初始状态分布下的目标；不能随意删掉再声称仍是同一精确梯度。
+
+### 成立条件与解的含义
+
+- 允许交换微分与积分；策略支持与光滑性满足推导条件。
+- 动作无关且在给定状态下适当处理的基线不改变 score 期望；有偏 critic 不因此无偏。
+
+判断准则：在可枚举轨迹上将估计器期望与有限差分梯度比较，再测量方差。
+
+### 适用边界
+
+- 随机梯度上升必然找到全局最优策略。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 特例：增加条件 · [策略梯度与 actor–critic](../../textbook/policy.md)：本章聚焦基础 score-function 梯度与完整 on-policy 回报；相关章还组合 actor–critic 与 PPO。那些后续近似不是本章精确梯度恒等式的前提。
+
+- 改变评价目标 · [平均奖励与差分价值](../../textbook/average.md)：本章采用初始分布下的折扣目标；相对平均奖励梯度，其占用权重和价值对象不同。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+动作改变未来分布，而环境通常不可微；完整回报又可能噪声很大。
+
+### 本章的核心思路
+
+对轨迹概率求导，用 score-function 把不可微环境留在采样过程中，再用基线和 critic 控制方差。
+
+1. [从概率乘积导出梯度](policy-gradient.md#lesson-derive)：先得到完整表达，再用因果性去掉动作无法影响的过去奖励。
+
+2. [分开方差缩减与预测近似](policy-gradient.md#policy-baseline)：基线消去恒等式有明确条件，TD critic 的偏差需要另行分析。
+
+3. [实现时固定采样与更新关系](policy-gradient.md#policy-algorithm)：采样策略、回报计算和参数更新时间必须与估计器声明一致。
+
+结论与条件：无偏梯度估计的条件不等于非凸优化的全局收敛保证。
+
+### 相关方法改变了什么
+
+- REINFORCE / actor–critic：前者使用采样未来，后者用价值预测替代部分未来。
+
+- 普通 / 自然梯度：改变参数空间的步进几何，不改变期望回报定义。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -238,6 +310,8 @@ python3 examples/approximation_textbook_lab.py test
 - critic 只用于 MC 基线，与用 TD 替换回报有何不同？答案：前者可只改变方差，后者通常还引入 bootstrap 近似偏差。
 - 自然梯度方向为何不保证每一步收益上升？答案：推导使用局部线性目标与局部二次 KL，有限步长和估计误差可能使近似失效。
 
+
+
 <a id="chapter-code"></a>
 
 ## 下载与运行
@@ -264,6 +338,10 @@ python3 examples/approximation_textbook_lab.py test
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
+
+本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+[领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 
 - [策略梯度与 actor–critic](../../textbook/policy.md)
 - [最大熵控制](../../textbook/soft-control.md)

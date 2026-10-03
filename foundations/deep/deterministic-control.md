@@ -8,6 +8,78 @@
 - 推导确定性 actor 的链式梯度。
 - 写出 TD3 双 critic、延迟更新与平滑目标的完整次序。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+动作是连续向量，无法像离散 Q-learning 那样枚举所有动作来最大化价值。
+
+### 给定条件与符号
+
+- 状态 $s\in\mathcal S$、动作 $a\in\mathcal A$；转移与奖励核 $p(s^{\prime},r\mid s,a)$。
+- 初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\le\gamma<1$；$J(\pi)=\mathbb E_{d_0,\pi,p}[\sum_{t\ge0}\gamma^tR_{t+1}]$。
+- 确定性 actor $a=\mu_\theta(s)$，critic $Q_\phi(s,a)$，replay 状态分布 $d_{\mathcal D}$。
+
+### 需要求解的对象
+
+同时学习动作价值和近似最大化它的连续动作函数。
+
+### 信息与数据权限
+
+训练数据由带探索噪声的行为产生；actor 的导数使用 critic，不使用真实环境导数。
+
+$$
+L_{\rm actor}(\theta)=-\mathbb E_{s\sim d_{\mathcal D}}[Q_\phi(s,\mu_\theta(s))]
+$$
+
+这是固定 critic 与 replay 分布下的实际 actor surrogate。它与完整 on-policy 收益梯度的关系需要分布及 critic 正确性条件，不能省略这一步。
+
+### 成立条件与解的含义
+
+- 动作和 critic 对动作可微，动作边界处理明确。
+- 行为需提供足够局部动作覆盖；函数近似与 bootstrap 可能放大误差。
+
+判断准则：验证动作梯度、target noise、更新频率，再检查真实收益与过估计，而不是仅看 actor loss。
+
+### 适用边界
+
+- 保证 actor 找到 critic 的全局动作最大值，或 critic 准确描述未覆盖动作。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 限制表示或采用近似 · [持续控制与学习智能体比较](../../textbook/control.md)：本章限制为确定性 actor，并用可微近似 critic 搜索连续动作；这是控制的表示与求解近似，不是离散 DQN 的特例。
+
+- 改变评价目标 · [最大熵控制](../../textbook/soft-control.md)：本章优化外部奖励而不含策略熵；相对最大熵控制，去掉熵项改变目标，不只是改变行为噪声。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+actor 会主动寻找 critic 估计高的位置，因此可能利用 critic 的误差。
+
+### 本章的核心思路
+
+通过可微 critic 给 actor 方向，再限制目标过估计和过快策略反馈。
+
+1. [明确链式梯度的对象](deterministic-control.md#lesson-derive)：梯度经动作进入 critic，不穿过未知环境。
+
+2. [稳定 critic 的回归参照](deterministic-control.md#lesson-target)：DDPG 使用缓慢目标网络，区分当前优化与目标构造。
+
+3. [分别限制三种反馈问题](deterministic-control.md#lesson-td3)：TD3 的双 critic、平滑目标和延迟 actor 更新有不同作用。
+
+结论与条件：确定性策略梯度定理不等于任意 replay 和近似 critic 下的无偏实现。
+
+### 相关方法改变了什么
+
+- DDPG / TD3：TD3 改变目标估计、目标动作扰动和 actor 更新频率。
+
+- 行为探索噪声 / target smoothing：前者改变真实采样，后者改变 critic 的训练目标。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -219,7 +291,9 @@ def td3_update(actor, q1, q2, target_actor, target_q1, target_q2,
 - 问：DDPG critic loss 中也更新 actor 会怎样？答：actor 会沿着降低拟合误差而不是提高 Q 的方向改变 target，失去指定更新的含义。
 - 问：TD3 的两个 critic 一致就表示可信么？答：不表示。相同数据和相似函数类可以产生相关错误。
 - 问：探索噪声与 target smoothing 可以共享同一随机样本吗？答：标准机制不要求共享；前者发生在真实行为，后者发生在 replay 标签构造，必须分清数据时间。
-- 实验：对标量 Q(a)=−(a−0.8)² 做中心差分，比较 actor 的解析梯度 1.6；再 detach 动作，检查自动微分为何无法更新 actor。
+- 实验：对标量 $Q(a)=-(a-0.8)^2$ 做中心差分，比较 actor 的解析梯度 1.6；再 detach 动作，检查自动微分为何无法更新 actor。
+
+
 
 <a id="chapter-code"></a>
 
@@ -255,7 +329,10 @@ python3 examples/deep_textbook_lab.py test
 
 ## 与教材主线的衔接
 
-- [控制问题与广义策略迭代](../../textbook/control.md)
+本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+[领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
+
 - [策略梯度与 actor–critic](../../textbook/policy.md)
 - [最大熵控制](../../textbook/soft-control.md)
 - [实验设计、统计与算法测试](../../textbook/experiments.md)

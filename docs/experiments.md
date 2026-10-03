@@ -212,7 +212,77 @@ python3 examples/deep_textbook_lab.py test
 
 [源码](../examples/deep_textbook_lab.py)
 
-## [任务与优化目标：奖励、回报和持续交互](../textbook/objectives.md)
+## [不完全可观测：信念状态、信息行动与递归记忆](../foundations/deep/partial-observability.md)
+
+标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+
+```bash
+python3 examples/extended_foundations_lab.py test
+```
+
+[源码](../examples/extended_foundations_lab.py)
+
+## [探索与不确定性：后验、乐观估计和时间一致行动](../foundations/deep/exploration.md)
+
+标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+
+```bash
+python3 examples/extended_foundations_lab.py test
+```
+
+[源码](../examples/extended_foundations_lab.py)
+
+## [分布强化学习：Bellman 分布、分位数与风险目标](../foundations/deep/distributional.md)
+
+标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+
+```bash
+python3 examples/extended_foundations_lab.py test
+```
+
+[源码](../examples/extended_foundations_lab.py)
+
+## [离线强化学习：数据支持、策略评估与保守改进](../foundations/deep/offline.md)
+
+标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+
+```bash
+python3 examples/extended_foundations_lab.py test
+```
+
+[源码](../examples/extended_foundations_lab.py)
+
+## [模型学习与规划：MPC、短模型 rollout 和潜在想象](../foundations/deep/model-based.md)
+
+标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+
+```bash
+python3 examples/extended_foundations_lab.py test
+```
+
+[源码](../examples/extended_foundations_lab.py)
+
+## [约束强化学习：占据测度、拉格朗日与可行策略](../foundations/deep/constraints.md)
+
+标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+
+```bash
+python3 examples/extended_foundations_lab.py test
+```
+
+[源码](../examples/extended_foundations_lab.py)
+
+## [多智能体：博弈、局部信息与集中训练](../foundations/deep/multi-agent.md)
+
+标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+
+```bash
+python3 examples/extended_foundations_lab.py test
+```
+
+[源码](../examples/extended_foundations_lab.py)
+
+## [强化学习问题的形式化：交互、目标与持续学习](../textbook/objectives.md)
 
 标准库解析实验：周期策略偏好、随机停止、终止与截断、势函数塑形、在线与冻结评价。
 
@@ -221,6 +291,17 @@ python3 examples/objectives_lab.py all
 ```
 
 [源码](../examples/objectives_lab.py)
+
+## [奖励假设与奖励设计](../textbook/reward-design.md)
+
+原创建模反例、望远镜求和、偏好与 MaxEnt 梯度、单步约束优化。不是大规模算法复现。
+
+```bash
+python3 examples/reward_design_lab.py demo
+python3 examples/reward_design_lab.py test
+```
+
+[源码](../examples/reward_design_lab.py)
 
 ## [平均奖励：奖励率、差分价值与持续控制](../textbook/average.md)
 
@@ -264,16 +345,16 @@ python3 examples/gvf_lab.py test
 
 [源码](../examples/gvf_lab.py)
 
-## [控制问题：策略改进与动态规划](../textbook/control.md)
+## [持续控制：比较策略与学习智能体](../textbook/control.md)
 
-Python 3.10+，仅标准库。包含策略迭代、价值迭代、完整在线 Q-learning 与 12 个测试。确定性两状态教学环境；不作为复杂任务的性能证据。
+Python 3.10+，仅标准库。五组可解析持续控制反例、轨迹重要性采样、精确枚举与 29 个测试；教学模型不是论文 benchmark 或大规模性能复现。
 
 ```bash
-python3 examples/control_problem_lab.py all
-python3 examples/control_problem_lab.py test
+python3 examples/continual_control_lab.py demo
+python3 examples/continual_control_lab.py test
 ```
 
-[源码](../examples/control_problem_lab.py)
+[源码](../examples/continual_control_lab.py)
 
 ## [深度价值学习：DQN 与 Double DQN](../textbook/deep-value.md)
 
@@ -308,9 +389,9 @@ python3 examples/foundations_detail_lab.py test
 
 [源码](../examples/foundations_detail_lab.py)
 
-## [时间信用分配：多步回报、资格迹与在线等价](../textbook/credit.md)
+## [时间信用分配：从资格迹到深度梯度学习](../textbook/credit.md)
 
-标准库：冻结前后向等价、传统与 true-online TD、在线前向参考、SARSA／Watkins 时序、最小递归敏感度。
+标准库：31项检查覆盖冻结／在线等价、策略校正、Q(σ)端点、V-trace目标变化、状态λ、期望迹混叠反例、非线性梯度迹有限差分及actor／递归敏感度；不是完整论文复现。
 
 ```bash
 python3 examples/credit_assignment_lab.py all

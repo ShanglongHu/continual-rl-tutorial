@@ -12,6 +12,20 @@
 - Andrew G. Barto｜自适应控制、内在动机与层级学习：自适应控制与强化学习问题的形成。
 - David Abel｜从表示抽象到“学习究竟在哪里”：持续学习定义与智能体内部学习过程。
 
+## 奖励假设与奖励设计
+
+偏好、奖励机制、回报与辅助信号不是同一对象。保持最优策略、加快学习与符合设计者意图需要不同证据。
+
+先检验顺序目标、塑形边界和偏好梯度；再用 B-Pref 与安全诊断环境检验反馈成本和代理失效。
+
+[教材](../textbook/reward-design.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-reward-design)
+
+- Richard S. Sutton｜持续经验型智能体的总纲：奖励假设与从经验学习的总体问题。
+- David Abel｜从表示抽象到“学习究竟在哪里”：奖励表达能力与持续学习的概念基础。
+- Michael Bowling｜博弈、评测与 agency：奖励表示的公理条件与设计者目标。
+- Will Dabney｜价值分布与目标／agent 基础：奖励表达与偏好表示。
+- Satinder Singh｜内在动机、时间抽象与 agency：奖励、内在动机与智能能力的关系。
+
 ## 平均奖励与差分价值
 
 平均奖励按原始时间计收益。随机时长 option 要使用半马尔可夫时间口径。
@@ -62,17 +76,18 @@ Random Walk 与小型马尔可夫奖励过程：有解析真值，便于分开�
 - Adam White｜从实时预测知识到可信实验：并行离策略预测与实时经验学习。
 - Martha White｜可靠 off-policy 学习到长期控制：稳定的离策略预测方法。
 
-## 控制问题与广义策略迭代
+## 持续控制与学习智能体比较
 
-评价固定策略与改进策略不是同一问题。状态、预测或技能的改进必须最终接受行为收益检验。
+固定策略、记忆递推和完整学习器是不同评价对象。CRL 可定义历史条件价值，但不能不加条件地沿用固定 MDP 的策略排序。
 
-Cliff Walking / 小型 Gridworld：记录访问覆盖、策略和状态价值，而不只记录总分。
+解析例子检验时域排序、相同策略下不同学习规则、不可逆后果与偏离遗憾；再扩展到单次生命期评价。
 
 [教材](../textbook/control.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-control)
 
-- Chris Watkins｜Q-learning 与动物学习的反思：Q-learning：从行为数据学习最优动作价值。
-- Richard S. Sutton｜持续经验型智能体的总纲：广义策略迭代与控制。
-- Csaba Szepesvári｜统计效率和算法边界：强化学习的统计效率与理论边界。
+- Michael Bowling｜博弈、评测与 agency：持续学习器的评价与可行偏离比较。
+- Martha White｜可靠 off-policy 学习到长期控制：适应过程、学习目标与评测。
+- David Abel｜从表示抽象到“学习究竟在哪里”：历史过程与持续学习定义。
+- Richard S. Sutton｜持续经验型智能体的总纲：GPI 为局部策略改善提供基础。
 
 ## 深度价值学习
 
@@ -111,9 +126,9 @@ Pendulum 做单位与动作范围检查；MuJoCo / DMC 控制需固定版本、�
 
 ## 时间信用分配与资格迹
 
-资格迹将当前误差分配给过去的预测。元学习则学习如何更新参数。二者可组合，但估计对象不同。
+先分开前向目标、后向计算与离策略校正，再比较 Expected Traces 和梯度迹的估计对象。RTRL 传播递归敏感度；元学习传播更新规则的敏感度。
 
-固定短轨迹做前后向一致性检查；延迟反馈任务再测有限资源下的学习速度。
+固定轨迹的代数与导数检查 → Markov/混叠路径反例 → 延迟反馈和部分可观测控制；MinAtar、MuJoCo 与严格流式协议分别比较。
 
 [教材](../textbook/credit.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-credit)
 
@@ -212,7 +227,7 @@ Blocking Maze / Shortcut Maze：固定真实交互，另报规划备份次数与
 
 ## 知识保留与再适应
 
-记住旧任务和快速学习新任务可能冲突。冻结诊断与继续学习的再适应实验分别回答不同问题。
+记住旧任务和快速学习新任务可能冲突。冻结诊断与保持更新的再适应实验分别回答不同问题。
 
 Continual World / COOM：逐任务学习矩阵、任务身份权限、首次习得和再学习速度。
 

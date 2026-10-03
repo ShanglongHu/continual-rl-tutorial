@@ -514,7 +514,7 @@ $$
 
 本站 c-only 写法把终止信号吸收到 cumulant；RLPark 把 r 和 z 分开传入。z=0 时退回普通写法。γ 是延续系数，不是环境 done 的同义词。
 
-检查：两步到达：c=(0,1)、γ=(0.9,0)，回报是 0.9；同样两步之后的终点价值折扣是 0.9²。先说明预测对象，再判断下标。
+检查：两步到达：c=(0,1)、γ=(0.9,0)，回报是 0.9；同样两步之后的终点价值折扣是 $0.9^2$。先说明预测对象，再判断下标。
 
 思考：如果把 z 和到达事件 cumulant 同时加进去，会不会重复计算？
 
@@ -548,7 +548,7 @@ $$
 \begin{aligned}Q(s,o)&\leftarrow Q(s,o)+\alpha\left[\sum_{k=0}^{\tau-1}\gamma^kR_{t+k+1}+\gamma^\tau V(S_{t+\tau})-Q(s,o)\right]\\p_o^\gamma(s'\mid s)&=\mathbb E[\gamma^\tau\mathbf1\{S_{t+\tau}=s'\}]\end{aligned}
 $$
 
-一旦转移模型已经包含 γ^τ，规划中的 r_o+Σp_o^γV 就不能再乘一个 γ。随机持续时间的 E[γ^τ] 不等于 γ^{E[τ]}；随机终点与时长相关时，还要保留联合加权。
+一旦转移模型已经包含 $γ^τ$，规划中的 $r_o+Σp_o^γV$ 就不能再乘一个 γ。随机持续时间的 $E[γ^τ]$ 不等于 $γ^{E[τ]}$；随机终点与时长相关时，还要保留联合加权。
 
 检查：三步奖励 (−1,−1,0)、γ=0.9、终点价值 10：backup=5.39。随机耗时 1/3、等概率时，终点价值项为 8.145，不是 8.1。
 
@@ -610,7 +610,7 @@ $$
 
 ### [STOMP · Reward-Respecting Subtasks](https://arxiv.org/abs/2202.03466)
 
-未确认完整作者原实现。检索到的 ramos-ai/STOMP 自述为第三方 work in progress，且未匹配原论文结果，不列入作者代码目录。子任务终止奖励的 γ^{K−1} 约定与 option model 终点价值的 γ^K 必须分别处理。
+未确认完整作者原实现。检索到的 ramos-ai/STOMP 自述为第三方 work in progress，且未匹配原论文结果，不列入作者代码目录。子任务终止奖励的 $γ^{K-1}$ 约定与 option model 终点价值的 $γ^K$ 必须分别处理。
 
 ### [Laplacian Keyboard · 2026](https://arxiv.org/html/2602.07730v2)
 

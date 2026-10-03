@@ -9,6 +9,82 @@
 - 推导 option 内策略与终止函数的两种梯度，正确处理停止、换技能和环境结束。
 - 按覆盖、可区分性、可预测性、主任务价值区分发现技能的算法线。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+以闭环多步行为为决策单位；给定技能时选择技能，学习技能时还要更新内部动作与终止。
+
+### 给定条件与符号
+
+- Markov任务、原始奖励和折扣，以及可启动技能集合或技能参数化。
+- 每步转移、当前技能标识、开始状态、累计折扣奖励、时长与计算预算。
+
+### 需要求解的对象
+
+给定技能集合上的高层策略/价值，或在声明发现准则下学习内部策略和停止函数；技能发现准则不自动等于主任务目标。
+
+### 信息与数据权限
+
+$o=(I_o,\pi_o,\beta_o)$ 分别规定启动集、内部动作策略与到达后的停止概率；高层 $\mu$ 只在技能停止后重选，$\tau\ge1$ 为原始步时长。
+
+$$
+Q^*_{\mathcal O}(s,o)=\mathbb E_o\!\left[\sum_{k=0}^{\tau-1}\gamma^kR_{t+k+1}+\gamma^\tau\max_{o'\in\mathcal O(S_{t+\tau})}Q^*_{\mathcal O}(S_{t+\tau},o')\mid S_t=s\right]
+$$
+
+$\mathcal O(s)$ 为在状态 $s$ 可启动的固定技能集合，$\gamma$ 按原始步折扣，真实终止的尾项为0。此最优性限于集合；评价给定 $\mu$ 时将最大值换成其动作平均。Option-Critic改变技能参数，模型和发现问题需另定义。
+
+### 成立条件与解的含义
+
+- 基础有限折扣任务中每个非终止状态有可启动行为；完整技能样本需相应终止/可积条件。
+- Intra-option的行为纠偏需要动作支持；技能参数持续改变时原固定技能理论不直接适用。
+
+判断准则：两步奖励1、2和终点价值10、折扣0.9时跨步target为10.9；一步技能退化为普通控制；检查启动mask、终止梯度方向、技能多样性与主任务收益。
+
+### 适用边界
+
+- 技能停止不等于环境终止。
+- 扩大技能集合在精确问题中的潜在收益不保证有限学习和规划成本后的收益。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 特例：增加条件 · [持续控制与学习智能体比较](../textbook/control.md)：相对完整持续控制，本章先限定Markov任务和具有启动、执行、停止接口的行为类；它在这个局部设定内再将一步动作推广为随机时长技能。
+
+- 组合不同学习问题 · [目标条件化与子任务构造](../textbook/goals.md)：子任务给出行为评价标准，技能将它落实为策略、启动与停止。
+
+- 组合不同学习问题 · [转移模型与后果模型](../textbook/models.md)：可执行技能还需后果模型才能用于模型规划；技能改变会改变模型题目。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+高层跨多步才收到反馈，内部行为又在每步执行；技能终止与环境终止不能使用同一边界。
+
+### 本章的核心思路
+
+从原始回报按技能边界拆分，再把继续/停止分支展开为一步接口。
+
+1. [保留随机时长折扣](../textbook/options.md#lesson-derive)：因为技能消耗多个原始步，SMDP标签使用内部折扣奖励与实际时长的尾折扣。
+
+2. [每步估计相容技能](../textbook/options.md#lesson-intra)：因为不用等技能完整结束，一步arrival value混合继续和高层重选，动作比率处理其他技能的行为差异。
+
+3. [分别优化内部动作与停止](../textbook/options.md#lesson-critic)：因为执行什么与何时交回高层是两种选择，Option-Critic用动作score与继续—切换优势构造不同梯度。
+
+结论与条件：固定技能精确SMDP与相应表格学习有明确条件；Option-Critic为参数化目标的梯度结构，不保证技能多样性、全局最优或可迁移。
+
+### 相关方法改变了什么
+
+- SMDP Q-learning：技能完整结束后更新高层价值，等待时间明确。
+
+- Intra-option：每个原始步更新相容技能的价值，仍可固定内部策略。
+
+- Option-Critic/发现方法：前者用主任务梯度学策略与停止；谱/互信息等发现采用另外的准则。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -70,14 +146,14 @@ $$
 
 **算法：算法伪代码**
 
-1. 初始化 Q；每次高层选择合法 o，保存 s_start
-1. R_sum=0；discount=1；duration=0
+1. 初始化 Q；每次高层选择合法 o，保存 `s_start`
+1. `R_sum=0`；`discount=1`；`duration=0`
 1. 循环：
-  1. 按 π_o(a|s) 行动，观察 r,s′,environment_done
-  1. R_sum += discount*r；discount *= γ；duration += 1
-  1. 若 environment_done，或在 s′ 按 β_o(s′) 抽样结束：
-    1. continuation = 0（环境终止）否则 max_{合法 o′} Q(s′,o′)
-    1. Q(s_start,o) += α*(R_sum + discount*continuation - Q(s_start,o))
+  1. 按 $π_o(a|s)$ 行动，观察 r,s′,environment_done
+  1. `R_sum += discount*r`；$\mathrm{discount}←γ\mathrm{discount}$；`duration += 1`
+  1. 若 environment_done，或在 s′ 按 $β_o(s^{\prime})$ 抽样结束：
+    1. continuation = 0（环境终止）否则 $\max_{o^{\prime}\in\mathcal O(s^{\prime})} Q(s^{\prime},o^{\prime})$
+    1. $Q(s_{start},o)←Q(s_{start},o)+α(R_{sum}+\mathrm{discount}\,\mathrm{continuation}-Q(s_{start},o))$
     1. 若环境未结束，在 s′ 重新选 option
   1. 否则保留当前 option；s=s′
 
@@ -115,7 +191,7 @@ $$
 \begin{aligned}Q_U(s,o,a)&=\mathbb E[R+\gamma U(S',o)\mid s,a]\\ Q(s,o)&=\sum_a\pi_{o,\theta}(a|s)Q_U(s,o,a)\end{aligned}
 $$
 
-第一式给 critic 的 TD target，第二式把内部策略的动作平均还原成 option 价值。实际工程也常用 r+γU 作为当前 Q_U 的样本估计，未必单独存一个完整三维表。
+第一式给 critic 的 TD target，第二式把内部策略的动作平均还原成 option 价值。实际工程也常用 r+γU 作为当前 $Q_U$ 的样本估计，未必单独存一个完整三维表。
 
 固定 critic 作为局部评价器，对第二式中的当前动作概率求导，再将以后状态的递归影响展开，得到沿状态-option 占用分布加权的策略梯度。我们不需要显式微分环境转移，但必须在正确的轨迹/占用分布上采样。以下写出精确目标所对应的结构，再写常用的单样本方向。
 
@@ -128,20 +204,26 @@ $d_\gamma$ 是从指定起点出发的折扣占用权重；$b$ 不依赖当前�
 终止梯度可直接从混合式推导。保持当前 $Q$ 与 $V$ 不动，对 $U=(1-\beta)Q+\beta V$ 求终止参数导数，得到 $\nabla\beta(V-Q)$。当 $Q<V$ 时，增大停止概率能提高局部价值；反之应鼓励延续。递归展开这些贡献后得到终止梯度定理，其占用权重对应到达状态。
 
 $$
-\begin{aligned}A_\Omega(s',o)&=Q(s',o)-V(s')\\ \nabla_\vartheta U(s',o)&=-\nabla_\vartheta\beta_{o,\vartheta}(s')\,A_\Omega(s',o)\\ \Delta\vartheta&=-\alpha_\beta\nabla_\vartheta\beta_{o,\vartheta}(s')\,\widehat A_\Omega(s',o)\end{aligned}
+\begin{aligned}A_\Omega(s',o)&=Q(s',o)-V(s'),\\ U_{\rm loc}(s',o;\vartheta)&=(1-\beta_{o,\vartheta}(s'))\operatorname{sg}(Q(s',o))+\beta_{o,\vartheta}(s')\operatorname{sg}(V(s')),\\ \nabla_\vartheta U_{\rm loc}(s',o;\vartheta)&=-\nabla_\vartheta\beta_{o,\vartheta}(s')\,\operatorname{sg}(A_\Omega(s',o)),\\ \Delta\vartheta&=-\alpha_\beta\nabla_\vartheta\beta_{o,\vartheta}(s')\,\widehat A_\Omega(s',o).\end{aligned}
 $$
 
-若 $\beta=\sigma(h)$，则 $\partial\beta/\partial h=\beta(1-\beta)$。当前 option 优势为负时，更新增大 $h$，使它更容易停止；优势为正时则鼓励继续。真实环境终止后不再存在继续与停止的选择。
+$\operatorname{sg}$ 表示在当前局部更新中固定 critic。这个局部偏导不是包含未来 $Q,V$ 参数依赖的完整 $\nabla_\vartheta U$。若 $\beta=\sigma(h)$，则 $\partial\beta/\partial h=\beta(1-\beta)$。当前 option 优势为负时，更新增大 $h$，使它更容易停止；优势为正时则鼓励继续。真实环境终止后不再存在继续与停止的选择。
+
+$$
+\nabla_\vartheta J=-\sum_{s',o}d_\gamma^{\rm arrival}(s',o)\,\nabla_\vartheta\beta_{o,\vartheta}(s')\,A_\Omega(s',o)
+$$
+
+$d_\gamma^{\rm arrival}(s',o)=\sum_{t\ge0}\gamma^{t+1}\Pr(S_{t+1}=s',\Omega_t=o)$ 是从指定初始化出发、在非终止到达状态上定义的未归一化折扣占用；$\Omega_t$ 表示正在执行的 option。该式把未来重复出现的局部终止选择展开后才得到完整目标梯度。求导时固定高层和内部动作策略参数；若共享参数，还需合并相应梯度路径。
 
 **算法：算法伪代码**
 
-1. 初始化 π_o、β_o、Q 或 Q_U；选择当前 option o
+1. 初始化 $π_o,β_o,Q$ 或 $Q_U$；选择当前 option o
 1. 每一步：
-  1. 按旧 π_o 行动，记录 s,o,a,r,s′ 与真实 terminal
-  1. 缓存旧 Q(s′,o)、V(s′)、β_o(s′)，构造 U 和 y=r+γU
+  1. 按旧 $π_o$ 行动，记录 s,o,a,r,s′ 与真实 terminal
+  1. 缓存旧 $Q(s^{\prime},o),V(s^{\prime}),β_o(s^{\prime})$，构造 $U$ 和 $y=r+γU$
   1. 用 y 更新 critic（真实 terminal 时 y=r）
-  1. 用缓存的动作优势更新 π_o 的 log-probability
-  1. 若非 terminal，用 −∇β_o(s′)[Q(s′,o)−V(s′)] 更新停止参数
+  1. 用缓存的动作优势更新 $π_o$ 的 log-probability
+  1. 若非 terminal，用 $-∇β_o(s^{\prime})[Q(s^{\prime},o)-V(s^{\prime})]$ 更新停止参数
   1. 按明确规定的 β 版本抽样停止；停止才按高层 μ 重新选 o
   1. s=s′；持续记录技能长度、选择频率、动作熵与主任务回报
 
@@ -245,16 +327,18 @@ def skill_intrinsic_rewards(log_q_z_given_s, log_prior_z,
             log_q_next_given_skill - log_mixture_next)
 ```
 
-标准库运行；测试包含动作与终止局部梯度的中心有限差分
+标准库运行；测试包含局部梯度，以及双 option 链完整折扣目标的终止梯度有限差分
 
 ```sh
 python3 examples/knowledge_algorithms_lab.py options
 python3 examples/knowledge_algorithms_lab.py test
 ```
 
+完整梯度测试使用一个持续状态和两个 option。内部动作每步分别产生 $0$ 与 $1$，高层以相同概率重新选择，初始执行 option 0。先精确解出二阶 Bellman 线性方程，再对初始收益作参数有限差分。对照量是到达占用加权的终止梯度，不是单个状态上的局部偏导；遗漏到达前那一步的 $\gamma$ 会使测试失败。
+
 运行结果对应前面的手算：跨步 target 为 $10.9$，arrival value 为 $3$，两个估值为 $[0.74,0.64]$，动作 logits 为 $[0.1,-0.1]$，终止 logit 为 $0.1$。还应检查启动集合：下一状态价值为 $[1,100]$、只有第一个 option 可启动时，重新选择的价值是 $1$；第二个 option 若早已开始且 $\beta=0$，继续执行的价值仍可为 $100$。代码中的 sigmoid 分支避免了极端 logit 的指数溢出。
 
-这份表格实现适合逐步观察更新顺序。继续学习深度 Option-Critic 时，作者 Atari 仓库提供卷积网络、目标网络、策略与终止损失以及完整交互循环；可沿相同的三个接口阅读：跨步选技能、原始步选动作、到达状态判断停止。
+这份表格实现适合逐步观察更新顺序。进一步研究深度 Option-Critic 时，作者 Atari 仓库提供卷积网络、目标网络、策略与终止损失以及完整交互循环；可沿相同的三个接口阅读：跨步选技能、原始步选动作、到达状态判断停止。
 
 - 改动 A：把所有 β 设成 1，并限制一个 option 对应一个 primitive action；验证 target 退化到 Q-learning。
 - 改动 B：把当前 option 优势从 −4 改为 +4；停止 logit 应下降。再把其设为 0，更新应为零。
@@ -309,7 +393,7 @@ $$
 r_i(s,a,s')=e_i(s')-e_i(s),\qquad Q_i(s,a)\leftarrow Q_i(s,a)+\alpha\left[r_i+\gamma_i\max_{b\in\mathcal A\cup\{\perp\}}Q_i(s',b)-Q_i(s,a)\right]
 $$
 
-终止动作 ⊥ 的后续收益规定为零；当所有继续动作的内在价值都不大于零时，可以选择停止。技能的启动区域是仍值得继续的状态。γ_i 是该发现问题自己的折扣，未必等于主任务折扣。
+终止动作 ⊥ 的后续收益规定为零；当所有继续动作的内在价值都不大于零时，可以选择停止。技能的启动区域是仍值得继续的状态。$γ_i$ 是该发现问题自己的折扣，未必等于主任务折扣。
 
 这里的差分奖励不是“保持原任务最优策略不变”的一般奖励塑形。策略不变塑形通常使用 $\gamma\Phi(s')-\Phi(s)$；eigenoption 则有意定义一个新的内在控制问题。它的价值在于生成长程行为，不在于保证该行为已经优化外部任务。
 
@@ -329,7 +413,7 @@ $$
 M^\pi=\sum_{k=0}^{\infty}\gamma^k(P^\pi)^k=(I-\gamma P^\pi)^{-1},\qquad M^\pi(s,:)\leftarrow M^\pi(s,:)+\alpha\left[\mathbf e_s+\gamma M^\pi(s',:)-M^\pi(s,:)\right]
 $$
 
-这里采用包含当前状态的访问约定，e_s 是当前状态的 one-hot 向量。神经表示用特征替换 one-hot，再学习其未来累计。SR 与转移算子共享适当的谱结构；与对称 Laplacian 的对应还需要可逆性或合适的对称化，不能对任意有向动力学直接当作同一个矩阵。
+这里采用包含当前状态的访问约定，$e_s$ 是当前状态的 one-hot 向量。神经表示用特征替换 one-hot，再学习其未来累计。SR 与转移算子共享适当的谱结构；与对称 Laplacian 的对应还需要可逆性或合适的对称化，不能对任意有向动力学直接当作同一个矩阵。
 
 由此得到一条清楚的变化：2017 年先有图再发现技能，2018 年开始从行为数据学习发现技能所需的结构。代价是表示依赖采样策略；没有访问过的房间，不会因为使用深度网络就自动出现在可靠的结构表示中。
 
@@ -388,7 +472,7 @@ $$
 \begin{aligned}r_w(s,a,s')&=w^\top\phi(s')\\ \psi(s,a,w)&=\mathbb E_{\pi_w}\left[\sum_{k=0}^{\infty}\gamma^k\phi(S_{t+k+1})\mid s,a\right]\\ Q^{\pi_w}_w(s,a)&=w^\top\psi(s,a,w)\end{aligned}
 $$
 
-每个 w 同时规定一个奖励方向和对应的目标策略。预测 ψ 时必须沿同一个 π_w 递归，不能对各特征分量分别取最大后再组合。这里特征计在到达状态，避免与上一节包含当前状态的 SR 约定混淆。
+每个 w 同时规定一个奖励方向和对应的目标策略。预测 ψ 时必须沿同一个 $π_w$ 递归，不能对各特征分量分别取最大后再组合。这里特征计在到达状态，避免与上一节包含当前状态的 SR 约定混淆。
 
 **算法：Laplacian Keyboard 的分层接口；高层选择连续技能参数，低层实现原始动作**
 
@@ -407,13 +491,77 @@ $$
 
 至此，技能发现有了三条可分别检验的研究问题：表示是否保留环境长程结构；行为是否沿这些结构可靠执行；调用方式是否真正帮助新任务。接着还需要第四个问题：能否预测这些行为的后果，并据此规划？reward-respecting 子任务保留真实沿途奖励，option models 预测真实后果，STOMP 将两者接入规划；这些接口与纯覆盖性技能互补，而非简单的新旧替代。
 
+<a id="research-options-behavior-basis"></a>
+
+## 研究专题 A · 从给定技能库到自动补齐行为基
+
+Option-Critic 优化当前任务中的内部动作和停止；谱发现提供覆盖性的候选行为；Option Keyboard 则问已有行为怎样组合。这里还缺一个问题：组合器已经训练充分，却依然无法产生某个必要动作时，是组合学习不足，还是基础行为缺失？OKB（NeurIPS 2025）把这一区别变成增量构造行为基的准则。
+
+$$
+\pi_{\rm OK}(s,w;\Pi)\in\arg\max_a\max_{\pi_i\in\Pi}\psi^{\pi_i}(s,a)^\top\omega(s,w)
+$$
+
+与固定新奖励权重 w 的 GPI 相比，元策略 ω 根据状态和任务选择组合方向。这里的 max 对固定基础策略的 SF 做评价；ω 的训练使用真实目标回报，不是让各 SF 坐标独立选择自己的最优未来。
+
+例如一个递送问题需要先穿门，再向充电区移动。为整个任务选择单一奖励方向可能过早偏向充电；状态相关 ω 可以先选择过门方向，进门后再切换。若基础策略的 SF 在所有方向上都把“开门”排在其他动作后面，任何 ω 都无法恢复该动作，组合器的表达范围就成为瓶颈。此时增加训练步数与增加必要基础是不同操作。
+
+$$
+\mathcal A_{\Pi}(s)=\bigcup_{z\in\mathcal Z}\arg\max_a\max_i\psi^{\pi_i}(s,a)^\top z;\qquad A^{\pi_{\rm OK}}_w(s,a)=Q^{\pi_{\rm OK}}_w(s,a)-V^{\pi_{\rm OK}}_w(s)
+$$
+
+A_Π 描述当前基础通过任意方向能表达的动作。论文用已训练组合策略的正优势动作识别仍值得改善的行为；把这种诊断解释成缺失基础，要求组合训练已达到其表达范围内的最优，有限训练的正优势也可能仅是未学充分。
+
+**算法：教学摘要；角点枚举、判定与子程序细节见原文算法和附录**
+
+1. OKB 的结构：
+  1. 从一个任务训练初始基础策略与 SF
+  1. 根据现有 SF 的线性支持角点挑选任务权重
+  1. 固定基础，训练状态/任务条件的组合元策略
+  1. 检查仍无法表达的必要行为；若存在，训练一个新基础并加入
+  1. 移除不再必要的基础，再更新支持集合
+  1. 只有原文最优子程序和充分检查条件成立时，采用其最优基结论
+
+定理中的 NewPolicy(w) 必须返回最优策略，TrainOK 必须找到可表达的最优组合；深度 actor–critic 的有限训练不能默认为满足这两个条件。原文非线性任务的扩展也要求最优行为可由相关线性任务的子策略构成，不能写成有限技能覆盖所有未来任务。
+
+实验应将随机加基础、按覆盖加基础、仅训练组合与 OKB 构造分开，计入基础训练、SF 估计和元策略全部经验。若进入 CRL，再固定技能容量并引入未知新奖励和通道变化：旧基础是否还必要，旧 SF 是否过期，基淘汰是否损害后来恢复？原文的静态最优构造提供起点，有限资源的终生维护尚需另做验证。
+
+<a id="research-options-directional-policy-contract"></a>
+
+## 研究专题 B · 方向条件策略如何成为真正的时间抽象
+
+HILP（ICML 2024）从离线时间距离表示学方向条件行为。它与 METRA 都使用潜在位移的方向奖励，但表示来源不同：HILP 从离线目标价值约束距离，METRA 在技能交互中联合约束表示与行为。条件策略 π(a|s,z) 本身只定义当前动作，必须再规定调用、停止和时长，才能成为 planner 可使用的 option。
+
+$$
+d^*(s,g)\approx\|\phi(s)-\phi(g)\|_2,\qquad r_z(s,a,s')=(\phi(s')-\phi(s))^\top z,\quad \|z\|_2=1
+$$
+
+HILP 的结构将时间距离与方向行为联系起来。精确欧氏嵌入要求距离结构相容；一般有向控制的 d*(s,g) 与 d*(g,s) 可不同，不能同时被同一对称欧氏距离精确表示。近似训练结果与理论条件须分别报告。
+
+一扇只允许从左到右通过的门给出了反例：左右两边在像素上近，单向到达很容易，反向到达却不可能。仅以对称潜在距离宣布“两个方向同样可执行”会掩盖控制限制。正确的接口应实际测各方向策略成功率，并让启动集合排除无法可靠执行的起点。
+
+$$
+o_z=(I_z,\pi_z,\beta_z),\quad \widehat R_z=\sum_{k=0}^{\tau-1}\gamma^kR_{t+k+1},\quad y_{\rm high}=\widehat R_z+\gamma^\tau V(S_{t+\tau})
+$$
+
+高层使用真实外部奖励与真实段长。方向奖励用于训练低层，除非改变主任务，否则不能代替 R。固定时长 K 是一种明确的 β/时钟约定；目标到达终止又是另一种约定，不能只标为同一个“skill”。
+
+| 缺少的接口 | 最小可实现选择 | 必须测什么 |
+| --- | --- | --- |
+| 启动条件 | 仅从数据覆盖且方向成功的状态调用 | 数据外起点的失败与拒绝调用率 |
+| 停止 | 固定 K 步或检测子目标到达 | 长度分布、停止错误与切换开销 |
+| 后果模型 | 拟合外部奖励、联合折扣终点与时长 | 新后续价值下的 backup 误差 |
+| 版本 | 方向表示与策略变化时标记模型过期 | 同名 z 的后果是否已变 |
+| 高层控制 | 按段收集真实 target 学选择 z | 计入原始步数的收益与计算延迟 |
+
+实验可冻结同一个 HILP 低层，比较直接目标方向、无模型高层与 option-model 规划，匹配真实交互和调用预算。再仅改变停止条件，检验收益来自更好的行为还是更合适的时间尺度。研究空缺是新经验改变距离和方向语义时，怎样同步维护启动、停止和后果模型；预训练的通用方向接口并未自动完成这条闭环。
+
 <a id="lesson-check"></a>
 
 ## 11. 诊断与自测
 
 - 技能全部长度为 1：检查终止梯度符号、critic 初始化、β 是否被当作环境 done，以及高层选择是否有过强的即时切换优势。
 - 所有技能完全一样：检查各技能是否获得不同学习信号、初始化/探索能否破坏对称；增加技能数量并不自动增加有效能力。
-- 长期 option 价值偏高：检查 γ^τ 是否误写为 γ，是否漏掉沿途负奖励，以及技能模型是否过期。
+- 长期 option 价值偏高：检查 $γ^τ$ 是否误写为 γ，是否漏掉沿途负奖励，以及技能模型是否过期。
 - 只在训练目标有效：分别评价固定技能后重新学习高层的速度、技能覆盖、维护开销与长期遗忘。
 
 自测 1：$\beta=1$ 是否使 $V(s')=0$？答：只是重新选择 option，真实环境终止才清零后续价值。自测 2：为何 intra-option 能学习没被执行的 option？答：共享已观察的一步后果，用动作兼容性或概率比修正当前动作分布，以 bootstrap 表示后续行为。自测 3：SF 是否就是 option？答：SF 预测固定策略的未来特征，option 定义行为与停止；一个 option 可以有 SF 模型，两者的职责不同。
@@ -439,6 +587,393 @@ $$
 单步动作推广为可变持续时间的策略。发现、学习、选择和终止 option 是不同子问题。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-options) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=options) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=options)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 子任务、技能与经验获取
+
+哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
+
+Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+
+- [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
+- [Proper Laplacian Representation Learning](https://yingwen.io/zh/continual-rl/research/#recent-proper-laplacian-representations)
+- [Reward-Aware Proto-Representations in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-reward-aware-proto-representations)
+- [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
+- [METRA: Scalable Unsupervised RL with Metric-Aware Abstraction](https://yingwen.io/zh/continual-rl/research/#recent-metra-skills)
+- [HIQL: Offline Goal-Conditioned RL with Latent States as Actions](https://yingwen.io/zh/continual-rl/research/#recent-hiql-hierarchical-goals)
+- [MaestroMotif: Skill Design from Artificial Intelligence Feedback](https://yingwen.io/zh/continual-rl/research/#recent-maestromotif-semantic-skills)
+- [Foundation Policies with Hilbert Representations](https://yingwen.io/zh/continual-rl/research/#recent-hilbert-foundation-policies)
+- [Constructing an Optimal Behavior Basis for the Option Keyboard](https://yingwen.io/zh/continual-rl/research/#recent-option-keyboard-basis)
+
+#### 后果模型、知识保留与规划
+
+学会预测后果，何时能真正改善决策？
+
+模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+
+- [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
+- [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
+
+#### 完整智能体与研究基础
+
+长期能力应怎样定义，各个机制又怎样共同产生它？
+
+形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+
+- [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
+- [Constructing an Optimal Behavior Basis for the Option Keyboard](https://yingwen.io/zh/continual-rl/research/#recent-option-keyboard-basis)
+
+### Reward-Respecting Subtasks for Model-Based Reinforcement Learning
+
+Richard S. Sutton, Marlos C. Machado, G. Zacharias Holland, David Szepesvari, Finbarr Timbers, Brian Tanner, Adam White
+
+Artificial Intelligence · 2023 · 支持方法与理论
+
+#### 研究问题
+
+学到一个能到达子目标的技能之后，为什么它仍可能不适合主任务规划？
+
+#### 关键机制
+
+STOMP 把子任务、option、模型和规划连起来。子任务保留原任务的路径奖励，并用带有特征偏好的终止价值表达目标；学习得到策略和终止规则后，再预测该行为的累计奖励与折扣终点。这样，技能不会因为只追求到达子目标而忽略途中代价。
+
+#### 证据
+
+论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+
+#### 条件与限制
+
+终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+
+#### 阅读与实验
+
+在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+
+#### 原文与相关入口
+
+- [期刊论文](https://doi.org/10.1016/j.artint.2023.104001)：STOMP 与奖励感知子任务的正式论文。
+- [作者预印本](https://arxiv.org/abs/2202.03466)：最初预印本早于期刊年份；阅读停止收益的精确定义。
+
+### Proper Laplacian Representation Learning
+
+Diego Gomez, Michael Bowling, Marlos C. Machado
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+技能发现需要一组确定的谱方向，为什么仅学到低频子空间还不够？
+
+#### 关键机制
+
+图上的平滑性目标倾向保留缓慢变化的特征，但旋转后的同一子空间未必给出可解释、排序明确的单个特征向量。ALLO 使用增广 Lagrangian、正交条件与对称性破除，同时恢复特征向量和特征值，从而为 eigenoption 的方向构造提供更明确的输入。
+
+#### 证据
+
+论文分析优化目标，并在多个环境中检验谱表示的恢复质量和下游使用。作者仓库包含表示学习训练程序。
+
+#### 条件与限制
+
+谱结构依赖采样行为诱导的图和覆盖程度，不是脱离数据分布的环境真值。低频方向也不自动等于有奖励价值的技能；这正是奖励感知表示要继续处理的问题。
+
+#### 阅读与实验
+
+先在小图上直接求特征分解，再比较学习特征的子空间误差和逐向量误差。两种指标不等价，后者才揭示任意旋转问题。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2310.10833)：ICLR 2024 论文的公开版本。
+- [ALLO 作者代码](https://github.com/tarod13/laplacian_dual_dynamics)：增广 Lagrangian 的实际优化与实验入口。
+
+#### 作者代码
+
+[论文作者的 ALLO 实现。](https://github.com/tarod13/laplacian_dual_dynamics)
+
+Laplacian 表示学习和论文实验。
+
+### Reward-Aware Proto-Representations in Reinforcement Learning
+
+Hon Tik Tse, Siddarth Chandrasekar, Marlos C. Machado
+
+NeurIPS 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+仅编码可达关系的表示，怎样进一步反映奖励与行动成本？
+
+#### 关键机制
+
+论文研究 default representation，将奖励或成本纳入对未来状态关系的表示，并给出动态规划与 TD 学习方法。由此提取的谱特征可以参与技能发现、奖励塑形和迁移。它沿着 SR 的后果预测思路前进，但不再把奖励完全留到最后的线性读出阶段。
+
+#### 证据
+
+作者提供表格问题中的推导，并用表示、技能和迁移实验展示奖励信息如何改变学得的结构。代码包含 SR、DR 的计算和在线表示学习实验。
+
+#### 条件与限制
+
+把奖励纳入表示会改变迁移边界：奖励或内部成本变化后，原表示可能需要重学。论文结果不能解释为任意新奖励下都能免费零样本迁移。
+
+#### 阅读与实验
+
+固定转移图，只改变一处通行成本，比较 SR 与 DR 的谱方向。随后检查新的 eigenoption 是改变了可达性，还是改变了对路径代价的偏好。
+
+#### 原文与相关入口
+
+- [论文与版本记录](https://arxiv.org/abs/2505.16217)：NeurIPS 2025；后续版本修订不改变会议年份。
+- [作者实现](https://github.com/httse9/Reward-Aware-Proto-Representations)：从 minigrid_basics/examples 的表示计算与技能实验开始。
+
+#### 作者代码
+
+[原论文作者仓库。](https://github.com/httse9/Reward-Aware-Proto-Representations)
+
+奖励感知表示、谱特征与相关 MiniGrid 实验。
+
+### Laplacian Keyboard: Beyond the Linear Span
+
+Siddarth Chandrasekar, Marlos C. Machado
+
+arXiv 预印本 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+从一组谱技能出发，能否解决超出原特征线性奖励空间的新任务？
+
+#### 关键机制
+
+Laplacian 特征先定义行为基，并借助后继特征预测各行为的后果。固定任务权重的价值组合受特征张成空间限制；论文进一步使用随状态变化的元策略，在不同位置组合已有行为。关键变化是组合规则从一组全局固定权重变为状态相关的行为选择。
+
+#### 证据
+
+论文对行为基与任务组合给出理论分析，并报告有限环境中的组合实验。它延续 eigenoptions 与 successor features 的路线，同时解释了为什么单纯线性读出会遇到表达边界。
+
+#### 条件与限制
+
+理论结论依赖具体的行为基、近似误差和任务条件。技能集合的长期生成、淘汰与非平稳模型维护仍是另外的问题；此处按预印本收录，不指定未经确认的会议。
+
+#### 阅读与实验
+
+构造一个必须在中途切换方向的奖励任务。分别比较固定权重的技能选择与状态相关切换，并解释性能差异来自哪里。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/abs/2602.07730)：阅读线性张成空间的限制及状态相关组合机制。
+
+### METRA: Scalable Unsupervised RL with Metric-Aware Abstraction
+
+Seohong Park, Oleh Rybkin, Sergey Levine
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+没有外部任务奖励时，怎样发现能产生长距离、有区别状态变化的技能？
+
+#### 关键机制
+
+METRA 学习反映时间距离的潜在表示，并让技能方向 $z$ 最大化内在奖励 $r_z=(\phi(s')-\phi(s))^\top z$。邻接状态间的距离约束阻止编码器靠任意放大数值提高奖励。表示学习和技能策略相互影响，因此它不同于先固定一个表示、再单独训练 option。
+
+#### 证据
+
+论文在视觉与状态输入的运动、操纵任务中研究无监督技能学习和下游使用。作者代码包括约束优化、技能策略和相应实验配置。
+
+#### 条件与限制
+
+预训练技能加下游任务不等于技能库在单次生命内持续维护。理论距离约束与源码中的均方尺度、松弛量截断需要分别对照，不能只照抄一个简化公式重现。
+
+#### 阅读与实验
+
+观察表示范数、约束残差和实际位移三条曲线。若内在回报上升而位移不变，应先检查尺度和约束，而不是直接解释为探索改善。
+
+#### 原文与相关入口
+
+- [ICLR 原文](https://proceedings.iclr.cc/paper_files/paper/2024/hash/516593a423838642a2eb4e9c5b9c7f44-Abstract-Conference.html)：方法与技能评价。
+- [作者代码](https://github.com/seohongpark/METRA)：核心方法在 iod/metra.py；同时检查约束的归一化与截断。
+
+#### 作者代码
+
+[作者提供的论文实现。](https://github.com/seohongpark/METRA)
+
+METRA、技能训练与下游评价。
+
+### HIQL: Offline Goal-Conditioned RL with Latent States as Actions
+
+Seohong Park, Dibya Ghosh, Benjamin Eysenbach, Sergey Levine
+
+NeurIPS 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+只拿到已有轨迹时，长距离目标为什么适合拆成高层子目标和低层动作？
+
+#### 关键机制
+
+HIQL 学习目标条件价值，并以潜在状态作为高层动作。高层提出中间目标，低层输出环境动作；两层利用优势加权回归学习。时间分解让低层面对较短的控制距离，而不是要求一个策略直接消化所有远距离价值误差。
+
+#### 证据
+
+论文在离线长时域目标任务中检验层次结构，并提供原始实现。作者后来在 OGBench 中提供更统一的实现，二者适合不同用途：原实验复现和统一基线比较。
+
+#### 条件与限制
+
+数据覆盖和行为分布约束仍然存在。目标采样、层级时间间隔与离线轨迹由外部流程提供，不能把效果解释为在线自主目标生成已经解决。
+
+#### 阅读与实验
+
+对一段轨迹明确标记最终目标、中间目标和当前动作。逐一检查价值目标、优势权重和高层标签的停止梯度边界。
+
+#### 原文与相关入口
+
+- [NeurIPS 2023 原文](https://papers.nips.cc/paper_files/paper/2023/file/6d7c4a0727e089ed6cdd3151cbe8d8ba-Paper-Conference.pdf)：离线目标学习和两层回归目标。
+- [HIQL 原始实现](https://github.com/seohongpark/HIQL)：README 区分原始实验与 OGBench 中的新实现。
+
+#### 作者代码
+
+[作者仓库；更新的统一基线另见 OGBench。](https://github.com/seohongpark/HIQL)
+
+HIQL 原论文的离线训练与评价。
+
+### MaestroMotif: Skill Design from Artificial Intelligence Feedback
+
+Martin Klissarov, Mikael Henaff, Roberta Raileanu, Shagun Sodhani, Pascal Vincent, Amy Zhang, Pierre-Luc Bacon, Doina Precup, Marlos C. Machado, Pierluca D’Oro
+
+ICLR 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+语言描述如何变成可训练的技能奖励，并进一步组织成一个层次策略？
+
+#### 关键机制
+
+设计者先给出技能描述。语言模型的偏好反馈被用于训练奖励模型，再用生成的代码规定技能启动、终止和组合方式；强化学习负责学习实际执行行为。这把语义先验、奖励学习和时间抽象串成了具体训练流程。
+
+#### 证据
+
+论文在 NetHack 学习环境中检验复杂技能与任务组合。作者仓库同时包含偏好、代码生成和 RL 训练模块，可以追踪自然语言到环境动作的完整依赖。
+
+#### 条件与限制
+
+语义知识、技能描述和语言模型来自外部设计过程。该证据并不说明智能体仅凭自身交互就能产生同样的技能体系；偏好模型也可能与真实目标不一致。
+
+#### 阅读与实验
+
+选择一项技能，分别列出描述、偏好标签、训练奖励、终止条件和下游用途。移除语义描述或改变奖励模型时，要单独计量额外查询与人工成本。
+
+#### 原文与相关入口
+
+- [ICLR 2025 原文](https://proceedings.iclr.cc/paper_files/paper/2025/hash/2dc5a0faac8102fd47363795f71126ee-Abstract-Conference.html)：技能设计、奖励学习与组合实验。
+- [作者实现](https://github.com/mklissa/maestromotif)：偏好学习、代码生成和执行策略的不同模块。
+
+#### 作者代码
+
+[原论文作者仓库。](https://github.com/mklissa/maestromotif)
+
+MaestroMotif 的偏好处理、技能组织与 RL 实验。
+
+### The OaK Architecture: A Vision of SuperIntelligence from Experience
+
+Richard S. Sutton
+
+RLC 2025 讲座 / Oak Lab · 2025 · 定义与架构观点
+
+#### 研究问题
+
+持续学习是否只是在一个现成 actor–critic 上加入抗遗忘机制，还是需要重新安排知识构造与使用？
+
+#### 关键机制
+
+OaK 提出从经验持续形成状态、预测知识、子任务、时间抽象与模型，并让这些知识服务规划的架构方向。这里的重点是模块之间怎样产生可复用知识，而不只是保留某个固定策略网络的参数。
+
+#### 证据
+
+官方页面提供 Richard Sutton 的架构讲座与相关研究入口。STOMP、预测学习和在线特征学习等论文可以检验其中具体组件，但不能自动验证整体架构。
+
+#### 条件与限制
+
+这是研究愿景与架构讲解，不是一套已公布完整训练配方、统一基准结果和可复现端到端代码的系统。资源分配、问题生成、知识替换与模块相互干扰仍需明确算法。
+
+#### 阅读与实验
+
+为每个模块写出输入、输出、更新频率和资源上限。再选择一个双模块接口做可证伪实验，例如技能模型改善是否真的减少规划误差。
+
+#### 原文与相关入口
+
+- [Oak Lab 官方讲座页面](https://oaklab.ai/posts/the-oak-architecture)：讲座入口与架构研究方向。
+- [Oak Lab 研究主页](https://oaklab.ai/)：区分已发表研究、技术文章和仍在预告中的项目。
+
+### Foundation Policies with Hilbert Representations
+
+Seohong Park, Tobias Kreiman, Sergey Levine
+
+ICML 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+如何从无任务标签的离线轨迹形成既能按方向调用、又能用于目标任务的策略接口？
+
+#### 关键机制
+
+HILP 先学习近似保存时间距离的 Hilbert 表示，再以潜在位移与方向的内积训练方向条件策略。新任务通过奖励回归、目标方向或分层调用选择策略条件，结构表示也支持测试时规划。
+
+#### 证据
+
+ICML 原文与作者项目包含零样本 RL、离线目标条件 RL 及规划实验；官方仓库将 zero-shot 与 goal-conditioned 两套实现分开。
+
+#### 条件与限制
+
+精确时间距离不总能无损嵌入有限维对称欧氏距离，尤其有向不可逆行为；理论充分条件与近似神经实验需区分。方向条件策略没有自动获得任意停止条件或完整技能后果模型。
+
+#### 阅读与实验
+
+固定离线数据分别测距离误差、方向执行误差、奖励可表达误差与高层收益。让同一视觉观测对应不同历史，检查仅观测编码是否足够，之后再讨论 CRL 状态维护。
+
+#### 原文与相关入口
+
+- [ICML 2024 原文](https://proceedings.mlr.press/v235/park24g.html)：Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。
+- [作者项目与公式](https://seohong.me/projects/hilp/)：时间距离与方向奖励接口。
+- [官方实现](https://github.com/seohongpark/HILP)：hilp_zsrl 与 hilp_gcrl 对应不同实验。
+
+#### 作者代码
+
+[作者项目直接链接并标为 official implementation。](https://github.com/seohongpark/HILP)
+
+离线预训练、零样本奖励适配及目标条件实验。
+
+### Constructing an Optimal Behavior Basis for the Option Keyboard
+
+Lucas N. Alegre, Ana L. C. Bazzan, André Barreto, Bruno C. da Silva
+
+NeurIPS 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+状态相关的技能组合足够强时，是否仍须为每个新奖励保存一条完整策略？
+
+#### 关键机制
+
+OKB 联合扩充基础策略与 Option Keyboard 的元策略。线性支持方法选择需要补齐的任务权重，先训练现有基础上的组合，再检查无法表达的动作并新增基础，移除冗余项。优化的是可组合的行为基，而非仅增加技能数量。
+
+#### 证据
+
+正式原文分析基础数量与 convex coverage set 的关系，并在多任务领域检验规模与表现。附录提供元策略、新基础训练和角点枚举等实现细节；论文声明实验代码在 Supplemental Material。
+
+#### 条件与限制
+
+保证假定 NewPolicy 返回最优策略，且 TrainOK 能达到可表达的最优组合。近似 critic、有限训练、变化动力学不直接继承保证；非线性任务结论仅覆盖最优行为可由相应子策略组合的类别。
+
+#### 阅读与实验
+
+分别比较“增加基础”“只训练组合”和“去除冗余”。保留一组未用于基构造的奖励权重，记录基础规模、元策略成本、SF 误差与迁移回报。持续淘汰仍需未来任务效用检验。
+
+#### 原文与相关入口
+
+- [NeurIPS 2025 原文与补充材料入口](https://proceedings.neurips.cc/paper_files/paper/2025/hash/0ab48777def88e73b50746a6011be0b0-Abstract-Conference.html)：算法 1–3、附录 A.3 的两个最优子程序假设及代码声明；未在本教材运行补充代码。
+- [Option Keyboard 的经典桥梁](https://proceedings.neurips.cc/paper/2019/file/251c5ffd6b62cc21c446c963c76cf214-Paper.pdf)：cumulant 组合、GPE/GPI 与技能接口。
+
 
 <a id="chapter-code"></a>
 
@@ -497,3 +1032,13 @@ python3 examples/knowledge_algorithms_lab.py options
 - [Sharma et al. — Dynamics-Aware Unsupervised Discovery of Skills](https://arxiv.org/abs/1907.01657)：原文。理解技能条件后果模型如何既提供发现奖励又进入下游控制。
 
 - [Google Research — DADS 作者代码](https://github.com/google-research/dads)：原工程含技能学习与技能空间 MPC；入口 unsupervised_skill_learning/dads_off.py，按其配置区分训练与评估。
+
+- [ICML 2024 原文](https://proceedings.mlr.press/v235/park24g.html)：Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。
+
+- [作者项目与公式](https://seohong.me/projects/hilp/)：时间距离与方向奖励接口。
+
+- [官方实现](https://github.com/seohongpark/HILP)：hilp_zsrl 与 hilp_gcrl 对应不同实验。
+
+- [NeurIPS 2025 原文与补充材料入口](https://proceedings.neurips.cc/paper_files/paper/2025/hash/0ab48777def88e73b50746a6011be0b0-Abstract-Conference.html)：算法 1–3、附录 A.3 的两个最优子程序假设及代码声明；未在本教材运行补充代码。
+
+- [Option Keyboard 的经典桥梁](https://proceedings.neurips.cc/paper/2019/file/251c5ffd6b62cc21c446c963c76cf214-Paper.pdf)：cumulant 组合、GPE/GPI 与技能接口。

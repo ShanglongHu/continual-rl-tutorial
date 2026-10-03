@@ -5,7 +5,7 @@
       "number": "I",
       "title": "强化学习问题与目标",
       "question": "什么结果算更好？",
-      "result": "目标规定要改善什么。状态规定决策时可以使用什么信息。两者需要分别定义。",
+      "result": "目标规定要改善什么。奖励机制传递学习信号。状态规定决策时可以使用什么信息。三者需要分别定义。",
       "topics": [
         "objectives",
         "single-life"
@@ -126,6 +126,19 @@
   ],
   "curriculum": [
     {
+      "id": "B4",
+      "stage": "objectives",
+      "title": "奖励假设与奖励设计",
+      "path": "foundations/reward-design/",
+      "question": "奖励能表达哪些偏好，怎样让学习信号与设计意图一致？",
+      "output": "推导塑形、偏好梯度和 MaxEnt，并检验时间结构、代理失效与约束。",
+      "requires": [
+        "B0"
+      ],
+      "practice": "奖励语义、边界项与梯度反例",
+      "practicePath": "foundations/reward-design/#lesson-code"
+    },
+    {
       "id": "D0",
       "stage": "credit",
       "title": "时间信用分配与资格迹",
@@ -176,14 +189,15 @@
     {
       "id": "A2",
       "stage": "control",
-      "title": "控制问题与广义策略迭代",
+      "title": "持续控制与学习智能体比较",
       "path": "algorithms/control/",
-      "question": "怎样比较策略，并用预测改善行为？",
-      "output": "从 Bellman 最优方程推到策略迭代、价值迭代与在线控制。",
+      "question": "从固定策略到持续适应的智能体，评价对象怎样变化？",
+      "output": "定义历史条件价值、生命期指标与可行比较器；区分信息收益和不可逆后果。",
       "requires": [
-        "A1"
+        "A1",
+        "B0"
       ],
-      "practice": "动态规划与在线控制对照",
+      "practice": "完整学习器与策略排序反例",
       "practicePath": "algorithms/control/#lesson-code"
     },
     {
@@ -542,10 +556,11 @@
       "number": "I",
       "title": "强化学习问题与目标",
       "question": "什么结果算更好？",
-      "premise": "先规定智能体与环境交换的信号。奖励描述当前结果。回报规定怎样累计未来奖励。折扣回报、有限时域回报和平均奖励定义不同的优化问题。",
-      "transition": "目标规定要改善什么。状态规定决策时可以使用什么信息。两者需要分别定义。",
+      "premise": "从智能体与世界的持续交互出发，区分外部设计者的偏好、实际奖励和评价准则。奖励是假设与设计的对象，不是结果好坏的天然真值。折扣、时域和平均奖励进一步规定跨时间的比较。",
+      "transition": "目标规定要改善什么。奖励机制传递学习信号。状态规定决策时可以使用什么信息。三者需要分别定义。",
       "chapters": [
         "objectives",
+        "reward-design",
         "average"
       ]
     },
@@ -577,7 +592,7 @@
       "number": "IV",
       "title": "控制与策略改善",
       "question": "智能体怎样选择动作并改善行为？",
-      "premise": "控制比较策略，而不只是估计某个策略的价值。策略评价与策略改善构成基本循环。动作价值方法和策略梯度方法使用不同的改善步骤。函数逼近改变它们的误差与稳定性。",
+      "premise": "先区分固定策略的改善与完整学习器的生命期表现。持续控制中，动作同时改变世界、未来数据和后续学习。经典 GPI、动作价值和策略梯度提供局部工具；历史条件、可行比较器与资源限制决定这些工具能支持什么结论。",
       "transition": "这些控制方法都需要分配信用并选择更新尺度。持续交互要求学习过程也能适应。",
       "chapters": [
         "control",
@@ -702,6 +717,7 @@
     "plasticity": "algorithms/plasticity/",
     "exploration": "algorithms/exploration/",
     "architectures": "construction/architectures/",
-    "experiments": "experiments/"
+    "experiments": "experiments/",
+    "reward-design": "foundations/reward-design/"
   }
 }

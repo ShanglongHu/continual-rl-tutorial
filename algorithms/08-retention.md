@@ -8,6 +8,82 @@
 - 从目标函数推导 replay、EWC、策略蒸馏与 CLEAR，并把算法落实为完整存储/采样/更新流程。
 - 用固定内存、相同数据与计算预算设计保留—适应对照，而不让“存得更多”掩盖算法贡献。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+新经验要求改变行为，而过去能力可能再有用途；在固定存储和更新预算内控制保留—适应冲突。
+
+### 给定条件与符号
+
+- 当前经验、历史能力的独立评价分布和未来回访协议。
+- 固定内存、更新预算、可保存的经验/参数/教师输出及是否提供任务边界。
+
+### 需要求解的对象
+
+在当前适应与声明历史能力上满足可检验取舍的学习器；保留对象可为经验、参数近似或功能输出。
+
+### 信息与数据权限
+
+旧数据和教师输出来自当时行为；重放需处理行为差异，动力学变化不能仅由动作概率比修复。评测副本不得反馈数据或重置主智能体。
+
+$$
+\min L_{\rm now}(\theta)\quad\text{s.t.}\quad L_{\rm hist}(\theta)-L_{\rm hist}(\theta_{\rm ref})\le\varepsilon,\quad M\le B
+$$
+
+$\theta$ 为当前参数，$\theta_{\rm ref}$ 是历史参考，$L_{\rm now}$ 为当前声明损失，$L_{\rm hist}$ 是固定历史诊断分布的损失，$\varepsilon$ 为允许退化，$M$ 为持久内存，$B$ 为预算。此式定义一种可操作取舍；replay/EWC/CLEAR以不同代理近似它，RL最终还需在线外部收益。
+
+### 成立条件与解的含义
+
+- 历史诊断保持同一任务语义；永久失效的旧行为不应自动当作必须保持的能力。
+- 固定预算包含buffer、教师、参数锚与统计；旧任务边界和真标签是额外权限。
+
+判断准则：A→B→A或等价独立probe记录A的下降、B学习速度与A恢复；匹配容量、数据和更新数，报告全程收益，区分遗忘、负迁移和必要适应。
+
+### 适用边界
+
+- 保留不是无条件阻止参数变化或复制旧错误。
+- 历史训练损失低不能替代旧能力在固定分布上的诊断。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 组合不同学习问题 · [可塑性与特征更新](../textbook/plasticity.md)：保留测旧能力下降，可塑性测新学习速度；两者可能同时出现但需不同对照。
+
+- 组合不同学习问题 · [转移模型与后果模型](../textbook/models.md)：模型/SF也可保留结构知识，但模型过期与重估成本须另测。
+
+- 改变信息或数据协议 · [流式更新与稳定性](../textbook/streaming.md)：原始经验replay超出严格不重放协议，参数统计和功能约束也需记入预算。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+当前梯度会覆盖旧行为，而保存全部经验或每任务完整模型不可持续扩展。
+
+### 本章的核心思路
+
+先确定未来需保留什么，再用预算内的经验、局部几何或教师输出近似其约束。
+
+1. [选择代表的历史经验分布](../textbook/retention.md#lesson-derive)：因为FIFO与reservoir保留不同年龄分布，明确保存与训练采样规则，匹配所需历史评价。
+
+2. [纠偏历史学习并约束功能漂移](../textbook/retention.md#lesson-clear)：因为旧行为与当前策略不同，CLEAR用V-trace处理旧经验并用旧输出克隆限制漂移，两项目的分开。
+
+3. [以局部参数几何压缩历史](../textbook/retention.md#lesson-ewc)：因为不能总保留数据，EWC保存锚点与对角Fisher近似；检查边界触发、容量和局部近似误差。
+
+结论与条件：reservoir的时间索引保留概率可精确检验；EWC是局部曲率代理，CLEAR依赖覆盖和off-policy条件，均不提供任意变化任务的无遗忘保证。
+
+### 相关方法改变了什么
+
+- Replay：保留真实输入和经验，采样分布与行为纠偏决定用途。
+
+- EWC：保留参数附近的局部损失几何，忽略部分相关方向。
+
+- 蒸馏/CLEAR：保留指定状态上的功能输出，并可用RL项继续改进，强约束也会保存错误。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -271,6 +347,44 @@ python examples/lifelong_algorithms_lab.py test
 
 一个可检验的研究问题是：在无任务 ID 的循环环境中，总内存固定为 10 MB，将一部分观测存储预算改为保存旧 logits，是否改善全程收益与回访表现？相同原则也适用于 DRAGO：生成器、旧模型和少量真实 replay，应在同一存储预算下比较。
 
+<a id="research-upgd-utility"></a>
+
+## 研究专题 A · UPGD：保留与可塑性耦合在同一更新中
+
+固定重要参数可以保护旧功能，却可能阻碍必要适应；无选择地扰动又可能破坏仍有用的功能。UPGD 根据近期效用，让一些方向少变化，另一些方向更容易改变。效用的干预方式与数据范围是定义的一部分，不能直接叫作永久知识重要性。
+
+$$
+U_i=L(w-w_ie_i)-L(w)\approx-w_i\frac{\partial L}{\partial w_i}+\frac12w_i^2\frac{\partial^2L}{\partial w_i^2}
+$$
+
+U 是将第 i 个权重置零造成的损失变化。右侧为局部二阶 Taylor 近似；大幅移除时可失准，特征级与权重级干预也不相同。
+
+取 $L(w)=(w-1)^2/2$。在 $w=1$，精确移除效用为 0.5，一阶项却为零，二阶项补足 0.5。在 $w=-1$，精确效用为 −1.5，一阶项为 −2，二阶近似为 −1.5。负效用只说明这个分布上移除有益，不说明未来永远无用。
+
+$$
+\bar U_{t,i}=\beta\bar U_{t-1,i}+(1-\beta)U_{t,i},\qquad w_{t+1,i}=(1-\alpha\lambda)w_{t,i}-2\alpha(1-\widetilde U_{t,i})(g_{t,i}+\xi_{t,i})
+$$
+
+对应作者 README 的全局缩放、一阶、权重级短实现骨架。Ũ 经偏差修正、全局参照与 sigmoid 得到，ξ 是指定尺度扰动。论文另有效用/特征变体，不能混用。
+
+同一保护系数同时乘在梯度和噪声上。因此高效用坐标不仅少受随机破坏，也可能更慢完成新任务更新；低效用坐标可能承担更大优化方差。weight decay 是第三条独立变化路径。只消融噪声不能解释全部效果。
+
+| 对照 | 检验 |
+| --- | --- |
+| 统一乘子 vs 效用乘子 | 总体降低学习率还是方向选择？ |
+| 只调梯度、只调噪声、同时调节 | 功能保护与参数多样性的不同作用。 |
+| 精确效用、一阶、二阶 | 近似在漂移或饱和处何时失真？ |
+| 近期分布、旧 probe、真实回访 | 近期有用与历史稀有重要知识是否相同？ |
+
+**算法：从反事实效用到持续控制的验证路径**
+
+1. 两坐标回归：精确计算逐坐标置零效用，固定相同噪声序列
+1. A→B→A 数据流：不给切换标记，不清零效用统计
+1. 报告当前误差、新目标速度、A 回访与整个过程损失
+1. 再接入 PPO，明确 rollout 长度与重复更新预算
+
+作者 mohmdelsayed/upgd 的 experiments/weight_utility.py 对应效用实验，core/run/rl 对应 PPO。需要核对缩放分母退化、梯度与参数是否来自同一步、统计是否跨任务保留。主体流式监督结果与 PPO 证据分别报告；换用在线 optimizer 不能使 PPO 自动满足严格一次使用经验协议。
+
 <a id="lesson-check"></a>
 
 ## 9 · 习题与下一步
@@ -285,7 +399,7 @@ python examples/lifelong_algorithms_lab.py test
 
 ## 本章的实验设计
 
-冻结副本测试保留能力。继续学习的副本测试再适应。副本中的反馈不能写回主运行。
+冻结副本测试保留能力。保持更新的副本测试再适应。副本中的反馈不能写回主运行。
 
 设定：使用 A→B→A，并在回访前复制隔离的评测分支。一个分支冻结，另一个允许新增学习。加入未见 C 以防“少遗忘但学不动”。
 
@@ -301,9 +415,399 @@ python examples/lifelong_algorithms_lab.py test
 
 ## 学习与研究衔接
 
-记住旧任务和快速学习新任务可能冲突。冻结诊断与继续学习的再适应实验分别回答不同问题。
+记住旧任务和快速学习新任务可能冲突。冻结诊断与保持更新的再适应实验分别回答不同问题。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-retention) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=retention) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=retention)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 后果模型、知识保留与规划
+
+学会预测后果，何时能真正改善决策？
+
+模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+
+- [Knowledge Retention in Continual Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-drago-model-retention)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-upgd-utility-protection)
+
+#### 新学习能力、知识保留与负迁移
+
+学得慢是失去学习能力、旧知识有害，还是必须保护的知识发生干扰？
+
+可塑性看新知识能否学会，保留看旧能力是否下降，负迁移看过去学习是否使新任务差于从头学习。网络回收、函数正则、双学习器和预训练适配对应不同机制，不应只用一个平均回报解释全部现象。
+
+- [Loss of plasticity in deep continual learning](https://yingwen.io/zh/continual-rl/research/#recent-continual-backpropagation)
+- [Mitigating Plasticity Loss in Continual Reinforcement Learning by Reducing Churn](https://yingwen.io/zh/continual-rl/research/#recent-c-chain-churn)
+- [Prevalence of Negative Transfer in Continual Reinforcement Learning: Analyses and a Simple Baseline](https://yingwen.io/zh/continual-rl/research/#recent-reset-and-distill)
+- [Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-fame-fast-meta-learners)
+- [Knowledge Retention in Continual Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-drago-model-retention)
+- [Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-continual-vla-simple-recipe)
+- [Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-upgd-utility-protection)
+- [Parseval Regularization for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-parseval-continual-geometry)
+- [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-trac-online-regularization)
+
+#### 学习规则本身的适应
+
+谁在调整学习过程，依据哪些经验，付出多少外部训练成本？
+
+在线步长元梯度、跨任务算法发现、知识整合与局部更新控制并非同一设定。逐项写清智能体内部的更新、设计者的预训练和调参，以及测试时仍能变化的量，才能判断真正的适应来自哪里。
+
+- [Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-fame-fast-meta-learners)
+- [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-trac-online-regularization)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-continual-vla-simple-recipe)
+
+### Loss of plasticity in deep continual learning
+
+Shibhansh Dohare, J. Fernando Hernandez-Garcia, Qingfeng Lan, Parash Rahman, A. Rupam Mahmood, Richard S. Sutton
+
+Nature · 2024 · 直接研究持续学习
+
+#### 研究问题
+
+一个长期训练的网络如何保留继续形成新特征的能力？
+
+#### 关键机制
+
+Continual Backpropagation 在梯度学习之外持续生成并测试特征。它估计单元的效用和成熟度，少量替换低效用的成熟单元，并协调新单元的输入、输出和相关状态。维护新的可学习方向是一个持续过程，而不是等到任务切换后整体重启。
+
+#### 证据
+
+论文在长序列监督学习与强化学习问题中展示可塑性损失，并检验特征替换的作用。作者仓库包含 generate-and-test 与优化器状态处理。
+
+#### 条件与限制
+
+有限序列上的学习保持不保证无限生命中的任意适应。替换率、效用定义与成熟度条件仍需选择；新任务学习速度和旧能力保留必须分开测量。
+
+#### 阅读与实验
+
+逐项消融“成熟度筛选”“效用筛选”“随机替换”。比较相同替换预算，检验收益究竟来自定向回收还是一般参数扰动。
+
+#### 原文与相关入口
+
+- [Nature 原文](https://doi.org/10.1038/s41586-024-07711-7)：长期可塑性实验与 continual backpropagation。
+- [作者代码](https://github.com/shibhansh/loss-of-plasticity)：关注 lop/algos/gnt.py 及替换时的优化器状态。
+
+#### 作者代码
+
+[论文作者公开的实验实现。](https://github.com/shibhansh/loss-of-plasticity)
+
+论文任务、持续反向传播与 generate-and-test。
+
+### Mitigating Plasticity Loss in Continual Reinforcement Learning by Reducing Churn
+
+Hongyao Tang, Johan Obando-Ceron, Pablo Samuel Castro, Aaron Courville, Glen Berseth
+
+ICML 2025 · 2025 · 直接研究持续学习
+
+#### 研究问题
+
+一次局部更新为什么会在其他输入上引发大幅预测变化，并损害后续学习？
+
+#### 关键机制
+
+C-CHAIN 抑制相对于近期参考网络的函数输出变化，降低一次更新在其他样本上造成的 churn。论文把该现象与经验神经切线核及学习动力学联系起来。正则化对象是函数变化，不是直接把所有参数锁在旧值附近。
+
+#### 证据
+
+作者在持续 Gym Control、ProcGen、DMC 和 MinAtar 序列中比较，并提供对应环境和算法代码。
+
+#### 条件与限制
+
+近期函数稳定性不等于长期任务知识保留；参考样本和参考网络也占资源。若环境突然发生真实变化，过强抑制输出变化可能延迟必要适应。
+
+#### 阅读与实验
+
+将 churn 按旧分布、新分布分别计算，并同时画适应速度。这样才能区分“减少无关干扰”和“阻止有用改变”。
+
+#### 原文与相关入口
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/tang25g.html)：机制、理论分析与持续实验。
+- [作者代码](https://github.com/bluecontra/C-CHAIN)：四类持续环境的基线和 C-CHAIN 对照实现。
+
+#### 作者代码
+
+[作者仓库，README 说明依赖的 TRAC、CleanRL 与 MinAtar 基础实现。](https://github.com/bluecontra/C-CHAIN)
+
+持续控制环境与 C-CHAIN 对照实验。
+
+### Knowledge Retention in Continual Model-Based Reinforcement Learning
+
+Haotian Fu, Yixiang Sun, Michael Littman, George Konidaris
+
+ICML 2025 · 2025 · 直接研究持续学习
+
+#### 研究问题
+
+当前任务不再访问旧区域时，世界模型怎样避免忘记那些区域的动力学？
+
+#### 关键机制
+
+DRAGO 将生成式旧经验、旧模型知识和探索结合起来。模型学习不只跟随当前奖励驱动的数据分布，还尝试维持对曾经学过区域的预测能力。它关注知识保留发生在模型里，而不只是保存旧策略输出。
+
+#### 证据
+
+论文在 MiniGrid 和连续控制任务中检验模型保留与任务表现，并给出原作者实现。关键设定包括共享状态与动力学、变化的任务奖励。
+
+#### 条件与限制
+
+已知任务切换、旧模型和数据资源是协议的一部分。共享动力学下的保留不能直接外推到动力学本身任意变化，也不是禁止重放的严格流式算法。
+
+#### 阅读与实验
+
+分别测量旧区域模型误差、旧任务回报与新任务学习速度。若模型误差改善而控制没有改善，再检查规划是否真正查询了被保留的知识。
+
+#### 原文与相关入口
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/fu25f.html)：任务设定、模型保留和探索机制。
+- [作者代码](https://github.com/YixiangSun/drago)：原文链接的 DRAGO 实验实现。
+
+#### 作者代码
+
+[作者 Yixiang Sun 的仓库；不使用同名第三方项目。](https://github.com/YixiangSun/drago)
+
+DRAGO 的模型、重放、探索与实验。
+
+### Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning
+
+Ke Sun, Hongming Zhang, Jun Jin, Chao Gao, Xi Chen, Wulong Liu, Linglong Kong
+
+ICLR 2026 · 2026 · 直接研究持续学习
+
+#### 研究问题
+
+快速学习新任务和整合旧知识，能否由不同学习器承担并以明确目标连接？
+
+#### 关键机制
+
+FAME 的快速学习器适应当前任务，元学习器整合此前知识。论文按旧策略的重要访问分布度量价值或策略变化，再据此构造减少遗忘的整合目标。自适应预热决定如何利用旧知识初始化或约束早期行为，以减少负迁移。
+
+#### 证据
+
+论文分析价值型和策略型版本，并在像素与连续控制任务序列中比较。作者提供官方实现，可追踪快速适应与知识整合两个阶段。
+
+#### 条件与限制
+
+设定要求相同状态与动作空间、已知任务边界以及额外整合计算。这里的 meta learner 主要是知识整合模块，不应因名称就当作通过长期回报反向求导的在线元梯度算法。脑机制类比也不是神经科学实验证据。
+
+#### 阅读与实验
+
+分别报告新任务前向迁移、旧任务保留和两个学习阶段的计算量。改变任务相似性，检验自适应预热是否确实避免有害旧知识。
+
+#### 原文与相关入口
+
+- [ICLR 2026 原文](https://proceedings.iclr.cc/paper_files/paper/2026/hash/2230ffcd5da10015ce0c6ce588fc2936-Abstract-Conference.html)：任务边界假设、遗忘度量与快慢知识机制。
+- [FAME 官方实现](https://github.com/datake/FAME)：论文链接的快速学习与知识整合代码。
+
+#### 作者代码
+
+[论文与仓库均注明为官方实现。](https://github.com/datake/FAME)
+
+FAME 的价值型、策略型持续学习实验。
+
+### Prevalence of Negative Transfer in Continual Reinforcement Learning: Analyses and a Simple Baseline
+
+Hongjoon Ahn, Jinu Hyeon, Youngmin Oh, Bosun Hwang, Taesup Moon
+
+ICLR 2025 · 2025 · 直接研究持续学习
+
+#### 研究问题
+
+一个网络还能拟合新目标，为什么先前训练仍可能让它在新任务上学得更慢？
+
+#### 关键机制
+
+论文把任务之间的负迁移与一般可塑性损失区分开。Reset & Distill 在新任务开始时重置在线 actor 和 critic，避免旧初始化阻碍学习；随后离线蒸馏当前策略与旧专家的动作分布以整合知识。适应和保留通过不同过程实现。
+
+#### 证据
+
+作者在控制与游戏任务中分析负迁移，并在长 MetaWorld 序列上检验该基线。原文直接提供实现地址。
+
+#### 条件与限制
+
+任务边界、在线网络重置、旧专家和离线蒸馏都需要资源。它不能直接当作无边界、不能重置、禁止回放的单次生命方案。
+
+#### 阅读与实验
+
+除了与连续微调比较，还要与同等预算的从头训练比较。若新任务表现低于从头训练，先检查负迁移，再判断是否属于单纯容量损失。
+
+#### 原文与相关入口
+
+- [ICLR 2025 原文](https://proceedings.iclr.cc/paper_files/paper/2025/hash/ba9e3d60610f3525717665966d86e0cd-Abstract-Conference.html)：负迁移诊断、Reset & Distill 机制与边界。
+- [原文代码入口](https://github.com/hongjoon0805/Reset-Distill)：论文首页提供的作者实现。
+
+#### 作者代码
+
+[ICLR 正式论文首页明确链接的代码。](https://github.com/hongjoon0805/Reset-Distill)
+
+Reset & Distill 以及任务序列实验。
+
+### Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning
+
+Jiaheng Hu, Jay Shim, Chen Tang, Yoonchang Sung, Bo Liu, Peter Stone, Roberto Martín-Martín
+
+RLC 2026 · 2026 · 直接研究持续学习
+
+#### 研究问题
+
+大规模预训练的视觉—语言—动作模型，是否仍需要复杂机制才能顺序学习控制任务？
+
+#### 关键机制
+
+论文研究对预训练 VLA 进行顺序强化学习，并以低秩适配等相对简单的训练流程检验持续学习。预训练表示、可更新参数子空间和 RL 目标共同决定迁移与遗忘，不能只把结果归因于单一保留正则项。
+
+#### 证据
+
+作者在多种 VLA 与长期任务基准上比较，并提供实验代码。RLJ 的 RLC 2026 论文页与论文脚注分别给出正式入口和作者仓库。
+
+#### 条件与限制
+
+预训练数据和算力属于外部资源，任务与重置协议也影响难度。该结果不意味着从零训练的网络不会遗忘，更不意味着任意无边界任务流只需微调。
+
+#### 阅读与实验
+
+固定预训练模型，分别改变可训练参数量和任务顺序。报告预训练资源、每任务在线数据、回放或重置条件，再与传统 CRL 方法比较。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2603.11653)：VLA 持续学习设置、机制与比较。
+- [RLC 2026 / RLJ 论文页](https://rlj.cs.umass.edu/2026/papers/Paper84.html)：会议原文入口；PDF 脚注链接作者代码。
+- [作者实现](https://github.com/UT-Austin-RobIn/continual-vla-rl)：持续 VLA 的训练与评价代码。
+
+#### 作者代码
+
+[UT Austin RobIn 实验室的原论文仓库。](https://github.com/UT-Austin-RobIn/continual-vla-rl)
+
+预训练 VLA 的顺序 RL 训练和论文评价。
+
+### Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning
+
+Aneesh Muppidi, Zhiyu Zhang, Heng Yang
+
+NeurIPS 2024 · 2024 · 直接研究持续学习
+
+#### 研究问题
+
+未知环境变化时间和速度时，怎样在线决定参数应离参考初始化多远？
+
+#### 关键机制
+
+TRAC 在基础优化器外维护一组具有不同遗忘时间尺度的一维 tuner，根据梯度与参考方向的内积调整参数位移尺度。它通过数据驱动的缩放联系到正则化，而不是对未来任务回报进行长窗口元梯度反传。
+
+#### 证据
+
+作者在 Procgen、Atari 与 Gym Control 变化序列中比较适应与可塑性，并分析在线凸优化对该设计的启发。
+
+#### 条件与限制
+
+凸在线优化中的遗憾理论不等于非凸、策略依赖采样的深度 RL 收敛定理。“parameter-free”不表示没有基础学习率、初始化、时间尺度网格、warm-start 或协议选择。
+
+#### 阅读与实验
+
+记录 tuner 尺度、距参考点的位移、旧分布干扰与变化后适应。用相同基础优化器比较固定尺度、单时间尺度和多时间尺度。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/file/5b76d77e7095c6480ed827b85f0c2878-Paper-Conference.pdf)：Algorithm 1–2、正则化联系与持续实验。
+- [作者论文 v3](https://arxiv.org/html/2405.16642v3)：区分凸理论、RL 经验结果与初期表现限制。
+
+#### 作者代码
+
+[作者项目页与仓库均明确标为官方实现。](https://github.com/ComputationalRobotics/TRAC)
+
+trac.py、PyTorch/JAX optimizer 包与控制/视觉实验。
+
+### Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning
+
+Mohamed Elsayed, A. Rupam Mahmood
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同一网络里，哪些方向应当保护，哪些方向应当获得更强的新学习与扰动？
+
+#### 关键机制
+
+UPGD 用移除权重或特征的反事实损失变化定义效用，并以 Taylor 近似在线估计。平滑、缩放后的效用同时调制梯度与随机扰动，让近期高效用方向变化较小、低效用方向更活跃。
+
+#### 证据
+
+主体证据包括未知边界的非平稳流式监督任务；另外包含长时间 PPO 实验。两类证据应分别理解，不能把监督任务数量写成 RL 任务覆盖。
+
+#### 条件与限制
+
+近期分布上的效用不保证稀有旧知识的重要性；一阶和二阶近似、权重级和特征级版本不同。PPO 仍使用 rollout 与重复更新，不因 optimizer 在线就成为严格流式 RL。
+
+#### 阅读与实验
+
+用可精确消融的小网络检查效用估计，再拆开保护梯度、保护噪声和 weight decay 三种作用；独立报告新学习与旧功能。
+
+#### 原文与相关入口
+
+- [ICLR 2024 原文](https://proceedings.iclr.cc/paper_files/paper/2024/file/8e5f0591943d8dae5702af12dcdcd2f6-Paper-Conference.pdf)：效用定义、近似、不同 UPGD 变体与 PPO 实验。
+- [作者预印本](https://arxiv.org/abs/2404.00781)：流式监督协议与 RL 证据范围。
+
+#### 作者代码
+
+[论文首页明确链接的作者仓库；README 的短实现是一个指定变体。](https://github.com/mohmdelsayed/upgd)
+
+权重/特征效用实验、流式任务及 PPO 实现。
+
+### Parseval Regularization for Continual Reinforcement Learning
+
+Wesley Chung, Lynn Cherif, David Meger, Doina Precup
+
+NeurIPS 2024 · 2024 · 直接研究持续学习
+
+#### 研究问题
+
+仅在初始化时保持良好的权重几何，是否足以让很晚出现的新任务仍容易学习？
+
+#### 关键机制
+
+在选定隐藏层加入 $\lambda\|WW^\top-sI\|_F^2$，持续约束行向量的范数与角度；输出层及额外尺度设计保留表达能力。它维护学习的几何条件，并不直接保存旧任务标签或预测。
+
+#### 证据
+
+作者在 Gridworld、CARL、MetaWorld 任务序列中检验，并拆分范数与角度约束。稳定秩、Jacobian 与熵属于诊断量，不单独构成可塑性或保留的因果证明。
+
+#### 条件与限制
+
+约束会限制函数类；输出行数大于输入维度时，全部行正交不可实现。非线性门控仍能切断梯度。有限任务序列的结果不保证无限生命内有效，也不是无任务信息的万能机制。
+
+#### 阅读与实验
+
+同预算比较仅初始化正交、持续范数约束、持续角度约束和完整正则；同时记录新目标拟合、真实回报、旧功能与额外计算。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/file/e6df4efa20adf8ef9acb80e94072a429-Paper-Conference.pdf)：目标函数、容量限制、角度/范数消融及持续任务协议。
+- [作者版本记录](https://arxiv.org/abs/2412.07224)：正式会议年份为 2024。
+
+#### 作者代码
+
+[仓库明确标为 NeurIPS 2024 官方实现。](https://github.com/wechu/parseval_reg)
+
+PPO、任务序列、正则化与网络结构消融。
+
 
 <a id="chapter-code"></a>
 
@@ -334,3 +838,21 @@ python examples/lifelong_algorithms_lab.py retention
 - [DRAGO 作者实现](https://github.com/YixiangSun/drago)：对应生成器、冻结旧动力学模型和任务/回访行为；与仅用 reservoir 的模型自由方法有不同预算。
 
 - [AGI-Labs continual_rl](https://github.com/AGI-Labs/continual_rl)：可扩展 CRL 比较框架，包含统一接口下的方法复现；实现来源与原论文作者仓库分别标识。
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/file/5b76d77e7095c6480ed827b85f0c2878-Paper-Conference.pdf)：Algorithm 1–2、正则化联系与持续实验。
+
+- [作者论文 v3](https://arxiv.org/html/2405.16642v3)：区分凸理论、RL 经验结果与初期表现限制。
+
+- [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning · 作者实现](https://github.com/ComputationalRobotics/TRAC)：trac.py、PyTorch/JAX optimizer 包与控制/视觉实验。 作者项目页与仓库均明确标为官方实现。
+
+- [ICLR 2024 原文](https://proceedings.iclr.cc/paper_files/paper/2024/file/8e5f0591943d8dae5702af12dcdcd2f6-Paper-Conference.pdf)：效用定义、近似、不同 UPGD 变体与 PPO 实验。
+
+- [作者预印本](https://arxiv.org/abs/2404.00781)：流式监督协议与 RL 证据范围。
+
+- [Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning · 作者实现](https://github.com/mohmdelsayed/upgd)：权重/特征效用实验、流式任务及 PPO 实现。 论文首页明确链接的作者仓库；README 的短实现是一个指定变体。
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/file/e6df4efa20adf8ef9acb80e94072a429-Paper-Conference.pdf)：目标函数、容量限制、角度/范数消融及持续任务协议。
+
+- [作者版本记录](https://arxiv.org/abs/2412.07224)：正式会议年份为 2024。
+
+- [Parseval Regularization for Continual Reinforcement Learning · 作者实现](https://github.com/wechu/parseval_reg)：PPO、任务序列、正则化与网络结构消融。 仓库明确标为 NeurIPS 2024 官方实现。

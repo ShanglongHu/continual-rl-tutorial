@@ -31,8 +31,10 @@ class Documentation(unittest.TestCase):
 
     def test_complete_textbook_and_prerequisites(self):
         inventory=json.loads((ROOT/'data/site-export.json').read_text())
-        self.assertEqual(len(inventory['chapters']),22)
-        self.assertGreaterEqual(len(inventory['lessons']),19)
+        self.assertEqual(len(inventory['chapters']),23)
+        self.assertEqual(len(inventory['lessons']),26)
+        self.assertIn('reward-design', {c['id'] for c in inventory['chapters']})
+        self.assertEqual(sum(l['track']=='deep' and l['order']>=7 for l in inventory['lessons']),7)
         for chapter in inventory['chapters']:
             path=ROOT/'textbook'/(chapter['id']+'.md')
             self.assertTrue(path.exists())

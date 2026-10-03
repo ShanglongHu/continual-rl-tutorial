@@ -8,6 +8,82 @@ DQN 用神经网络近似动作价值。在共享参数下，一次更新会影�
 - 实现两层 ReLU Q 网络及其反向传播。
 - 知道 buffer、更新比率、目标滞后和非平稳环境之间的冲突。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+离散动作折扣控制中，以共享神经网络估计动作价值；数据行为、回放分布和目标网络具有不同时间尺度。
+
+### 给定条件与符号
+
+- 固定Markov任务、奖励、真实终止语义和可选离散动作。
+- 网络、回放容量、采样规则、目标同步、探索及更新预算。
+
+### 需要求解的对象
+
+可产生高回报动作的近似最优动作价值；每批训练只拟合给定Bellman标签。
+
+### 信息与数据权限
+
+行为策略收集 $(s,a,r,s',d)$，$d$ 只表示真实终止；回放分布 $D$ 决定本批样本，在线参数 $\theta$ 与目标参数 $\theta^-$ 的更新时间各自规定。
+
+$$
+Q^*(s,a)=\mathbb E\!\left[R+\gamma(1-d)\max_{a'}Q^*(S',a')\mid s,a\right]
+$$
+
+$R,S'$ 是真实条件后果，$0\le\gamma<1$。这是理想最优价值固定点；本批DQN损失是 $\tfrac12\mathbb E_D[(Q_\theta(s,a)-\operatorname{sg}(Y))^2]$，$Y$ 为旧目标网络构造的标签，$\operatorname{sg}$ 表示停止梯度。二者不是同一个优化问题。
+
+### 成立条件与解的含义
+
+- 基础题目固定且状态Markov；数据必须覆盖决策所需动作与状态。
+- 任意非线性网络、回放与自举的组合没有本章给出的全局收敛保证。
+
+判断准则：两状态解析问题上核对最优价值[[0.9,0.1],[1,−1]]、终止标签和网络梯度；复杂任务用独立行为收益并记录真实步、梯度步和回放年龄。
+
+### 适用边界
+
+- Double DQN不保证完全消除高估或总有更高回报。
+- batch size为1不构成严格流式协议。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 限制表示或采用近似 · [持续控制与学习智能体比较](../textbook/control.md)：DQN解决固定离散折扣任务的局部价值控制，并不完整评价持续学习过程。
+
+- 组合不同学习问题 · [知识保留与再适应](../textbook/retention.md)：回放重用经验，但是否保留未来需要的旧知识还需历史采样与回访评价。
+
+- 组合不同学习问题 · [可塑性与特征更新](../textbook/plasticity.md)：共享网络长期可学习性是额外问题，较低Bellman标签损失不能诊断全部退化。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+共享估计同时改变多个输入，目标又依赖价值估计，产生相关样本与追逐标签的反馈。
+
+### 本章的核心思路
+
+分别控制数据重用、目标移动和选择—评估耦合，不把三个机制混成一项收敛保证。
+
+1. [从最优固定点构造冻结标签](../textbook/deep-value.md#lesson-derive)：因为网络不能直接枚举真实期望，用目标网络生成本批Bellman标签并停止其梯度。
+
+2. [分开动作选择和评估](../textbook/deep-value.md#lesson-derive)：因为最大值会偏爱估计偏高的动作，Double DQN用在线网络选、目标网络评估；两网络仍可能相关。
+
+3. [验证共享梯度与三种时钟](../textbook/deep-value.md#lesson-code)：因为一处参数更新影响多个输出，先检查固定标签梯度，再接回放、真实交互和目标同步循环。
+
+结论与条件：精确有限折扣Bellman算子有唯一固定点；这不构成神经DQN训练的收敛证明，目标网络与回放是有限协议下的稳定化机制。
+
+### 相关方法改变了什么
+
+- 表格Q-learning：独立参数消除共享逼近干扰，但不能扩展到任意高维输入。
+
+- DQN：目标网络同时选与评估下一动作。
+
+- Double DQN：分开选择与评估来源，减少一类最大化偏差而不消除所有误差。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -245,6 +321,272 @@ Rainbow 将若干改动组合，在其任务与预算中评估。研究 CRL 时�
 DQN 保留 TD 目标。网络、回放与目标网络增加新的时间尺度，长期训练时也可能引入陈旧数据与可塑性问题。
 
 [分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-deep-value) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=deep-value) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=deep-value)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+
+- [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+
+#### 时间信用分配与离策略多步学习
+
+当前反馈如何修正过去的决策与预测，哪些历史信息可以压缩成迹？
+
+前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。
+
+- [Safe and Efficient Off-Policy Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-retrace-safe-offpolicy)
+- [Convergent Tree Backup and Retrace with Function Approximation](https://yingwen.io/zh/continual-rl/research/#recent-convergent-tree-retrace)
+
+#### 后果模型、知识保留与规划
+
+学会预测后果，何时能真正改善决策？
+
+模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+
+- [TD-MPC2: Scalable, Robust World Models for Continuous Control](https://yingwen.io/zh/continual-rl/research/#recent-tdmpc2-decision-time-model)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+
+#### 新学习能力、知识保留与负迁移
+
+学得慢是失去学习能力、旧知识有害，还是必须保护的知识发生干扰？
+
+可塑性看新知识能否学会，保留看旧能力是否下降，负迁移看过去学习是否使新任务差于从头学习。网络回收、函数正则、双学习器和预训练适配对应不同机制，不应只用一个平均回报解释全部现象。
+
+- [The Dormant Neuron Phenomenon in Deep Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-redo-dormant-neurons)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+
+#### 完整智能体与研究基础
+
+长期能力应怎样定义，各个机制又怎样共同产生它？
+
+形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+
+- [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+
+### The Dormant Neuron Phenomenon in Deep Reinforcement Learning
+
+Ghada Sokar, Rishabh Agarwal, Pablo Samuel Castro, Utku Evci
+
+ICML 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+网络参数数量没有变，为什么越来越多隐藏单元不再对输出产生有效贡献？
+
+#### 关键机制
+
+ReDo 用相对激活量识别低活跃单元，重新初始化其输入连接，并处理输出连接，使被回收单元可以重新参与学习。它针对的是可用表示容量，而不是直接惩罚旧任务表现变化。
+
+#### 证据
+
+论文记录深度 RL 中的休眠单元现象，并比较回收机制对多个任务学习的影响。实现进入作者所在团队的 Dopamine 代码库。
+
+#### 条件与限制
+
+低激活只是可塑性问题的一种诊断，不能覆盖曲率变化、优化器状态和负迁移。回收也可能损坏低频但重要的旧知识，需要与保留指标共同评价。
+
+#### 阅读与实验
+
+同时记录休眠比例、新目标拟合速度与旧任务冻结表现。三者发生不同方向变化时，不要用单个表示指标替代整个持续学习结论。
+
+#### 原文与相关入口
+
+- [ICML 2023 原文](https://proceedings.mlr.press/v202/sokar23a.html)：休眠定义、回收规则与实验。
+- [Dopamine ReDo 实现](https://github.com/google/dopamine/tree/master/dopamine/labs/redo)：作者团队公开代码中的 ReDo 模块。
+
+#### 作者代码
+
+[论文作者团队发布的实现，不是本教材的简化版本。](https://github.com/google/dopamine/tree/master/dopamine/labs/redo)
+
+Dopamine 中的 ReDo 神经元回收与实验实现。
+
+### Revisiting Adam for Streaming Reinforcement Learning
+
+Florin Gogianu, Luțu Adrian-Cătălin, Razvan Pascanu
+
+RLC 2026 / RLJ 预会议版 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+流式 RL 的不稳定来自 Adam 本身，还是目标导数、方差与超参数的组合？
+
+#### 关键机制
+
+论文重新分析自适应更新的信噪比，将 Adam 的稳定项与目标导数尺度联系起来，并研究有界导数的回报分布学习及多步更新。它改变的是目标与更新的配合，而非简单沿用批量训练时的默认配置。
+
+#### 证据
+
+作者在大规模 Atari 流式实验中展示了具有竞争力的结果，并重新比较早期流式方法。正式 RLJ 入口收录为 RLC 2026 预会议论文。
+
+#### 条件与限制
+
+主体实验采用经典回合式 Atari 的流式学习协议，不是任意非平稳终生适应的证据。这些结果也不否定归一化、资格迹或更新约束在其他任务中的价值。版本、调参预算和目标分布必须对齐。
+
+#### 阅读与实验
+
+建立二维对照：固定目标换优化器，固定优化器换目标。将调参种子与最终测试分开，再判断改进来自哪一个因素。
+
+#### 原文与相关入口
+
+- [RLC 2026 论文入口](https://rlj.cs.umass.edu/2026/papers/Paper131.html)：会议收录信息与论文。
+- [作者预印本](https://arxiv.org/abs/2605.06764)：Adam 尺度分析、回报分布目标与实验协议。
+
+### Safe and Efficient Off-Policy Reinforcement Learning
+
+Rémi Munos, Tom Stepleton, Anna Harutyunyan, Marc G. Bellemare
+
+NeurIPS 2016 · 2016 · 支持方法与理论
+
+#### 研究问题
+
+目标与行为策略不一致时，如何保留多步信用而避免重要性比率乘积爆炸？
+
+#### 关键机制
+
+统一多步目标为目标策略TD误差的加权和，Retrace采用λmin(1,π/μ)传播系数。近同策略时保留长迹，目标概率较低的动作则减少传播；一步误差仍使用目标动作期望。
+
+#### 证据
+
+论文分析表格算子的收缩性质，给出条件下的评价与控制收敛，并报告Atari实验。信用章独立检查传播系数和有限轨迹恒等式。
+
+#### 条件与限制
+
+表格安全性不是任意线性或神经逼近的稳定性保证。行为覆盖、变化策略与投影条件仍需检查；代码小实验不复现Atari。
+
+#### 阅读与实验
+
+在同样轨迹与表示上，分别改变策略差异和动作随机性，比较Tree-backup与Retrace的信用长度、方差和预测误差。
+
+#### 原文与相关入口
+
+- [原论文](https://arxiv.org/html/1606.02647)：统一算子、传播系数及理论条件。
+
+### Convergent Tree Backup and Retrace with Function Approximation
+
+Ahmed Touati, Pierre-Luc Bacon, Doina Precup, Pascal Vincent
+
+ICML 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+传播系数已经截断，为什么函数逼近下的Tree-backup和Retrace仍可能发散？
+
+#### 关键机制
+
+分析函数逼近与off-policy多步bootstrap的学习算子，展示线性反例，再把相应目标写成二次凸凹鞍点问题，构造梯度版本。
+
+#### 证据
+
+原文给出线性不稳定例子、梯度方法收敛保证与有限样本界。它直接限定了从Retrace表格结论外推到逼近算法的范围。
+
+#### 条件与限制
+
+凸凹线性问题的保证不能自动覆盖学习表示的深度网络。稳定目标、更新速度与控制性能还需分别验证。
+
+#### 阅读与实验
+
+先检查固定表示下的期望更新矩阵，再将半梯度和梯度版本按相同样本、步数与计算预算比较。
+
+#### 原文与相关入口
+
+- [ICML原文](https://proceedings.mlr.press/v80/touati18a.html)：理论反例、鞍点方法和保证条件。
+
+### Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations
+
+Haosen Shi, Jianda Chen, Sinno Jialin Pan
+
+ICLR 2026 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+能否直接学习多步未来状态的分布，并把它压缩为适合控制学习的特征？
+
+#### 关键机制
+
+SF² 以 flow matching 估计 successor measure，将条件向量场分解为未来位置及生成时间的投影与当前状态动作特征的乘积。特征进入 TD3/SAC 的 critic；线性的是向量场对条件特征的分解，critic 本身可以非线性。
+
+#### 证据
+
+正式原文给出 mixture Bellman 结构、生成式 bootstrap 与控制实验，并提供作者 JAX/Brax 仓库。实验研究在线收集数据下的 off-policy 控制，并使用 replay、批次与目标网络。
+
+#### 条件与限制
+
+“online policy learning”不代表 strict streaming。生成时间不是环境时间；向量场线性不保证任意奖励价值线性。文中与 SR 的小生成时间联系是近似动机，未证明递归 agent state 或任意持续变化下的充分性。
+
+#### 阅读与实验
+
+对齐模型调用与梯度预算，拆分直接预测、bootstrap、critic 联合训练。冻结特征后比较线性与非线性读出，再测新奖励和动力学变化，才能检验预测知识的可复用程度。
+
+#### 原文与相关入口
+
+- [ICLR 2026 正式原文](https://proceedings.iclr.cc/paper_files/paper/2026/hash/48acf4b231771e693f42305b4c9b4c9f-Abstract-Conference.html)：第 2–3 节和算法附录；区分 flow 时间、环境时间与近似 SR 联系。
+- [原文链接的作者实现](https://github.com/Shiien/successor-flow-representation-implementation)：SAC/TD3、flow 特征、对照和 sweep 配置。
+
+#### 作者代码
+
+[正式论文摘要直接链接的作者代码。](https://github.com/Shiien/successor-flow-representation-implementation)
+
+基于 JAX/Brax 的 SF² 控制实验；不包含自动 GVF 问题发现或完整持续架构。
+
+### TD-MPC2: Scalable, Robust World Models for Continuous Control
+
+Nicklas Hansen, Hao Su, Xiaolong Wang
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+如何让短期动力学与长期价值分工，并在动作选择时继续使用模型？
+
+#### 关键机制
+
+TD-MPC2 学习无需观测 decoder 的潜在动力学、奖励、价值与策略先验。决策时优化有限动作序列，用终点价值补上未展开的后果；执行第一步后，利用新观测重新规划。
+
+#### 证据
+
+正式会议原文报告 104 个在线任务和单一大型多任务智能体的实验。官方仓库包含模型训练与计划接口，适合与 Dreamer 的想象 actor 学习比较计算位置。
+
+#### 条件与限制
+
+跨任务共享超参数和多任务能力不是单条生命流中持续适应的证据。replay、任务条件、模型更新、决策延迟等成本需进入 CRL 协议；长程 critic 错误不能被短期模型精度自动修复。
+
+#### 阅读与实验
+
+固定模型，对比无终点价值、不同 horizon 和不同规划预算；再固定预算比较部署 actor 与决策时搜索。环境变化后同时记录模型校准、critic 误差和恢复收益。
+
+#### 原文与相关入口
+
+- [ICLR 2024 原文](https://proceedings.iclr.cc/paper_files/paper/2024/hash/cf73d57b6dcda32b293df7c2d5341f49-Abstract-Conference.html)：短期预测、终点价值、多任务协议。
+- [作者实现](https://github.com/nicklashansen/tdmpc2)：训练、模型与 plan 函数分别阅读。
+
+#### 作者代码
+
+[作者维护的原论文代码。](https://github.com/nicklashansen/tdmpc2)
+
+TD-MPC2 的单任务/多任务训练和决策时规划。
+
 
 <a id="chapter-code"></a>
 

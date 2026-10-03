@@ -1,6 +1,63 @@
 {
   "researchQuestions": [
     {
+      "id": "reward-design",
+      "group": "objectives",
+      "title": "奖励表示与奖励学习：目标怎样进入智能体？",
+      "setting": "设计者拥有偏好，智能体只能接收有限观测和奖励。奖励可能手写，也可能由人的比较或示范推断。必须分开目标变化、奖励估计变化与环境变化。",
+      "known": "期望效用与局部加性奖励需要不同条件。势函数塑形在边界条件满足时保持策略排序；偏好模型可以从片段比较中学习。",
+      "gap": "新行为会改变奖励模型的数据分布。有限反馈下，怎样保持奖励语义并防止代理失效仍是开放问题。",
+      "methods": [
+        {
+          "name": "表示条件与奖励状态",
+          "mechanism": "用反例检查原状态是否丢失时间结构；必要时显式增加奖励自动机或记忆。",
+          "assumptions": "更大状态不保证任意偏好都可由有限计算表示。",
+          "sourceIds": [
+            "reward-representation",
+            "reward-expressivity"
+          ]
+        },
+        {
+          "name": "偏好学习与重标记",
+          "mechanism": "比较损失更新奖励模型；控制器使用更新后的信号并产生新经验。",
+          "assumptions": "反馈噪声、片段选择和奖励模型版本都属于协议。",
+          "sourceIds": [
+            "reward-feedback"
+          ]
+        }
+      ],
+      "competingExplanations": [
+        "收益可能来自更接近真实目标，也可能只是更稠密的反馈。",
+        "奖励下降可能来自目标变化、模型外推错误或控制器失去可塑性。"
+      ],
+      "experiment": {
+        "hypothesis": "相同反馈预算下，版本一致的经验重标记可减少奖励模型更新后的控制滞后。",
+        "design": "固定环境与真实评价，仅改变奖励模型；再独立改变真实目标。设置训练分布内与新策略片段两种偏好测试。",
+        "controls": "真奖励诊断、固定模型、不重标记、全部重标记；匹配查询与计算预算。",
+        "measures": "原任务收益、偏好校准、奖励投机行为、适应成本与反馈数。",
+        "falsifier": "若优势只来自更高反馈量，或训练奖励提高但真实评价下降，则不支持目标学习改进。"
+      },
+      "chapterIds": [
+        "reward-design",
+        "objectives",
+        "state",
+        "control",
+        "goals",
+        "experiments"
+      ],
+      "scholarIds": [
+        "S01",
+        "S08",
+        "S17",
+        "S41",
+        "S65"
+      ],
+      "benchmarkIds": [
+        "analytic"
+      ],
+      "sourceIds": []
+    },
+    {
       "id": "lifetime-objective",
       "group": "objectives",
       "title": "01 · 什么目标能够评价一个始终在学习的智能体？",
@@ -48,6 +105,7 @@
       },
       "chapterIds": [
         "objectives",
+        "control",
         "average",
         "experiments"
       ],
@@ -846,7 +904,7 @@
     {
       "id": "experience-selection",
       "group": "adaptation",
-      "title": "14 · 应当探索什么、练习什么，以及如何保留继续学习的机会？",
+      "title": "14 · 应当探索什么、练习什么，以及如何保留未来交互与学习的机会？",
       "setting": "智能体的行为决定未来数据。新奇、可学习性、学习进展和任务收益并不一致。课程 teacher 能否选目标、改环境或重置，也会从根本上改变问题。",
       "known": "预测误差可以鼓励访问未熟悉状态，学习进展可以优先分配可改善任务，恢复策略可以减少陷入失能状态的风险。但噪声环境可能永远产生大误差，短期安全也不等于长期可恢复。",
       "gap": "持续经验选择需要区分暂时不会、根本不可预测和对未来没用。没有外部救援时，还要把不可逆风险纳入评价。技能覆盖或新奇奖励不能代替任务回报与恢复能力。",
@@ -885,7 +943,7 @@
         "design": "在小环境同时设置稀疏有用线索、纯噪声区域和可恢复/不可恢复陷阱。比较新奇和学习进展；若有 teacher，另开同权限实验。",
         "controls": "随机探索、固定内在权重、oracle 可学区域仅作诊断上界；匹配先验数据和外部救援次数。",
         "measures": "有用覆盖、噪声区域停留、首次任务发现、恢复成功、失能时间、外在累计奖励和人工干预。",
-        "falsifier": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善可继续学习能力，则需更换机制解释。"
+        "falsifier": "去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善后续学习能力，则需更换机制解释。"
       },
       "chapterIds": [
         "exploration",
@@ -1052,6 +1110,34 @@
     }
   ],
   "researchSources": [
+    {
+      "id": "reward-representation",
+      "title": "Bowling et al. · Settling the Reward Hypothesis",
+      "url": "https://proceedings.mlr.press/v202/bowling23a.html",
+      "venue": "ICML 2023",
+      "contribution": "区分期望效用表示与逐步 Markov 奖励表示；时间一致性是额外条件。",
+      "code": null
+    },
+    {
+      "id": "reward-expressivity",
+      "title": "Abel et al. · On the Expressivity of Markov Reward",
+      "url": "https://arxiv.org/abs/2111.00876",
+      "venue": "NeurIPS 2021",
+      "contribution": "给定状态和奖励输入后，并非所有任务偏好都能由固定 Markov 奖励表达。",
+      "code": null
+    },
+    {
+      "id": "reward-feedback",
+      "title": "Lee et al. · PEBBLE",
+      "url": "https://arxiv.org/abs/2106.05091",
+      "venue": "2021",
+      "contribution": "用预训练与奖励重标记提高偏好反馈的利用率。反馈模型与策略的数据分布共同变化。",
+      "code": {
+        "url": "https://github.com/rll-research/BPref",
+        "label": "B-Pref / PEBBLE 作者代码",
+        "scope": "奖励模型、查询策略、回放重标记与训练配置。"
+      }
+    },
     {
       "id": "book",
       "title": "Sutton & Barto · Reinforcement Learning: An Introduction",

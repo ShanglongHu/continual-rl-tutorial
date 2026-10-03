@@ -68,10 +68,17 @@ def prediction_demo():
                (0.5, [3.0], 1.0, 0.5, [1.0])]
     exact = solve([[1.0, -0.5], [-0.5, 1.0]], [0.0, 1.0])
     td, a, b = lstd(samples, 1)
+    # Changing an evaluation weight alone does not change the original stream.
+    # To solve the new projected equation, change the actual sample masses.
+    weighted, weighted_a, weighted_b = lstd([
+        (0.9, [1.0], 0.0, 0.5, [3.0]),
+        (0.1, [3.0], 1.0, 0.5, [1.0])], 1)
     mc = (0.5 * exact[0] + 1.5 * exact[1]) / 5.0
     return {"true_values": exact, "A": a, "b": b, "TD_weight": td[0],
             "MC_weight": mc, "TD_values": [td[0], 3 * td[0]],
-            "MC_values": [mc, 3 * mc]}
+            "MC_values": [mc, 3 * mc],
+            "reweighted_TD_weight": weighted[0],
+            "reweighted_A": weighted_a, "reweighted_b": weighted_b}
 # END prediction
 
 
@@ -326,6 +333,15 @@ class ApproximationTests(unittest.TestCase):
     def test_lstd_normal_equation(self):
         result = prediction_demo()
         self.assertAlmostEqual(result["A"][0][0] * result["TD_weight"], result["b"][0])
+
+    def test_td_projection_weights_must_match_sampling(self):
+        result = prediction_demo()
+        self.assertAlmostEqual(result["reweighted_TD_weight"], 1.0)
+        self.assertAlmostEqual(result["reweighted_A"][0][0], 0.3)
+        self.assertAlmostEqual(result["reweighted_b"][0], 0.3)
+        # The unweighted stream's root does not solve the reweighted equation.
+        residual = result["reweighted_b"][0] - result["reweighted_A"][0][0] * result["TD_weight"]
+        self.assertAlmostEqual(residual, 6/35)
 
     def test_scaling_requires_squared_step_adjustment(self):
         w, _ = semi_gradient_td([0.4], [2], 0.3, [1], 0.8, 0.1)

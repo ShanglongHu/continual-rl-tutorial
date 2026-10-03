@@ -68,7 +68,39 @@ def average_demo():
           "h1_minus_h0": round(values[1] - values[0], 6),
           "control_rate": round(optimal_rate, 6), "behavior_rate": 0.5,
           "option_step": option_rate_step(1, 0.5, 2, 5, 4, 3)})
+    q_centered, reference = 0.0, 0.0
+    for _ in range(1000):
+        q_centered, reference, _ = centered_single_state_step(
+            q_centered, reference, 1.0, gamma=0.9, eta=0.1, alpha=0.3)
+    print("discounted_centering", {"q": round(q_centered, 6),
+          "reference_c": round(reference, 6), "true_reward_rate": 1.0,
+          "invariant_c_minus_eta_q": round(reference - 0.1*q_centered, 12)})
 # END average
+
+
+# BEGIN centering
+def centered_single_state_step(q, reference, reward, gamma=0.9,
+                               eta=0.1, alpha=0.1):
+    """One-state diagnostic, not a complete reward-centering implementation.
+
+    Discounted TD reference c need not equal the actual reward rate.
+    Both writes use the SAME old-parameter error. gamma=1 is the
+    differential limiting comparison, not discounted policy equivalence.
+    """
+    if not 0 <= gamma <= 1 or eta < 0 or alpha < 0:
+        raise ValueError("invalid discount or nonnegative update scale")
+    delta = reward - reference - (1 - gamma)*q
+    return q + alpha*delta, reference + eta*alpha*delta, delta
+
+
+def centered_single_state_fixed_point(reward, gamma, eta, q0=0.0, c0=0.0):
+    """Solve c-eta*q invariant and zero TD error; not a stability claim."""
+    if not 0 <= gamma <= 1 or eta < 0 or eta + 1 - gamma <= 0:
+        raise ValueError("a positive fixed-point denominator is required")
+    invariant = c0 - eta*q0
+    q = (reward - invariant)/(eta + 1 - gamma)
+    return q, invariant + eta*q
+# END centering
 
 
 # BEGIN streaming
@@ -346,6 +378,8 @@ class ModularAgent:
         self.q[state][action] += self.alpha*q_error
         self.rate += self.eta*self.alpha*q_error
         self.gvf[state] += self.alpha*ratio*prediction_error
+        # Finite toy outcome slots, not an unlimited-lifetime byte bound:
+        # Python counts/cursor grow in bit width; new reward values add keys.
         outcomes = self.model.setdefault((state, action), {})
         outcomes[reward, next_state] = outcomes.get((reward, next_state), 0) + 1
         # A deterministic scheduler makes the simulated-update budget inspectable.
@@ -396,6 +430,34 @@ def architectures_demo():
 
 
 class MechanismTests(unittest.TestCase):
+    def test_centering_reference_is_not_true_reward_rate(self):
+        q, c = 0.0, 0.0
+        for _ in range(1000):
+            q, c, _ = centered_single_state_step(q, c, 1., alpha=.3)
+        self.assertAlmostEqual(q, 5.)
+        self.assertAlmostEqual(c, .5)
+        self.assertNotAlmostEqual(c, 1.)
+
+    def test_centering_invariant_with_arbitrary_initialization(self):
+        q, c, eta = 2., -.3, .2
+        invariant = c-eta*q
+        for reward in [1., -2., 3., 0.]:
+            q, c, _ = centered_single_state_step(q, c, reward, .8, eta, .3)
+            self.assertAlmostEqual(c-eta*q, invariant)
+        fixed_q, fixed_c = centered_single_state_fixed_point(1., .8, eta, 2., -.3)
+        self.assertAlmostEqual(1.-fixed_c-.2*fixed_q, 0.)
+        self.assertAlmostEqual(fixed_c-eta*fixed_q, invariant)
+
+    def test_centering_differential_limit(self):
+        _, c = centered_single_state_fixed_point(3., 1., .2, 4., -1.)
+        self.assertAlmostEqual(c, 3.)
+
+    def test_centering_rejects_invalid_settings(self):
+        with self.assertRaises(ValueError):
+            centered_single_state_step(0., 0., 1., gamma=1.1)
+        with self.assertRaises(ValueError):
+            centered_single_state_fixed_point(1., 1., 0.)
+
     def test_average_both_updates_use_old_error(self):
         v, g, d = differential_td([1., 3.], .5, 0, 2., 1)
         self.assertEqual(d, 3.5)

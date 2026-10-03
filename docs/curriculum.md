@@ -30,7 +30,15 @@
 
 什么结果算更好？
 
-完成标志：目标规定要改善什么。状态规定决策时可以使用什么信息。两者需要分别定义。
+完成标志：目标规定要改善什么。奖励机制传递学习信号。状态规定决策时可以使用什么信息。三者需要分别定义。
+
+### [B4 · 奖励假设与奖励设计](../textbook/reward-design.md)
+
+奖励能表达哪些偏好，怎样让学习信号与设计意图一致？
+
+- 先修：[B0 交互、奖励与优化目标](../textbook/objectives.md)
+- 学会什么：推导塑形、偏好梯度和 MaxEnt，并检验时间结构、代理失效与约束。
+- 动手：[奖励语义、边界项与梯度反例](../textbook/reward-design.md#lesson-code)
 
 ### [B0 · 交互、奖励与优化目标](../textbook/objectives.md)
 
@@ -44,7 +52,7 @@
 
 continuing、continual、streaming、single-life 差在哪？
 
-- 先修：[A2 控制问题与广义策略迭代](../textbook/control.md)
+- 先修：[A2 持续控制与学习智能体比较](../textbook/control.md)
 - 学会什么：明确环境与学习器各在何时重置。
 - 动手：[从变化 bandit 完成第一份实验](https://yingwen.io/zh/continual-rl/first-project/)
 
@@ -52,7 +60,7 @@ continuing、continual、streaming、single-life 差在哪？
 
 没有自然终点时，如何学每单位时间的收益？
 
-- 先修：[A1 价值预测：MC → TD → traces](../textbook/value.md)；[A2 控制问题与广义策略迭代](../textbook/control.md)
+- 先修：[A1 价值预测：MC → TD → traces](../textbook/value.md)；[A2 持续控制与学习智能体比较](../textbook/control.md)
 - 学会什么：区分折扣价值、奖励率、差分价值与时长。
 - 动手：[Differential TD/Q 原代码与公式检查](https://yingwen.io/zh/continual-rl/construction/implementations/#impl-differential)
 
@@ -98,19 +106,19 @@ continuing、continual、streaming、single-life 差在哪？
 
 完成标志：这些控制方法都需要分配信用并选择更新尺度。持续交互要求学习过程也能适应。
 
-### [A2 · 控制问题与广义策略迭代](../textbook/control.md)
+### [A2 · 持续控制与学习智能体比较](../textbook/control.md)
 
-怎样比较策略，并用预测改善行为？
+从固定策略到持续适应的智能体，评价对象怎样变化？
 
-- 先修：[A1 价值预测：MC → TD → traces](../textbook/value.md)
-- 学会什么：从 Bellman 最优方程推到策略迭代、价值迭代与在线控制。
-- 动手：[动态规划与在线控制对照](../textbook/control.md#lesson-code)
+- 先修：[A1 价值预测：MC → TD → traces](../textbook/value.md)；[B0 交互、奖励与优化目标](../textbook/objectives.md)
+- 学会什么：定义历史条件价值、生命期指标与可行比较器；区分信息收益和不可逆后果。
+- 动手：[完整学习器与策略排序反例](../textbook/control.md#lesson-code)
 
 ### [A3 · 深度价值：DQN 与扩展](../textbook/deep-value.md)
 
 函数逼近、bootstrap 与复用数据怎样相互影响？
 
-- 先修：[A2 控制问题与广义策略迭代](../textbook/control.md)
+- 先修：[A2 持续控制与学习智能体比较](../textbook/control.md)
 - 学会什么：定位 replay、target network 和 Double DQN。
 - 动手：[从单文件 DQN 追一次更新](https://yingwen.io/zh/continual-rl/algorithms/deep-value/#algorithm-sources)
 
@@ -126,7 +134,7 @@ continuing、continual、streaming、single-life 差在哪？
 
 连续动作与熵正则如何改变 actor 和 critic？
 
-- 先修：[A2 控制问题与广义策略迭代](../textbook/control.md)；[A4 策略梯度 → actor–critic → PPO](../textbook/policy.md)
+- 先修：[A2 持续控制与学习智能体比较](../textbook/control.md)；[A4 策略梯度 → actor–critic → PPO](../textbook/policy.md)
 - 学会什么：分开 off-policy 数据、双 Q 与熵目标。
 - 动手：[阅读 SAC 数据与 target 路径](https://yingwen.io/zh/continual-rl/algorithms/soft-control/#algorithm-sources)
 
@@ -182,7 +190,7 @@ continuing、continual、streaming、single-life 差在哪？
 
 目标、内在奖励和子任务怎样定义用途？
 
-- 先修：[A2 控制问题与广义策略迭代](../textbook/control.md)；[C1 GVF：从一个回报到一组预测](../textbook/gvf.md)
+- 先修：[A2 持续控制与学习智能体比较](../textbook/control.md)；[C1 GVF：从一个回报到一组预测](../textbook/gvf.md)
 - 学会什么：区分 goal conditioning、目标生成与价值保留。
 - 动手：[最短路与 reward-respecting 子任务](https://yingwen.io/zh/continual-rl/construction/#construction-code)
 
@@ -190,7 +198,7 @@ continuing、continual、streaming、single-life 差在哪？
 
 怎样发现、执行、终止和复用长行为？
 
-- 先修：[A2 控制问题与广义策略迭代](../textbook/control.md)
+- 先修：[A2 持续控制与学习智能体比较](../textbook/control.md)
 - 学会什么：定义 I、π、β；区分技能发现与 SF/GPI。
 - 动手：[Option-Critic → eigenoptions](https://yingwen.io/zh/continual-rl/construction/implementations/#impl-option-critic)
 
@@ -204,7 +212,7 @@ continuing、continual、streaming、single-life 差在哪？
 
 真实经验和模型生成的 backup 如何配合？
 
-- 先修：[A2 控制问题与广义策略迭代](../textbook/control.md)
+- 先修：[A2 持续控制与学习智能体比较](../textbook/control.md)
 - 学会什么：分开真实步数、模型误差和规划计算。
 - 动手：[Q-learning 与 Dyna-Q 对照](https://yingwen.io/zh/continual-rl/algorithms/#algorithm-code)
 
@@ -250,7 +258,7 @@ continuing、continual、streaming、single-life 差在哪？
 
 什么经验值得主动获取？
 
-- 先修：[A2 控制问题与广义策略迭代](../textbook/control.md)；[B1 生命期、变化与交互协议](../tutorials/01-lifetime.md)
+- 先修：[A2 持续控制与学习智能体比较](../textbook/control.md)；[B1 生命期、变化与交互协议](../tutorials/01-lifetime.md)
 - 学会什么：区分预测误差、新奇、学习进步与最终用途。
 - 动手：[给不可约噪声加一个对照](https://yingwen.io/zh/continual-rl/algorithms/exploration/#algorithm-practice)
 

@@ -8,6 +8,82 @@
 - 独立实现 Differential TD、Differential Q 与已知模型的 RVI，明确每条更新使用哪个旧值。
 - 把原子动作推广到随机时长的 option，分清目标、数据协议与深度实现假设。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+持续运行没有自然终点，关注每个原始时间步的长期收益；预测与控制分别求指定策略奖励率或最优奖励率。
+
+### 给定条件与符号
+
+- 固定MDP、原始步计时、有界奖励和可用动作。
+- 预测时给定目标策略；控制时给定探索、访问与更新预算。
+
+### 需要求解的对象
+
+指定策略的奖励率与差分价值，或使奖励率尽可能大的策略及相应相对动作价值。
+
+### 信息与数据权限
+
+数据为 $(S_t,A_t,R_{t+1},S_{t+1})$；离策略预测另需实际行为 $b(A_t\mid S_t)$，目标策略为 $\pi$。技能更新另记录原始持续时间 $\tau$。
+
+$$
+g_\pi=\lim_{T\to\infty}\frac1T\mathbb E_\pi\!\left[\sum_{t=0}^{T-1}R_{t+1}\right],\qquad g_* =\sup_{\pi\in\Pi}g_\pi
+$$
+
+$T$ 是原始环境步数，$\Pi$ 是允许的策略集合。预测只估计固定 $\pi$ 的 $g_\pi$；控制才比较 $g_*$。差分价值 $h_\pi$ 描述去掉奖励率后的相对收益，只在加常数意义下确定。
+
+### 成立条件与解的含义
+
+- 本章基础预测先假设奖励率不依赖初始状态，例如有限不可约策略链；控制需对应算法的通信和访问条件。
+- 差分方程与相对值的锚定需要明确；深网、非平稳世界和随机技能不能直接继承表格收敛结论。
+
+判断准则：小MDP上核对奖励率和Poisson/Bellman方程残差；比较相对价值差而非任意偏移；技能按原始时间计收益并检验时长扣除。
+
+### 适用边界
+
+- 有限窗口平均不等于已证明存在的无限时域奖励率。
+- 奖励中心化参照量不自动等于精确平均奖励。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 改变评价目标 · [价值预测与资格迹](value.md)：将折扣累计量改成长期奖励率，预测对象随之变为奖励率与差分价值。
+
+- 改变评价目标 · [Options 与技能发现](options.md)：相对options章的折扣控制，本章采用每个原始步的长期奖励率；同样的随机时长技能需扣除奖励率乘时长，而不使用折扣尾值。
+
+- 组合不同学习问题 · [持续控制与学习智能体比较](control.md)：固定策略奖励率是局部控制工具；完整学习器仍需计入有限寿命的适应与探索成本。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+无折扣总奖励随时间增长，普通价值无法直接作为有限相对量；技能还改变了决策间隔。
+
+### 本章的核心思路
+
+估计共同增长的奖励率与剩余相对价值，并保持原始时间单位；联合TD更新与参考函数锚定是两种实现。
+
+1. [减去长期增长项](average.md#lesson-derive)：因为总奖励随时间线性增长，Poisson方程用奖励率分离增长与相对价值；Differential TD/Q以同一旧误差更新两种估计。
+
+2. [锚定价值的平移自由度](average.md#lesson-rvi)：因为相对值加常数仍满足方程，RVI用参考状态/函数约束坐标；这是另一实现，不要求Differential TD也固定参考状态。
+
+3. [将机会成本按技能时长计算](average.md#lesson-duration)：因为一个option消耗多个原始步，理想半Markov方程扣除奖励率乘实际时长；本章更新变体先用旧期望长度估计扣除并归一化，再更新长度，不能任意换成随机时长分母。
+
+结论与条件：表格差分TD/Q与RVI有各自的链结构、步长及覆盖条件；本章深度骨架不提供普遍收敛或重置免费保证。
+
+### 相关方法改变了什么
+
+- Differential TD/Q：由同一TD误差联合更新奖励率与价值。
+
+- RVI：用参考函数提供相对价值的锚定。
+
+- 奖励中心化：处理共同奖励偏移；折扣联合更新的中心不应预先当成奖励率。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -203,6 +279,13 @@ def average_demo():
           "h1_minus_h0": round(values[1] - values[0], 6),
           "control_rate": round(optimal_rate, 6), "behavior_rate": 0.5,
           "option_step": option_rate_step(1, 0.5, 2, 5, 4, 3)})
+    q_centered, reference = 0.0, 0.0
+    for _ in range(1000):
+        q_centered, reference, _ = centered_single_state_step(
+            q_centered, reference, 1.0, gamma=0.9, eta=0.1, alpha=0.3)
+    print("discounted_centering", {"q": round(q_centered, 6),
+          "reference_c": round(reference, 6), "true_reward_rate": 1.0,
+          "invariant_c_minus_eta_q": round(reference - 0.1*q_centered, 12)})
 ```
 
 下载本页实验文件后运行；Python 3.10+，仅标准库
@@ -231,10 +314,12 @@ $$
 Naik 等人的 Reward Centering（RLC 2024）据此将共同的奖励偏移从价值学习中分离。它与 Differential TD/Q 共用一个重要思想：同时学习价值差异与标量参照量。但保留 $\gamma<1$ 时，学习的仍是中心化的折扣价值，而不是自动改成平均奖励控制。
 
 $$
-\delta_t=R_{t+1}-\bar g_t+\gamma\max_{a'}Q_t(S_{t+1},a')-Q_t(S_t,A_t),\qquad \bar g_{t+1}=\bar g_t+\eta\alpha_t\delta_t
+\delta_t=R_{t+1}-c_t+\gamma\max_{a'}Q_t(S_{t+1},a')-Q_t(S_t,A_t),\qquad c_{t+1}=c_t+\eta\alpha_t\delta_t
 $$
 
-这是 TD 驱动的控制中心化形式。$Q$ 同时按 $\alpha_t\delta_t$ 更新。固定参照量下的平移恒等式说明其动机；参照量与函数近似同时变化时，还需分析联合学习过程。
+这是 TD 驱动的控制中心化形式，$Q$ 同时按 $\alpha_t\delta_t$ 更新。$c$ 是联合学习的参照量；当 $\gamma<1$ 时，不应预先把它等同于精确的平均奖励率。固定常数的平移恒等式与这个联合学习过程是不同结论。
+
+反例：单状态、单动作、每步奖励 1，取 $\gamma=0.9$、$\eta=0.1$、$Q_0=c_0=0$。两条更新使 $c_t-\eta Q_t$ 恒为零；稳定固定点为 $Q_*=5,c_*=0.5$，真实奖励率却为 1。此时 Q 正确表示中心化奖励 0.5 的折扣价值。详细推导见本章的 TD 中心化固定点研究节。on-policy 奖励均值、TD 参照与平均奖励 Differential TD 需分别命名和评价。
 
 例如 $c=2$、$\gamma=0.99$ 时，共同价值偏移是 $200$；移除它可让网络更多容量用于区分状态和动作。Wan、Korenkevych 与 Zhu 的 continuing-task 研究（2025）进一步比较了无重置、预设重置和智能体控制重置的环境，并发现中心化不能完全消除大折扣带来的性能下降。它解决部分数值与估计问题，并不消除恢复困难或探索不足。
 
@@ -261,6 +346,111 @@ RVI-SAC 将参考项估计与最大熵控制结合。训练收益可包含熵和
 - 研究函数逼近：固定特征、线性辅助变量、深网三层递进；先确定失效来自覆盖、投影还是表示漂移。
 - 研究 SMDP：控制时长分布、奖励与时长相关性，并统一按原始环境步计算分母。
 
+<a id="research-centering-fixed-point"></a>
+
+## 研究专题 A · TD 中心化标量为何不总是奖励率？
+
+固定 c 时，中心化折扣价值只发生共同平移。TD 中心化却同时更新 q 与 c，二者相互影响。下面用常奖励的单状态系统求解其固定点，检查 c 是否等于真实平均奖励率。
+
+$$
+\delta_t=r-c_t-(1-\gamma)q_t,\quad q_{t+1}=q_t+\alpha\delta_t,\quad c_{t+1}=c_t+\eta\alpha\delta_t
+$$
+
+单状态、单动作、常奖励 r，γ<1。所有右侧使用旧参数；c 是 TD 参照量，不预先称作真实 g。
+
+$$
+c_t-\eta q_t=c_0-\eta q_0=:k,\quad q_*={r-k\over\eta+1-\gamma},\quad c_*={\eta r+(1-\gamma)k\over\eta+1-\gamma}
+$$
+
+两种增量成比例，所以 c−ηq 不变；联立 δ=0 得固定点。确定性误差倍率为 1−α(η+1−γ)，还需满足其绝对值小于 1 的稳定条件。
+
+取 $r=1$、$\gamma=0.9$、$\eta=0.1$、初值全零，得 $q_*=5,c_*=0.5$，实际奖励率却是 1。q 正是中心化奖励 0.5 的折扣价值 $0.5/(1-0.9)=5$。若令 $\gamma=1$，这个单状态方程才要求 $c_*=r$。
+
+Reward Centering 的 TD 驱动参照、on-policy 行为奖励均值与 Differential TD 是不同对象。保留 γ<1 可改善共同数值尺度，却不能证明有限折扣与平均奖励在任意策略上排序相同。off-policy 场景也不能把真实行为均值直接当作目标策略的奖励率。
+
+| 量 | 含义 | 检查 |
+| --- | --- | --- |
+| c | TD 学习参照 | γ、初始化约束及联合固定点。 |
+| reward/time | 实际行为外部奖励率 | 完整奖励和真实时间。 |
+| g | 平均奖励方法的目标奖励率 | 策略对象、覆盖与收敛条件。 |
+
+**算法：参照语义的验证方案**
+
+1. 常奖励单状态：逐步更新 q,c，核对 c−ηq 不变量
+1. 改变 γ、奖励常数偏移和初值，核对解析固定点
+1. 多动作控制：保持同一 reset 协议，比较排序和外部率
+1. 深度比较：同预算分别加入行为均值与 TD 中心化
+
+可运行的单状态更新与独立固定点参考；本章 average 命令打印反例，test 命令核对不变量、固定点与差分极限。
+
+```python
+def centered_single_state_step(q, reference, reward, gamma=0.9,
+                               eta=0.1, alpha=0.1):
+    """One-state diagnostic, not a complete reward-centering implementation.
+
+    Discounted TD reference c need not equal the actual reward rate.
+    Both writes use the SAME old-parameter error. gamma=1 is the
+    differential limiting comparison, not discounted policy equivalence.
+    """
+    if not 0 <= gamma <= 1 or eta < 0 or alpha < 0:
+        raise ValueError("invalid discount or nonnegative update scale")
+    delta = reward - reference - (1 - gamma)*q
+    return q + alpha*delta, reference + eta*alpha*delta, delta
+
+
+def centered_single_state_fixed_point(reward, gamma, eta, q0=0.0, c0=0.0):
+    """Solve c-eta*q invariant and zero TD error; not a stability claim."""
+    if not 0 <= gamma <= 1 or eta < 0 or eta + 1 - gamma <= 0:
+        raise ValueError("a positive fixed-point denominator is required")
+    invariant = c0 - eta*q0
+    q = (reward - invariant)/(eta + 1 - gamma)
+    return q, invariant + eta*q
+```
+
+原始 Reward Centering 论文与 DeepRL-continuing-tasks 的 rc 配置可追踪具体变体。函数逼近、随机采样及不同更新时间尺度带来额外误差；单状态不变量用于发现语义混淆，不能直接推广成深网守恒律。
+
+<a id="research-rvi-sac-reset-cost"></a>
+
+## 研究专题 B · RVI-SAC：平均奖励、soft 参照与重置成本
+
+RVI-SAC（ICML 2024）直接面向平均奖励最大熵控制。在 soft 后继价值中减去参考项，不使用小于一的环境折扣；另用 reset critic 和成本控制重置频率。完整系统不是仅把 SAC 的 γ 改成 1。
+
+$$
+\bar v(s')=\mathbb E_{a'\sim\pi_\theta}[\min_k\bar Q_k(s',a')-\tau_H\log\pi_\theta(a'\mid s')],\quad y=r-cd-f+\bar v(s')
+$$
+
+target critics、策略与温度构造 y 后停止梯度；d 是本次 reset 指示，s′ 是真实后继。τH 是熵温度，不是任务耗时。
+
+$$
+L_Q=\sum_k\mathbb E[(Q_k(s,a)-\operatorname{sg}(y))^2],\quad f^+=(1-\kappa)f+\kappa\zeta\mathbb E_{\rm batch}[\bar v(s')],\quad L_\pi=\mathbb E[\tau_H\log\pi_\theta(a\mid s)-\min_k Q_k(s,a)]
+$$
+
+f 式对应作者当前 rvi_sac.py 的移动参考，ζ 对应 fq_gain；其他 reference 变体需逐文件区分。actor 使用可重参数化动作，温度另行训练。
+
+$$
+y_d=d-f_d+\bar Q_d(s',a'),\quad L_{Q_d}=\mathbb E[(Q_d(s,a)-\operatorname{sg}(y_d))^2],\quad c^+=\max\{0,c+\alpha_c(f_d-p_0)\}
+$$
+
+reset critic 使用 reset 指示作为信号，fd 按对应移动参考更新。c 式是普通 dual 梯度步解释；作者实际用 Adam 再投影非负，不能把此式称作完整 Adam。p0 为目标 reset 频率。
+
+若 fd=0.03、p0=0.01，梯度增大重置成本；若 fd=0.005，则减小至非负边界。成本改变 critic 与 actor，actor 又改变真实重置频率。这是依赖准确估计的反馈，并非一次失败便固定加罚。
+
+**算法：对应 average_reward_drl/algorithms/rvi_sac.py 与 train.py；固定版本核对**
+
+1. 从 replay 采样，以旧 f/fd/c 和 target networks 构造两个 target
+1. 更新双任务 critic 与 reset critic，再更新 reference
+1. 更新 actor 和温度；更新非负 reset cost
+1. 最后更新 target networks
+1. 采用 reset scheme 时：训练循环先实际 reset，再保存新状态为后继
+
+| 分别报告 | 理由 |
+| --- | --- |
+| 外部奖励率 | 应用收益不混入 entropy。 |
+| 熵及 reset 成本修正目标 | 与原始外部奖励数值不同。 |
+| 重置率、恢复时间与真实耗时 | 仿真一步 reset 不等于即时免费复位。 |
+
+作者 yhisaki/average-reward-drl 的固定成本与 reference 变体适合机制对照。精确平均奖励 soft improvement 的条件不自动覆盖重放、目标网络、非凸逼近及成本反馈联合学习。CRL 还需检查变化后的参照滞后和过时 replay。
+
 <a id="lesson-check"></a>
 
 ## 9 · 习题与诊断
@@ -278,15 +468,16 @@ RVI-SAC 将参考项估计与最大熵控制结合。训练收益可包含熵和
 
 记录每单位原始时间的收益。技能调用次数不能代替经过的时间。分别报告暂态和长期表现。
 
-设定：先比较两个持续时间不同的固定技能：累计奖励分别为 2、9，时长分别为 1、9；再接小型 continuing MDP 的 Differential TD/Q。
+设定：先比较两个持续时间不同的固定技能：累计奖励分别为 2、9，时长分别为 1、9；再接小型非回合式 MDP 的 Differential TD/Q。用常奖励单状态反例检查有限折扣下的 TD 中心化。
 
 - 总奖励率为 11/10，而不是两个技能奖励率的平均数。
-- 所有奖励加常数后，奖励率按相同常数平移。
+- 每单位原始时间的奖励加同一常数后，奖励率按相同常数平移。
 - 差分价值的常数偏移不改变所比较的动作优势。
+- 中心化代码保持 c−ηq 不变量；r=1、γ=0.9、η=0.1、零初值时收敛到 q=5、c=0.5，而真实奖励率为 1。
 
-对照：固定策略的解析奖励率；匹配动作持续时间的 primitive 对照；单独列出的折扣目标基线
+对照：固定策略的解析奖励率；匹配动作持续时间的 primitive 对照；单独列出的折扣目标基线；行为奖励均值、TD 中心化和 γ=1 差分极限分别测试
 
-记录：总原始奖励除以总原始时长；奖励率估计误差与暂态表现；差分 Bellman 残差及各状态访问量
+记录：总原始奖励除以总原始时长；奖励率估计误差与暂态表现；差分 Bellman 残差及各状态访问量；中心化参照、实际奖励率与联合固定点误差分别报告
 
 [具体测试规程](../docs/experiment-handbook.md#handbook-modules)
 
@@ -295,6 +486,174 @@ RVI-SAC 将参考项估计与最大熵控制结合。训练收益可包含熵和
 平均奖励按原始时间计收益。随机时长 option 要使用半马尔可夫时间口径。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-average) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=average) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=average)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 子任务、技能与经验获取
+
+哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
+
+Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+
+- [Posterior Sampling for Continuing Environments](https://yingwen.io/zh/continual-rl/research/#recent-cpsrl-continuing-exploration)
+
+#### 持续控制、平均奖励与重置
+
+当学习、行动和恢复占用同一条时间轴时，应优化什么，又怎样探索？
+
+平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
+
+- [RVI-SAC: Average Reward Off-Policy Deep Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rvi-sac-average-control)
+- [Reward Centering](https://yingwen.io/zh/continual-rl/research/#recent-reward-centering-discounted)
+- [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
+- [Posterior Sampling for Continuing Environments](https://yingwen.io/zh/continual-rl/research/#recent-cpsrl-continuing-exploration)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
+
+### RVI-SAC: Average Reward Off-Policy Deep Reinforcement Learning
+
+Yukinari Hisaki, Isao Ono
+
+ICML 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+深度连续控制若最终按单位时间收益评测，训练能否直接采用平均奖励而非有限折扣？
+
+#### 关键机制
+
+RVI-SAC 将相对价值参照项加入 soft critic，以平均奖励的 soft policy improvement 构造 actor，并用额外 reset critic 与可学习成本控制重置频率。完整实现包含双 critic、经验重放、目标网络和温度更新。
+
+#### 证据
+
+论文给出平均奖励最大熵控制推导，并在 MuJoCo 运动任务中比较；公开实现可核对重置转移是否继续 bootstrap。
+
+#### 条件与限制
+
+理论的表格或精确评价条件不自动覆盖所有神经网络训练。最大熵奖励率、外部奖励率与带 reset 成本的奖励率是三个量；不可将有限折扣 reward centering 当作同一算法。
+
+#### 阅读与实验
+
+逐项对应 critic 参照、actor 分布、reset 指示与 reset 后状态；评价保留外部原始奖励、实际时长、重置次数和训练修正目标。
+
+#### 原文与相关入口
+
+- [ICML 2024 正式论文](https://proceedings.mlr.press/v235/hisaki24a.html)：平均奖励 soft improvement、RVI 与自动 reset cost。
+
+#### 作者代码
+
+[作者仓库 README 标明 reference code 与同名原论文。](https://github.com/yhisaki/average-reward-drl)
+
+average_reward_drl/algorithms/rvi_sac.py 及其参照项、固定 reset cost 变体。
+
+### Reward Centering
+
+Abhishek Naik, Yi Wan, Manan Tomar, Richard S. Sutton
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+接近一的折扣为何使共同价值偏移很大，中心化能改善什么、又不能改变什么？
+
+#### 关键机制
+
+从折扣价值的共同偏移与相对价值分解出发，移除奖励参照量；on-policy 可估计行为奖励均值，off-policy 提出 TD 驱动的参照更新。保留小于一的折扣时，中心化没有消除折扣对策略排序的影响。
+
+#### 证据
+
+原文给出理论动机与表格、线性、非线性控制实验，检验折扣及奖励常数平移。深度 continuing-task 后续研究扩大了算法与环境范围。
+
+#### 条件与限制
+
+TD 中心化中的标量在有限折扣下不必精确等于真实奖励率。训练期的联合参照/价值更新与固定常数下的平移恒等式需分别分析；真实终止改变平移条件。
+
+#### 阅读与实验
+
+用单状态常奖励问题解出联合更新固定点，再用多动作问题检查策略排序；同时记录参照量与直接观测的外部奖励率。
+
+#### 原文与相关入口
+
+- [RLC 2024 原文](https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_261.pdf)：中心化分解、on/off-policy 区别及收敛讨论。
+- [RLJ 论文记录](https://rlj.cs.umass.edu/2024/papers/Paper261.html)：正式题名、作者与会议年份。
+
+### An Empirical Study of Deep Reinforcement Learning in Continuing Tasks
+
+Yi Wan, Dmytro Korenkevych, Zheqing Zhu
+
+arXiv 预印本 · 2025 · 评价与实验协议
+
+#### 研究问题
+
+把环境作为持续的转移过程后，无重置、预设重置和智能体控制重置怎样改变学习难点？
+
+#### 关键机制
+
+构造三类 continuing 协议，将重置后的收益纳入同一条持续过程；对深度控制算法及不同 reward centering 方法进行比较。重置权限属于环境/接口设计，而不是一个可以隐藏的评测便利。
+
+#### 证据
+
+作者公开 MuJoCo 与 Atari testbeds、训练和评价配置。论文报告中心化在多种方法中的收益，同时保留大折扣及无重置恢复困难等限制。
+
+#### 条件与限制
+
+continuing 指非回合式持续交互，不自动意味着环境任意非平稳或无限容量学习。仓库 citation 中的 2024 草稿年与 arXiv 2025 发布年不同；此处按可核验预印本记录，不指定未确认的会议。
+
+#### 阅读与实验
+
+先固定重置转移、成本和时间，再比较目标与算法；分别评价全程学习收益、冻结策略奖励率及失败恢复。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2501.06937)：三类持续协议与深度中心化实验；2025 年 arXiv 首稿。
+
+#### 作者代码
+
+[论文对应 Meta 作者团队的研究仓库，README 明确区分三个 reset 协议。](https://github.com/facebookresearch/DeepRL-continuing-tasks)
+
+testbeds、Pearl 算法、experiments 配置与评测/作图。
+
+### Posterior Sampling for Continuing Environments
+
+Wanqiao Xu, Shi Dong, Benjamin Van Roy
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+没有自然回合边界，后验采样探索应在什么时候更换整条行动假设？
+
+#### 关键机制
+
+CPSRL 以独立随机时钟重采样模型并规划，而不等待真实 reset 或逐状态计数翻倍。几何持续时间把策略试验的未折扣收益与相应折扣规划目标联系起来；改变的是探索承诺的时间尺度。
+
+#### 证据
+
+论文在有限平稳 MDP 条件下分析 Bayesian regret，得到含奖励平均时间 $\tau$ 的 $\widetilde O(\tau S\sqrt{AT})$ 量级，并给出模拟。
+
+#### 条件与限制
+
+定理依赖正确后验、规划与平均时间条件；深网 ensemble 只是一种近似，不直接继承表格界。重采样不重置世界；平稳后验也不会自动遗忘已过时的动力学。
+
+#### 阅读与实验
+
+比较每步换假设、几何时钟与固定时钟，控制同一模型学习预算；在漂移实验中另外定义后验遗忘，避免误用平稳遗憾保证。
+
+#### 原文与相关入口
+
+- [RLC 2024 原文](https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_277.pdf)：随机重采样、折扣联系与 Bayesian regret 假设。
+- [RLJ 论文记录](https://rlj.cs.umass.edu/2024/papers/Paper277.html)：作者、会议与理论结果。
+
 
 <a id="chapter-code"></a>
 
@@ -320,12 +679,18 @@ python examples/lifelong_algorithms_lab.py average
 
 - [Wan & Sutton · Weakly Communicating MDPs](https://arxiv.org/abs/2209.15141)：扩展理解平均奖励控制的链结构和收敛条件；不可外推为任意非平稳深网定理。
 
-- [Hisaki & Ono · RVI-SAC](https://proceedings.mlr.press/v235/hisaki24a.html)：深度平均奖励、熵正则与 reset 成本的完整方法。
+- [ICML 2024 正式论文](https://proceedings.mlr.press/v235/hisaki24a.html)：平均奖励 soft improvement、RVI 与自动 reset cost。
 
-- [RVI-SAC 作者代码](https://github.com/yhisaki/average-reward-drl)：核心文件 average_reward_drl/algorithms/rvi_sac.py；完整实验需要相应 MuJoCo 环境与训练配置。
+- [RVI-SAC: Average Reward Off-Policy Deep Reinforcement Learning · 作者实现](https://github.com/yhisaki/average-reward-drl)：average_reward_drl/algorithms/rvi_sac.py 及其参照项、固定 reset cost 变体。 作者仓库 README 标明 reference code 与同名原论文。
 
-- [Naik et al. · Reward Centering · RLC 2024](https://rlj.cs.umass.edu/2024/papers/Paper261.html)：将共同奖励偏移与折扣价值差异分离；对照 on-policy 奖励均值与 off-policy TD 中心化。
+- [RLJ 论文记录](https://rlj.cs.umass.edu/2024/papers/Paper261.html)：正式题名、作者与会议年份。
 
-- [Wan, Korenkevych & Zhu · Deep RL in Continuing Tasks · 2025](https://arxiv.org/abs/2501.06937)：无重置、预设重置、智能体控制重置三种协议，以及 TD 中心化的深度实验和局限。
+- [作者论文](https://arxiv.org/abs/2501.06937)：三类持续协议与深度中心化实验；2025 年 arXiv 首稿。
 
-- [DeepRL-continuing-tasks · 环境协议与 reward centering](https://github.com/facebookresearch/DeepRL-continuing-tasks)：核对无重置、预设重置与 agent-controlled reset 的协议差异。
+- [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks · 作者实现](https://github.com/facebookresearch/DeepRL-continuing-tasks)：testbeds、Pearl 算法、experiments 配置与评测/作图。 论文对应 Meta 作者团队的研究仓库，README 明确区分三个 reset 协议。
+
+- [RLC 2024 原文](https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_261.pdf)：中心化分解、on/off-policy 区别及收敛讨论。
+
+- [RLC 2024 原文](https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_277.pdf)：随机重采样、折扣联系与 Bayesian regret 假设。
+
+- [RLJ 论文记录](https://rlj.cs.umass.edu/2024/papers/Paper277.html)：作者、会议与理论结果。

@@ -9,6 +9,82 @@
 - 读懂 RNN、GRU、LSTM、预测状态、GVFN、RTU 分别改变了什么，运行能逐项检查的记忆实验。
 - 区分状态更新与参数学习，设计无任务边界、固定资源预算的 CRL 状态构造实验。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+当前观测不足以预测后果或选择动作，需要从历史构造有限、可更新的决策信息。
+
+### 给定条件与符号
+
+- 观测、动作、奖励的因果流，以及指定的预测问题或控制评价。
+- 状态容量、每步计算预算、递归结构和允许的训练数据。
+
+### 需要求解的对象
+
+可递推的历史摘要及其参数，使声明的后果预测或决策所需信息得到保留；不是重建全部历史。
+
+### 信息与数据权限
+
+$H_t$ 是完整已到达历史；$z_t=f_\phi(z_{t-1},a_{t-1},o_t)$ 是实际保存的摘要，$\phi$ 为状态更新参数。隐藏环境状态不作为免费输入。
+
+$$
+\operatorname{Law}(Y\mid H_t=h,a)=\operatorname{Law}(Y\mid z_t=z(h),a)
+$$
+
+$Y$ 是本任务指定的未来后果，$a$ 是当前干预动作，$z(h)$ 是历史的状态编码。此式表达相对该后果族的理想充分性；实际网络用预测损失、Bellman目标或控制目标近似检验，不宣称有限状态总能满足它。
+
+### 成立条件与解的含义
+
+- 充分性必须相对后果、未来行为和时间尺度定义；任意多预测坐标不自动构成充分状态。
+- RTRL固定参数全历史敏感度、在线参数变化和截断BPTT分别说明，不能共用精确梯度称谓。
+
+判断准则：在同观测但不同历史的别名反例上保持不同预测/动作；用匹配历史探针测预测误差，敏感度对固定参数有限差分吻合，并报告内存与每步时间。
+
+### 适用边界
+
+- 资格迹不能代替行动时使用的记忆状态。
+- 状态充分性或预测精度不直接证明控制最优。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 组合不同学习问题 · [通用价值函数与预测知识](../textbook/gvf.md)：GVF可提供预测坐标，但其题目集合是否保留决策信息仍需验证。
+
+- 组合不同学习问题 · [时间信用分配与资格迹](../textbook/credit.md)：状态构造处理存什么；递归敏感度处理后来的误差怎样更新早先记忆参数。
+
+- 改变信息或数据协议 · [流式更新与稳定性](../textbook/streaming.md)：严格流式预算限制保存历史及展开计算图，影响可选递归结构和导数近似。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+历史含有有用线索但持续增长；学习记忆又需要计算参数通过过去活动影响当前输出的路径。
+
+### 本章的核心思路
+
+先指定摘要必须保留的后果，再选择递归结构及其可负担的敏感度计算。
+
+1. [从历史别名识别缺失信息](../textbook/state.md#lesson-derive)：因为同一观测可对应不同未来，先用历史条件分布和预测状态区分需要保留的线索。
+
+2. [把活动与参数求导分开](../textbook/state.md#lesson-rtrl)：因为递归活动是运行状态而参数是学习对象，RTRL分别递推活动和全历史敏感度。
+
+3. [按预算选择结构或导数近似](../textbook/state.md#lesson-online-approximations)：因为一般敏感度昂贵，RTU限制耦合结构，BPTT/UORO分别截断或压缩导数；误差和资源分别检验。
+
+结论与条件：敏感度恒等式限定在所写固定参数/计算图；RTU成本依赖局部结构，近似导数的无偏性不保证低方差或回报增益。
+
+### 相关方法改变了什么
+
+- 信念状态或PSR：有相应模型/可识别性条件时定义充分信息，未必低成本可学。
+
+- RTRL/RTU：递推敏感度；RTU通过结构降低成本而非通用精确RTRL的免费替代。
+
+- 截断BPTT/UORO：分别丢弃长路径或随机压缩导数，产生不同偏差与方差。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -265,9 +341,9 @@ $$
 
 | 方法 | 保存什么 | 理想化成本 | 遗漏什么 |
 | --- | --- | --- | --- |
-| 完整 BPTT | T 步活动/计算图 | 时间 O(Tn²)，活动内存 O(Tn)，另加参数 | 固定参数且完整反传时不截断历史梯度。 |
-| TBPTT | K 步活动和边界状态 | 每块 O(Kn²)，活动内存 O(Kn) | 跨截断边界的参数影响；数值记忆仍可继续。 |
-| 稠密 RTRL | 当前状态与 n×p 敏感度 | 每步 O(n²p)，敏感度内存 O(np) | 固定参数时不截断；在线变参时有历史不一致。 |
+| 完整 BPTT | T 步活动/计算图 | 时间 $O(Tn^2)$，活动内存 $O(Tn)$，另加参数 | 固定参数且完整反传时不截断历史梯度。 |
+| TBPTT | K 步活动和边界状态 | 每块 $O(Kn^2)$，活动内存 $O(Kn)$ | 跨截断边界的参数影响；数值记忆仍可继续。 |
+| 稠密 RTRL | 当前状态与 n×p 敏感度 | 每步 $O(n^2p)$，敏感度内存 $O(np)$ | 固定参数时不截断；在线变参时有历史不一致。 |
 | 结构化 RTRL | 受限结构的局部敏感度 | 可显著低于稠密成本 | 先限制递归连接，再获得便宜的精确结构内导数。 |
 
 同一个 RNN 的反向推导；window=2 切断导数而不清空旧状态。
@@ -325,13 +401,13 @@ $$
 
 **算法：算法伪代码**
 
-1. 为每个预测分量明确 c_i、γ_i、π_i；初始化递归网络与所选梯度记忆。
+1. 为每个预测分量明确 $c_i,γ_i,π_i$；初始化递归网络与所选梯度记忆。
 1. 每次真实转移：
   1. 用行为策略 b 选动作，并记录真实选取概率。
-  1. 用旧网络状态与新输入计算 h_next；同时推进 RTRL 或 TBPTT。
-  1. 逐问题计算 c_i、γ_i、ρ_i，以及 δ_i。
+  1. 用旧网络状态与新输入计算 `h_next`；同时推进 RTRL 或 TBPTT。
+  1. 逐问题计算 $c_i,γ_i,ρ_i$，以及 $δ_i$。
   1. 固定 bootstrap target，组合各分量的梯度更新共享 θ。
-  1. 更新控制头；将 h_next 作为后续活动状态。
+  1. 更新控制头；将 `h_next` 作为后续活动状态。
   1. 定期检查每个预测的校准、方差，以及对控制的增益。
 
 如果只是把 GVF 头挂在一个自由隐藏层后面，那么隐藏状态本身不必等于预测：这是辅助任务结构。两种结构都值得比较，但不能混称。设计研究时还应设置坏问题对照：大量准确却与决策无关的预测，可能耗费预算而不改善控制。预测充分性、易学性和控制实用性需要分别测量。
@@ -504,6 +580,77 @@ def state_demo():
 
 GVFN 作者仓库中的问题定义、递归单元与学习方法应分别阅读：改变 GVF 集合是在改变状态语义，改变递归结构是在改变表示族，改变更新方法是在改变训练信用或稳定性。这三者需要独立消融。将 RTU 与预测状态结合时也相同：低成本长期梯度并不会自动选出有用的预测问题。
 
+<a id="research-memory-training-interface"></a>
+
+## 研究专题 A · Memoroids：记忆能保存多久，梯度能学习多久？
+
+“隐状态能保留很久”和“参数能从早期事件学到什么”是两个问题。前者取决于递归动力学，后者还取决于训练中的梯度路径。即使活动保留了线索，在短块之间停止梯度，也可能无法教会网络哪些输入值得记住。Memoroids（NeurIPS 2024）提供一个重要对照：保持线性递归模型，改变长序列运算和训练批处理方式。
+
+$$
+h_t=A_t h_{t-1}+b_t,\qquad (A_1,b_1)\star(A_2,b_2)=(A_2A_1,A_2b_1+b_2)
+$$
+
+每次输入产生仿射变换，第二个变换作用在第一个之后。单位元为 (I,0)，一般不交换；对角 A 可降低合并成本。
+
+$$
+((A_1,b_1)\star(A_2,b_2))\star(A_3,b_3)=(A_3A_2A_1,A_3A_2b_1+A_3b_2+b_3)
+$$
+
+两种括号顺序结果相同，所以可以用树状 scan 计算前缀。固定大小合并的并行深度可为 O(log T)，总工作量仍为 O(T)；稠密矩阵乘法成本没有消失。
+
+标量例子：$h_0=0$，三个变换为 $(0.5,1)$、$(0.5,2)$、$(0.5,3)$。逐步得到 $1,2.5,4.25$；组合为 $(0.125,4.25)$。若第三次输入来自新的独立回合，规定状态归零，则改成 $(0,3)$，前面活动被屏蔽，结果为 3。非零初始状态则将 $A_t h_{\rm init}$ 吸收入新偏置。
+
+Tape-Based Batching 将多个完整回合存入一条 tape，以 begin/reset 信息阻断回合之间的状态传递，减少固定分段的补零和梯度截断。它仍保存序列并执行反传，既不属于严格逐步 RTRL，也不能让任意非线性门控模型采用同样的结合运算。
+
+**算法：验证方案；不是论文实验已在本地运行的报告**
+
+1. 固定一个早期线索、延迟决策的 POMDP和同一记忆模型
+1. A：固定长度片段，保留活动但停止跨片段梯度
+1. B：完整回合 tape，用 begin 标记阻断真实回合边界
+1. C：允许相同数据协议时，对照结构化在线敏感度
+1. 记录决策表现、早期观测敏感度、训练峰值内存与每步延迟
+
+| 对象 | 作者实现入口 | 检查 |
+| --- | --- | --- |
+| 结合递归与边界 | proroklab/memoroids 的 memory、modules.py | 逐步、scan 与 begin 标记是否一致？ |
+| 存储与切分 | buffer.py、segment_dqn.py、tape_dqn.py | 采样是否含完整回合？活动缓存来自哪版参数？ |
+| 损失与回报 | losses.py、returns.py | target、padding 和终止定义是否匹配？ |
+
+CRL 的进一步问题是参数变化时的状态一致性：实际活动由历次参数生成，从完整历史用当前参数重算则得到另一状态。缓存旧活动、burn-in、tape 重算和实时敏感度各有资源与近似边界。先固定参数验证代数等价，再开放参数更新测状态差异与控制表现；固定参数的恒等式不能证明不同学习时序的智能体等价。
+
+<a id="research-state-query-sufficiency"></a>
+
+## 研究专题 B · 状态充分性要相对于未来问题检验
+
+把一张画面编码成漂亮的潜在向量，与从历史形成足够预测和行动的 agent state，是两个问题。DINO-WM 使用冻结视觉 patch 特征加观测历史做动作后果预测，V-JEPA 2-AC 也利用视频表示与动作条件预测器。它们提醒我们先检查表示接口中有哪些历史与运动信息，再讨论“模型理解了世界”。单帧自监督特征本身不保证隐藏速度、门锁状态或先前指令可被恢复。
+
+$$
+\begin{aligned}H_t&=(O_0,A_0,R_1,O_1,\ldots,A_{t-1},R_t,O_t),\quad Z_t=f_\theta(H_t),\\\mathcal Q&=\{(\pi_q,C_q,\gamma_q)\},\qquad v_q(h)=\mathbb E_{\pi_q}[G_q\mid H_t=h],\\Z(h)=Z(\tilde h)&\ \Rightarrow\ \begin{cases}\pi_q(\cdot\mid h)=\pi_q(\cdot\mid\tilde h),\\v_q(h)=v_q(\tilde h),\end{cases}\quad\forall q\in\mathcal Q.\end{aligned}
+$$
+
+这是目标策略可由该状态执行、且状态对查询族理想充分的联合规格，不是上述论文对任意历史的保证。每个 q 必须在两条历史上采用同一声明的策略规则；若规则要求已被状态丢弃的历史信息，先违反的是行为条件兼容性。查询族越丰富，允许丢弃的信息通常越少，但有限查询相容不等于任意控制的 Markov 充分性。
+
+例子：两个历史都以“机器人站在门前”结束，但其中一个历史刚执行过解锁。若预测任务只问附近墙壁颜色，两种历史可以具有完全相同的正确答案；若增加“执行推门动作能否通过”的查询，二者必须区分。增加与门锁无关的预测数量无法补回这个信息。这个例子也说明，预测充分性必须包括行为条件，单纯预测自然视频的下一帧不足以验证反事实动作后果。
+
+| 表示路线 | 怎样形成训练信号 | 须另外检验的条件 |
+| --- | --- | --- |
+| GVF / successor 表示 | 指定策略和时域下的未来量或占用 | 目标策略覆盖、查询族是否区分控制相关历史 |
+| HILP 时间距离表示 | 离线目标价值约束潜在距离 | 有向距离、有限维嵌入和历史混叠 |
+| DINO-WM 冻结视觉表示 | 动作条件的未来 patch 特征 | 视觉特征是否保留任务事件，历史窗口是否足够 |
+| V-JEPA 视频与 2-AC | 视频潜在预测，再学机器人动作条件预测 | 动作坐标语义、预训练与部署视角、记忆跨度 |
+
+**算法：从表示诊断推进到控制检验；不是将隐藏状态作为训练输入**
+
+1. 受控状态实验（拟议）：
+  1. 构造同观测、不同历史的成对起点；只把观测/动作历史交给 agent
+  1. 固定未来行为策略，收集成对的后续轨迹
+  1. 分别用单帧特征、固定历史窗口、可学习递归状态预测同一查询集
+  1. 在冻结副本上测：隐藏条件可读性、未来预测误差、线性/非线性读出差
+  1. 再用相同控制器和计算预算测试动作选择与全程回报
+  1. 分开改变观测外观、隐藏动力学和奖励，保留失败结果
+
+研究空缺在于：一个持续变化的查询族怎样反过来帮助构造状态，又怎样发现当前查询尚未区分的历史？可以提出新问题后只使用新发生的轨迹检验，但这仍需要合适的行为覆盖与在线信用分配。SF² 的状态动作特征、HILP 的离线距离、视频预训练都不能直接替代这一递归状态构造过程。
+
 <a id="lesson-check"></a>
 
 ## 12. 诊断、自测与研究问题
@@ -544,6 +691,791 @@ GVFN 作者仓库中的问题定义、递归单元与学习方法应分别阅读
 深度网络不能自动消除部分可观测性。必须区分观测编码、历史状态递推与参数学习。
 
 [分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-state) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=state) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=state)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+
+- [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
+- [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
+- [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
+- [When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-self-prediction-auxiliary-tasks)
+- [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+- [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
+- [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
+- [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+
+#### 时间信用分配与离策略多步学习
+
+当前反馈如何修正过去的决策与预测，哪些历史信息可以压缩成迹？
+
+前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。
+
+- [Expected Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-expected-eligibility-traces)
+- [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
+- [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+
+#### 子任务、技能与经验获取
+
+哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
+
+Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+
+- [Proper Laplacian Representation Learning](https://yingwen.io/zh/continual-rl/research/#recent-proper-laplacian-representations)
+- [METRA: Scalable Unsupervised RL with Metric-Aware Abstraction](https://yingwen.io/zh/continual-rl/research/#recent-metra-skills)
+- [HIQL: Offline Goal-Conditioned RL with Latent States as Actions](https://yingwen.io/zh/continual-rl/research/#recent-hiql-hierarchical-goals)
+- [Foundation Policies with Hilbert Representations](https://yingwen.io/zh/continual-rl/research/#recent-hilbert-foundation-policies)
+
+#### 后果模型、知识保留与规划
+
+学会预测后果，何时能真正改善决策？
+
+模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+
+- [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
+- [DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning](https://yingwen.io/zh/continual-rl/research/#recent-dino-wm-feature-planning)
+- [V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning](https://yingwen.io/zh/continual-rl/research/#recent-vjepa2-action-conditioned)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
+- [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
+
+#### 学习规则本身的适应
+
+谁在调整学习过程，依据哪些经验，付出多少外部训练成本？
+
+在线步长元梯度、跨任务算法发现、知识整合与局部更新控制并非同一设定。逐项写清智能体内部的更新、设计者的预训练和调参，以及测试时仍能变化的量，才能判断真正的适应来自哪里。
+
+- [Learning from experience instead of curated datasets](https://yingwen.io/zh/continual-rl/research/#recent-oak-network-idbd)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [The Cell Must Go On: Agar.io for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-agarcl)
+- [OGBench: Benchmarking Offline Goal-Conditioned RL](https://yingwen.io/zh/continual-rl/research/#recent-ogbench-goal-evaluation)
+- [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+
+#### 完整智能体与研究基础
+
+长期能力应怎样定义，各个机制又怎样共同产生它？
+
+形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+
+- [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
+- [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
+- [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+
+### Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks
+
+Khurram Javed, Haseeb Shah, Richard S. Sutton, Martha White
+
+JMLR 24 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+如果每次观测只处理一次，如何学习包含历史信息的状态，而不保存一段序列做反向传播？
+
+#### 关键机制
+
+一般递归网络的实时递归学习需要维护庞大的参数—状态敏感度。CCN 限制列之间的递归依赖，并逐步构造新特征，使敏感度可以局部计算。它通过改变网络结构和构造过程降低求导成本，而不是把任意稠密 RNN 的完整导数免费变小。
+
+#### 证据
+
+论文分析受限结构的计算性质，并在动物学习启发的预测问题和 Atari 策略评价中检验预测效率。这里的 Atari 结果主要是预测已有策略的回报，不等于从头训练完整控制智能体。
+
+#### 条件与限制
+
+结构约束、构造顺序和被冻结的旧特征共同限制函数类。监督预测和策略评价上的优势，还需要在会主动改变数据分布的控制闭环中检验。
+
+#### 阅读与实验
+
+先写出递归状态对参数的敏感度递推，再检查哪些跨列项被结构消除。比较 CCN、截断 BPTT 与 RTU 时，同时计入状态、梯度缓存和每步计算。
+
+#### 原文与相关入口
+
+- [JMLR 原文与论文入口](https://www.jmlr.org/papers/v24/23-0367.html)：从网络结构、敏感度传播与预测实验三部分阅读。
+
+### Real-Time Recurrent Learning using Trace Units in Reinforcement Learning
+
+Esraa Elelimy, Adam White, Michael Bowling, Martha White
+
+NeurIPS 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+递归状态既要保存长时信息，又要在在线强化学习中以可控成本更新，怎样设计其递归结构？
+
+#### 关键机制
+
+RTU 使用有结构的递归连接，并维护状态关于参数的在线敏感度。复杂的递归动力学可以用实值运算实现。其关键是让状态更新与梯度迹具有相容的计算结构，减少一般 RTRL 的高阶成本；这与仅给 TD 误差加一条资格迹不同。
+
+#### 证据
+
+论文在部分可观测任务中与常见递归网络比较预测与控制表现。作者代码包含 RTU、其他递归基线、实时 actor–critic 以及部分可观测环境配置。
+
+#### 条件与限制
+
+计算优势依赖特定递归参数化，不能外推为任意记忆问题上的表达能力优势。PPO 版本和严格逐步更新版本的经验协议不同，应分别比较。
+
+#### 阅读与实验
+
+在同一部分可观测任务中固定隐状态维度，再比较完整运行内存和每步更新时间。检查 actor、critic 与递归状态的参数更新是否共享同一条敏感度。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/hash/1e616bde0438cb10cb6adf076ae7d336-Abstract-Conference.html)：结构、在线导数与实验协议。
+- [作者代码](https://github.com/esraaelelimy/rtus)：从 src/nets、src/agents 和实验配置追踪递归状态到控制更新。
+
+#### 作者代码
+
+[论文作者维护的实现。](https://github.com/esraaelelimy/rtus)
+
+RTU 网络、实时学习器与论文实验配置。
+
+### Towards model-free RL algorithms that scale well with unstructured data
+
+Joseph Modayil, Zaheer Abbas
+
+arXiv 预印本 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+大量原始观测中只有少数局部组合与奖励有关，智能体能否逐步构造有用的预测特征？
+
+#### 关键机制
+
+Nibbler 将预测问题的构造和预测结果的复用结合起来：选择局部输入、学习与奖励相关的通用价值预测，再将预测作为后续学习的特征。GVF 在这里不是一个新的优化器，而是描述“预测什么、在什么行为下预测”的问题接口。
+
+#### 证据
+
+作者在组合式合成环境中增加观测规模，报告了利用任务结构的样本效率。环境可以具有指数增长的状态组合，但学习器不必显式枚举全部状态。
+
+#### 条件与限制
+
+这不是对任意高维观测的线性样本复杂度保证。局部可分解结构、候选问题与特征构造规则仍是关键条件；从该实验族迁移到视觉控制需要额外验证。
+
+#### 阅读与实验
+
+把一条预测完整写成累积量、延续条件、目标策略和输入特征四项，再指出它如何进入主任务的价值函数。区分问题生成带来的收益与增加参数量带来的收益。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/abs/2311.02215)：问题族、Nibbler 构造过程与扩展性实验。
+
+### When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning
+
+Claas A. Voelcker, Tyler Kastner, Igor Gilitschenski, Amir-massoud Farahmand
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+预测下一潜在状态、重建观测和学习价值，为什么会产生不同的表示？
+
+#### 关键机制
+
+论文在含干扰因素的线性问题中分析辅助目标的学习动力学。潜在状态自预测与价值学习共同作用时可能保留决策相关结构，但单独训练同一目标未必得到最有用的特征。目标的作用取决于它和 TD 目标怎样共享表示。
+
+#### 证据
+
+线性分析给出可检查的条件，并用神经网络实验检验部分预测。结果不支持“任何自监督预测都能改善 RL”这种无条件判断。
+
+#### 条件与限制
+
+线性分析中的观测映射、优化过程与神经网络控制并不完全等价。项目仓库入口不等于已经提供完整可复现实验实现，因此这里不列为可运行代码。
+
+#### 阅读与实验
+
+固定编码器容量，分别比较仅 TD、仅辅助任务和联合训练。记录价值误差与任务收益，不要只用辅助损失下降评价表示。
+
+#### 原文与相关入口
+
+- [RLC 2024 论文入口](https://rlj.cs.umass.edu/2024/papers/Paper197.html)：原文、线性假设与神经网络实验。
+- [作者预印本](https://arxiv.org/abs/2406.17718)：便于追踪论文版本。
+
+### Proper Laplacian Representation Learning
+
+Diego Gomez, Michael Bowling, Marlos C. Machado
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+技能发现需要一组确定的谱方向，为什么仅学到低频子空间还不够？
+
+#### 关键机制
+
+图上的平滑性目标倾向保留缓慢变化的特征，但旋转后的同一子空间未必给出可解释、排序明确的单个特征向量。ALLO 使用增广 Lagrangian、正交条件与对称性破除，同时恢复特征向量和特征值，从而为 eigenoption 的方向构造提供更明确的输入。
+
+#### 证据
+
+论文分析优化目标，并在多个环境中检验谱表示的恢复质量和下游使用。作者仓库包含表示学习训练程序。
+
+#### 条件与限制
+
+谱结构依赖采样行为诱导的图和覆盖程度，不是脱离数据分布的环境真值。低频方向也不自动等于有奖励价值的技能；这正是奖励感知表示要继续处理的问题。
+
+#### 阅读与实验
+
+先在小图上直接求特征分解，再比较学习特征的子空间误差和逐向量误差。两种指标不等价，后者才揭示任意旋转问题。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2310.10833)：ICLR 2024 论文的公开版本。
+- [ALLO 作者代码](https://github.com/tarod13/laplacian_dual_dynamics)：增广 Lagrangian 的实际优化与实验入口。
+
+#### 作者代码
+
+[论文作者的 ALLO 实现。](https://github.com/tarod13/laplacian_dual_dynamics)
+
+Laplacian 表示学习和论文实验。
+
+### METRA: Scalable Unsupervised RL with Metric-Aware Abstraction
+
+Seohong Park, Oleh Rybkin, Sergey Levine
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+没有外部任务奖励时，怎样发现能产生长距离、有区别状态变化的技能？
+
+#### 关键机制
+
+METRA 学习反映时间距离的潜在表示，并让技能方向 $z$ 最大化内在奖励 $r_z=(\phi(s')-\phi(s))^\top z$。邻接状态间的距离约束阻止编码器靠任意放大数值提高奖励。表示学习和技能策略相互影响，因此它不同于先固定一个表示、再单独训练 option。
+
+#### 证据
+
+论文在视觉与状态输入的运动、操纵任务中研究无监督技能学习和下游使用。作者代码包括约束优化、技能策略和相应实验配置。
+
+#### 条件与限制
+
+预训练技能加下游任务不等于技能库在单次生命内持续维护。理论距离约束与源码中的均方尺度、松弛量截断需要分别对照，不能只照抄一个简化公式重现。
+
+#### 阅读与实验
+
+观察表示范数、约束残差和实际位移三条曲线。若内在回报上升而位移不变，应先检查尺度和约束，而不是直接解释为探索改善。
+
+#### 原文与相关入口
+
+- [ICLR 原文](https://proceedings.iclr.cc/paper_files/paper/2024/hash/516593a423838642a2eb4e9c5b9c7f44-Abstract-Conference.html)：方法与技能评价。
+- [作者代码](https://github.com/seohongpark/METRA)：核心方法在 iod/metra.py；同时检查约束的归一化与截断。
+
+#### 作者代码
+
+[作者提供的论文实现。](https://github.com/seohongpark/METRA)
+
+METRA、技能训练与下游评价。
+
+### HIQL: Offline Goal-Conditioned RL with Latent States as Actions
+
+Seohong Park, Dibya Ghosh, Benjamin Eysenbach, Sergey Levine
+
+NeurIPS 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+只拿到已有轨迹时，长距离目标为什么适合拆成高层子目标和低层动作？
+
+#### 关键机制
+
+HIQL 学习目标条件价值，并以潜在状态作为高层动作。高层提出中间目标，低层输出环境动作；两层利用优势加权回归学习。时间分解让低层面对较短的控制距离，而不是要求一个策略直接消化所有远距离价值误差。
+
+#### 证据
+
+论文在离线长时域目标任务中检验层次结构，并提供原始实现。作者后来在 OGBench 中提供更统一的实现，二者适合不同用途：原实验复现和统一基线比较。
+
+#### 条件与限制
+
+数据覆盖和行为分布约束仍然存在。目标采样、层级时间间隔与离线轨迹由外部流程提供，不能把效果解释为在线自主目标生成已经解决。
+
+#### 阅读与实验
+
+对一段轨迹明确标记最终目标、中间目标和当前动作。逐一检查价值目标、优势权重和高层标签的停止梯度边界。
+
+#### 原文与相关入口
+
+- [NeurIPS 2023 原文](https://papers.nips.cc/paper_files/paper/2023/file/6d7c4a0727e089ed6cdd3151cbe8d8ba-Paper-Conference.pdf)：离线目标学习和两层回归目标。
+- [HIQL 原始实现](https://github.com/seohongpark/HIQL)：README 区分原始实验与 OGBench 中的新实现。
+
+#### 作者代码
+
+[作者仓库；更新的统一基线另见 OGBench。](https://github.com/seohongpark/HIQL)
+
+HIQL 原论文的离线训练与评价。
+
+### OGBench: Benchmarking Offline Goal-Conditioned RL
+
+Seohong Park, Kevin Frans, Benjamin Eysenbach, Sergey Levine
+
+ICLR 2025 · 2025 · 评价与实验协议
+
+#### 研究问题
+
+一个目标条件算法表现不好，是长时域、轨迹拼接、视觉表示还是随机性造成的？
+
+#### 关键机制
+
+OGBench 用不同环境类型与数据集分别施加这些困难，并提供统一的目标条件基线。固定离线数据让算法面对相同经验，从而将学习机制的差异与在线探索能力的差异暂时分离。
+
+#### 证据
+
+论文提供八类环境、八十五个数据集和六类算法实现。价值在于可复用的实验接口与困难分解，而不只是汇总一个排行榜。
+
+#### 条件与限制
+
+固定数据不检验智能体如何主动获得未来经验，也不直接检验单次生命的灾难性变化、恢复或长期资源管理。它适合 CRL 子问题实验，不是完整 CRL 的替代品。
+
+#### 阅读与实验
+
+先选择只改变一种困难的两个数据集，再比较 HIQL 与平坦目标策略。把观察到的差异写成可检验机制假设，而不是直接归因于“层次更好”。
+
+#### 原文与相关入口
+
+- [论文](https://arxiv.org/abs/2410.20092)：ICLR 2025；环境、数据与基线定义。
+- [作者基准库](https://github.com/seohongpark/ogbench)：数据获取、环境与统一算法实现。
+
+#### 作者代码
+
+[基准作者维护的官方实现。](https://github.com/seohongpark/ogbench)
+
+离线目标环境、数据集与标准化基线。
+
+### Learning from experience instead of curated datasets
+
+Oak Lab
+
+Oak Lab 技术博文 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+有用信号稀疏且大量输入是噪声时，在线学习规则如何分配不同方向的更新能力？
+
+#### 关键机制
+
+博文从含稀有有效特征的线性预测问题出发，对比统一步长与 IDBD 的逐权重适应，再展示 NetworkIDBD 在非线性带噪观测中的例子。核心主张是让长期学习效果影响信用和步长分配，而不只依据当前梯度幅度归一化。
+
+#### 证据
+
+公开页面提供受控噪声特征任务和 NoisyMNIST 示例。它们是机制演示，便于理解有效信号密度与输入规模的关系。
+
+#### 条件与限制
+
+该页面不是完整 CRL 控制论文，也未给出可直接复现所有图表的完整代码和算法推导。监督噪声任务的结果不能证明一般 SGD 或所有深度 RL 都无法从经验学习。
+
+#### 阅读与实验
+
+先复现线性噪声特征问题，分开改变有效特征稀疏度与噪声维数。进入控制前，再加入策略改变数据分布这一因素。
+
+#### 原文与相关入口
+
+- [Oak Lab 原始博文](https://oaklab.ai/posts/learning-from-experience-instead-of-curated-datasets)：2026 年 7 月 13 日；受控实验、NetworkIDBD 示例与研究动机。
+
+### Mastering diverse control tasks through world models
+
+Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, Timothy Lillicrap
+
+Nature · 2025 · 支持方法与理论
+
+#### 研究问题
+
+同一套世界模型训练与控制方法，能否减少跨任务重新设计损失和超参数的需求？
+
+#### 关键机制
+
+DreamerV3 从经验学习递归潜在状态、奖励和延续预测，再在潜在想象轨迹上学习 actor 和 critic。尺度稳健的表示与损失设计使同一配置可以适用于多种任务。模型是用于决策的学习接口，不必生成完整真实世界。
+
+#### 证据
+
+论文在大量视觉和状态控制任务上报告了广泛表现。关键含义是共享算法配置；这些结果主要来自分别训练的任务智能体，不是一个智能体按顺序学会全部任务。
+
+#### 条件与限制
+
+经验重放、批量训练和模型想象都有资源成本。模型偏差、表示遗忘与长期任务切换仍需要专门实验，不能由多任务覆盖范围自动推出持续学习能力。
+
+#### 阅读与实验
+
+把状态更新、模型训练、想象起点和策略更新四种分布分别写清。比较真实交互步数之外，还应记录想象步数和优化次数。
+
+#### 原文与相关入口
+
+- [Nature 原文](https://www.nature.com/articles/s41586-025-08744-2)：方法和任务协议；区分共享配置与单智能体持续学习。
+- [作者维护的实现](https://github.com/danijar/dreamerv3)：公开实现的版本与论文实验环境应分别记录。
+
+#### 作者代码
+
+[作者发布的重实现；不把当前分支当作原论文实验的冻结快照。](https://github.com/danijar/dreamerv3)
+
+DreamerV3 的作者维护公开实现及运行配置。
+
+### The Cell Must Go On: Agar.io for Continual Reinforcement Learning
+
+Mohamed A. Mohamed, Kateryna Nekhomiazh, Vedant Vyas, Marcos M. José, Andrew Patterson, Marlos C. Machado
+
+arXiv 预印本 · 2025 · 评价与实验协议
+
+#### 研究问题
+
+如何在持续、动态的高维交互里，同时研究记忆、探索、信用分配与学习能力保持？
+
+#### 关键机制
+
+AgarCL 提供持续运行的游戏环境，并用分解的小任务暴露不同困难。完整环境把这些机制放回同一交互循环，小任务则便于定位失败原因。游戏中的复活事件与把整个世界和智能体都重新开始不是同一种重置。
+
+#### 证据
+
+论文提供环境、基线与可塑性方法比较；部分常见修复在其测试中改善有限。这说明保持可塑性并不能单独代替记忆、探索和长期信用分配。
+
+#### 条件与限制
+
+一个游戏不能代表全部真实持续问题。小任务与完整游戏的协议需要分别阅读；此处仅按可确认的预印本状态收录，不把投稿信息写成会议录用。
+
+#### 阅读与实验
+
+先在一个小任务中验证机制，再检验它在完整环境中的作用是否仍存在。将世界重置、角色复活、参数重置和数据清空分开记录。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2505.18347)：环境设计、分解任务与基线结果。
+- [作者环境仓库](https://github.com/machado-research/AgarCL)：环境安装、接口和运行示例；算法基线与环境本体分开。
+
+#### 作者代码
+
+[Machado 研究团队的环境实现。](https://github.com/machado-research/AgarCL)
+
+AgarCL 环境与示例，非所有算法结果的单一训练脚本。
+
+### The OaK Architecture: A Vision of SuperIntelligence from Experience
+
+Richard S. Sutton
+
+RLC 2025 讲座 / Oak Lab · 2025 · 定义与架构观点
+
+#### 研究问题
+
+持续学习是否只是在一个现成 actor–critic 上加入抗遗忘机制，还是需要重新安排知识构造与使用？
+
+#### 关键机制
+
+OaK 提出从经验持续形成状态、预测知识、子任务、时间抽象与模型，并让这些知识服务规划的架构方向。这里的重点是模块之间怎样产生可复用知识，而不只是保留某个固定策略网络的参数。
+
+#### 证据
+
+官方页面提供 Richard Sutton 的架构讲座与相关研究入口。STOMP、预测学习和在线特征学习等论文可以检验其中具体组件，但不能自动验证整体架构。
+
+#### 条件与限制
+
+这是研究愿景与架构讲解，不是一套已公布完整训练配方、统一基准结果和可复现端到端代码的系统。资源分配、问题生成、知识替换与模块相互干扰仍需明确算法。
+
+#### 阅读与实验
+
+为每个模块写出输入、输出、更新频率和资源上限。再选择一个双模块接口做可证伪实验，例如技能模型改善是否真的减少规划误差。
+
+#### 原文与相关入口
+
+- [Oak Lab 官方讲座页面](https://oaklab.ai/posts/the-oak-architecture)：讲座入口与架构研究方向。
+- [Oak Lab 研究主页](https://oaklab.ai/)：区分已发表研究、技术文章和仍在预告中的项目。
+
+### Recurrent Reinforcement Learning with Memoroids
+
+Steven Morad, Chris Lu, Ryan Kortvelesy, Stephan Liwicki, Jakob Foerster, Amanda Prorok
+
+NeurIPS 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+当记忆网络能够保存信息时，训练序列的切分是否仍会阻止学习器给早期信息分配信用？
+
+#### 关键机制
+
+Memoroids 将一类线性递归模型写成结合运算，利用并行 scan 处理长序列；Tape-Based Batching 将多个完整回合接入同一条 tape，用显式边界处理状态重置，减少分段、补零和截断反传带来的问题。
+
+#### 证据
+
+论文在 POPGym 等部分可观测任务和循环价值学习中比较分段与 tape 训练，并研究观测敏感度、样本效率及运行时间。
+
+#### 条件与限制
+
+并行 scan 和长序列反传使用保存的序列与批处理资源，不属于严格逐步、每条经验只使用一次的 RTRL。结合结构也不使任意非线性 RNN 都能采用同样的 scan。
+
+#### 阅读与实验
+
+固定同一种记忆模型，对照截断长度、完整回合和流式在线导数；分别检查活动能记多久、梯度能传多久、持久内存与训练峰值内存。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://papers.nips.cc/paper_files/paper/2024/file/19f7f755908372efb25826d61959cdf9-Paper-Conference.pdf)：结合运算、inline reset、Tape-Based Batching 与实验。
+- [作者公开版本](https://arxiv.org/html/2402.09900v3)：附录给出不同递归模型与回报的 memoroid 写法。
+
+#### 作者代码
+
+[论文附录原链接 memory-monoids 对应作者 Prorok Lab 的现有 memoroids 仓库；README 标明论文。](https://github.com/proroklab/memoroids)
+
+memory 模型、buffer、losses 与 segment_dqn/tape_dqn 对照。
+
+### Expected Eligibility Traces
+
+Hado van Hasselt, Sephora Madjiheurem, Matteo Hessel, David Silver, André Barreto, Diana Borsa
+
+AAAI 2021（2020预印本） · 2021 · 支持方法与理论
+
+#### 研究问题
+
+当前误差能否同时更新本次未走过、但也可能到达当前状态的过去路径？
+
+#### 关键机制
+
+学习给定当前状态的资格迹条件均值，再用当前TD误差更新该均值所指向的过去预测。递归混合在实际轨迹迹与预测的期望迹之间插值；预测对象是过去资格，而非未来奖励。
+
+#### 证据
+
+原文在Markov状态与相应条件下证明更新均值相同、逐分量方差不增，并在路径汇合问题检验预测效率。信用章精确枚举一个正例和一个状态混叠反例。
+
+#### 条件与限制
+
+不完整观察、参数漂移和近似迹预测器会破坏无偏条件。全参数期望迹预测还有输出维度和计算成本；小实验不复现作者的神经实验。
+
+#### 阅读与实验
+
+保持奖励边际分布一致，仅改变奖励是否依赖隐藏的过去路径。先测信用均值与方差，再研究agent state能否恢复条件独立。
+
+#### 原文与相关入口
+
+- [作者原文](https://arxiv.org/html/2007.01839)：Lemma 1、Proposition 1及ET(λ,η)递归混合。
+- [AAAI发表版本](https://ojs.aaai.org/index.php/AAAI/article/view/17200)：正式会议年份为2021。
+
+### Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning
+
+Noah Farr, Aryaman Reddi, Carlo D’Eramo, Jan Peters
+
+arXiv预印本（2026-07-07 v2） · 2026 · 支持方法与理论
+
+#### 研究问题
+
+严格逐步更新的智能体怎样同时学习递归记忆、分配延迟信用并控制计算？
+
+#### 关键机制
+
+将RTU结构的RTRL敏感度接入QRC与流式actor–critic。敏感度给出当前输出对记忆参数的导数，资格迹再组合过去输出的回报信用；两条递推保持分工。
+
+#### 证据
+
+v2在MemoryChain、五项POPGym和masked MuJoCo上报告5-seed结果，另用KMemoryChain比较在线敏感度与当前参数重算参考，并检验Taylor修正。
+
+#### 条件与限制
+
+masked MuJoCo仍落后批量PPO。固定参数精确RTRL不代表在线变参敏感度始终等于当前参数重算；诊断保存整个episode，须计为额外评价资源。尚未确认作者公开代码。
+
+#### 阅读与实验
+
+在相同递归容量下独立改变记忆跨度、回报λ与参数步幅，同时测敏感度误差和回报。诊断改善不能单独当作控制改进证据。
+
+#### 原文与相关入口
+
+- [2026年v2原文](https://arxiv.org/html/2605.24709v2)：方法、5-seed实验、masked MuJoCo负边界与staleness诊断。
+
+### Does Zero-Shot Reinforcement Learning Exist?
+
+Ahmed Touati, Jérémy Rapin, Yann Ollivier
+
+ICLR 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+没有事先指定奖励时，怎样学一套预测表示，日后接收新奖励就能选行为？
+
+#### 关键机制
+
+Forward–Backward 表示联合学习行为条件的未来占用与奖励读出，而非先固定任意编码器再学习 successor features。新奖励被映射到任务向量，策略根据这个向量直接行动；该论文系统比较 FB 与多种 SF 基础特征。
+
+#### 证据
+
+原文在固定离线 replay buffers 上比较零样本任务迁移，借此把表示学习与探索数据的质量分开。不同特征与数据覆盖产生显著差异，不能仅靠“所有奖励”的理论目标预测实际效果。
+
+#### 条件与限制
+
+假定共享动力学与可用经验覆盖。无下游梯度更新不等于无预训练成本；有限秩、近似训练和奖励估计都有误差。新动力学、历史混叠和严格一次使用经验均须另测。
+
+#### 阅读与实验
+
+同一 buffer 对比随机特征、谱特征与联合 FB，再独立换 buffer。奖励读出误差、占用误差与新任务回报分别报告，避免把数据覆盖优势记成表示优势。
+
+#### 原文与相关入口
+
+- [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
+- [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
+
+#### 作者代码
+
+[论文作者团队仓库；归档工程，依赖和旧环境需单独核验。](https://github.com/facebookresearch/controllable_agent)
+
+FB 与 SF 的训练、固定数据实验及奖励查询示例。
+
+### Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations
+
+Haosen Shi, Jianda Chen, Sinno Jialin Pan
+
+ICLR 2026 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+能否直接学习多步未来状态的分布，并把它压缩为适合控制学习的特征？
+
+#### 关键机制
+
+SF² 以 flow matching 估计 successor measure，将条件向量场分解为未来位置及生成时间的投影与当前状态动作特征的乘积。特征进入 TD3/SAC 的 critic；线性的是向量场对条件特征的分解，critic 本身可以非线性。
+
+#### 证据
+
+正式原文给出 mixture Bellman 结构、生成式 bootstrap 与控制实验，并提供作者 JAX/Brax 仓库。实验研究在线收集数据下的 off-policy 控制，并使用 replay、批次与目标网络。
+
+#### 条件与限制
+
+“online policy learning”不代表 strict streaming。生成时间不是环境时间；向量场线性不保证任意奖励价值线性。文中与 SR 的小生成时间联系是近似动机，未证明递归 agent state 或任意持续变化下的充分性。
+
+#### 阅读与实验
+
+对齐模型调用与梯度预算，拆分直接预测、bootstrap、critic 联合训练。冻结特征后比较线性与非线性读出，再测新奖励和动力学变化，才能检验预测知识的可复用程度。
+
+#### 原文与相关入口
+
+- [ICLR 2026 正式原文](https://proceedings.iclr.cc/paper_files/paper/2026/hash/48acf4b231771e693f42305b4c9b4c9f-Abstract-Conference.html)：第 2–3 节和算法附录；区分 flow 时间、环境时间与近似 SR 联系。
+- [原文链接的作者实现](https://github.com/Shiien/successor-flow-representation-implementation)：SAC/TD3、flow 特征、对照和 sweep 配置。
+
+#### 作者代码
+
+[正式论文摘要直接链接的作者代码。](https://github.com/Shiien/successor-flow-representation-implementation)
+
+基于 JAX/Brax 的 SF² 控制实验；不包含自动 GVF 问题发现或完整持续架构。
+
+### Foundation Policies with Hilbert Representations
+
+Seohong Park, Tobias Kreiman, Sergey Levine
+
+ICML 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+如何从无任务标签的离线轨迹形成既能按方向调用、又能用于目标任务的策略接口？
+
+#### 关键机制
+
+HILP 先学习近似保存时间距离的 Hilbert 表示，再以潜在位移与方向的内积训练方向条件策略。新任务通过奖励回归、目标方向或分层调用选择策略条件，结构表示也支持测试时规划。
+
+#### 证据
+
+ICML 原文与作者项目包含零样本 RL、离线目标条件 RL 及规划实验；官方仓库将 zero-shot 与 goal-conditioned 两套实现分开。
+
+#### 条件与限制
+
+精确时间距离不总能无损嵌入有限维对称欧氏距离，尤其有向不可逆行为；理论充分条件与近似神经实验需区分。方向条件策略没有自动获得任意停止条件或完整技能后果模型。
+
+#### 阅读与实验
+
+固定离线数据分别测距离误差、方向执行误差、奖励可表达误差与高层收益。让同一视觉观测对应不同历史，检查仅观测编码是否足够，之后再讨论 CRL 状态维护。
+
+#### 原文与相关入口
+
+- [ICML 2024 原文](https://proceedings.mlr.press/v235/park24g.html)：Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。
+- [作者项目与公式](https://seohong.me/projects/hilp/)：时间距离与方向奖励接口。
+- [官方实现](https://github.com/seohongpark/HILP)：hilp_zsrl 与 hilp_gcrl 对应不同实验。
+
+#### 作者代码
+
+[作者项目直接链接并标为 official implementation。](https://github.com/seohongpark/HILP)
+
+离线预训练、零样本奖励适配及目标条件实验。
+
+### DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning
+
+Gaoyue Zhou, Hengkai Pan, Yann LeCun, Lerrel Pinto
+
+ICML 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+预训练视觉表示能否直接成为动作后果预测与目标规划的接口？
+
+#### 关键机制
+
+冻结 DINOv2 空间 patch 特征，用离线动作轨迹学习未来特征预测器；测试时优化动作序列，让预测特征接近目标图像特征。没有重建图像、奖励模型或逆模型，不表示没有动作条件的动力学训练。
+
+#### 证据
+
+ICML 原文在六类环境检验视觉目标规划，作者仓库公开数据、部分检查点、训练与 CEM 规划入口。零样本指给定已训练模型后解决目标，无额外任务策略训练。
+
+#### 条件与限制
+
+依赖视觉预训练与离线交互覆盖；patch 相近不总等于任务完成或风险相同。原实验不证明冻结视觉表示能适应长期新物体、新动作语义或隐藏状态。
+
+#### 阅读与实验
+
+分别改变背景、物体属性、控制动力学与目标分布。把冻结 encoder 和联合更新 encoder 分开，对照视觉距离、真实成功与模型误差，观察表示漂移的依赖成本。
+
+#### 原文与相关入口
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/zhou25t.html)：正式发表入口；早期 ICLR 投稿页不能替代此状态。
+- [作者项目代码](https://github.com/gaoyuezhou/dino_wm)：train.py、plan.py、数据与已公开模型检查点范围。
+
+#### 作者代码
+
+[原作者 Gaoyue Zhou 的论文配套仓库。](https://github.com/gaoyuezhou/dino_wm)
+
+DINO 特征预测、离线环境数据与目标规划；README 公开部分环境检查点。
+
+### V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning
+
+Mahmoud Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba Komeili, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, Nicolas Ballas
+
+arXiv 预印本（此处采用 2025 首稿） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+无动作标注的视频预训练，与能接受机器人动作的规划模型之间还缺哪一步？
+
+#### 关键机制
+
+V-JEPA 2 先学被遮蔽视频的潜在特征预测；V-JEPA 2-AC 冻结编码器，再用机器人轨迹训练动作条件预测器。控制以目标图像的特征差为代价进行 MPC；视频理解、动作条件预测和真实控制是三个独立证据层。
+
+#### 证据
+
+2025 首稿报告以大规模视频预训练，再用不到 62 小时 DROID 交互视频后训练，在两个实验室以图像目标做真实机器人规划。论文单独讨论相机位置、长程规划与图像目标的局限。
+
+#### 条件与限制
+
+无任务奖励并不等于无动作、无机器人状态或无外部数据。零样本部署未持续更新模型，也未发现和维护 options。官方仓库现含 V-JEPA 2.1，复现首稿须记录配置和模型版本。
+
+#### 阅读与实验
+
+按视觉编码、动作坐标、后果模型、目标代价逐项做迁移检验。若引入在线更新，记录模型更新使旧目标接口失效的程度，测未来交互收益，而非仅用 frozen probe 证明 CRL。
+
+#### 原文与相关入口
+
+- [2025 首稿](https://arxiv.org/abs/2506.09985v1)：action-free 预训练、2-AC 后训练、真实规划与第 4.3 节限制；此处不赋予未核实会议状态。
+- [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。
+
+#### 作者代码
+
+[Meta FAIR 官方仓库；首稿模型与后续版本需按配置区分。](https://github.com/facebookresearch/vjepa2)
+
+官方视频表征与动作条件模型；数据、机器人部署条件与检查点分别核验。
+
 
 <a id="chapter-code"></a>
 
@@ -588,3 +1520,31 @@ python3 examples/state_meta_lab.py state
 - [Orvieto 等：Resurrecting Recurrent Neural Networks for Long Sequences](https://arxiv.org/abs/2303.06349)：LRU 的线性/对角递归、初始化与尺度设计；长序列建模结果不是 streaming RL 的直接证据。
 
 - [RTU 原始实验与配置](https://github.com/esraaelelimy/rtus)：网络、实时 actor–critic/PPO、POPGym 与部分可观测 Brax 的入口和配置。
+
+- [NeurIPS 2024 原文](https://papers.nips.cc/paper_files/paper/2024/file/19f7f755908372efb25826d61959cdf9-Paper-Conference.pdf)：结合运算、inline reset、Tape-Based Batching 与实验。
+
+- [作者公开版本](https://arxiv.org/html/2402.09900v3)：附录给出不同递归模型与回报的 memoroid 写法。
+
+- [Recurrent Reinforcement Learning with Memoroids · 作者实现](https://github.com/proroklab/memoroids)：memory 模型、buffer、losses 与 segment_dqn/tape_dqn 对照。 论文附录原链接 memory-monoids 对应作者 Prorok Lab 的现有 memoroids 仓库；README 标明论文。
+
+- [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
+
+- [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
+
+- [ICLR 2026 正式原文](https://proceedings.iclr.cc/paper_files/paper/2026/hash/48acf4b231771e693f42305b4c9b4c9f-Abstract-Conference.html)：第 2–3 节和算法附录；区分 flow 时间、环境时间与近似 SR 联系。
+
+- [原文链接的作者实现](https://github.com/Shiien/successor-flow-representation-implementation)：SAC/TD3、flow 特征、对照和 sweep 配置。
+
+- [ICML 2024 原文](https://proceedings.mlr.press/v235/park24g.html)：Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。
+
+- [作者项目与公式](https://seohong.me/projects/hilp/)：时间距离与方向奖励接口。
+
+- [官方实现](https://github.com/seohongpark/HILP)：hilp_zsrl 与 hilp_gcrl 对应不同实验。
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/zhou25t.html)：正式发表入口；早期 ICLR 投稿页不能替代此状态。
+
+- [作者项目代码](https://github.com/gaoyuezhou/dino_wm)：train.py、plan.py、数据与已公开模型检查点范围。
+
+- [2025 首稿](https://arxiv.org/abs/2506.09985v1)：action-free 预训练、2-AC 后训练、真实规划与第 4.3 节限制；此处不赋予未核实会议状态。
+
+- [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。

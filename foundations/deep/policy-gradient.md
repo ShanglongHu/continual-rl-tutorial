@@ -9,6 +9,78 @@
 - 给 GAE 设置独立的 bootstrap 与跨序列 mask。
 - 正确使用 log_prob、detach 和 actor/critic loss。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+从当前随机策略产生的轨迹估计收益梯度，并用价值网络减少对完整回报的依赖。
+
+### 给定条件与符号
+
+- 状态 $s\in\mathcal S$、动作 $a\in\mathcal A$；转移与奖励核 $p(s^{\prime},r\mid s,a)$。
+- 初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\le\gamma<1$；$J(\pi)=\mathbb E_{d_0,\pi,p}[\sum_{t\ge0}\gamma^tR_{t+1}]$。
+- 可微策略 $\pi_\theta$、价值近似 $V_\phi$、优势估计 $\hat A_t$。
+
+### 需要求解的对象
+
+构造与声明收益目标对应的 actor 更新，同时学习用于该估计器的 critic。
+
+### 信息与数据权限
+
+标准 on-policy 更新使用采样时策略的动作概率；使用旧策略数据需额外校正。
+
+$$
+\nabla_\theta J=\mathbb E\!\left[\sum_{t\ge0}\gamma^t\nabla_\theta\log\pi_\theta(A_t\mid S_t)A^{\pi_\theta}(S_t,A_t)\right]
+$$
+
+$A^\pi=Q^\pi-V^\pi$ 是真实优势。代码将它替换为估计量时，会引入方差以及可能的自举或截断偏差。
+
+### 成立条件与解的含义
+
+- 轨迹微分与期望交换合法；策略参数影响环境仅通过所执行动作。
+- GAE 的有限 rollout 边界需正确区分真实终止和采样截断。
+
+判断准则：先验证 score、优势与参数冻结时序，再将梯度估计的偏差方差与收益变化区分。
+
+### 适用边界
+
+- 由 GAE 降方差推断估计必然无偏或策略必然改善。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 限制表示或采用近似 · [策略梯度与 actor–critic](../../textbook/policy.md)：神经网络近似策略和价值，不改变 score-function 的概率学起点。
+
+- 组合不同学习问题 · [时间信用分配与资格迹](../../textbook/credit.md)：GAE 在 critic 残差上分配时间权重，不等于完整递归网络参数信用。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+真实优势未知，长轨迹回报噪声大，截断窗口又留下未观察未来。
+
+### 本章的核心思路
+
+从精确策略梯度出发，把未知优势换成具有明确边界的多步残差估计。
+
+1. [先求轨迹梯度](policy-gradient.md#lesson-derive)：环境不可微并不阻止对策略概率求导。
+
+2. [构造时间上的优势估计](policy-gradient.md#lesson-advantage)：GAE 混合 TD 残差，并保留末状态的 bootstrap。
+
+3. [隔离 actor 与 critic 的梯度职责](policy-gradient.md#lesson-algorithm)：actor 中通常停止对优势反传；critic 使用自己的回归损失。
+
+结论与条件：真实优势给出梯度恒等式；实际 actor–critic 的性质还取决于 critic 误差和数据协议。
+
+### 相关方法改变了什么
+
+- REINFORCE / GAE：分别依赖完整采样回报和带自举的多步残差。
+
+- VPG / A2C：共享策略梯度基础，但采样长度、critic 和同步方式可不同。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -208,6 +280,8 @@ VPG 更新核用固定优势乘当前 log_prob，进行一次 actor 更新，再
 - 问：原始优势是 (2.12,1)，标准化后还能作为价值 target 吗？答：不能。actor 的尺度处理不应改变 critic 的奖励单位。
 - 实验：固定一批完整轨迹，比较 λ=0、0.8、1 的目标，并单独制造一个 timeout。确认目标差异由哪一条 mask 和哪个尾值产生。
 
+
+
 <a id="chapter-code"></a>
 
 ## 下载与运行
@@ -235,6 +309,10 @@ python3 examples/deep_textbook_lab.py test
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
+
+本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+[领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 
 - [策略梯度与 actor–critic](../../textbook/policy.md)
 - [时间信用分配与资格迹](../../textbook/credit.md)

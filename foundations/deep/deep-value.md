@@ -9,6 +9,78 @@
 - 通过 autograd 检查停止梯度和张量形状。
 - 运行含真实交互、replay、优化与评估的 CPU 小实验。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+在离散动作控制中，用神经网络近似最优动作价值；环境模型未知，数据来自不断变化的行为。
+
+### 给定条件与符号
+
+- 状态 $s\in\mathcal S$、动作 $a\in\mathcal A$；转移与奖励核 $p(s^{\prime},r\mid s,a)$。
+- 初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\le\gamma<1$；$J(\pi)=\mathbb E_{d_0,\pi,p}[\sum_{t\ge0}\gamma^tR_{t+1}]$。
+- 在线网络 $Q_\theta$、目标网络 $Q_{\bar\theta}$、经验分布 $\mathcal D$；$m=0$ 表示真实终止，否则 $m=1$。
+
+### 需要求解的对象
+
+学习能产生有效贪心动作的价值近似；最终目标仍是外部期望回报。
+
+### 信息与数据权限
+
+可重放已保存转移，但不能由 replay 自动获得未覆盖动作的真实结果。
+
+$$
+y=r+\gamma m\max_{a^{\prime}}Q_{\bar\theta}(s^{\prime},a^{\prime}),\qquad L(\theta)=\mathbb E_{\mathcal D}[(Q_\theta(s,a)-\operatorname{sg}(y))^2]
+$$
+
+这是在固定目标版本和数据分布下的回归损失，$\operatorname{sg}$ 表示停止梯度。它是逼近 Bellman 最优性更新的机制，不是等同于最大化 J 的恒等式。
+
+### 成立条件与解的含义
+
+- 有限可枚举动作；明确终止、目标网络同步和 replay 采样规则。
+- 网络容量、覆盖和优化误差均可能限制解；一般非线性 DQN 没有表格式全局收敛保证。
+
+判断准则：先在已知小问题检查 target 和动作选择；再报告实际收益、价值尺度及覆盖，不能只看训练 loss。
+
+### 适用边界
+
+- 把固定 target 下的回归下降解释为整个非平稳控制过程单调改善。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 限制表示或采用近似 · [持续控制与学习智能体比较](../../textbook/control.md)：本章用神经动作价值与指定贪心提取规则近似折扣控制；表示、覆盖和求解误差限制实际行为，回归损失不是完整学习器收益。
+
+- 改变信息或数据协议 · [流式更新与稳定性](../../textbook/streaming.md)：本章允许 replay 和目标网络滞后；相对严格流式协议，它增加数据复用、持久内存及更新调度。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+自举目标、采样分布与网络参数同时变化，且最大化会选择正向估计噪声。
+
+### 本章的核心思路
+
+将采样、回归和目标更新放在不同时间尺度，并分离动作选择与评价。
+
+1. [固定一个回归目标再求梯度](deep-value.md#lesson-derive)：停止对 target 反传，明确每次优化实际使用的目标版本。
+
+2. [拆开选择和评价](deep-value.md#lesson-double)：Double DQN 由在线网络选动作，再由目标网络评值。
+
+3. [规定三个时钟的执行顺序](deep-value.md#lesson-algorithm)：环境步、优化步和目标同步步不是同一计数器。
+
+结论与条件：目标网络与 replay 是稳定化机制；它们不消除函数逼近、自举和离策略耦合的所有风险。
+
+### 相关方法改变了什么
+
+- DQN / Double DQN：改变后继目标中的动作选择器，不改变外部奖励目标。
+
+- Replay / 严格在线更新：改变数据复用和相关性，也改变内存与每步成本。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -210,6 +282,8 @@ def train_dqn(steps=2000, seed=0, double=True):
 - 问：replay 与 target 哪个解决长期遗忘？答：二者都不提供一般保证。Replay 保存部分数据，target 降低短期标签变化；保留能力还依赖覆盖、容量和更新规则。
 - 实验：把目标同步间隔改为 1、100、1000，在相同交互预算记录 TD loss、目标变化和回报。解释过快与过慢同步各自可能带来的问题，而不是只选最好种子。
 
+
+
 <a id="chapter-code"></a>
 
 ## 下载与运行
@@ -236,8 +310,11 @@ python3 examples/deep_textbook_train.py dqn --steps 2000 --seed 0
 
 ## 与教材主线的衔接
 
+本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+[领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
+
 - [深度价值学习](../../textbook/deep-value.md)
-- [控制问题与广义策略迭代](../../textbook/control.md)
 - [知识保留与再适应](../../textbook/retention.md)
 - [可塑性与特征更新](../../textbook/plasticity.md)
 

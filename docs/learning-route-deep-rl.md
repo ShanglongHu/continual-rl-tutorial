@@ -1,8 +1,12 @@
 # 现代 DRL：可学习表示与稳定控制
 
-先建立评价与控制，再理解函数近似带来的训练问题，最后研究长期交互中的适应与知识积累。这是先修关系，不是后来的算法取代前面的算法。
+运行时，智能体与世界形成交互闭环；外部设计者选择奖励、初始化、数据权限、调参与预算。经典方法、神经表示和持续学习描述不同维度，可以共同用于同一智能体。下面按教学先修组织，不把三册视为互斥问题类，也不要求读完全部分支才开始研究。
 
-深度强化学习把价值、策略或模型表示为神经网络。Bellman 方程与策略目标并没有失效，但共享特征、不断变化的训练目标和策略诱导的数据分布，使表格方法的保证不能直接沿用。本册按需要解决的问题连接 DQN、actor–critic、PPO、连续控制与世界模型。
+[领域总览与问题地图](field-framework.md) · [奖励假设与设计](../textbook/reward-design.md) · [持续控制：比较完整学习器](../textbook/control.md)
+
+基础目录包含表格方法、函数逼近与深度核心算法。深度拓展中的部分可观测、探索、回报分布、离线数据、模型、约束和多智能体是并列研究分支，可按问题选择。
+
+深度强化学习用神经网络表示价值、策略或模型。它与持续学习可以同时成立，也可以研究固定任务或离线数据。本册先解释 DQN、actor–critic、PPO 与连续控制的核心接口，再按部分可观测性、探索、分布、离线数据、模型、约束和多智能体等条件选择并列研究分支。
 
 学习目标：
 
@@ -45,7 +49,7 @@ python3 examples/foundations_detail_lab.py test
 
 解答：不保证。目标本身可能错误，样本可能不覆盖重要状态动作，网络还可能在未见区域误泛化。零训练误差仅说明拟合了这批目标。
 
-完整教材：
+完整推导与问题衔接：
 
 - [深度价值学习](../textbook/deep-value.md)
 - [价值预测与资格迹](../textbook/value.md)
@@ -90,7 +94,7 @@ python3 examples/foundations_detail_lab.py test
 
 解答：DQN 为 .9×3=2.7。Double 由在线网络选第一个动作，再由目标网络评价，因此为 .9×1=.9。差异来自选择与评价分工，不是折扣不同。
 
-完整教材：
+完整推导与问题衔接：
 
 - [深度价值学习](../textbook/deep-value.md)
 
@@ -113,7 +117,7 @@ $$
 \nabla_\theta J=\mathbb E_{\tau\sim\pi_\theta}\left[\sum_{t=0}^{T-1}\gamma^t\nabla_\theta\log\pi_\theta(A_t\mid S_t)\bigl(G_t-b(S_t)\bigr)\right]
 $$
 
-这里 J 是从固定初始分布出发的有限轨迹折扣回报，Gₜ 从时刻 t 重新计折扣。baseline 在 actor 更新中按固定数值使用；连续动作要使用联合概率密度。
+这里 J 是从固定初始分布出发的有限轨迹折扣回报，$G_t$ 从时刻 t 重新计折扣。baseline 在 actor 更新中按固定数值使用；连续动作要使用联合概率密度。
 
 ### 动手与核对
 
@@ -134,10 +138,11 @@ python3 examples/foundations_detail_lab.py test
 
 解答：若 logits 按动作 0、1 排列，方向为 2×(-.5,.5)=(-1,1)。它提高被选且优于 baseline 的动作概率，而不是直接把概率加 2。
 
-完整教材：
+完整推导与问题衔接：
 
+- [策略梯度与优势估计的完整实现](../foundations/deep/policy-gradient.md)
 - [策略梯度与 actor–critic](../textbook/policy.md)
-- [控制问题与广义策略迭代](../textbook/control.md)
+- [持续控制与学习智能体比较](../textbook/control.md)
 
 原文、课程与实现：
 
@@ -178,7 +183,7 @@ python3 examples/foundations_detail_lab.py test
 
 解答：min(.5×-2,.8×-2)=min(-1,-1.6)=-1.6。负优势乘法会反转大小关系；不能仅把正优势的直觉照搬。
 
-完整教材：
+完整推导与问题衔接：
 
 - [策略梯度与 actor–critic](../textbook/policy.md)
 - [时间信用分配与资格迹](../textbook/credit.md)
@@ -225,7 +230,7 @@ python3 examples/foundations_detail_lab.py test
 
 解答：不会。概率正比于 exp(r/.5)，好动作概率为 exp(2)/(1+exp(2))≈.880797。这里的随机性来自优化目标，不是估计尚未收敛。
 
-完整教材：
+完整推导与问题衔接：
 
 - [最大熵控制](../textbook/soft-control.md)
 - [策略梯度与 actor–critic](../textbook/policy.md)
@@ -253,7 +258,7 @@ $$
 (a_0^*,\ldots,a_{H-1}^*)\in\arg\max_{a_{0:H-1}}\mathbb E_{\hat p}\!\left[\sum_{k=0}^{H-1}\gamma^k\hat r_k+\gamma^H\hat V(z_H)\right]
 $$
 
-这是有限时域 MPC 的一个形式。z 是模型状态，H 是规划长度，末端价值弥补规划截断。实际只执行 a₀，再重新估计状态并规划。
+这是有限时域 MPC 的一个形式。z 是模型状态，H 是规划长度，末端价值弥补规划截断。实际只执行 $a_0$，再重新估计状态并规划。
 
 ### 动手与核对
 
@@ -272,9 +277,9 @@ python3 examples/knowledge_algorithms_lab.py test
 
 自测：模型只预测下一特征的期望，能否直接用 V(E[X]) 替代 E[V(X)]？
 
-解答：只有特定条件下可以，例如 V 对该特征线性。若 X 等概率为 ±1，V(x)=x²，则 V(E[X])=0，而 E[V(X)]=1。
+解答：只有特定条件下可以，例如 V 对该特征线性。若 X 等概率为 ±1，$V(x)=x^2$，则 V(E[X])=0，而 E[V(X)]=1。
 
-完整教材：
+完整推导与问题衔接：
 
 - [Dyna 与模型学习](../textbook/dyna.md)
 - [转移模型与后果模型](../textbook/models.md)
@@ -321,7 +326,7 @@ python3 examples/state_meta_lab.py test
 
 解答：不一定。相同数值可以产生相同输出，但梯度不再经过截断点返回更早的运算。需要同时检查信息保留与学习信用。
 
-完整教材：
+完整推导与问题衔接：
 
 - [智能体状态与递归学习](../textbook/state.md)
 - [时间信用分配与资格迹](../textbook/credit.md)
@@ -331,4 +336,4 @@ python3 examples/state_meta_lab.py test
 - [Williams & Zipser · A Learning Algorithm for Continually Running Fully Recurrent Neural Networks](https://doi.org/10.1162/neco.1989.1.2.270)：RTRL 的原始前向敏感度方法。
 - [Hausknecht & Stone · Deep Recurrent Q-Learning](https://arxiv.org/abs/1507.06527)：把循环状态用于部分可观测深度 Q-learning。
 
-下一步：这些方法通常在指定训练预算内改善某个任务的表现。持续强化学习继续使用它们的价值与策略工具，但要进一步规定：学习状态保存多久、环境能否重置、数据是否过时，以及多年之后能否继续学。
+下一步：不必先读完所有深度研究分支才研究 CRL。选定问题后，再确定神经表示是否必要、信息与数据权限是什么，以及学习状态怎样长期保留。持续学习评价的是这些模块共同组成的完整学习器，而不只评价训练结束时的一组网络权重。

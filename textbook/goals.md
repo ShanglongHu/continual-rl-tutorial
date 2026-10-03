@@ -9,6 +9,82 @@
 - 推导带 stopping value 的子任务 target，区分 STOMP 原文约定与普通 option 后续价值。
 - 用真实任务收益与规划收益评价子任务，而非只看目标到达率。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+同一动力学下需要应对一族结果目标，并决定经验如何共享、下一目标如何选择、哪些子任务有长期用途。
+
+### 给定条件与符号
+
+- 目标空间、目标奖励和成功/终止语义，目标分布。
+- 目标无关动力学、真实转移及可重算标签的信息，数据和重置预算。
+
+### 需要求解的对象
+
+给定目标的策略/价值；HER改变训练标签，课程改变练习分布，子任务构造另选择有用的行为规格。
+
+### 信息与数据权限
+
+$g$ 是当前指定目标；保存状态、动作、后继、实际达到结果与物理终止。事后目标 $g'$ 只能重算评价标签，不能改写已发生转移。
+
+$$
+\max_\pi\ \mathbb E_{g\sim p_G}\mathbb E_{\pi(\cdot\mid s,g)}\!\left[\sum_{t=0}^{T_g-1}\gamma^t r_g(S_t,A_t,S_{t+1})\right]
+$$
+
+$p_G$ 是声明的目标评价分布，$r_g$ 为该目标奖励，$T_g$ 为按目标语义定义的停止时刻，$\gamma$ 为折扣。UVFA学习一族价值；重标记分布不等于 $p_G$。STOMP另以沿途cumulant与停止价值定义子任务，非普通到达目标。
+
+### 成立条件与解的含义
+
+- 重标记要求动力学不因目标改变；必要标签可由保留信息重算。
+- 随机环境中按实际结果选目标可能条件化噪声；标准HER不普遍无偏。子任务停止价值计时遵从明确的return约定。
+
+判断准则：在原先指定且未用于选择的目标上测成功率、步数和收益；重标记检验奖励与终止重算；子任务还需测其技能/模型对主任务规划的用途。
+
+### 适用边界
+
+- hindsight成功标签不等于原真实目标已经成功。
+- 子任务到达率高不证明有主任务价值。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 特例：增加条件 · [持续控制与学习智能体比较](control.md)：相对完整持续控制，本章限定目标参数索引的任务族和可共享动力学；目标输入、重标记权限与目标分布是这类控制问题的具体结构。
+
+- 组合不同学习问题 · [Options 与技能发现](options.md)：子任务是行为评价规格，option是包含执行与停止的可复用解。
+
+- 组合不同学习问题 · [探索与经验选择](exploration.md)：课程选择改变真实经验分配，不能由目标条件控制或HER自动完成。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+稀疏目标使失败轨迹缺少反馈；共享目标可能引入分布偏差，局部子目标还可能伤害主任务。
+
+### 本章的核心思路
+
+把目标规格、标签操作、课程与子任务停止收益分别定义，再检查各自连接外部收益的路径。
+
+1. [从每个目标推导共享控制](goals.md#lesson-derive)：因为目标只改变评价，先写每个目标的Bellman方程，再以UVFA共享参数。
+
+2. [重算事实的评价而非事实](goals.md#lesson-derive)：因为失败轨迹可能完成别的目标，HER保留转移并重算奖励/目标终止，同时检查随机选择偏差。
+
+3. [用沿途收益约束子任务](goals.md#lesson-subtasks)：因为最短到达可能忽略危险代价，reward-respecting子任务保留沿途奖励并以停止价值表达可复用后果。
+
+结论与条件：固定目标恢复普通控制定义；HER有效性取决于动力学和重标记条件，STOMP停止规则及折扣计时不能凭普通option公式替换。
+
+### 相关方法改变了什么
+
+- UVFA：共享一族目标价值，不决定练习目标。
+
+- HER：重用已发生经验的目标标签，不改变实际交互成功。
+
+- 课程/STOMP：课程选择经验分配；STOMP提出有沿途收益与停止价值的技能子任务。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -41,7 +117,7 @@ $$
 
 | 研究对象 | 输入与输出 | 没有被顺带解决的事 |
 | --- | --- | --- |
-| 目标表达 | 由 g 定义奖励 r_g、成功条件与可选的终止条件 | 并不保证目标可达或可观察 |
+| 目标表达 | 由 g 定义奖励 $r_g$、成功条件与可选的终止条件 | 并不保证目标可达或可观察 |
 | 目标条件控制 / UVFA | 给 s,a,g，预测 Q；给 s,g，输出动作 | 不决定下一次练哪个 g |
 | HER / 重标记 | 给已发生的轨迹，构造另一 g 下的训练转移 | 不把失败事实改成真实外部成功 |
 | 目标生成 / 课程 | 给学习进度与经验，选择下一批 g | 不等于已学到可靠技能或它的模型 |
@@ -55,7 +131,7 @@ $$
 
 ## 2. 从一族控制问题推到 UVFA 与 HER
 
-对每个目标 g 先固定奖励 r_g 和终止 d_g。最常见的到达任务令成功奖励为 0、未成功为 −1；成功立即结束时，回报衡量到达前的折扣步数。也可以成功后继续交互，只在奖励里反映成功。这两种任务的 Bellman 方程不同，不能把 success、环境 terminated 和时间上限 truncated 混成一个 done。
+对每个目标 g 先固定奖励 $r_g$ 和终止 $d_g$。最常见的到达任务令成功奖励为 0、未成功为 −1；成功立即结束时，回报衡量到达前的折扣步数。也可以成功后继续交互，只在奖励里反映成功。这两种任务的 Bellman 方程不同，不能把 success、环境 terminated 和时间上限 truncated 混成一个 done。
 
 $$
 Q_g^*(s,a)=\mathbb E\!\left[r_g(s,a,S')+\gamma(1-d_g)\max_{a'}Q_g^*(S',a')\mid s,a\right]
@@ -81,12 +157,12 @@ HER 再增加一个数据操作：先真实执行原目标 g，保留轨迹；�
 
 **算法：算法伪代码**
 
-1. 收集一段 (s_t, a_t, s_{t+1}, achieved_{t+1}, physical_done, info)
+1. 收集一段 ($s_t,a_t,s_{t+1}$，$\mathrm{achieved}_{t+1}$，`physical_done`，`info`)
 1. 对抽到的时刻 t：
-  1. 以一定概率保留原目标 g；否则从未来 achieved_{t+1:T} 采样 g′
-  1. 不改 s_t、a_t、s_{t+1}
-  1. 重算 r_{g′}(s_t,a_t,s_{t+1})
-  1. 按所定义任务重算 d_{g′}，物理终止仍保留
+  1. 以一定概率保留原目标 g；否则从未来 $\mathrm{achieved}_{t+1:T}$ 采样 g′
+  1. 不改 $s_t,a_t,s_{t+1}$
+  1. 重算 $r_{g^{\prime}}(s_t,a_t,s_{t+1})$
+  1. 按所定义任务重算 $d_{g^{\prime}}$，物理终止仍保留
   1. 构造目标 y；更新 Q（以及连续动作时的 actor）
 1. 独立评估：只用预先规定的真实目标，不用 hindsight 标签
 
@@ -130,12 +206,12 @@ $$
 
 **算法：算法伪代码**
 
-1. 初始化每个子任务的价值 v_i、策略 π_i、停止价值规格 z_i
+1. 初始化每个子任务的价值 $v_i$、策略 $π_i$、停止价值规格 $z_i$
 1. 每个真实转移：
   1. 记录旧价值、旧策略概率、行为概率 b(a|s)
-  1. 由选定规则计算 β_i(s′)，环境终止强制 β_i=1、z_i=0
-  1. 对每个 i 计算 δ_i = r + β_i z_i + γ(1−β_i)v_i(s′) − v_i(s)
-  1. 更新 critic；用已缓存 δ_i 更新 actor
+  1. 由选定规则计算 $β_i(s^{\prime})$，环境终止强制 $β_i=1,z_i=0$
+  1. 对每个 i 计算 $δ_i = r + β_i z_i + γ(1-β_i)v_i(s^{\prime}) - v_i(s)$
+  1. 更新 critic；用已缓存 $δ_i$ 更新 actor
   1. 另行学习此 option 的真实 reward/end-state 模型
   1. 评价该模型用于主任务规划的改善，不能只看子任务成功率
 
@@ -354,6 +430,449 @@ $$
 目标定义偏好，状态保留信息。学会达到给定目标，不等于学会构建有用目标。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-goals) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=goals) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=goals)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+
+- [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
+
+#### 子任务、技能与经验获取
+
+哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
+
+Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+
+- [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
+- [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
+- [HIQL: Offline Goal-Conditioned RL with Latent States as Actions](https://yingwen.io/zh/continual-rl/research/#recent-hiql-hierarchical-goals)
+- [MaestroMotif: Skill Design from Artificial Intelligence Feedback](https://yingwen.io/zh/continual-rl/research/#recent-maestromotif-semantic-skills)
+- [Foundation Policies with Hilbert Representations](https://yingwen.io/zh/continual-rl/research/#recent-hilbert-foundation-policies)
+- [Constructing an Optimal Behavior Basis for the Option Keyboard](https://yingwen.io/zh/continual-rl/research/#recent-option-keyboard-basis)
+- [Reset-free Reinforcement Learning with World Models](https://yingwen.io/zh/continual-rl/research/#recent-morefree-reset-free-models)
+
+#### 后果模型、知识保留与规划
+
+学会预测后果，何时能真正改善决策？
+
+模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+
+- [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
+- [General Agents Contain World Models](https://yingwen.io/zh/continual-rl/research/#recent-general-agents-world-models)
+- [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
+- [Reset-free Reinforcement Learning with World Models](https://yingwen.io/zh/continual-rl/research/#recent-morefree-reset-free-models)
+
+#### 持续控制、平均奖励与重置
+
+当学习、行动和恢复占用同一条时间轴时，应优化什么，又怎样探索？
+
+平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
+
+- [Reset-free Reinforcement Learning with World Models](https://yingwen.io/zh/continual-rl/research/#recent-morefree-reset-free-models)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [OGBench: Benchmarking Offline Goal-Conditioned RL](https://yingwen.io/zh/continual-rl/research/#recent-ogbench-goal-evaluation)
+
+#### 完整智能体与研究基础
+
+长期能力应怎样定义，各个机制又怎样共同产生它？
+
+形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+
+- [General Agents Contain World Models](https://yingwen.io/zh/continual-rl/research/#recent-general-agents-world-models)
+- [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
+- [Constructing an Optimal Behavior Basis for the Option Keyboard](https://yingwen.io/zh/continual-rl/research/#recent-option-keyboard-basis)
+
+### Reward-Respecting Subtasks for Model-Based Reinforcement Learning
+
+Richard S. Sutton, Marlos C. Machado, G. Zacharias Holland, David Szepesvari, Finbarr Timbers, Brian Tanner, Adam White
+
+Artificial Intelligence · 2023 · 支持方法与理论
+
+#### 研究问题
+
+学到一个能到达子目标的技能之后，为什么它仍可能不适合主任务规划？
+
+#### 关键机制
+
+STOMP 把子任务、option、模型和规划连起来。子任务保留原任务的路径奖励，并用带有特征偏好的终止价值表达目标；学习得到策略和终止规则后，再预测该行为的累计奖励与折扣终点。这样，技能不会因为只追求到达子目标而忽略途中代价。
+
+#### 证据
+
+论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+
+#### 条件与限制
+
+终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+
+#### 阅读与实验
+
+在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+
+#### 原文与相关入口
+
+- [期刊论文](https://doi.org/10.1016/j.artint.2023.104001)：STOMP 与奖励感知子任务的正式论文。
+- [作者预印本](https://arxiv.org/abs/2202.03466)：最初预印本早于期刊年份；阅读停止收益的精确定义。
+
+### Laplacian Keyboard: Beyond the Linear Span
+
+Siddarth Chandrasekar, Marlos C. Machado
+
+arXiv 预印本 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+从一组谱技能出发，能否解决超出原特征线性奖励空间的新任务？
+
+#### 关键机制
+
+Laplacian 特征先定义行为基，并借助后继特征预测各行为的后果。固定任务权重的价值组合受特征张成空间限制；论文进一步使用随状态变化的元策略，在不同位置组合已有行为。关键变化是组合规则从一组全局固定权重变为状态相关的行为选择。
+
+#### 证据
+
+论文对行为基与任务组合给出理论分析，并报告有限环境中的组合实验。它延续 eigenoptions 与 successor features 的路线，同时解释了为什么单纯线性读出会遇到表达边界。
+
+#### 条件与限制
+
+理论结论依赖具体的行为基、近似误差和任务条件。技能集合的长期生成、淘汰与非平稳模型维护仍是另外的问题；此处按预印本收录，不指定未经确认的会议。
+
+#### 阅读与实验
+
+构造一个必须在中途切换方向的奖励任务。分别比较固定权重的技能选择与状态相关切换，并解释性能差异来自哪里。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/abs/2602.07730)：阅读线性张成空间的限制及状态相关组合机制。
+
+### HIQL: Offline Goal-Conditioned RL with Latent States as Actions
+
+Seohong Park, Dibya Ghosh, Benjamin Eysenbach, Sergey Levine
+
+NeurIPS 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+只拿到已有轨迹时，长距离目标为什么适合拆成高层子目标和低层动作？
+
+#### 关键机制
+
+HIQL 学习目标条件价值，并以潜在状态作为高层动作。高层提出中间目标，低层输出环境动作；两层利用优势加权回归学习。时间分解让低层面对较短的控制距离，而不是要求一个策略直接消化所有远距离价值误差。
+
+#### 证据
+
+论文在离线长时域目标任务中检验层次结构，并提供原始实现。作者后来在 OGBench 中提供更统一的实现，二者适合不同用途：原实验复现和统一基线比较。
+
+#### 条件与限制
+
+数据覆盖和行为分布约束仍然存在。目标采样、层级时间间隔与离线轨迹由外部流程提供，不能把效果解释为在线自主目标生成已经解决。
+
+#### 阅读与实验
+
+对一段轨迹明确标记最终目标、中间目标和当前动作。逐一检查价值目标、优势权重和高层标签的停止梯度边界。
+
+#### 原文与相关入口
+
+- [NeurIPS 2023 原文](https://papers.nips.cc/paper_files/paper/2023/file/6d7c4a0727e089ed6cdd3151cbe8d8ba-Paper-Conference.pdf)：离线目标学习和两层回归目标。
+- [HIQL 原始实现](https://github.com/seohongpark/HIQL)：README 区分原始实验与 OGBench 中的新实现。
+
+#### 作者代码
+
+[作者仓库；更新的统一基线另见 OGBench。](https://github.com/seohongpark/HIQL)
+
+HIQL 原论文的离线训练与评价。
+
+### OGBench: Benchmarking Offline Goal-Conditioned RL
+
+Seohong Park, Kevin Frans, Benjamin Eysenbach, Sergey Levine
+
+ICLR 2025 · 2025 · 评价与实验协议
+
+#### 研究问题
+
+一个目标条件算法表现不好，是长时域、轨迹拼接、视觉表示还是随机性造成的？
+
+#### 关键机制
+
+OGBench 用不同环境类型与数据集分别施加这些困难，并提供统一的目标条件基线。固定离线数据让算法面对相同经验，从而将学习机制的差异与在线探索能力的差异暂时分离。
+
+#### 证据
+
+论文提供八类环境、八十五个数据集和六类算法实现。价值在于可复用的实验接口与困难分解，而不只是汇总一个排行榜。
+
+#### 条件与限制
+
+固定数据不检验智能体如何主动获得未来经验，也不直接检验单次生命的灾难性变化、恢复或长期资源管理。它适合 CRL 子问题实验，不是完整 CRL 的替代品。
+
+#### 阅读与实验
+
+先选择只改变一种困难的两个数据集，再比较 HIQL 与平坦目标策略。把观察到的差异写成可检验机制假设，而不是直接归因于“层次更好”。
+
+#### 原文与相关入口
+
+- [论文](https://arxiv.org/abs/2410.20092)：ICLR 2025；环境、数据与基线定义。
+- [作者基准库](https://github.com/seohongpark/ogbench)：数据获取、环境与统一算法实现。
+
+#### 作者代码
+
+[基准作者维护的官方实现。](https://github.com/seohongpark/ogbench)
+
+离线目标环境、数据集与标准化基线。
+
+### MaestroMotif: Skill Design from Artificial Intelligence Feedback
+
+Martin Klissarov, Mikael Henaff, Roberta Raileanu, Shagun Sodhani, Pascal Vincent, Amy Zhang, Pierre-Luc Bacon, Doina Precup, Marlos C. Machado, Pierluca D’Oro
+
+ICLR 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+语言描述如何变成可训练的技能奖励，并进一步组织成一个层次策略？
+
+#### 关键机制
+
+设计者先给出技能描述。语言模型的偏好反馈被用于训练奖励模型，再用生成的代码规定技能启动、终止和组合方式；强化学习负责学习实际执行行为。这把语义先验、奖励学习和时间抽象串成了具体训练流程。
+
+#### 证据
+
+论文在 NetHack 学习环境中检验复杂技能与任务组合。作者仓库同时包含偏好、代码生成和 RL 训练模块，可以追踪自然语言到环境动作的完整依赖。
+
+#### 条件与限制
+
+语义知识、技能描述和语言模型来自外部设计过程。该证据并不说明智能体仅凭自身交互就能产生同样的技能体系；偏好模型也可能与真实目标不一致。
+
+#### 阅读与实验
+
+选择一项技能，分别列出描述、偏好标签、训练奖励、终止条件和下游用途。移除语义描述或改变奖励模型时，要单独计量额外查询与人工成本。
+
+#### 原文与相关入口
+
+- [ICLR 2025 原文](https://proceedings.iclr.cc/paper_files/paper/2025/hash/2dc5a0faac8102fd47363795f71126ee-Abstract-Conference.html)：技能设计、奖励学习与组合实验。
+- [作者实现](https://github.com/mklissa/maestromotif)：偏好学习、代码生成和执行策略的不同模块。
+
+#### 作者代码
+
+[原论文作者仓库。](https://github.com/mklissa/maestromotif)
+
+MaestroMotif 的偏好处理、技能组织与 RL 实验。
+
+### General Agents Contain World Models
+
+Jonathan Richens, David Abel, Alexis Bellot, Tom Everitt
+
+ICML 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+能完成足够丰富的目标集合，是否意味着智能体内部已经包含可提取的环境预测知识？
+
+#### 关键机制
+
+论文在形式化条件下，将广泛多步目标上的行为能力与环境模型的可提取性联系起来。通过查询智能体对不同目标的行为，可以恢复关于环境后果的信息；目标集合和性能要求越强，所要求的预测知识也越强。
+
+#### 证据
+
+主要证据是给定假设下的理论结果，而不是某个世界模型架构在所有任务上击败无模型算法的实验。
+
+#### 条件与限制
+
+可提取模型不等于智能体显式保存一个 RSSM，也不意味着所有实用任务都需要重建全部环境。必要知识的结论不能代替如何高效学到它的算法。
+
+#### 阅读与实验
+
+列出定理要求的目标丰富性和查询能力，再尝试构造一个只会单一任务的反例。由此区分任务专门知识与支持广泛目标的预测模型。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2506.01622)：形式化设定、模型可提取性与证明。
+- [David Abel 论文目录](https://david-abel.github.io/papers.html)：作者提供的 ICML 2025 发表信息及相关研究。
+
+### The OaK Architecture: A Vision of SuperIntelligence from Experience
+
+Richard S. Sutton
+
+RLC 2025 讲座 / Oak Lab · 2025 · 定义与架构观点
+
+#### 研究问题
+
+持续学习是否只是在一个现成 actor–critic 上加入抗遗忘机制，还是需要重新安排知识构造与使用？
+
+#### 关键机制
+
+OaK 提出从经验持续形成状态、预测知识、子任务、时间抽象与模型，并让这些知识服务规划的架构方向。这里的重点是模块之间怎样产生可复用知识，而不只是保留某个固定策略网络的参数。
+
+#### 证据
+
+官方页面提供 Richard Sutton 的架构讲座与相关研究入口。STOMP、预测学习和在线特征学习等论文可以检验其中具体组件，但不能自动验证整体架构。
+
+#### 条件与限制
+
+这是研究愿景与架构讲解，不是一套已公布完整训练配方、统一基准结果和可复现端到端代码的系统。资源分配、问题生成、知识替换与模块相互干扰仍需明确算法。
+
+#### 阅读与实验
+
+为每个模块写出输入、输出、更新频率和资源上限。再选择一个双模块接口做可证伪实验，例如技能模型改善是否真的减少规划误差。
+
+#### 原文与相关入口
+
+- [Oak Lab 官方讲座页面](https://oaklab.ai/posts/the-oak-architecture)：讲座入口与架构研究方向。
+- [Oak Lab 研究主页](https://oaklab.ai/)：区分已发表研究、技术文章和仍在预告中的项目。
+
+### Reset-free Reinforcement Learning with World Models
+
+Zhao Yang, Thomas M. Moerland, Mike Preuss, Aske Plaat, Edward S. Hu
+
+TMLR 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+不能靠外部重置回到起点时，怎样兼顾探索新状态与持续获得对任务有用的经验？
+
+#### 关键机制
+
+MoReFree 在 goal-conditioned world-model 系统中交替练习评测目标、返回初始分布与探索目标；模型内的策略训练也偏向任务相关目标。返回行为通过真实动作实现，调度块结束不会将物理世界 reset。
+
+#### 证据
+
+作者在八个 reset-free 任务中与模型自由及模型式基线比较；公开环境、探索调度和 imagination training 实现。
+
+#### 条件与限制
+
+训练无 reset，但主要评价仍使用可重置的 episodic 测试。已给定初始与目标状态分布、世界模型和 replay 都是资源；这不是任意非平稳 CRL 或真实安全的完整保证。
+
+#### 阅读与实验
+
+把返回成本计入总步数，分别消融数据获取目标与模型内训练目标；检查外部 reward-free 是否仍依赖设计者提供目标示例。
+
+#### 原文与相关入口
+
+- [作者论文 v3](https://arxiv.org/html/2408.09807v3)：训练与评价协议、back-and-forth exploration 与目标分布。
+- [TMLR 作者项目页](https://yangzhao-666.github.io/morefree/)：正式发表状态与作者代码链接。
+
+#### 作者代码
+
+[TMLR 作者项目页明确链接的官方实现。](https://github.com/yangzhao-666/MoReFree)
+
+resetfree/env.py、goal_picker_wrapper.py、Dreamer/PEG 与目标条件实验。
+
+### Does Zero-Shot Reinforcement Learning Exist?
+
+Ahmed Touati, Jérémy Rapin, Yann Ollivier
+
+ICLR 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+没有事先指定奖励时，怎样学一套预测表示，日后接收新奖励就能选行为？
+
+#### 关键机制
+
+Forward–Backward 表示联合学习行为条件的未来占用与奖励读出，而非先固定任意编码器再学习 successor features。新奖励被映射到任务向量，策略根据这个向量直接行动；该论文系统比较 FB 与多种 SF 基础特征。
+
+#### 证据
+
+原文在固定离线 replay buffers 上比较零样本任务迁移，借此把表示学习与探索数据的质量分开。不同特征与数据覆盖产生显著差异，不能仅靠“所有奖励”的理论目标预测实际效果。
+
+#### 条件与限制
+
+假定共享动力学与可用经验覆盖。无下游梯度更新不等于无预训练成本；有限秩、近似训练和奖励估计都有误差。新动力学、历史混叠和严格一次使用经验均须另测。
+
+#### 阅读与实验
+
+同一 buffer 对比随机特征、谱特征与联合 FB，再独立换 buffer。奖励读出误差、占用误差与新任务回报分别报告，避免把数据覆盖优势记成表示优势。
+
+#### 原文与相关入口
+
+- [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
+- [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
+
+#### 作者代码
+
+[论文作者团队仓库；归档工程，依赖和旧环境需单独核验。](https://github.com/facebookresearch/controllable_agent)
+
+FB 与 SF 的训练、固定数据实验及奖励查询示例。
+
+### Foundation Policies with Hilbert Representations
+
+Seohong Park, Tobias Kreiman, Sergey Levine
+
+ICML 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+如何从无任务标签的离线轨迹形成既能按方向调用、又能用于目标任务的策略接口？
+
+#### 关键机制
+
+HILP 先学习近似保存时间距离的 Hilbert 表示，再以潜在位移与方向的内积训练方向条件策略。新任务通过奖励回归、目标方向或分层调用选择策略条件，结构表示也支持测试时规划。
+
+#### 证据
+
+ICML 原文与作者项目包含零样本 RL、离线目标条件 RL 及规划实验；官方仓库将 zero-shot 与 goal-conditioned 两套实现分开。
+
+#### 条件与限制
+
+精确时间距离不总能无损嵌入有限维对称欧氏距离，尤其有向不可逆行为；理论充分条件与近似神经实验需区分。方向条件策略没有自动获得任意停止条件或完整技能后果模型。
+
+#### 阅读与实验
+
+固定离线数据分别测距离误差、方向执行误差、奖励可表达误差与高层收益。让同一视觉观测对应不同历史，检查仅观测编码是否足够，之后再讨论 CRL 状态维护。
+
+#### 原文与相关入口
+
+- [ICML 2024 原文](https://proceedings.mlr.press/v235/park24g.html)：Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。
+- [作者项目与公式](https://seohong.me/projects/hilp/)：时间距离与方向奖励接口。
+- [官方实现](https://github.com/seohongpark/HILP)：hilp_zsrl 与 hilp_gcrl 对应不同实验。
+
+#### 作者代码
+
+[作者项目直接链接并标为 official implementation。](https://github.com/seohongpark/HILP)
+
+离线预训练、零样本奖励适配及目标条件实验。
+
+### Constructing an Optimal Behavior Basis for the Option Keyboard
+
+Lucas N. Alegre, Ana L. C. Bazzan, André Barreto, Bruno C. da Silva
+
+NeurIPS 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+状态相关的技能组合足够强时，是否仍须为每个新奖励保存一条完整策略？
+
+#### 关键机制
+
+OKB 联合扩充基础策略与 Option Keyboard 的元策略。线性支持方法选择需要补齐的任务权重，先训练现有基础上的组合，再检查无法表达的动作并新增基础，移除冗余项。优化的是可组合的行为基，而非仅增加技能数量。
+
+#### 证据
+
+正式原文分析基础数量与 convex coverage set 的关系，并在多任务领域检验规模与表现。附录提供元策略、新基础训练和角点枚举等实现细节；论文声明实验代码在 Supplemental Material。
+
+#### 条件与限制
+
+保证假定 NewPolicy 返回最优策略，且 TrainOK 能达到可表达的最优组合。近似 critic、有限训练、变化动力学不直接继承保证；非线性任务结论仅覆盖最优行为可由相应子策略组合的类别。
+
+#### 阅读与实验
+
+分别比较“增加基础”“只训练组合”和“去除冗余”。保留一组未用于基构造的奖励权重，记录基础规模、元策略成本、SF 误差与迁移回报。持续淘汰仍需未来任务效用检验。
+
+#### 原文与相关入口
+
+- [NeurIPS 2025 原文与补充材料入口](https://proceedings.neurips.cc/paper_files/paper/2025/hash/0ab48777def88e73b50746a6011be0b0-Abstract-Conference.html)：算法 1–3、附录 A.3 的两个最优子程序假设及代码声明；未在本教材运行补充代码。
+- [Option Keyboard 的经典桥梁](https://proceedings.neurips.cc/paper/2019/file/251c5ffd6b62cc21c446c963c76cf214-Paper.pdf)：cumulant 组合、GPE/GPI 与技能接口。
+
 
 <a id="chapter-code"></a>
 

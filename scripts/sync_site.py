@@ -70,6 +70,7 @@ def expected_files(directory: Path) -> tuple[dict[str, bytes], dict]:
     links.update({"": "README.md", "foundations/": "foundations/README.md", "algorithms/": "textbook/README.md", "labs/": "docs/experiments.md", "research/": "docs/research-atlas.md", "frontier/": "docs/research-atlas.md", "experiments/handbook/": "docs/experiment-handbook.md", "start/": "docs/learning-route.md"})
     for track in ("tabular", "approximation", "deep"):
         links["foundations/" + track + "/"] = "foundations/" + track + "/README.md"
+    links["overview/"] = "docs/field-framework.md"
     for stage in ("classic-rl", "deep-rl", "continual-rl"):
         links["start/" + stage + "/"] = "docs/learning-route-" + stage + ".md"
     for entry in entries:
@@ -106,9 +107,14 @@ def expected_files(directory: Path) -> tuple[dict[str, bytes], dict]:
     chapters, lessons = manifest["chapters"], manifest["lessons"]
     put("textbook/README.md", "# CRL 教材与算法\n\n[基础分册](../foundations/README.md) · [实验手册](../docs/experiment-handbook.md) · [研究问题](../docs/research-atlas.md)\n\n" + "\n".join(f"- [{c['title']}]({c['id']}.md)" for c in chapters))
     foundation_parts=[]
-    for track, title in [("tabular", "表格强化学习 · Sutton Part I"), ("approximation", "函数逼近与经典进阶 · Sutton Part II"), ("deep", "现代深度强化学习 · Spinning Up 主线")]:
+    for track, title in [("tabular", "表格强化学习 · Sutton Part I"), ("approximation", "函数逼近与经典进阶 · Sutton Part II"), ("deep", "现代深度强化学习 · 核心算法与并列研究分支")]:
         rows=[l for l in lessons if l["track"] == track]
         lines="\n".join(f"- [{l['title']}]({l['path'].rstrip('/').split('/')[-1]}.md)" for l in rows)
+        if track == "deep":
+            sections=[]
+            for label, group in [("核心算法", [l for l in rows if l['order']<=6]), ("并列研究分支", [l for l in rows if l['order']>=7])]:
+                sections.append("## "+label+"\n\n"+"\n".join(f"- [{l['title']}]({l['path'].rstrip('/').split('/')[-1]}.md)" for l in group))
+            lines="先掌握核心更新，再按信息、数据和目标条件选择分支。分支可以交叉组合，不是必须依次完成的关卡。\n\n"+"\n\n".join(sections)
         put(f"foundations/{track}/README.md", f"# {title}\n\n{lines}\n\n[全部基础分册](../README.md) · [进入 CRL](../../textbook/README.md)")
         foundation_parts.append(f"## [{title}]({track}/README.md)\n\n" + "\n".join(f"- [{l['title']}]({track}/{l['path'].rstrip('/').split('/')[-1]}.md)" for l in rows))
     put("foundations/README.md", "# 强化学习基础：表格方法、函数逼近与深度学习\n\n每章给出设定、推导、执行顺序、手算、代码、边界与练习。Part II 不是可跳过的附录：共享参数、半梯度、离策略稳定性、资格迹和策略梯度是后续方法的共同基础。\n\n" + "\n\n".join(foundation_parts) + "\n\n[CRL 教材](../textbook/README.md)")

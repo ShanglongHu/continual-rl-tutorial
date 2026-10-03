@@ -8,6 +8,82 @@
 - 辨认 soft Q、策略熵、双 critic 和自动温度分别起什么作用。
 - 实现离散熵正则 actor 更新，并能检查连续 SAC 的 log-prob 和梯度路径。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+将动作分布熵作为明确的优化收益，控制目标随之改变；不是给普通控制算法附加一个无影响的探索技巧。
+
+### 给定条件与符号
+
+- 固定折扣任务、策略类、动作坐标与熵定义。
+- 温度或目标熵、回放与双critic配置、计算预算。
+
+### 需要求解的对象
+
+熵正则策略和soft价值；SAC近似学习这些量并可另行适应温度。
+
+### 信息与数据权限
+
+真实经验生成回放；critic标签停止梯度。actor更新冻结critic参数，但保留其对动作输入的导数。连续动作密度必须包含变换Jacobian。
+
+$$
+J_\tau(\pi)=\mathbb E_\pi\!\left[\sum_{t=0}^{\infty}\gamma^t\{R_{t+1}+\tau\mathcal H(\pi(\cdot\mid S_t))\}\right]
+$$
+
+$\gamma<1$ 是折扣，$\tau>0$ 是熵温度，$\mathcal H$ 为离散熵或明确坐标下的微分熵。$\tau$ 固定时，这是区别于纯外部回报的目标；自动温度另有目标熵约定。SAC的critic与actor loss是估计和改善该目标的代理。
+
+### 成立条件与解的含义
+
+- 有限离散精确softmax推导要求各动作价值有限；连续积分、微分熵和重参数化需要相应可积/可微条件。
+- 奖励尺度、动作尺度与温度共同决定目标；深网、双critic最小值与回放不自动保证收敛。
+
+判断准则：离散Q=[0,1]、温度0.5时动作1概率约0.880797、soft value约1.063464；连续实现检查变换密度与梯度路径，外部收益和熵收益分别报告。
+
+### 适用边界
+
+- soft value不是纯外部回报的价值。
+- 连续微分熵不与离散熵直接数值比较。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 改变评价目标 · [策略梯度与 actor–critic](policy.md)：熵进入回报，而actor优化和数据分布也按SAC协议改变。
+
+- 组合不同学习问题 · [平均奖励与差分价值](average.md)：最大熵准则可以结合平均奖励，但需重新定义奖励率、差分critic与参照项。
+
+- 组合不同学习问题 · [探索与经验选择](exploration.md)：熵鼓励分布多样性，但不等于访问新区域、信息增益或恢复能力。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+普通贪心选择忽略目标中的熵；连续策略还需可微采样和正确概率密度。
+
+### 本章的核心思路
+
+先由熵正则最优化推到softmax/soft Bellman，再将评价、改善和温度分别落实。
+
+1. [从熵收益推导策略改善](soft-control.md#lesson-derive)：因为确定贪心不再最优，拉格朗日推导得到softmax与log-sum-exp，并明确温度尺度。
+
+2. [构造soft评价与actor梯度](soft-control.md#sac-targets)：因为后续收益含熵，critic标签扣对数概率；actor通过重参数化动作保留动作价值梯度。
+
+3. [安排各模块的冻结边界](soft-control.md#sac-loop)：因为同批数据上critic、actor和温度互相依赖，明确标签停止梯度、critic参数冻结及目标软更新次序。
+
+结论与条件：有限离散精确局部熵优化有解析解；近似双critic/SAC训练不继承任意网络的全局最优保证，自动温度也需其目标熵可行。
+
+### 相关方法改变了什么
+
+- 普通贪心控制：只优化外部回报，不支付熵收益。
+
+- 精确soft策略迭代：已知或精确价值下执行soft评价与改善。
+
+- SAC：以回放、双critic和重参数化actor近似实现，含额外估计和工程误差。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -219,6 +295,57 @@ actor 更新时冻结 critic，是不是要对 min Q detach？不是。冻结的
 连续动作中，策略承担动作搜索。熵、双评论家与回放各有作用，不能合并为一个“稳定化技巧”。
 
 [分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-soft-control) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=soft-control) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=soft-control)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 持续控制、平均奖励与重置
+
+当学习、行动和恢复占用同一条时间轴时，应优化什么，又怎样探索？
+
+平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
+
+- [RVI-SAC: Average Reward Off-Policy Deep Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rvi-sac-average-control)
+
+### RVI-SAC: Average Reward Off-Policy Deep Reinforcement Learning
+
+Yukinari Hisaki, Isao Ono
+
+ICML 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+深度连续控制若最终按单位时间收益评测，训练能否直接采用平均奖励而非有限折扣？
+
+#### 关键机制
+
+RVI-SAC 将相对价值参照项加入 soft critic，以平均奖励的 soft policy improvement 构造 actor，并用额外 reset critic 与可学习成本控制重置频率。完整实现包含双 critic、经验重放、目标网络和温度更新。
+
+#### 证据
+
+论文给出平均奖励最大熵控制推导，并在 MuJoCo 运动任务中比较；公开实现可核对重置转移是否继续 bootstrap。
+
+#### 条件与限制
+
+理论的表格或精确评价条件不自动覆盖所有神经网络训练。最大熵奖励率、外部奖励率与带 reset 成本的奖励率是三个量；不可将有限折扣 reward centering 当作同一算法。
+
+#### 阅读与实验
+
+逐项对应 critic 参照、actor 分布、reset 指示与 reset 后状态；评价保留外部原始奖励、实际时长、重置次数和训练修正目标。
+
+#### 原文与相关入口
+
+- [ICML 2024 正式论文](https://proceedings.mlr.press/v235/hisaki24a.html)：平均奖励 soft improvement、RVI 与自动 reset cost。
+
+#### 作者代码
+
+[作者仓库 README 标明 reference code 与同名原论文。](https://github.com/yhisaki/average-reward-drl)
+
+average_reward_drl/algorithms/rvi_sac.py 及其参照项、固定 reset cost 变体。
+
 
 <a id="chapter-code"></a>
 

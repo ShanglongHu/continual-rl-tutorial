@@ -17,8 +17,8 @@
     {
       "id": "deep",
       "title": "现代深度强化学习",
-      "reference": "Spinning Up · 理论、算法与实现",
-      "question": "怎样把价值与策略的近似更新组织成可训练、可检查的神经智能体？",
+      "reference": "Spinning Up · 核心方法与原始研究扩展",
+      "question": "怎样组织神经智能体的核心更新，再按信息、目标与数据条件选择研究分支？",
       "next": null
     }
   ],
@@ -268,6 +268,71 @@
         "file": "tabular_textbook_lab.py",
         "command": "python3 tabular_textbook_lab.py bandits\npython3 tabular_textbook_lab.py test",
         "scope": "Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。"
+      },
+      "problem": {
+        "setting": "学习器反复从有限动作中选择一个动作，只观察该动作的奖励。动作不改变下一轮的外部状态。",
+        "given": [
+          "动作集合 $\\mathcal A=\\{1,\\ldots,K\\}$、交互预算 $T$。",
+          "每个动作有未知奖励分布 $\\nu_a$，均值 $q_*(a)$；$q_*^{\\max}=\\max_aq_*(a)$。"
+        ],
+        "sought": "因果选择规则：第 $t$ 轮只能使用此前的动作与奖励，决定 $A_t$。",
+        "information": "没有全部动作奖励反馈，也不知道哪个动作最优。观测一个动作的奖励不等于获知其他动作的均值。",
+        "objective": {
+          "tex": "\\operatorname{Regret}_T=\\mathbb E\\!\\left[\\sum_{t=0}^{T-1}(q_*^{\\max}-q_*(A_t))\\right]",
+          "explain": "在固定环境中减少累计伪遗憾，等价于增加同一预算下的期望累计奖励。动作均值的估计只是实现这一目标的中间问题。"
+        },
+        "assumptions": [
+          "标准随机 bandit 假设每个动作的奖励按固定分布独立采样，或至少满足给定历史及所选动作后的条件均值为该动作均值；仅有平稳边际分布不足。置信界另需有界或适当尾部条件。",
+          "常数步长跟踪漂移时，均值随时间变化；此时需要重新定义比较器。"
+        ],
+        "success": "报告累计收益或遗憾及探索次数；不能仅用均值估计误差评价选择规则。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "control",
+            "explanation": "本章去掉动作对未来状态的影响，仍保留学习与探索的权衡。"
+          },
+          {
+            "kind": "specialization",
+            "target": "exploration",
+            "explanation": "本章将探索限定为无上下文、独立拉臂；不包含序列探索中到达信息状态的成本。这是过程条件的限制，不只是反馈协议变化。"
+          }
+        ],
+        "nonGoals": [
+          "保证在未知分布下每一步选择都最优。"
+        ],
+        "solution": {
+          "difficulty": "只利用当前估计可能错过好动作；试验其他动作又会消耗当前收益。",
+          "insight": "将均值估计与动作选择分开，再用随机探索、置信上界或直接策略梯度分配试验。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "先得到可增量维护的估计",
+              "explanation": "样本平均把历史奖励压缩为计数和均值；常数步长改变了旧经验的权重。"
+            },
+            {
+              "sectionId": "bandit-exploration",
+              "title": "用不确定性决定是否试验",
+              "explanation": "比较 ε-greedy 的无差别探索与 UCB 的访问次数校正。"
+            },
+            {
+              "sectionId": "bandit-gradient",
+              "title": "不估动作值，也可以改策略",
+              "explanation": "偏好参数通过奖励与基线形成 score-function 更新；这与置信界选择是不同机制。"
+            }
+          ],
+          "guarantees": "样本平均的一致性依赖足够采样；UCB 遗憾界还依赖具体分布与探索系数，不能直接用于任意漂移。",
+          "alternatives": [
+            {
+              "name": "样本平均 / 常数步长",
+              "difference": "前者累计全部数据，后者遗忘旧数据。改变的是估计器，不是自动解决探索。"
+            },
+            {
+              "name": "UCB / Gradient bandit",
+              "difference": "前者以不确定性修正动作分数，后者直接更新随机策略。"
+            }
+          ]
+        }
       }
     },
     {
@@ -499,6 +564,71 @@
         "file": "tabular_textbook_lab.py",
         "command": "python3 tabular_textbook_lab.py mdps\npython3 tabular_textbook_lab.py test",
         "scope": "Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。"
+      },
+      "problem": {
+        "setting": "在完全可观测的序列决策问题中，动作改变下一状态和未来奖励。先定义数学对象，再区分评价与控制。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。"
+        ],
+        "sought": "评价问题求固定策略的价值 $v_\\pi$；控制问题选择策略 $\\pi$ 使 $J(\\pi)$ 尽可能大。",
+        "information": "本章定义模型，不预设算法已经知道模型。已知核时可计算期望；未知核时需另规定数据来源。",
+        "objective": {
+          "tex": "v_\\pi(s)=\\mathbb E_\\pi[G_t\\mid S_t=s],\\quad G_t=\\sum_{k\\ge0}\\gamma^kR_{t+k+1},\\qquad \\sup_\\pi J(\\pi)",
+          "explain": "左式定义预测对象；右式定义控制目标。两者不是同一个优化问题。"
+        },
+        "assumptions": [
+          "平稳 Markov 核与充分状态。",
+          "本章折扣式使用有界奖励；有限时域需把剩余时间纳入价值索引。"
+        ],
+        "success": "能从同一交互分布推导回报、价值和 Bellman 方程，并说明哪一步用了 Markov 性和策略固定条件。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "objectives",
+            "explanation": "本章对一般历史过程增加充分状态与平稳核假设，得到 MDP 方程。"
+          },
+          {
+            "kind": "objective-change",
+            "target": "average",
+            "explanation": "本章采用折扣求和而非平均奖励；时间聚合不同，两类最优策略不能默认相同。"
+          }
+        ],
+        "nonGoals": [
+          "把已写出 Bellman 方程等同于已有可计算、可收敛的学习算法。"
+        ],
+        "solution": {
+          "difficulty": "当前奖励不能直接比较动作的长期后果；直接枚举全部未来轨迹不可行。",
+          "insight": "按第一步拆开回报，并利用充分状态把后续条件期望重新写成价值函数。",
+          "steps": [
+            {
+              "sectionId": "mdp-state",
+              "title": "先检查状态是否足够",
+              "explanation": "只有丢弃历史不改变下一步条件分布时，才能在当前状态上递推。"
+            },
+            {
+              "sectionId": "mdp-bellman",
+              "title": "把轨迹期望变成局部方程",
+              "explanation": "回报分解与全期望公式给出固定策略 Bellman 方程。"
+            },
+            {
+              "sectionId": "mdp-optimal",
+              "title": "从预测转到动作选择",
+              "explanation": "将策略平均改为最优动作选择，得到另一组控制方程，而非同一方程换名字。"
+            }
+          ],
+          "guarantees": "有限折扣 MDP 的 Bellman 算子有唯一相应固定点；这依赖模型设定，不是所有学习表示的性质。",
+          "alternatives": [
+            {
+              "name": "回合终止 / 时间截断",
+              "difference": "自然终止改变未来回报；采样窗口结束通常只改变估计方式。"
+            },
+            {
+              "name": "固定策略价值 / 最优价值",
+              "difference": "前者指定未来行为；后者还对允许的未来行为取上确界。"
+            }
+          ]
+        }
       }
     },
     {
@@ -670,7 +800,7 @@
             },
             {
               "kind": "p",
-              "text": "dynamic-programming 模式打印三轮策略和价值；默认逐轮差阈值 10⁻¹² 下，价值迭代为 246 轮，得到相同策略。阈值用于停止数值计算，不自动等于策略性能差；需要误差界时应另算 Bellman 残差。"
+              "text": "dynamic-programming 模式打印三轮策略和价值；默认逐轮差阈值 $10^{-12}$ 下，价值迭代为 246 轮，得到相同策略。阈值用于停止数值计算，不自动等于策略性能差；需要误差界时应另算 Bellman 残差。"
             },
             {
               "kind": "p",
@@ -739,6 +869,72 @@
         "file": "tabular_textbook_lab.py",
         "command": "python3 tabular_textbook_lab.py dynamic-programming\npython3 tabular_textbook_lab.py test",
         "scope": "Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。"
+      },
+      "problem": {
+        "setting": "已知有限 MDP 的完整模型。困难来自长期递推的计算，而不是从样本识别未知环境。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "模型核 $p$ 可精确查询并对所有后继状态求和；误差容限 $\\varepsilon>0$。"
+        ],
+        "sought": "计算固定策略的价值，或得到在该模型中近似最优的策略。",
+        "information": "允许访问全部状态、动作与模型概率；这比只有一条交互轨迹的信息条件更强。",
+        "objective": {
+          "tex": "v_\\pi=T_\\pi v_\\pi,\\qquad v_*=T_*v_*,\\qquad \\|v-T_*v\\|_\\infty\\le\\varepsilon",
+          "explain": "$T_\\pi$ 对下一动作按策略平均；$T_*$ 对动作取最大值。最后的残差是计算停止准则，不等于策略收益误差本身。"
+        },
+        "assumptions": [
+          "有限状态动作、精确平稳模型、有界奖励、折扣小于一。",
+          "异步更新需保证相关状态反复更新。"
+        ],
+        "success": "残差、价值误差与提取策略的收益分别检查；使用收缩关系把残差转为可解释误差界。",
+        "relations": [
+          {
+            "kind": "protocol",
+            "target": "value",
+            "explanation": "允许精确模型期望后，采样噪声从预测问题中消失。"
+          },
+          {
+            "kind": "composition",
+            "target": "dyna",
+            "explanation": "Dyna 学得模型后调用规划备份；模型误差仍需另外计算。"
+          }
+        ],
+        "nonGoals": [
+          "未知模型的样本复杂度或任意近似模型的真实性保证。"
+        ],
+        "solution": {
+          "difficulty": "价值互相依赖，不能只按即时奖励贪心。",
+          "insight": "把互相依赖的方程视为收缩算子，并交替做策略评价和改善。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "建立可迭代的固定点",
+              "explanation": "收缩性说明重复评价备份为何收敛，也给出停止误差。"
+            },
+            {
+              "sectionId": "dp-improvement",
+              "title": "证明改善而不是凭直觉贪心",
+              "explanation": "在旧策略价值下做一步贪心，再比较新策略的完整未来。"
+            },
+            {
+              "sectionId": "dp-algorithms",
+              "title": "选择评价与改善的计算比例",
+              "explanation": "策略迭代、价值迭代和 GPI 在同一关系中安排不同计算次序。"
+            }
+          ],
+          "guarantees": "精确有限折扣条件下有评价收敛和策略改善结论；近似评价可破坏单调改善。",
+          "alternatives": [
+            {
+              "name": "策略迭代 / 价值迭代",
+              "difference": "前者先较充分评价当前策略，后者将最优性备份直接混入每次更新。"
+            },
+            {
+              "name": "同步 / 异步备份",
+              "difference": "改变计算调度；不能省去覆盖要求。"
+            }
+          ]
+        }
       }
     },
     {
@@ -980,6 +1176,72 @@
         "file": "tabular_textbook_lab.py",
         "command": "python3 tabular_textbook_lab.py monte-carlo\npython3 tabular_textbook_lab.py test",
         "scope": "Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。"
+      },
+      "problem": {
+        "setting": "模型未知，但能观察直到真实终止的完整回合。首先估计固定策略的期望回报。",
+        "given": [
+          "给定目标策略 $\\pi$，$v_\\pi(s)=\\mathbb E_\\pi[\\sum_{k\\ge0}\\gamma^kR_{t+k+1}\\mid S_t=s]$。",
+          "误差权重 $d(s)\\ge0$ 且 $\\sum_sd(s)=1$；权重指定在哪些状态上评价估计。",
+          "回合终止时间 $T$，完整回报 $G_t=\\sum_{k=t}^{T-1}\\gamma^{k-t}R_{k+1}$；数据由行为策略 $b$ 产生。"
+        ],
+        "sought": "用采样回报估计 $v_\\pi$ 或 $q_\\pi$；控制时还需改变策略并重新保证动作覆盖。",
+        "information": "不能对未知环境求精确期望；离策略评价要求可计算目标与行为的动作概率。",
+        "objective": {
+          "tex": "\\min_v\\sum_s d(s)[v(s)-v_\\pi(s)]^2,\\qquad \\rho_{t:T-1}=\\prod_{k=t}^{T-1}\\frac{\\pi(A_k\\mid S_k)}{b(A_k\\mid S_k)}",
+          "explain": "第一式是预测误差；第二式是变换轨迹分布的权重，不是另一种外部奖励。对同策略回合，权重为一。"
+        },
+        "assumptions": [
+          "回合几乎必然终止并满足所用估计器的可积条件。",
+          "目标可能发生的动作必须有行为支持；有限方差需更强条件。"
+        ],
+        "success": "分别检查估计偏差、方差和有效样本量；不要只看权重归一化后曲线平滑。",
+        "relations": [
+          {
+            "kind": "protocol",
+            "target": "value",
+            "explanation": "本章要求收到完整终止回合，使用不自举的回报样本估计同一个固定策略价值；改变的是可用数据与等待时刻。"
+          },
+          {
+            "kind": "protocol",
+            "target": "streaming",
+            "explanation": "本章允许等待完整回报，可能超出严格逐步内存或延迟约束。"
+          }
+        ],
+        "nonGoals": [
+          "在没有覆盖的数据中识别未观察行为的价值。"
+        ],
+        "solution": {
+          "difficulty": "只能看到随机回报；行为策略不同还会改变样本分布。",
+          "insight": "先用完整回报避免 bootstrap 偏差，再用概率比校正行为分布。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "确定一次状态访问怎样计数",
+              "explanation": "First-visit 与 every-visit 使用不同相关样本，不能混用计数和更新。"
+            },
+            {
+              "sectionId": "mc-importance",
+              "title": "由轨迹分布推出校正",
+              "explanation": "相同环境核抵消后留下动作概率比，覆盖条件由分母直接给出。"
+            },
+            {
+              "sectionId": "mc-estimators",
+              "title": "在无偏与稳定性之间选择",
+              "explanation": "普通重要性采样与自归一化估计器有不同有限样本性质。"
+            }
+          ],
+          "guarantees": "一致性需要覆盖和相应大数条件；普通 IS 可能方差极大，weighted IS 一般有有限样本偏差。",
+          "alternatives": [
+            {
+              "name": "MC / TD",
+              "difference": "MC 等真实未来；TD 用当前预测补足未观察未来。"
+            },
+            {
+              "name": "Ordinary / weighted IS",
+              "difference": "分母分别用样本数和权重总和，不是可互换的归一化细节。"
+            }
+          ]
+        }
       }
     },
     {
@@ -1237,6 +1499,72 @@
         "file": "tabular_textbook_lab.py",
         "command": "python3 tabular_textbook_lab.py temporal-difference\npython3 tabular_textbook_lab.py test",
         "scope": "Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。"
+      },
+      "problem": {
+        "setting": "模型未知，只收到逐步转移。既要定义预测目标，也要说明控制更新采用哪一种未来行为。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "转移 $(S_t,A_t,R_{t+1},S_{t+1})$；策略评价时固定 $\\pi$，控制时可更新行为。"
+        ],
+        "sought": "预测时估计 $v_\\pi$；控制时学习动作价值并生成更好的行为。",
+        "information": "每次更新只需当前转移和已有估计；没有真实的全部未来回报。",
+        "objective": {
+          "tex": "v_\\pi=T_\\pi v_\\pi,\\qquad q_*=T_*q_*,\\qquad \\delta_t=R_{t+1}+\\gamma V(S_{t+1})-V(S_t)",
+          "explain": "前两式分别定义固定策略与最优控制的目标；TD 残差是利用一步样本构造的更新信号。残差不是外部目标的定义。"
+        },
+        "assumptions": [
+          "经典收敛结论要求平稳表格问题、充分访问以及合适步长。",
+          "SARSA 的控制收敛还需规定探索随时间的变化；固定探索策略评价不是最优贪心控制。"
+        ],
+        "success": "在有解析解的小 MDP 检查目标固定点，再在控制中报告实际行为收益和覆盖。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "control",
+            "explanation": "本章的控制部分限定为平稳充分状态和独立表格参数；一般历史依赖学习器不必满足这些条件。共享神经表示不是表格方法的前提。"
+          },
+          {
+            "kind": "composition",
+            "target": "credit",
+            "explanation": "本章的一步预测与控制可接入多步或资格迹的反馈传播机制，而不重新定义外部控制目标。"
+          }
+        ],
+        "nonGoals": [
+          "由一次 TD loss 降低推出策略收益提高。"
+        ],
+        "solution": {
+          "difficulty": "完整未来尚不可用；控制还可能用带噪声的估计同时选择和评价动作。",
+          "insight": "用后继预测自举，并明确区分下一动作采样、策略期望与最大化。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "用一步样本估计 Bellman 备份",
+              "explanation": "自举允许立即更新，但目标也依赖正在学习的估计。"
+            },
+            {
+              "sectionId": "td-control-targets",
+              "title": "由未来行为确定控制目标",
+              "explanation": "SARSA、Expected SARSA 与 Q-learning 的差别在后继动作的处理，不只是代码写法。"
+            },
+            {
+              "sectionId": "td-double",
+              "title": "拆开动作选择与评价",
+              "explanation": "Double Q 用不同估计器减弱选择噪声造成的最大化偏差。"
+            }
+          ],
+          "guarantees": "经典表格保证有访问和步长条件；Double Q 缓解一种偏差，不保证所有有限样本误差更小。",
+          "alternatives": [
+            {
+              "name": "SARSA / Q-learning",
+              "difference": "分别跟踪实际下一动作与贪心最优备份。"
+            },
+            {
+              "name": "Expected SARSA / Double Q",
+              "difference": "前者积分掉动作采样噪声，后者分离选择和评价噪声。"
+            }
+          ]
+        }
       }
     },
     {
@@ -1340,7 +1668,7 @@
             {
               "kind": "math",
               "tex": "G_{t:h}^{\\rm TB}=R_{t+1}+\\gamma\\left[\\sum_{a\\ne A_{t+1}}\\pi(a\\mid S_{t+1})Q(S_{t+1},a)+\\pi(A_{t+1}\\mid S_{t+1})G_{t+1:h}^{\\rm TB}\\right]",
-              "explain": "非终止边界设 Gₕ:ₕ=Q(Sₕ,Aₕ)，最后一层因此退化为 Expected SARSA。到达真实终点时 G=最后奖励。"
+              "explain": "非终止边界设 $G_{h:h}=Q(S_h,A_h)$，最后一层因此退化为 Expected SARSA。到达真实终点时 G=最后奖励。"
             },
             {
               "kind": "math",
@@ -1480,6 +1808,72 @@
         "file": "tabular_textbook_lab.py",
         "command": "python3 tabular_textbook_lab.py multistep\npython3 tabular_textbook_lab.py test",
         "scope": "Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。"
+      },
+      "problem": {
+        "setting": "固定预测问题后，决定使用多少个真实奖励，以及如何处理后继动作的不确定性。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "目标策略 $\\pi$、行为策略 $b$、备份深度 $n$ 与当前估计 $V$；终止时间记为 $T$。"
+        ],
+        "sought": "构造具有明确期望对象的多步学习目标；控制版本还需指定目标策略如何更新。",
+        "information": "可以等待并保存一个有限窗口；离策略概率比需要行为概率和覆盖。",
+        "objective": {
+          "tex": "G_{t:t+n}=\\sum_{k=0}^{n-1}\\gamma^kR_{t+k+1}+\\gamma^nV(S_{t+n}),\\quad t+n<T",
+          "explain": "该目标估计固定策略价值；在真实终止处截断奖励和并去掉尾部自举。增加 n 只改变估计器，不能自动保证更高回报。"
+        },
+        "assumptions": [
+          "前向恒等式须规定备份中使用的参数版本；在线变化参数时不能直接套冻结参数推导。",
+          "离策略采样校正、策略期望和混合策略各有覆盖与有界性条件。"
+        ],
+        "success": "验证一步极限、终止边界、确定性例子及离策略概率比的起止索引。",
+        "relations": [
+          {
+            "kind": "composition",
+            "target": "credit",
+            "explanation": "本章的多步目标可接入资格迹的后向实现；前向与后向更新是否等价取决于参数版本等条件。"
+          },
+          {
+            "kind": "protocol",
+            "target": "streaming",
+            "explanation": "本章允许等待 n 步并保存窗口，相对严格流式增加延迟与存储。"
+          }
+        ],
+        "nonGoals": [
+          "把更长备份等同于更无偏、更低方差或更好的控制。"
+        ],
+        "solution": {
+          "difficulty": "短备份依赖不准确的尾值；长备份增加等待、方差及离策略概率乘积。",
+          "insight": "把时间深度与动作采样方式分成两个独立的选择维度。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "展开奖励并保留一个尾值",
+              "explanation": "明确哪些后果是真实观察，哪些仍来自预测。"
+            },
+            {
+              "sectionId": "tree-backup",
+              "title": "未采样的动作分支用期望保留",
+              "explanation": "Tree Backup 以策略概率传播后续误差，不等于简单乘整条轨迹比率。"
+            },
+            {
+              "sectionId": "q-sigma",
+              "title": "连续调节采样与期望",
+              "explanation": "逐层的 σ 选择改变估计方式；两端退化情况可作为实现测试。"
+            }
+          ],
+          "guarantees": "冻结估计下可精确核对目标代数关系；控制学习收敛仍需额外假设。",
+          "alternatives": [
+            {
+              "name": "n-step / λ-return",
+              "difference": "前者选择固定深度，后者混合多个深度。"
+            },
+            {
+              "name": "采样 IS / Tree Backup / Q(σ)",
+              "difference": "分别使用概率校正、动作期望和逐层混合来处理行为差异。"
+            }
+          ]
+        }
       }
     },
     {
@@ -1558,7 +1952,7 @@
             },
             {
               "kind": "code",
-              "code": "初始化 Q 与空模型。\n每次真实交互：\n  按 Q 的探索策略选动作，执行后得到奖励、后继与终止。\n  对这条真实经验做一次 Q-learning 更新。\n  把后果加入模型。\n  重复 n_plan 次：\n    从已建模的状态动作中选择一个。\n    查询模型取得后果，再做一次价值更新。\n  继续真实交互；真正终止时按环境协议开始下一 episode。",
+              "code": "初始化 Q 与空模型。\n每次真实交互：\n  按 Q 的探索策略选动作，执行后得到奖励、后继与终止。\n  对这条真实经验做一次 Q-learning 更新。\n  把后果加入模型。\n  重复 `n_plan` 次：\n    从已建模的状态动作中选择一个。\n    查询模型取得后果，再做一次价值更新。\n  继续真实交互；真正终止时按环境协议开始下一 episode。",
               "caption": "Dyna-Q 的完整循环"
             },
             {
@@ -1737,6 +2131,72 @@
         "file": "tabular_textbook_lab.py",
         "command": "python3 tabular_textbook_lab.py planning\npython3 tabular_textbook_lab.py test",
         "scope": "Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。"
+      },
+      "problem": {
+        "setting": "世界模型可查询或可由经验估计。真实交互有限，额外模型计算用于改进价值和决策。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "模型 $\\hat p$ 与每次真实交互之间允许的备份预算 $B$。"
+        ],
+        "sought": "在预算内安排模型备份，并从改进后的价值或搜索结果选择动作。",
+        "information": "真实样本与模型生成样本来源不同；模型计算不会增加真实环境的信息量。",
+        "objective": {
+          "tex": "(\\hat T_*Q)(s,a)=\\mathbb E_{\\hat p}[R+\\gamma\\max_{a^{\\prime}}Q(S^{\\prime},a^{\\prime})\\mid s,a],\\qquad N_{\\rm backup}\\le B",
+          "explain": "模型备份逼近在模型中的最优性递推；最终仍按真实环境收益评价。模型内残差降低不代表真实控制误差降低。"
+        },
+        "assumptions": [
+          "模型语义、终止和奖励必须与外部过程一致。",
+          "精确模型下的 DP 结论不能直接用于有偏学习模型。"
+        ],
+        "success": "分别计数真实步、模型查询和耗时，并区分采样误差、模型误差与规划不足。",
+        "relations": [
+          {
+            "kind": "composition",
+            "target": "dyna",
+            "explanation": "本章把模型备份与真实更新、模型估计组合成 Dyna 循环，分别检查三者误差。"
+          },
+          {
+            "kind": "specialization",
+            "target": "planning",
+            "explanation": "本章限定为原子动作的表格备份；时间抽象规划还需技能持续时间和终点模型，是相关章更广的接口。"
+          }
+        ],
+        "nonGoals": [
+          "把模型 rollout 当作无成本的真实经验。"
+        ],
+        "solution": {
+          "difficulty": "计算预算不足以遍历全部状态；模型本身又可能过时或错误。",
+          "insight": "区分模型如何学习、一次备份如何执行，以及备份应分配到哪里。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "决定求期望还是采样",
+              "explanation": "两种备份在模型正确时指向同一对象，但方差与计算成本不同。"
+            },
+            {
+              "sectionId": "planning-dyna",
+              "title": "把模型接入真实学习循环",
+              "explanation": "每次真实经验既更新价值也更新模型，再调用预算内的模型更新。"
+            },
+            {
+              "sectionId": "planning-priority",
+              "title": "把有限计算放到误差会传播的位置",
+              "explanation": "前驱和优先队列加速传播，但队列本身不保证模型正确。"
+            }
+          ],
+          "guarantees": "精确备份和充分覆盖可连接 DP 理论；有限预算、有偏模型需单独测量控制后果。",
+          "alternatives": [
+            {
+              "name": "Dyna / MPC",
+              "difference": "Dyna 将模型计算写入持久价值；MPC 为当前动作重新规划。"
+            },
+            {
+              "name": "均匀采样 / 优先扫描",
+              "difference": "改变备份分配，不改变模型真实性条件。"
+            }
+          ]
+        }
       }
     },
     {
@@ -1782,7 +2242,7 @@
             },
             {
               "kind": "p",
-              "text": "考虑固定策略、有限状态和 $0\\le\\gamma<1$。用 $d(s)$ 表示评价状态的权重，令 $D=\\operatorname{diag}(d)$。它可以是策略的平稳分布，也可以是另外指定的分布，但采样规则必须与推导一致。误差较小究竟意味着在哪些状态准确，需要在算法之前确定。"
+              "text": "考虑固定策略、有限状态和 $0\\le\\gamma<1$。用 $d(s)$ 表示评价状态的权重，令 $D=\\operatorname{diag}(d)$。普通 on-policy 流的长期访问分布记为 $d_\\pi$，需要相应平稳链和大数条件；此时不经状态重加权的更新使用 $d=d_\\pi$。可以另外指定评价分布 $d$，但必须再说明怎样获得相匹配的样本或权重，不能仅把它写进误差函数。"
             },
             {
               "kind": "math",
@@ -1807,11 +2267,11 @@
             {
               "kind": "math",
               "tex": "w_{t+1}=w_t+\\alpha_t[G_t-\\hat v(S_t,w_t)]\\nabla_w\\hat v(S_t,w_t).",
-              "explain": "在线性情形，梯度就是 $x_t$。这里没有通过 $G_t$ 求导，因为预测问题中的策略和环境固定，完整回报不依赖预测权重。"
+              "explain": "这个期望梯度要求状态样本按 $d$ 加权，且给定状态的回报期望为 $v_\\pi$。普通 on-policy 访问对应 $d_\\pi$；另外指定 $d$ 时需状态采样或重加权。在线性情形，梯度就是 $x_t$；不通过 $G_t$ 求导，因为固定策略与环境的完整回报不依赖预测权重。"
             },
             {
               "kind": "p",
-              "text": "回合式任务可以等到终止再计算回报。长回合使反馈延迟，随机未来使目标方差增大。继续型任务也有定义良好的折扣价值，但无法在有限时间观察无限回报；截断后仍需说明尾项如何处理。因此 MC 的无偏目标条件和现实可用估计需要区分。"
+              "text": "回合式任务可以等到终止再计算回报。长回合使反馈延迟，随机未来使目标方差增大。持续交互任务也有定义良好的折扣价值，但无法在有限时间观察无限回报；截断后仍需说明尾项如何处理。因此 MC 的无偏目标条件和现实可用估计需要区分。"
             },
             {
               "kind": "math",
@@ -1825,6 +2285,10 @@
           "title": "3 · 半梯度 TD：目标变化但只对当前预测求导",
           "blocks": [
             {
+              "kind": "p",
+              "text": "先令 $(S_t,R_{t+1},S_{t+1})$ 的采样条件为：当前状态按 $d$ 加权，下一步后果按固定目标策略的核生成。普通 on-policy 流在平稳极限满足这一条件且 $d=d_\\pi$；若要使用任意指定的 $d$，可按该分布抽取起点再采样一步，或对覆盖它的状态采样分布 $q$ 使用权重 $d(s)/q(s)$。后者还需适当矩条件。行为流上的动作概率校正只改变条件动作分布，仍保留行为状态分布 $d_b$，不会自动实现任意 $d$。"
+            },
+            {
               "kind": "math",
               "tex": "\\begin{aligned}\\delta_t&=R_{t+1}+\\gamma x_{t+1}^\\top w_t-x_t^\\top w_t,\\\\ w_{t+1}&=w_t+\\alpha_t\\delta_t x_t.\\end{aligned}",
               "explain": "一步 TD 用下一状态的当前预测补上未观察到的尾部。目标中也含 $w_t$，更新却只使用当前预测的梯度 $x_t$，因此称为半梯度。"
@@ -1835,13 +2299,13 @@
             },
             {
               "kind": "math",
-              "tex": "\\begin{aligned}\\mathbb E[\\delta_t x_t]&=b-Aw,\\\\ A&=\\Phi^\\top D(I-\\gamma P_\\pi)\\Phi,\\\\ b&=\\Phi^\\top Dr_\\pi.\\end{aligned}",
-              "explain": "先将 $\\delta_t$ 展开，再对奖励和下一状态取条件期望。TD 的平均更新为零时满足 $Aw=b$，通常不是价值误差的正规方程。"
+              "tex": "\\begin{aligned}\\mathbb E_d[\\delta_t x_t]&=b-Aw,\\\\ A&=\\Phi^\\top D(I-\\gamma P_\\pi)\\Phi,\\\\ b&=\\Phi^\\top Dr_\\pi.\\end{aligned}",
+              "explain": "这里 $w$ 在取期望时固定；$\\mathbb E_d$ 表示上述按 $d$ 加权的状态与目标策略后果分布，而非任意实际数据流的无条件期望。展开 TD 误差并取条件期望后得到 $b-Aw$。相应期望更新为零时满足 $Aw=b$，通常不是价值误差的正规方程。"
             },
             {
               "kind": "math",
               "tex": "\\begin{aligned}\\Phi w&=\\Pi_D T_\\pi(\\Phi w),\\\\ \\Pi_D&=\\Phi(\\Phi^\\top D\\Phi)^{-1}\\Phi^\\top D.\\end{aligned}",
-              "explain": "把 $Aw=b$ 改写成 $\\Phi^\\top D[T_\\pi\\Phi w-\\Phi w]=0$，再左乘 $\\Phi C^{-1}$，得到投影 Bellman 固定点。先作 Bellman 更新，再投影回可表示空间。"
+              "explain": "$C=\\Phi^\\top D\\Phi$ 可逆时，把 $Aw=b$ 改写成 $\\Phi^\\top D[T_\\pi\\Phi w-\\Phi w]=0$，再左乘 $\\Phi C^{-1}$，得到投影 Bellman 固定点。这里的 $D$ 必须与期望更新权重一致。任意 $D$ 下可写出该方程，不代表普通 on-policy TD 会到达它，也不自动具有 on-policy 的收敛保证。"
             }
           ]
         },
@@ -1857,7 +2321,7 @@
             {
               "kind": "math",
               "tex": "\\begin{aligned}\\hat A&=\\sum_t x_t(x_t-\\gamma_{t+1}x_{t+1})^\\top,\\\\ \\hat b&=\\sum_t x_tR_{t+1},\\\\ \\hat A\\hat w&=\\hat b.\\end{aligned}",
-              "explain": "LSTD 累积同一组固定点方程，再解线性系统。此处 $\\gamma_{t+1}$ 在真正终止时取零。数据和特征相同并不意味着有限样本 TD 迭代与 LSTD 已经给出相同参数。"
+              "explain": "这是未额外加权的 on-policy LSTD；在适用的平稳极限中对应 $D=\\operatorname{diag}(d_\\pi)$。若改用另外指定的 $d$，两项样本和也须采用相匹配的状态权重。$\\gamma_{t+1}$ 在真正终止时取零。相同数据和特征不保证有限样本 TD 迭代与 LSTD 已给出相同参数。"
             },
             {
               "kind": "p",
@@ -1915,6 +2379,10 @@
                   "9/7"
                 ]
               ]
+            },
+            {
+              "kind": "p",
+              "text": "再检验“写下评价权重”是否已经改变算法。若另指定 $d(A)=0.9,d(B)=0.1$，相应加权 TD 方程给出 $A=0.9(-1/2)+0.1(15/2)=0.3$、$b=0.1\\times3=0.3$，所以该方程的解为 $w=1$。但原交替轨迹的访问频率仍各为一半；未经重加权的 TD 期望更新仍对应 $w=3/7$。要求解新方程，必须实际改变样本权重或起点采样，而非只在说明中改写 $d$。"
             }
           ]
         },
@@ -1930,7 +2398,7 @@
             },
             {
               "kind": "p",
-              "text": "代码中的样本权重既可以是观测次数，也可以是已知概率。本例用概率计算期望矩阵，因此没有蒙特卡洛误差。它适合检查推导，不能用于估计某种学习器在随机数据下的样本效率。测试另外对 MC 做有限差分，对 TD 检查更新前后参数的时序。"
+              "text": "代码中的样本权重既可以是观测次数，也可以是已知概率。本例用概率计算期望矩阵，因此没有蒙特卡洛误差。输出同时给出原访问权重下的 $3/7$ 与重加权后的 $1$，测试还检查原解不满足新方程。它适合检查推导，不能用于估计随机数据下的样本效率。测试另外对 MC 做有限差分，对 TD 检查更新前后参数的时序。"
             },
             {
               "kind": "code",
@@ -1994,6 +2462,75 @@
         "file": "approximation_textbook_lab.py",
         "command": "python3 approximation_textbook_lab.py prediction\npython3 approximation_textbook_lab.py test",
         "scope": "标准库教学实现。命令运行本章的可解析小问题和全文件的公式测试；不依赖深度学习库，不等同于论文中的大规模实验。"
+      },
+      "problem": {
+        "setting": "固定策略价值不能逐状态存储，只能用共享参数函数表示。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "给定目标策略 $\\pi$，$v_\\pi(s)=\\mathbb E_\\pi[\\sum_{k\\ge0}\\gamma^kR_{t+k+1}\\mid S_t=s]$。",
+          "误差权重 $d(s)\\ge0$ 且 $\\sum_sd(s)=1$；权重指定在哪些状态上评价估计。",
+          "函数族 $\\{v_w:w\\in\\mathbb R^n\\}$；$n$ 为参数维度，线性情形为 $v_w(s)=x(s)^\\top w$。",
+          "状态采样权重与评价权重须区分：普通固定策略流在平稳极限按 $d_\\pi$ 更新；任意指定的 $d$ 需要匹配的采样或显式重加权。"
+        ],
+        "sought": "选择参数以逼近价值，并说明所用算法究竟逼近哪个投影或误差目标。",
+        "information": "先使用固定目标策略的样本流，或按指定 $d$ 抽取状态再采样该策略的一步后果。使用行为策略 $b$ 的流时，动作概率校正本身不会把状态分布 $d_b$ 变成 $d$。",
+        "objective": {
+          "tex": "\\min_w\\|v_w-v_\\pi\\|_d^2,\\qquad v_w=\\Pi_dT_\\pi v_w",
+          "explain": "左式是按评价权重 $d$ 的价值回归；右式只有在期望更新也按 $d$ 加权时才是相应线性 TD 的投影固定点。$\\Pi_d$ 为固定线性函数空间的加权正交投影。普通 on-policy 流对应 $d=d_\\pi$；一般两类解不相等。"
+        },
+        "assumptions": [
+          "投影解释限定为固定线性特征，且加权特征 Gram 矩阵可逆。普通 on-policy 推导假定策略链有适用的平稳访问分布 $d_\\pi$。",
+          "另外指定 $d$ 时，需保证状态采样或重加权实现该期望；采样支持必须覆盖 $d$ 的支持。任意加权固定点的代数定义不自动继承 on-policy TD 的稳定性。"
+        ],
+        "success": "对同一小问题分别求回归解和 TD 固定点，确认算法到达自己声称的对象。",
+        "relations": [
+          {
+            "kind": "approximation",
+            "target": "value",
+            "explanation": "限制价值表示会产生逼近误差，并改变不同估计器的解。"
+          },
+          {
+            "kind": "protocol",
+            "target": "streaming",
+            "explanation": "逐步更新限制计算形式；LSTD 的矩阵成本可能不满足同一预算。"
+          }
+        ],
+        "nonGoals": [
+          "认为共享参数后仍可独立改善每个状态。"
+        ],
+        "solution": {
+          "difficulty": "更新一个状态会改变其他状态；自举目标也随参数变化。",
+          "insight": "先区分回归问题和固定点问题，再为各自目标选择随机梯度、半梯度或线性方程求解器。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "从明确的回归误差得到梯度 MC",
+              "explanation": "真实回报作为监督信号时，可以直接推导所优化的均方目标。"
+            },
+            {
+              "sectionId": "prediction-td",
+              "title": "识别 TD 是半梯度与固定点更新",
+              "explanation": "停止对尾值求导改变了更新方向，不能当作完整梯度的简写。"
+            },
+            {
+              "sectionId": "prediction-algorithm",
+              "title": "比较逐步求解与矩阵求解",
+              "explanation": "TD 和 LSTD 可以联系到同一线性方程，但资源和数值条件不同。"
+            }
+          ],
+          "guarantees": "线性 on-policy 的稳定性不覆盖任意深网或离策略数据。",
+          "alternatives": [
+            {
+              "name": "MC / TD",
+              "difference": "同一特征下通常得到不同投影结果。"
+            },
+            {
+              "name": "TD / LSTD",
+              "difference": "逐步随机逼近与批量矩阵求解在存储、条件数和跟踪能力上不同。"
+            }
+          ]
+        }
       }
     },
     {
@@ -2219,6 +2756,72 @@
         "file": "approximation_textbook_lab.py",
         "command": "python3 approximation_textbook_lab.py features-control\npython3 approximation_textbook_lab.py test",
         "scope": "标准库教学实现。命令运行本章的可解析小问题和全文件的公式测试；不依赖深度学习库，不等同于论文中的大规模实验。"
+      },
+      "problem": {
+        "setting": "用特征共享动作价值参数，并据此改变行为策略；表示和访问分布会相互影响。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "特征 $x(s,a)$、参数 $w$、动作价值 $q_w(s,a)=x(s,a)^\\top w$；探索规则需明确。"
+        ],
+        "sought": "在有限表示中学习可用于选择动作的价值，并获得较好的实际行为收益。",
+        "information": "只观察行为访问的状态动作。未访问区域的估计来自特征共享，而非新增证据。",
+        "objective": {
+          "tex": "\\sup_{\\pi\\in\\Pi_x}J(\\pi),\\qquad \\Pi_x=\\{\\pi:\\pi\\text{由 }q_w\\text{和指定选择规则生成}\\}",
+          "explain": "这是受表示与策略提取规则限制的控制目标。半梯度 Sarsa 是求解机制，通常不是这个收益目标的精确梯度。"
+        },
+        "assumptions": [
+          "特征尺度、激活数量与动作编码固定，并纳入步长解释。",
+          "探索策略和特征近似会限制可实现策略。"
+        ],
+        "success": "同时检查泛化干扰、访问覆盖和收益；表示误差不能仅由训练 TD 残差判断。",
+        "relations": [
+          {
+            "kind": "approximation",
+            "target": "control",
+            "explanation": "本章限制价值表示与策略提取规则；控制收益对象不变，但可实现行为受到限制。"
+          },
+          {
+            "kind": "composition",
+            "target": "state",
+            "explanation": "本章的固定特征控制可接入状态构造模块；若进一步学习特征，表示也会变化，固定特征分析不再直接适用。"
+          }
+        ],
+        "nonGoals": [
+          "声称一般半梯度控制在任意共享表示下全局收敛。"
+        ],
+        "solution": {
+          "difficulty": "特征相似性可能帮助泛化，也可能把互相冲突的动作结果混在一起。",
+          "insight": "先确定特征如何共享，再分析更新怎样沿这些共享方向传播。",
+          "steps": [
+            {
+              "sectionId": "features-local",
+              "title": "用局部特征控制干扰范围",
+              "explanation": "Tile coding 的激活数量决定一次更新的总尺度。"
+            },
+            {
+              "sectionId": "features-global",
+              "title": "区分表达能力与数值条件",
+              "explanation": "Fourier 特征能表达的函数与优化条件数是两个问题。"
+            },
+            {
+              "sectionId": "lesson-derive",
+              "title": "将自举误差投到参数方向",
+              "explanation": "Sarsa 的下一动作来自实际策略，之后策略又受更新后的价值影响。"
+            }
+          ],
+          "guarantees": "固定策略预测理论不能未经证明变成同时改变策略的控制保证。",
+          "alternatives": [
+            {
+              "name": "Tile coding / Fourier",
+              "difference": "局部与全局共享改变泛化和干扰结构。"
+            },
+            {
+              "name": "线性特征 / 学习表示",
+              "difference": "后者还改变特征本身，必须记录表示漂移。"
+            }
+          ]
+        }
       }
     },
     {
@@ -2243,7 +2846,7 @@
       ],
       "prerequisites": [
         {
-          "term": "继续型交互",
+          "term": "持续交互",
           "explanation": "任务本身不要求在某个时间终止。训练日志可以分段，但分段不等于环境终止，也不自动提供无成本重置。"
         },
         {
@@ -2441,6 +3044,71 @@
         "file": "approximation_textbook_lab.py",
         "command": "python3 approximation_textbook_lab.py average-control\npython3 approximation_textbook_lab.py test",
         "scope": "标准库教学实现。命令运行本章的可解析小问题和全文件的公式测试；不依赖深度学习库，不等同于论文中的大规模实验。"
+      },
+      "problem": {
+        "setting": "交互没有自然终点，评价单位原始时间内的长期收益，而非折扣累计量。",
+        "given": [
+          "平稳 MDP、策略类 $\\Pi$、每一步原始奖励 $R_{t+1}$。",
+          "平均奖励 $g_\\pi$ 与差分价值 $h_\\pi$；近似动作价值使用 $q_w(s,a)$。"
+        ],
+        "sought": "在规定策略类中提高平均奖励，同时估计相对未来价值。",
+        "information": "只有连续样本流；人为日志分段不产生新的问题终止。",
+        "objective": {
+          "tex": "\\sup_{\\pi\\in\\Pi}g_\\pi,\\qquad g_\\pi=\\lim_{T\\to\\infty}\\frac1T\\mathbb E_\\pi\\!\\left[\\sum_{t=0}^{T-1}R_{t+1}\\right]",
+          "explain": "本章先讨论极限存在且与起点无关的情形。差分价值刻画有限暂态与长期奖励率的偏差，不是发散的无折扣总回报。"
+        },
+        "assumptions": [
+          "策略诱导过程需具有保证平均奖励定义适用的链结构。",
+          "差分价值只确定到加法常数，需要参考规范。"
+        ],
+        "success": "真实奖励率、学习器内部奖励率估计、差分 Bellman 残差分别报告。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "objectives",
+            "explanation": "本章从一般准则中选取极限存在且与起点无关的平均奖励设定；它增加适用条件，而非推广所有准则。"
+          },
+          {
+            "kind": "approximation",
+            "target": "average",
+            "explanation": "本章用共享特征近似差分动作价值并采用差分 Sarsa；相关平均奖励章还讨论表格预测、离策略与规划。"
+          }
+        ],
+        "nonGoals": [
+          "用渐近奖励率概括所有有限生命期损失或不可逆风险。"
+        ],
+        "solution": {
+          "difficulty": "无折扣累计回报可能发散，价值的共同偏移也不可辨识。",
+          "insight": "每步减去奖励率，学习相对价值，再把奖励率估计与价值更新耦合。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "从长期速率推导差分方程",
+              "explanation": "先定义中心化的回报对象，避免对发散总和直接求值。"
+            },
+            {
+              "sectionId": "average-algorithm",
+              "title": "确定两个估计的更新时序",
+              "explanation": "差分 Sarsa 同时更新价值和奖励率；两者不应被误认成独立真值。"
+            },
+            {
+              "sectionId": "average-objective",
+              "title": "检验目标是否真正相同",
+              "explanation": "构造折扣与速率排序不同的例子，阻止把一种目标的实验结论外推到另一种。"
+            }
+          ],
+          "guarantees": "链结构和函数逼近条件决定可用结论；表格定理不能自动保证近似控制。",
+          "alternatives": [
+            {
+              "name": "平均奖励 / 折扣回报",
+              "difference": "前者强调长期速率，后者为相同时间距离设置几何权重。"
+            },
+            {
+              "name": "差分更新 / 折扣奖励中心化",
+              "difference": "有限折扣下的中心化参照不一定等于真实奖励率。"
+            }
+          ]
+        }
       }
     },
     {
@@ -2690,6 +3358,74 @@
         "file": "approximation_textbook_lab.py",
         "command": "python3 approximation_textbook_lab.py off-policy\npython3 approximation_textbook_lab.py test",
         "scope": "标准库教学实现。命令运行本章的可解析小问题和全文件的公式测试；不依赖深度学习库，不等同于论文中的大规模实验。"
+      },
+      "problem": {
+        "setting": "行为策略生成数据，目标策略定义预测对象。共享参数和自举可能使朴素校正 TD 不稳定。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "给定目标策略 $\\pi$，$v_\\pi(s)=\\mathbb E_\\pi[\\sum_{k\\ge0}\\gamma^kR_{t+k+1}\\mid S_t=s]$。",
+          "误差权重 $d(s)\\ge0$ 且 $\\sum_sd(s)=1$；权重指定在哪些状态上评价估计。",
+          "行为策略 $b$、状态权重矩阵 $D$、特征矩阵 $X$，投影 $\\Pi_D$。"
+        ],
+        "sought": "稳定求解指定的离策略预测问题，而非改变目标策略来适应数据。",
+        "information": "目标动作由行为覆盖，且动作概率比可得；状态分布通常仍是行为分布。",
+        "objective": {
+          "tex": "\\operatorname{MSPBE}(w)=\\|Xw-\\Pi_DT_\\pi Xw\\|_D^2",
+          "explain": "这是线性函数空间中的投影 Bellman 误差。它与真实价值均方误差、逐样本 TD 平方都不同。强调方法又改变投影的权重结构。"
+        },
+        "assumptions": [
+          "目标对行为绝对连续；所需矩阵与采样矩满足相应定理条件。",
+          "覆盖是必要信息条件，不足以保证半梯度迭代稳定。"
+        ],
+        "success": "既检查概率比与时间索引，也检查固定点、矩阵谱和参数是否有界。",
+        "relations": [
+          {
+            "kind": "protocol",
+            "target": "value",
+            "explanation": "改变数据策略不应改变所声明的目标价值。"
+          },
+          {
+            "kind": "composition",
+            "target": "gvf",
+            "explanation": "多个目标策略的预测可共享行为流，但每个预测仍有自己的稳定性条件。"
+          }
+        ],
+        "nonGoals": [
+          "从离策略预测收敛推导深度最优控制收敛。"
+        ],
+        "solution": {
+          "difficulty": "重要性采样能校正动作分布，却不自动使自举更新成为下降方向。",
+          "insight": "先用反例定位不稳定，再选择显式误差梯度或改变状态权重。",
+          "steps": [
+            {
+              "sectionId": "offpolicy-counterexample",
+              "title": "区分覆盖与稳定性",
+              "explanation": "即使每个目标动作都有数据，更新矩阵仍可能放大误差。"
+            },
+            {
+              "sectionId": "offpolicy-gtd",
+              "title": "用辅助变量估计目标梯度",
+              "explanation": "GTD2/TDC 的第二组参数并非额外价值任务，而是校正更新方向。"
+            },
+            {
+              "sectionId": "offpolicy-emphasis",
+              "title": "通过跟随迹重加权状态",
+              "explanation": "ETD 改变有效更新分布，因此与仅校正动作概率不是同一机制。"
+            }
+          ],
+          "guarantees": "结论首先针对线性预测和明确步长、矩阵条件；高方差和控制耦合仍需单独处理。",
+          "alternatives": [
+            {
+              "name": "GTD2 / TDC",
+              "difference": "辅助估计相近，主参数更新的梯度与校正形式不同。"
+            },
+            {
+              "name": "梯度 TD / ETD",
+              "difference": "前者显式处理投影目标梯度，后者改变有效状态权重。"
+            }
+          ]
+        }
       }
     },
     {
@@ -2919,6 +3655,74 @@
         "file": "approximation_textbook_lab.py",
         "command": "python3 approximation_textbook_lab.py traces\npython3 approximation_textbook_lab.py test",
         "scope": "标准库教学实现。命令运行本章的可解析小问题和全文件的公式测试；不依赖深度学习库，不等同于论文中的大规模实验。"
+      },
+      "problem": {
+        "setting": "给定固定策略的预测任务，要求在线把后续误差分配给此前参数方向。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "给定目标策略 $\\pi$，$v_\\pi(s)=\\mathbb E_\\pi[\\sum_{k\\ge0}\\gamma^kR_{t+k+1}\\mid S_t=s]$。",
+          "误差权重 $d(s)\\ge0$ 且 $\\sum_sd(s)=1$；权重指定在哪些状态上评价估计。",
+          "线性特征 $x_t$、参数 $w_t$、迹系数 $\\lambda\\in[0,1]$、步长 $\\alpha$。"
+        ],
+        "sought": "以递推摘要实现规定的前向多步更新；先验证更新语义，再比较统计效率。",
+        "information": "只能按时间到达顺序处理数据；旧特征的影响可由资格迹保存。",
+        "objective": {
+          "tex": "w_t^{\\rm backward}=w_t^{\\rm online\\ forward}\\quad\\text{for every observed prefix }t",
+          "explain": "这是实现等价性要求，不是外部控制目标。在线前向视图规定每个前缀如何重构目标；传统冻结参数 λ-return 是不同参照。"
+        },
+        "assumptions": [
+          "True-online TD 的精确逐前缀等价先在线性函数逼近及匹配的步长定义下成立。",
+          "终止、截断和参数版本必须在两个实现中一致。"
+        ],
+        "success": "对同一短轨迹比较每个前缀的参数，而非仅比较最后的平均回报。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "credit",
+            "explanation": "本章把信用分配限定为固定线性预测及指定在线前向视图；相关章还包含离策略、非线性与递归状态信用。"
+          },
+          {
+            "kind": "composition",
+            "target": "streaming",
+            "explanation": "本章的资格迹可作为流式学习器的持久摘要，组合时须计入其参数维度、计算和内存；它不是样本回放。"
+          }
+        ],
+        "nonGoals": [
+          "把线性 true-online 等价直接推广到任意深度网络。"
+        ],
+        "solution": {
+          "difficulty": "参数在数据到来时不断改变，冻结权重下的交换求和不再精确描述实际更新。",
+          "insight": "先明确在线前向参照，再加入 Dutch trace 和预测变化修正以匹配它。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "看清多步目标的混合",
+              "explanation": "λ 控制不同未来长度的权重，先在冻结参数下建立代数关系。"
+            },
+            {
+              "sectionId": "traces-online",
+              "title": "把参照改为在线前缀",
+              "explanation": "指定每一步重新计算什么，才能判断后向实现是否正确。"
+            },
+            {
+              "sectionId": "traces-dutch",
+              "title": "修正重复特征与预测变化",
+              "explanation": "两项修正共同实现等价，不能只换一种迹递推。"
+            }
+          ],
+          "guarantees": "等价保证的是算法语义，不是任意任务上的收益优势。",
+          "alternatives": [
+            {
+              "name": "Accumulating / replacing traces",
+              "difference": "两者处理重复激活不同，不可无条件互换。"
+            },
+            {
+              "name": "传统 TD(λ) / true-online TD",
+              "difference": "后者精确匹配指定在线前向视图，而非只在小步长下近似。"
+            }
+          ]
+        }
       }
     },
     {
@@ -3188,6 +3992,72 @@
         "file": "approximation_textbook_lab.py",
         "command": "python3 approximation_textbook_lab.py policy-gradient\npython3 approximation_textbook_lab.py test",
         "scope": "标准库教学实现。命令运行本章的可解析小问题和全文件的公式测试；不依赖深度学习库，不等同于论文中的大规模实验。"
+      },
+      "problem": {
+        "setting": "用可微随机策略直接参数化动作分布，不通过对动作价值取最大值间接改变行为。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "策略 $\\pi_\\theta(a\\mid s)$、参数 $\\theta$；完整轨迹或 on-policy 多步样本。"
+        ],
+        "sought": "构造 $\\nabla_\\theta J(\\pi_\\theta)$ 的可用估计，并说明基线和 critic 如何改变估计性质。",
+        "information": "无需知道或微分环境核；需要策略概率及其对参数的导数。",
+        "objective": {
+          "tex": "\\max_\\theta J(\\pi_\\theta),\\qquad \\nabla_\\theta J=\\mathbb E\\!\\left[\\sum_{t\\ge0}\\gamma^t\\nabla_\\theta\\log\\pi_\\theta(A_t\\mid S_t)\\,G_t\\right]",
+          "explain": "$G_t$ 是从时刻 t 起的折扣回报。式中外层折扣对应初始状态分布下的目标；不能随意删掉再声称仍是同一精确梯度。"
+        },
+        "assumptions": [
+          "允许交换微分与积分；策略支持与光滑性满足推导条件。",
+          "动作无关且在给定状态下适当处理的基线不改变 score 期望；有偏 critic 不因此无偏。"
+        ],
+        "success": "在可枚举轨迹上将估计器期望与有限差分梯度比较，再测量方差。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "policy",
+            "explanation": "本章聚焦基础 score-function 梯度与完整 on-policy 回报；相关章还组合 actor–critic 与 PPO。那些后续近似不是本章精确梯度恒等式的前提。"
+          },
+          {
+            "kind": "objective-change",
+            "target": "average",
+            "explanation": "本章采用初始分布下的折扣目标；相对平均奖励梯度，其占用权重和价值对象不同。"
+          }
+        ],
+        "nonGoals": [
+          "随机梯度上升必然找到全局最优策略。"
+        ],
+        "solution": {
+          "difficulty": "动作改变未来分布，而环境通常不可微；完整回报又可能噪声很大。",
+          "insight": "对轨迹概率求导，用 score-function 把不可微环境留在采样过程中，再用基线和 critic 控制方差。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "从概率乘积导出梯度",
+              "explanation": "先得到完整表达，再用因果性去掉动作无法影响的过去奖励。"
+            },
+            {
+              "sectionId": "policy-baseline",
+              "title": "分开方差缩减与预测近似",
+              "explanation": "基线消去恒等式有明确条件，TD critic 的偏差需要另行分析。"
+            },
+            {
+              "sectionId": "policy-algorithm",
+              "title": "实现时固定采样与更新关系",
+              "explanation": "采样策略、回报计算和参数更新时间必须与估计器声明一致。"
+            }
+          ],
+          "guarantees": "无偏梯度估计的条件不等于非凸优化的全局收敛保证。",
+          "alternatives": [
+            {
+              "name": "REINFORCE / actor–critic",
+              "difference": "前者使用采样未来，后者用价值预测替代部分未来。"
+            },
+            {
+              "name": "普通 / 自然梯度",
+              "difference": "改变参数空间的步进几何，不改变期望回报定义。"
+            }
+          ]
+        }
       }
     },
     {
@@ -3428,6 +4298,72 @@
         "file": "deep_textbook_train.py",
         "command": "python3 deep_textbook_train.py dqn --steps 2000 --seed 0",
         "scope": "CPU DeadlineChain 完整训练；需要同目录 deep_textbook_lab.py 和 PyTorch。"
+      },
+      "problem": {
+        "setting": "在离散动作控制中，用神经网络近似最优动作价值；环境模型未知，数据来自不断变化的行为。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "在线网络 $Q_\\theta$、目标网络 $Q_{\\bar\\theta}$、经验分布 $\\mathcal D$；$m=0$ 表示真实终止，否则 $m=1$。"
+        ],
+        "sought": "学习能产生有效贪心动作的价值近似；最终目标仍是外部期望回报。",
+        "information": "可重放已保存转移，但不能由 replay 自动获得未覆盖动作的真实结果。",
+        "objective": {
+          "tex": "y=r+\\gamma m\\max_{a^{\\prime}}Q_{\\bar\\theta}(s^{\\prime},a^{\\prime}),\\qquad L(\\theta)=\\mathbb E_{\\mathcal D}[(Q_\\theta(s,a)-\\operatorname{sg}(y))^2]",
+          "explain": "这是在固定目标版本和数据分布下的回归损失，$\\operatorname{sg}$ 表示停止梯度。它是逼近 Bellman 最优性更新的机制，不是等同于最大化 J 的恒等式。"
+        },
+        "assumptions": [
+          "有限可枚举动作；明确终止、目标网络同步和 replay 采样规则。",
+          "网络容量、覆盖和优化误差均可能限制解；一般非线性 DQN 没有表格式全局收敛保证。"
+        ],
+        "success": "先在已知小问题检查 target 和动作选择；再报告实际收益、价值尺度及覆盖，不能只看训练 loss。",
+        "relations": [
+          {
+            "kind": "approximation",
+            "target": "control",
+            "explanation": "本章用神经动作价值与指定贪心提取规则近似折扣控制；表示、覆盖和求解误差限制实际行为，回归损失不是完整学习器收益。"
+          },
+          {
+            "kind": "protocol",
+            "target": "streaming",
+            "explanation": "本章允许 replay 和目标网络滞后；相对严格流式协议，它增加数据复用、持久内存及更新调度。"
+          }
+        ],
+        "nonGoals": [
+          "把固定 target 下的回归下降解释为整个非平稳控制过程单调改善。"
+        ],
+        "solution": {
+          "difficulty": "自举目标、采样分布与网络参数同时变化，且最大化会选择正向估计噪声。",
+          "insight": "将采样、回归和目标更新放在不同时间尺度，并分离动作选择与评价。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "固定一个回归目标再求梯度",
+              "explanation": "停止对 target 反传，明确每次优化实际使用的目标版本。"
+            },
+            {
+              "sectionId": "lesson-double",
+              "title": "拆开选择和评价",
+              "explanation": "Double DQN 由在线网络选动作，再由目标网络评值。"
+            },
+            {
+              "sectionId": "lesson-algorithm",
+              "title": "规定三个时钟的执行顺序",
+              "explanation": "环境步、优化步和目标同步步不是同一计数器。"
+            }
+          ],
+          "guarantees": "目标网络与 replay 是稳定化机制；它们不消除函数逼近、自举和离策略耦合的所有风险。",
+          "alternatives": [
+            {
+              "name": "DQN / Double DQN",
+              "difference": "改变后继目标中的动作选择器，不改变外部奖励目标。"
+            },
+            {
+              "name": "Replay / 严格在线更新",
+              "difference": "改变数据复用和相关性，也改变内存与每步成本。"
+            }
+          ]
+        }
       }
     },
     {
@@ -3652,6 +4588,72 @@
         "file": "deep_textbook_lab.py",
         "command": "python3 deep_textbook_lab.py test",
         "scope": "标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。"
+      },
+      "problem": {
+        "setting": "从当前随机策略产生的轨迹估计收益梯度，并用价值网络减少对完整回报的依赖。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "可微策略 $\\pi_\\theta$、价值近似 $V_\\phi$、优势估计 $\\hat A_t$。"
+        ],
+        "sought": "构造与声明收益目标对应的 actor 更新，同时学习用于该估计器的 critic。",
+        "information": "标准 on-policy 更新使用采样时策略的动作概率；使用旧策略数据需额外校正。",
+        "objective": {
+          "tex": "\\nabla_\\theta J=\\mathbb E\\!\\left[\\sum_{t\\ge0}\\gamma^t\\nabla_\\theta\\log\\pi_\\theta(A_t\\mid S_t)A^{\\pi_\\theta}(S_t,A_t)\\right]",
+          "explain": "$A^\\pi=Q^\\pi-V^\\pi$ 是真实优势。代码将它替换为估计量时，会引入方差以及可能的自举或截断偏差。"
+        },
+        "assumptions": [
+          "轨迹微分与期望交换合法；策略参数影响环境仅通过所执行动作。",
+          "GAE 的有限 rollout 边界需正确区分真实终止和采样截断。"
+        ],
+        "success": "先验证 score、优势与参数冻结时序，再将梯度估计的偏差方差与收益变化区分。",
+        "relations": [
+          {
+            "kind": "approximation",
+            "target": "policy",
+            "explanation": "神经网络近似策略和价值，不改变 score-function 的概率学起点。"
+          },
+          {
+            "kind": "composition",
+            "target": "credit",
+            "explanation": "GAE 在 critic 残差上分配时间权重，不等于完整递归网络参数信用。"
+          }
+        ],
+        "nonGoals": [
+          "由 GAE 降方差推断估计必然无偏或策略必然改善。"
+        ],
+        "solution": {
+          "difficulty": "真实优势未知，长轨迹回报噪声大，截断窗口又留下未观察未来。",
+          "insight": "从精确策略梯度出发，把未知优势换成具有明确边界的多步残差估计。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "先求轨迹梯度",
+              "explanation": "环境不可微并不阻止对策略概率求导。"
+            },
+            {
+              "sectionId": "lesson-advantage",
+              "title": "构造时间上的优势估计",
+              "explanation": "GAE 混合 TD 残差，并保留末状态的 bootstrap。"
+            },
+            {
+              "sectionId": "lesson-algorithm",
+              "title": "隔离 actor 与 critic 的梯度职责",
+              "explanation": "actor 中通常停止对优势反传；critic 使用自己的回归损失。"
+            }
+          ],
+          "guarantees": "真实优势给出梯度恒等式；实际 actor–critic 的性质还取决于 critic 误差和数据协议。",
+          "alternatives": [
+            {
+              "name": "REINFORCE / GAE",
+              "difference": "分别依赖完整采样回报和带自举的多步残差。"
+            },
+            {
+              "name": "VPG / A2C",
+              "difference": "共享策略梯度基础，但采样长度、critic 和同步方式可不同。"
+            }
+          ]
+        }
       }
     },
     {
@@ -3910,6 +4912,72 @@
         "file": "deep_textbook_lab.py",
         "command": "python3 deep_textbook_lab.py test",
         "scope": "标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。"
+      },
+      "problem": {
+        "setting": "已有旧策略生成的一批轨迹，希望在有限数据下改变策略，又不让分布变化破坏局部近似。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "旧策略 $\\pi_{\\rm old}$、其折扣占用分布 $d_{\\rm old}$、优势估计 $\\hat A$、KL 预算 $\\delta>0$。"
+        ],
+        "sought": "选择局部策略更新；真实外部目标是 J，局部 surrogate 只是可计算替代。",
+        "information": "更新时不能立即知道新策略的完整占用分布；重复使用同批数据会逐渐偏离采样策略。",
+        "objective": {
+          "tex": "\\max_\\theta\\mathbb E_{s\\sim d_{\\rm old},a\\sim\\pi_{\\rm old}}\\!\\left[\\frac{\\pi_\\theta(a\\mid s)}{\\pi_{\\rm old}(a\\mid s)}\\hat A(s,a)\\right]\\quad\\text{s.t.}\\quad\\mathbb E_{d_{\\rm old}}[D_{\\rm KL}(\\pi_{\\rm old}\\|\\pi_\\theta)]\\le\\delta",
+          "explain": "这是常用平均 KL 信赖域近似。严谨性能界中的最坏状态分布偏差、优势误差与实践平均约束不能混为一谈。"
+        },
+        "assumptions": [
+          "旧策略支持需覆盖所评价动作；批内旧 log-prob 和优势版本固定。",
+          "Fisher 与局部二次近似要求适当数值条件。"
+        ],
+        "success": "同时记录实际 KL、clip fraction、收益和 value 误差；clipping 生效不是改善证明。",
+        "relations": [
+          {
+            "kind": "approximation",
+            "target": "policy",
+            "explanation": "用旧策略分布下的局部代理目标近似真实收益变化。"
+          },
+          {
+            "kind": "protocol",
+            "target": "streaming",
+            "explanation": "多轮批内优化不同于每步只消费一次新经验。"
+          }
+        ],
+        "nonGoals": [
+          "声称 PPO clipping 严格限制所有状态的 KL 或保证单调提高收益。"
+        ],
+        "solution": {
+          "difficulty": "改变动作概率还会改变未来状态分布，旧数据只直接描述旧策略。",
+          "insight": "限制更新尺度以维持局部比较的可信度，并明确理论界与实际近似之间的差距。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "从真实性能差分找到近似位置",
+              "explanation": "用旧占用分布替代新占用分布是关键近似。"
+            },
+            {
+              "sectionId": "lesson-local",
+              "title": "用局部几何求受限步长",
+              "explanation": "TRPO 借助 Fisher、共轭梯度和回溯近似求解信赖域问题。"
+            },
+            {
+              "sectionId": "lesson-ppo",
+              "title": "用裁剪代理简化优化",
+              "explanation": "PPO 对有利的比率变化设置分支，但没有把实际约束精确解出来。"
+            }
+          ],
+          "guarantees": "理想信赖域理论有优势和分布条件；实际平均 KL 与裁剪目标不自动继承全部保证。",
+          "alternatives": [
+            {
+              "name": "TRPO / PPO",
+              "difference": "分别近似求约束更新与优化裁剪代理目标。"
+            },
+            {
+              "name": "Clip / KL penalty",
+              "difference": "前者截取目标分支，后者在目标中惩罚偏离，二者都需观测实际分布变化。"
+            }
+          ]
+        }
       }
     },
     {
@@ -4118,7 +5186,7 @@
                 "问：DDPG critic loss 中也更新 actor 会怎样？答：actor 会沿着降低拟合误差而不是提高 Q 的方向改变 target，失去指定更新的含义。",
                 "问：TD3 的两个 critic 一致就表示可信么？答：不表示。相同数据和相似函数类可以产生相关错误。",
                 "问：探索噪声与 target smoothing 可以共享同一随机样本吗？答：标准机制不要求共享；前者发生在真实行为，后者发生在 replay 标签构造，必须分清数据时间。",
-                "实验：对标量 Q(a)=−(a−0.8)² 做中心差分，比较 actor 的解析梯度 1.6；再 detach 动作，检查自动微分为何无法更新 actor。"
+                "实验：对标量 $Q(a)=-(a-0.8)^2$ 做中心差分，比较 actor 的解析梯度 1.6；再 detach 动作，检查自动微分为何无法更新 actor。"
               ]
             }
           ]
@@ -4165,6 +5233,72 @@
         "file": "deep_textbook_lab.py",
         "command": "python3 deep_textbook_lab.py test",
         "scope": "标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。"
+      },
+      "problem": {
+        "setting": "动作是连续向量，无法像离散 Q-learning 那样枚举所有动作来最大化价值。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "确定性 actor $a=\\mu_\\theta(s)$，critic $Q_\\phi(s,a)$，replay 状态分布 $d_{\\mathcal D}$。"
+        ],
+        "sought": "同时学习动作价值和近似最大化它的连续动作函数。",
+        "information": "训练数据由带探索噪声的行为产生；actor 的导数使用 critic，不使用真实环境导数。",
+        "objective": {
+          "tex": "L_{\\rm actor}(\\theta)=-\\mathbb E_{s\\sim d_{\\mathcal D}}[Q_\\phi(s,\\mu_\\theta(s))]",
+          "explain": "这是固定 critic 与 replay 分布下的实际 actor surrogate。它与完整 on-policy 收益梯度的关系需要分布及 critic 正确性条件，不能省略这一步。"
+        },
+        "assumptions": [
+          "动作和 critic 对动作可微，动作边界处理明确。",
+          "行为需提供足够局部动作覆盖；函数近似与 bootstrap 可能放大误差。"
+        ],
+        "success": "验证动作梯度、target noise、更新频率，再检查真实收益与过估计，而不是仅看 actor loss。",
+        "relations": [
+          {
+            "kind": "approximation",
+            "target": "control",
+            "explanation": "本章限制为确定性 actor，并用可微近似 critic 搜索连续动作；这是控制的表示与求解近似，不是离散 DQN 的特例。"
+          },
+          {
+            "kind": "objective-change",
+            "target": "soft-control",
+            "explanation": "本章优化外部奖励而不含策略熵；相对最大熵控制，去掉熵项改变目标，不只是改变行为噪声。"
+          }
+        ],
+        "nonGoals": [
+          "保证 actor 找到 critic 的全局动作最大值，或 critic 准确描述未覆盖动作。"
+        ],
+        "solution": {
+          "difficulty": "actor 会主动寻找 critic 估计高的位置，因此可能利用 critic 的误差。",
+          "insight": "通过可微 critic 给 actor 方向，再限制目标过估计和过快策略反馈。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "明确链式梯度的对象",
+              "explanation": "梯度经动作进入 critic，不穿过未知环境。"
+            },
+            {
+              "sectionId": "lesson-target",
+              "title": "稳定 critic 的回归参照",
+              "explanation": "DDPG 使用缓慢目标网络，区分当前优化与目标构造。"
+            },
+            {
+              "sectionId": "lesson-td3",
+              "title": "分别限制三种反馈问题",
+              "explanation": "TD3 的双 critic、平滑目标和延迟 actor 更新有不同作用。"
+            }
+          ],
+          "guarantees": "确定性策略梯度定理不等于任意 replay 和近似 critic 下的无偏实现。",
+          "alternatives": [
+            {
+              "name": "DDPG / TD3",
+              "difference": "TD3 改变目标估计、目标动作扰动和 actor 更新频率。"
+            },
+            {
+              "name": "行为探索噪声 / target smoothing",
+              "difference": "前者改变真实采样，后者改变 critic 的训练目标。"
+            }
+          ]
+        }
       }
     },
     {
@@ -4427,6 +5561,77 @@
         "file": "deep_textbook_lab.py",
         "command": "python3 deep_textbook_lab.py test",
         "scope": "标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。"
+      },
+      "problem": {
+        "setting": "控制目标同时评价外部奖励和策略随机性；随机 actor 的密度进入价值与策略更新。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "可微密度 $\\pi_\\theta(a\\mid s)$、温度 $\\alpha\\ge0$；连续动作密度相对于指定坐标与基准测度定义。"
+        ],
+        "sought": "求最大熵目标下的策略与 soft 价值，而非只给普通奖励策略增加探索噪声。",
+        "information": "使用 replay 转移和当前 actor 采样动作；需要正确的变换后动作密度。",
+        "objective": {
+          "tex": "J_\\alpha(\\pi)=\\mathbb E_\\pi\\!\\left[\\sum_{t\\ge0}\\gamma^t\\{R_{t+1}-\\alpha\\log\\pi(A_t\\mid S_t)\\}\\right]",
+          "explain": "熵项是优化目标的一部分。连续微分熵依赖动作坐标，温度与奖励尺度必须一起解释。"
+        },
+        "assumptions": [
+          "目标与对数密度可积；有界动作变换包含 Jacobian。",
+          "自动温度调整还引入目标熵约束及其可行性。"
+        ],
+        "success": "分别检查外部收益、熵、温度和密度数值；不能把 entropy bonus 算入环境奖励率后与无熵算法直接比较。",
+        "relations": [
+          {
+            "kind": "approximation",
+            "target": "soft-control",
+            "explanation": "本章用神经 critic、连续 actor 和 replay 近似同一个最大熵问题；与相关章共享 soft 目标，而非再次改变目标。"
+          },
+          {
+            "kind": "objective-change",
+            "target": "control",
+            "explanation": "相对只评价外部奖励的控制，本章把策略熵纳入优化目标，因而改变 Bellman 方程与策略改善对象。"
+          },
+          {
+            "kind": "objective-change",
+            "target": "average",
+            "explanation": "本章相对平均奖励控制同时采用折扣时间聚合与熵项；若研究平均奖励 soft 控制，还须另定该目标，不能只将折扣设为一。"
+          }
+        ],
+        "nonGoals": [
+          "把自动温度当作任意任务都不需要调目标熵的保证。"
+        ],
+        "solution": {
+          "difficulty": "策略既决定采样动作，也决定自己的密度惩罚；有界动作变换会改变密度。",
+          "insight": "从最大熵目标推导 soft 备份，再用重参数化构造可微 actor 更新。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "先改变价值对象",
+              "explanation": "熵进入后继 soft value，普通 Q target 不能原样使用。"
+            },
+            {
+              "sectionId": "lesson-density",
+              "title": "保持采样动作与密度一致",
+              "explanation": "tanh 变换的 Jacobian 是概率公式的一部分。"
+            },
+            {
+              "sectionId": "lesson-temperature",
+              "title": "把随机性要求写成约束",
+              "explanation": "温度更新的符号来自对偶方向，不靠经验记忆正负号。"
+            }
+          ],
+          "guarantees": "精确 soft 策略改善与深度 replay 实现不同；函数逼近和数据覆盖仍限制实践。",
+          "alternatives": [
+            {
+              "name": "固定 / 自适应温度",
+              "difference": "前者指定奖励与熵权衡，后者试图满足另给的熵水平。"
+            },
+            {
+              "name": "TD3 / SAC",
+              "difference": "不只是确定性与随机性区别，优化目标和 critic 定义也不同。"
+            }
+          ]
+        }
       }
     },
     {
@@ -4754,6 +5959,2381 @@
         "file": "deep_textbook_lab.py",
         "command": "python3 deep_textbook_lab.py test",
         "scope": "标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。"
+      },
+      "problem": {
+        "setting": "将数学更新映射到有数据缓存、模型状态、终止标志和优化器的可执行学习器。",
+        "given": [
+          "完整实现状态 $z_t$，包括参数、优化器、记忆、缓存和随机数状态。",
+          "转移输入 $e_t$ 与更新算子 $F$；预算、初始化和评测协议固定。"
+        ],
+        "sought": "实现与所声明更新语义一致的学习过程，并定位模型、记忆和离线数据带来的额外误差。",
+        "information": "训练数据、评估数据和目标网络有明确读写时刻；测试环境信息不得泄漏回训练选择。",
+        "objective": {
+          "tex": "z_{t+1}=F(z_t,e_t),\\qquad F^{(T)}(z_0,e_{0:T-1})=F^{(T-k)}(z_k,e_{k:T-1})",
+          "explain": "右式表示完整状态恢复后应与不间断运行一致，在同样输入和随机性条件下比较。它是实现正确性要求，不是算法效能结论。"
+        },
+        "assumptions": [
+          "数值容差或逐位一致标准须预先选择。",
+          "数据协议改变时，需要重新检查目标估计，而不只是让张量维度正确。"
+        ],
+        "success": "通过小问题、梯度、边界和状态恢复测试；算法收益另用独立实验评价。",
+        "relations": [
+          {
+            "kind": "composition",
+            "target": "experiments",
+            "explanation": "把估计量、实验随机单位与实现检查接在一起。"
+          },
+          {
+            "kind": "protocol",
+            "target": "state",
+            "explanation": "递归记忆的读写和截断决定实际可用历史与梯度。"
+          }
+        ],
+        "nonGoals": [
+          "用测试通过替代论文效能复现或算法比较。"
+        ],
+        "solution": {
+          "difficulty": "同一个公式可能因版本、终止、缓存或梯度路径不同而实现成不同算法。",
+          "insight": "把每个更新视为显式状态转移，分别验证输入、时序、边界和输出。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "量化模型误差如何影响备份",
+              "explanation": "模型预测误差需要通过规划目标解释，不能只看预测 loss。"
+            },
+            {
+              "sectionId": "lesson-memory",
+              "title": "分开记忆递推和参数信用",
+              "explanation": "前向保留历史与反向传播到历史是两件事。"
+            },
+            {
+              "sectionId": "lesson-algorithm",
+              "title": "分层验证完整训练过程",
+              "explanation": "先机制测试，再短运行，再冻结协议做独立评价。"
+            }
+          ],
+          "guarantees": "测试只对已覆盖输入和属性提供证据；没有测试到的分布变化仍可能失败。",
+          "alternatives": [
+            {
+              "name": "单元测试 / 学习实验",
+              "difference": "分别检验算子语义与随机交互中的表现。"
+            },
+            {
+              "name": "参数 checkpoint / 完整状态恢复",
+              "difference": "后者还需优化器、记忆、缓存、计数器与随机状态。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "study-deep-partial-observability",
+      "track": "deep",
+      "order": 7,
+      "path": "foundations/deep/partial-observability/",
+      "title": "不完全可观测：信念状态、信息行动与递归记忆",
+      "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+      "objectives": [
+        "从历史条件分布推导 Bayes filter。",
+        "把信息获取的价值纳入 Bellman 决策。",
+        "区分精确信念、学习的 recurrent state 和训练时的隐状态权限。"
+      ],
+      "prerequisites": [
+        {
+          "term": "条件概率与期望",
+          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+        },
+        {
+          "term": "MDP 与价值",
+          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+        },
+        {
+          "term": "优化与梯度",
+          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+        }
+      ],
+      "bookSections": [
+        "Kaelbling、Littman、Cassandra：POMDP",
+        "Algorithms for Decision Making：state uncertainty"
+      ],
+      "connectsTo": [
+        "state",
+        "gvf",
+        "credit",
+        "models"
+      ],
+      "executable": {
+        "file": "extended_foundations_lab.py",
+        "command": "python3 extended_foundations_lab.py test",
+        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 观察不等于状态",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "设环境隐状态为 $S_t$，智能体收到 $O_t$。同一幅图像可能来自不同速度、物体遮挡或任务阶段。即使环境隐状态满足 Markov 性，观察序列也未必满足。POMDP 是信息条件；表格 belief、线性滤波器和深度 recurrent 网络都可以处理它。它不是深度 RL 之后才出现的阶段。"
+            },
+            {
+              "kind": "math",
+              "tex": "H_t=(O_0,A_0,R_1,\\ldots,A_{t-1},R_t,O_t),\\qquad b_t(s)=\\Pr(S_t=s\\mid H_t)",
+              "explain": "历史是已经到达的信息；belief 是给定模型时对当前隐状态的后验分布，不是对网络参数的置信区间。"
+            },
+            {
+              "kind": "p",
+              "text": "以下有限状态推导假定转移与观测模型已知，且奖励没有提供额外状态信息。如果奖励也携带信息，应将它并入观测似然或使用联合转移—奖励模型。设计者提供了状态假设、传感器接口和模型结构；运行时智能体更新 belief 并选择行动。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-notation",
+          "title": "2 · 动作之后，先预测再条件化",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "T_a(s,s')=\\Pr(S_{t+1}=s'\\mid S_t=s,A_t=a),\\qquad O_a(o\\mid s')=\\Pr(O_{t+1}=o\\mid S_{t+1}=s',A_t=a)",
+              "explain": "转移矩阵每一行和为一。观测似然按收到的观测取值，它不是在状态维度归一化的 posterior。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\bar b_{t+1}(s')=\\sum_sT_a(s,s')b_t(s)",
+              "explain": "用全概率公式将旧状态不确定性传播到下一状态。这一步尚未使用新观察。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\Pr(o\\mid b_t,a)=\\sum_{s'}O_a(o\\mid s')\\bar b_{t+1}(s')",
+              "explain": "这是新观测的证据概率，随后用作归一化常数。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-derive",
+          "title": "3 · Bayes 递推与 belief MDP",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "b_{t+1}(s')=\\frac{O_a(o\\mid s')\\sum_sT_a(s,s')b_t(s)}{\\sum_{\\tilde s}O_a(o\\mid\\tilde s)\\sum_sT_a(s,\\tilde s)b_t(s)}=:B(b_t,a,o)(s')",
+              "explain": "分子是下一状态与观测的联合条件概率，分母消去状态得到观测概率。分母为零时模型认为该观测不可能，不能静默归一化。"
+            },
+            {
+              "kind": "p",
+              "text": "给定正确模型与初始分布，belief 对未来控制是充分的：已知当前 belief 和新动作，即可预测后继 belief 及奖励，不必再次读取整段历史。状态集合变成概率单纯形，通常连续，即使原隐状态只有有限个。充分性来自模型和条件分布，不来自把向量命名为 state。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\bar r(b,a)=\\sum_sb(s)r(s,a)",
+              "explain": "即时奖励对隐藏状态求条件平均。"
+            },
+            {
+              "kind": "math",
+              "tex": "V^*(b)=\\max_a\\left[\\bar r(b,a)+\\gamma\\sum_o\\Pr(o\\mid b,a)V^*(B(b,a,o))\\right]",
+              "explain": "行动既影响外部状态，也影响未来能得到什么信息。这个递推自然包含感知行动的长期收益。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-information",
+          "title": "4 · 信息只有在改变决策时才有控制价值",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\operatorname{VOI}=\\sum_o\\Pr(o\\mid b)\\max_a\\sum_sb(s\\mid o)r(s,a)-\\max_a\\sum_sb(s)r(s,a)-c_{\\rm sense}",
+              "explain": "这是静态隐状态、先感知一次再作终端决策的价值差；不是所有序列任务的一般信息价值公式。"
+            },
+            {
+              "kind": "p",
+              "text": "若不计感知成本，观察后仍可采用原动作，因此这里的信息价值非负。加入成本后可能为负。减少 belief 的熵不必改善控制：传感器可能准确识别与奖励无关的细节。控制充分的状态只需保留会影响最优选择的信息，不必重建全部原始观察。"
+            },
+            {
+              "kind": "p",
+              "text": "对模型未知的任务，还需区分“当前状态在哪里”与“动力学是什么”两种不确定性。仅对状态做 Bayes filtering，并没有自动学习未知转移。将模型参数也作为隐变量会得到更大的信念空间，计算成本随之增加。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "5 · 精确 filter 与学习的 recurrent state",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "初始化已声明的先验 belief。\n根据当前 belief 计算或近似价值，选择动作。\n取得下一观察与奖励；仅使用已经到达的数据。\n用 transition 预测下一状态分布。\n乘观测似然，检查证据概率，再归一化。\n将后验保存为下一步 belief；重复行动。",
+              "caption": "外部 reset 改变隐状态分布时，需要相应重置先验；普通训练 batch 边界不自动改变世界。"
+            },
+            {
+              "kind": "math",
+              "tex": "z_{t+1}=f_\\theta(z_t,A_t,O_{t+1},R_{t+1}),\\qquad \\hat y_{t+1}=g_\\theta(z_{t+1})",
+              "explain": "RNN 用可训练的有限维摘要替代显式 belief；预测头或控制损失提供训练信号。"
+            },
+            {
+              "kind": "p",
+              "text": "RNN 能携带历史，但不因此等于精确后验。预测下一像素、预测多种未来信号和优化控制回报会保留不同信息。TBPTT 截断参数梯度，hidden-state reset 则清除记忆内容；即使二者都发生在同一个代码边界，它们仍是不同操作。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "6 · 两个可手算的例子",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "先验为 $(0.6,0.4)$，转移矩阵两行为 $(0.9,0.1)$ 与 $(0.2,0.8)$。预测分布是 $(0.62,0.38)$。收到观测的似然为 $(0.8,0.2)$，未归一化后验为 $(0.496,0.076)$，证据为 $0.572$，后验约为 $(0.86713,0.13287)$。直接将似然归一化为 $(0.8,0.2)$ 会丢掉先验和动态预测。"
+            },
+            {
+              "kind": "p",
+              "text": "另一个任务只有左右两扇门，隐藏的正确门先验各半，选对得一、选错得负一。立即选择的期望收益为零。准确率 0.8 的传感器让观察后的最佳选择收益为 0.6；感知成本 0.1，净收益为 0.5。若传感器完全无信息，净增益为 −0.1。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "7 · 可运行 filter 与信息价值",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "partial_observability",
+              "caption": "矩阵预测、Bayes 归一化与一次感知的期望决策价值；两个例子不依赖采样误差。"
+            },
+            {
+              "kind": "p",
+              "text": "执行 python3 extended_foundations_lab.py demo 查看 posterior、evidence 和信息收益；执行 test 检查归一化、零证据与无信息传感器。代码没有训练 recurrent 网络，也没有实现一般 POMDP 规划器。pomdp-solve 是 Cassandra 的经典求解软件；pomdp-py 是后续研究框架，二者的归属与实现范围不同。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "8 · 假设边界与持续学习接口",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "模型错误：精确计算错误模型下的 posterior，仍可能产生系统性误判。",
+                "信息泄漏：训练时的 simulator state 可以帮助 critic，但执行策略若依赖它，就不是相同观察条件。",
+                "序列失配：从 replay 抽单帧无法一般性重建 history-dependent state；burn-in 也需要明确参数版本。",
+                "变化环境：原观测或转移模型失效时，belief 可能越来越自信地错误，而不是自动适应。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "与 CRL 的连接是状态持续构建和状态模型持续校准。可固定任务奖励，单独改变传感器可靠度，比较已知新模型的 Bayes oracle、旧模型 filter 和学习的 recurrent state。这样能区分信息不足、模型滞后与优化失败，不能仅凭回报下降判断遗忘。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "9 · 练习与答案",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：观测看起来相同，是否必须采取相同动作？答：不必；不同历史可导致不同 belief。",
+                "问：belief 熵下降是否意味着决策价值增加？答：不保证。它可能只减少无关信息的不确定性，且感知有成本。",
+                "问：Bayes 更新的证据为零时可以加一个很小的数继续吗？答：数值平滑可以作为建模改动，但不能隐去模型与观测矛盾；需要报告所用平滑和支持假设。",
+                "实验：将传感器准确率从 0.8 改为 0.5。在门任务里后验保持先验，信息净收益应为 −0.1；此结论不依赖控制网络。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Kaelbling、Littman、Cassandra · Planning and Acting in Partially Observable Stochastic Domains",
+          "url": "https://www.cassandra.org/arc/papers/aij98.pdf",
+          "note": "作者托管原文；belief、决策与 POMDP 求解。"
+        },
+        {
+          "title": "Cassandra · pomdp-solve",
+          "url": "https://www.pomdp.org/code/index.html",
+          "note": "经典 POMDP 求解软件的作者入口，并非神经 recurrent agent。"
+        },
+        {
+          "title": "h2r · pomdp-py",
+          "url": "https://github.com/h2r/pomdp-py",
+          "note": "框架作者的模型、belief 与规划接口；是后续工具，不是 1998 原文代码。"
+        },
+        {
+          "title": "Kochenderfer、Wheeler、Wray · Algorithms for Decision Making",
+          "url": "https://algorithmsbook.com/",
+          "note": "作者书站提供决策、信念状态、模型与规划教材及配套 Julia 代码入口。"
+        }
+      ],
+      "problem": {
+        "setting": "当前观测不能确定未来。智能体必须利用历史形成足够的决策信息。",
+        "given": [
+          "有限潜在状态集 $\\mathcal X$、观测集 $\\mathcal O$、动作集 $\\mathcal A$、奖励域 $\\mathcal R\\subset\\mathbb R$；$X_t,O_t,A_t,R_{t+1}$ 为相应变量。平稳联合核为 $K(x',B_o,B_r\\mid x,a)=\\Pr(X_{t+1}=x',O_{t+1}\\in B_o,R_{t+1}\\in B_r\\mid X_t=x,A_t=a)$，其中 $B_o,B_r$ 为可测观测与奖励事件；离散情形可写为 $K(x',o,r\\mid x,a)$。",
+          "历史 $H_t=(O_0,A_0,R_1,O_1,\\ldots,A_{t-1},R_t,O_t)$；给定初始观测律 $\\nu_0$ 与条件初始信念 $b_0(x\\mid O_0)$，它们共同指定 $(X_0,O_0)$ 的联合分布。奖励有界，$0\\le\\gamma<1$。",
+          "$\\Pi_H$ 是非空的允许可测因果策略类，$\\pi_t(\\cdot\\mid H_t)$ 只能使用已到达的信息。已知 $K,b_0$ 时可维护 $b_t(x)=\\Pr(X_t=x\\mid H_t)$；未知模型需另给模型族和信息条件，联合估计模型与状态，或学习近似摘要。"
+        ],
+        "sought": "在 $\\Pi_H$ 中求使折扣收益接近上确界的策略，并构造支持它的信息状态；不假定任意受限策略类的最优者必然存在。",
+        "information": "执行时不可访问潜在真状态；精确 filter 的参照问题允许查询正确模型与初始律。未知模型版本不提供这项权限，须声明模型族、先验或识别数据。奖励如含状态信息，也必须纳入历史和后验。",
+        "objective": {
+          "tex": "J(\\pi)=\\mathbb E_{\\nu_0,b_0,K,\\pi}\\!\\left[\\sum_{t\\ge0}\\gamma^tR_{t+1}\\right],\\qquad J(\\hat\\pi)\\ge\\sup_{\\pi\\in\\Pi_H}J(\\pi)-\\varepsilon,\\quad\\varepsilon>0",
+          "explain": "这是指定初始化与策略类下的历史条件控制，$A_t\\sim\\pi_t(\\cdot\\mid H_t)$。正确已知模型下 belief 对未来预测充分；若策略类另有限制，其信息或资源约束也须保留，不能自动换成任意 belief 策略。"
+        },
+        "assumptions": [
+          "潜在 Markov 条件是给定 $X_t,A_t$ 后，下一潜在状态、观测和奖励的联合条件律不再依赖更早历史，并由同一 $K$ 给出。精确 filter 使用正确模型与初始律；离散观测的证据概率为正，连续情形使用相应密度或正规条件分布。",
+          "本章正文的分解式 filter 另假定奖励不提供额外状态信息；否则必须将奖励纳入联合似然。未知模型可在指定先验下维护状态与模型参数的联合后验，并非只能使用近似记忆。",
+          "有限记忆及计算限制应进入 $\\Pi_H$ 或完整实现集合；近似摘要的控制损失需另检验。"
+        ],
+        "success": "除状态预测误差，还检查不同历史被合并后是否仍能选择正确动作。",
+        "relations": [
+          {
+            "kind": "composition",
+            "target": "state",
+            "explanation": "本章将隐藏 Markov 模型的 belief 构造接到历史控制；一般状态构造章已包含部分可观测过程，本章不是再次放宽它的假设。"
+          },
+          {
+            "kind": "composition",
+            "target": "exploration",
+            "explanation": "本章的信息状态控制可与探索结合：动作可能通过改善信息而有价值，即使即时奖励较低。"
+          }
+        ],
+        "nonGoals": [
+          "以记忆长度或重构准确率直接证明控制充分性。"
+        ],
+        "solution": {
+          "difficulty": "相同观测可能来自需要不同动作的情境，反应式策略无法区分。",
+          "insight": "先用已知模型展示准确后验如何递推，再定位学习记忆的近似位置。",
+          "steps": [
+            {
+              "sectionId": "lesson-notation",
+              "title": "明确更新前后有什么信息",
+              "explanation": "动作先改变潜在状态，新观测和奖励再修正后验。"
+            },
+            {
+              "sectionId": "lesson-derive",
+              "title": "把历史压缩为 belief",
+              "explanation": "Bayes 递推给出充分状态的参照，而非要求神经网络储存完整历史。"
+            },
+            {
+              "sectionId": "lesson-information",
+              "title": "用决策差异评价信息价值",
+              "explanation": "更准确识别状态只有改变未来行动或预测时才产生对应用途。"
+            }
+          ],
+          "guarantees": "belief 充分性有正确模型条件；近似 recurrent state 必须通过下游任务检验。",
+          "alternatives": [
+            {
+              "name": "Bayes filter / recurrent network",
+              "difference": "前者依据指定生成模型精确递推，后者从目标和数据学习摘要。"
+            },
+            {
+              "name": "观测重构 / 控制充分性",
+              "difference": "优化的误差对象不同；重构很好仍可能遗漏决策关键变量。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "study-deep-exploration",
+      "track": "deep",
+      "order": 8,
+      "path": "foundations/deep/exploration/",
+      "title": "探索与不确定性：后验、乐观估计和时间一致行动",
+      "question": "为什么每一步都随机，并不等于有效获取长期有用的信息？",
+      "objectives": [
+        "区分环境随机性与知识不足。",
+        "推导 Bernoulli 后验与 UCB 的置信思路。",
+        "理解 posterior sampling、Bootstrapped DQN 与内在奖励各自改变什么。"
+      ],
+      "prerequisites": [
+        {
+          "term": "条件概率与期望",
+          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+        },
+        {
+          "term": "MDP 与价值",
+          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+        },
+        {
+          "term": "优化与梯度",
+          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+        }
+      ],
+      "bookSections": [
+        "Osband、Russo、Van Roy：Posterior Sampling",
+        "Bootstrapped DQN",
+        "RND"
+      ],
+      "connectsTo": [
+        "exploration",
+        "goals",
+        "options",
+        "gvf",
+        "experiments"
+      ],
+      "executable": {
+        "file": "extended_foundations_lab.py",
+        "command": "python3 extended_foundations_lab.py test",
+        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 行动同时获得回报与数据",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "探索的困难在于当前行动影响未来知道什么。随机动作可能增加覆盖，也可能反复把智能体带离有价值的路径。设计者通常给定奖励、可访问状态、重置权限与探索预算；智能体需要在这些边界内分配数据采集。探索算法并不自动解决目标从何而来。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\operatorname{Regret}(T)=T\\mu^*-\\mathbb E\\sum_{t=1}^T R_t",
+              "explain": "这是平稳 bandit 的期望遗憾定义。序列控制还涉及状态可达性、信息延迟和探索行动的不可逆后果，不能直接套用同一分析。"
+            },
+            {
+              "kind": "p",
+              "text": "一枚已经知道成功率为 0.5 的硬币仍有结果随机性，但不一定值得继续研究。相反，成功率未知的硬币有认识不确定性，可以由数据减少。预测残差大、回报方差大和模型不确定性大不是同一件事。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-notation",
+          "title": "2 · 一个精确后验的起点",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "R\\mid p\\sim\\operatorname{Bernoulli}(p),\\quad p\\sim\\operatorname{Beta}(\\alpha_0,\\beta_0)",
+              "explain": "模型假设每次条件独立且成功率不变。Beta 先验是设计者选择的模型知识，不是观测结果。"
+            },
+            {
+              "kind": "math",
+              "tex": "p\\mid\\mathcal D\\sim\\operatorname{Beta}(\\alpha_0+n_1,\\beta_0+n_0)",
+              "explain": "Bernoulli 似然提供成功次数与失败次数的幂，乘上先验后仍是同一族；归一化得到后验。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}\\mathbb E[p\\mid\\mathcal D]=\\frac{\\alpha}{\\alpha+\\beta}\\\\\\operatorname{Var}(p\\mid\\mathcal D)=\\frac{\\alpha\\beta}{(\\alpha+\\beta)^2(\\alpha+\\beta+1)}\\end{gathered}",
+              "explain": "这是对未知成功率的方差，不是下一次二元结果的方差。固定后验均值时，增加证据量仍会降低参数不确定性。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-derive",
+          "title": "3 · 后验采样为何需要保持时间一致",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\tilde p_a\\sim p(p_a\\mid\\mathcal D),\\qquad A_t=\\arg\\max_a\\tilde p_a",
+              "explain": "Thompson sampling 对每个 bandit 的可能成功率采样，再按该可能世界作最优选择。"
+            },
+            {
+              "kind": "p",
+              "text": "在已知先验模型族的 episodic MDP 中，PSRL 在 episode 开始采样一个 $\\tilde M\\sim p(M\\mid\\mathcal D)$，求解该模型的策略，并在本 episode 中保持它。完整模型的采样使多步行动围绕同一个假设保持一致；每一步重新抛独立动作硬币并不具有这项性质。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\Pr(\\text{长度 }H\\text{ 的全右路径})=2^{-H}\\quad\\text{或}\\quad\\tfrac12",
+              "explain": "左式是在每步公平地独立选左右；右式是 episode 开始公平选“始终右”或“始终左”两个完整策略。本比较只说明时间相关性，不是通用学习速度定理。"
+            },
+            {
+              "kind": "p",
+              "text": "Bootstrapped DQN 用多个价值头和随机化训练近似多种可信价值函数，并在 episode 内保持一个头。共享表征与有限 bootstrap 不构成精确 Bayes posterior；实验里应测校准、覆盖和探索效率，而不是把所有 ensemble 都解释成同一后验。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-bonus",
+          "title": "4 · 乐观估计与新奇奖励的不同角色",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "U_t(a)=\\hat\\mu_t(a)+\\sqrt{\\frac{2\\log t}{N_t(a)}}",
+              "explain": "UCB1 形式以样本均值加置信宽度排序；未访问动作优先探索。其经典保证依赖平稳、有界且适当独立的 bandit 观测。"
+            },
+            {
+              "kind": "p",
+              "text": "宽度随样本数减小，使已确定的低价值动作逐步退出。Hoeffding 型尾界控制经验均值偏差，由高概率上界产生乐观行动。序列 MDP 的 bonus 还需处理转移估计、规划误差与访问次数，不能仅把 bandit 式原样贴在神经 Q 输出上就获得 regret 保证。"
+            },
+            {
+              "kind": "math",
+              "tex": "Q_k(s,a)=\\hat r(s,a)+b_k(s,a)+\\gamma\\sum_{s'}\\hat P(s'\\mid s,a)\\max_{a'}Q_{k-1}(s',a')",
+              "explain": "示意性乐观模型备份：bonus 进入规划，沿未来状态传播。具体置信项必须由所用假设推导。"
+            },
+            {
+              "kind": "math",
+              "tex": "r_t^{\\rm int}=\\|f_\\theta(O_{t+1})-f_{\\rm fixed}(O_{t+1})\\|^2",
+              "explain": "RND 的固定随机目标与学习预测器产生新奇信号。它不直接估计环境奖励或转移模型的 Bayes 方差。"
+            },
+            {
+              "kind": "p",
+              "text": "RND 对确定随机映射做预测，避免将随机下一状态预测误差直接当作新奇的某些问题，但无关高维变化、表征泛化和遗忘仍能影响 bonus。熵正则则直接偏好较随机的动作分布；它不会自动区分有信息的状态与无信息的随机循环。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "5 · 三类方法的更新对象",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "后验采样：根据真实观测更新模型后验。\n  在声明的 episode 或决策周期采样一个模型/价值假设。\n  由该假设规划行动，保持约定的时间一致性。\n乐观方法：更新统计量，计算假设支持的置信宽度。\n  用乐观目标或模型规划；实际数据更新统计量。\n内在奖励：用到达的观察计算 bonus，再训练预测器。\n  明确 bonus 在训练前还是训练后计算，并单独记录外部收益。",
+              "caption": "这些是不同的信息处理机制，不应同时改变后再把全部差异归因于“探索”。"
+            },
+            {
+              "kind": "p",
+              "text": "若 predictor 先在新观察上充分训练，再计算同一观察的新奇误差，bonus 会明显减小。若使用陈旧目标或回放重新计算 bonus，其含义也改变。时间顺序是机制的一部分，而不只是工程细节。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "6 · 不确定性和路径概率的手算",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "先验 $\\operatorname{Beta}(1,1)$，观察三次成功、一次失败，后验为 $\\operatorname{Beta}(4,2)$。成功率均值为 $2/3$，参数方差为 $2/63\\approx0.03175$。下一结果的预测方差却是 $(2/3)(1/3)=2/9$。两者不能互换。"
+            },
+            {
+              "kind": "p",
+              "text": "十步链必须连续向右才看到远端信息。独立随机动作的概率为 1/1024；episode 级二策略采样的概率为 1/2。第二个过程并不意味着永远选右最好，它只展示了探索假设必须持续足够久才能被环境检验。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "7 · 后验、置信分数与深探索概率",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "exploration",
+              "caption": "精确 Beta 更新、带种子的 Thompson 采样、UCB 分数和链式概率；不需要训练神经网络。"
+            },
+            {
+              "kind": "p",
+              "text": "运行 demo 查看 posterior 与链概率，运行 test 检查共轭更新和未访问动作处理。bsuite 提供 Deep Sea 等诊断环境及随机化价值基线；它是后续作者团队框架，不等同于 2016 论文的全部原始 Atari 训练。RND 作者仓库则提供该论文的神经训练代码。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "8 · 假设边界与 CRL 的持续探索",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "不可逆世界：探索可能进入无法返回的状态。episode 重置得出的结论不能直接迁移到单生命期。",
+                "变化后验：对非平稳成功率持续累积旧计数会过度自信；遗忘窗口或变化模型改变了统计假设。",
+                "奖励混合：内在奖励系数改变行为目标，评估应单独报告外部任务收益和探索成本。",
+                "随机性混淆：环境噪声不会因为多看几次完全消失；高误差不一定意味着可学习的信息。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "CRL 中新任务、新预测和新 option 都可能需要新的数据。应比较固定预算下的信息获取与后续适应，而不仅看访问状态数量。能否识别旧知识何时失效，是持续探索与一次性探索的重要区别。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "9 · 练习与答案",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：两个 posterior 均值相同，探索优先级是否一定相同？答：不一定；后验宽度和行动的信息后果可以不同。",
+                "问：每步随机选价值头等价于 episode 固定头吗？答：不等价；前者可能破坏连续行动的假设一致性。",
+                "问：RND bonus 下降是否意味着任务学会了？答：不意味着；它只说明所访问输入的随机特征更容易预测。",
+                "实验：保持十步链不变，只把随机决策从每步改为每个 episode；核对 1/1024 与 1/2，但不要将这个固定路径概率称为完整算法的学习曲线。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Auer、Cesa-Bianchi、Fischer · Finite-time Analysis of the Multiarmed Bandit Problem",
+          "url": "https://link.springer.com/article/10.1023/A:1013689704352",
+          "note": "UCB1 的置信宽度、有限时间分析及平稳 bandit 条件。"
+        },
+        {
+          "title": "Osband、Russo、Van Roy · (More) Efficient Reinforcement Learning via Posterior Sampling",
+          "url": "https://arxiv.org/abs/1306.0940",
+          "note": "模型 posterior sampling 与 episode 级策略承诺。"
+        },
+        {
+          "title": "Osband et al. · Deep Exploration via Bootstrapped DQN",
+          "url": "https://arxiv.org/abs/1602.04621",
+          "note": "随机价值函数与多步一致探索。"
+        },
+        {
+          "title": "DeepMind · bsuite",
+          "url": "https://github.com/google-deepmind/bsuite",
+          "note": "作者团队后续诊断平台，包含 Deep Sea；不是原文所有实验的原始快照。"
+        },
+        {
+          "title": "Burda et al. · Exploration by Random Network Distillation",
+          "url": "https://arxiv.org/abs/1810.12894",
+          "note": "固定随机目标、预测误差 bonus 与外部/内部收益。"
+        },
+        {
+          "title": "OpenAI · RND 原始代码",
+          "url": "https://github.com/openai/random-network-distillation",
+          "note": "论文作者实现；查看 predictor、奖励归一化与 rollout 的顺序。"
+        },
+        {
+          "title": "UC Berkeley · CS 285",
+          "url": "https://rail.eecs.berkeley.edu/deeprlcourse/",
+          "note": "原课程的 exploration、model-based RL 与 offline RL 讲义和视频入口；按问题专题阅读，不必按网络规模划分领域。"
+        }
+      ],
+      "problem": {
+        "setting": "环境未知，动作既产生收益也改变以后可获得的信息。选择行为不能只最大化当前估计。",
+        "given": [
+          "未知 MDP 族 $\\mathcal M$、先验或置信集合、交互预算 $T$。",
+          "$\\mathcal L$ 表示因果学习规则，$J_T(\\mathcal L,M)$ 为其在环境 M 中的期望累计奖励。"
+        ],
+        "sought": "选择探索规则，使有限预算内的完整学习表现较好，而非只让状态访问熵最大。",
+        "information": "只观察实际轨迹，不能免费查询未执行动作的反事实后果。",
+        "objective": {
+          "tex": "\\mathbb E_{M\\sim P_0}\\!\\left[J_T^*(M)-J_T(\\mathcal L,M)\\right]",
+          "explain": "这是给定先验下的一种 Bayesian regret；$J_T^*$ 指知道环境的同目标最优值。其他探索问题可选择不同比较器，不能混用其理论界。"
+        },
+        "assumptions": [
+          "后验采样的理论依赖模型族和后验正确性；乐观界依赖覆盖概率。",
+          "神经 ensemble 的分歧不自动等于校准后验不确定性。"
+        ],
+        "success": "测量远端有用状态到达率、信息利用和原始奖励；把内在奖励与外部收益分开。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "exploration",
+            "explanation": "本章先固定未知 MDP 族与有限交互预算，研究识别和信息利用；更广的持续探索还要处理已有知识过时后的重新验证。"
+          },
+          {
+            "kind": "specialization",
+            "target": "control",
+            "explanation": "本章将完整学习器比较限定到未知 MDP 族、指定先验和有限预算的 Bayesian regret；相关控制章并不限于这一环境类与比较器。"
+          }
+        ],
+        "nonGoals": [
+          "保证任意新奇访问都能改善任务收益。"
+        ],
+        "solution": {
+          "difficulty": "长程有用试验需要连续一致的动作，逐步随机可能反复取消自己的计划。",
+          "insight": "用后验假设或乐观模型支撑跨时间行动，并区分信息不确定性与环境噪声。",
+          "steps": [
+            {
+              "sectionId": "lesson-notation",
+              "title": "先看可精确计算的后验",
+              "explanation": "小问题提供检验近似不确定性是否可信的参照。"
+            },
+            {
+              "sectionId": "lesson-derive",
+              "title": "让探索假设维持足够长",
+              "explanation": "抽样整个模型或策略与每步随机动作具有不同到达概率。"
+            },
+            {
+              "sectionId": "lesson-bonus",
+              "title": "说明奖励奖励的是哪种未知",
+              "explanation": "置信上界、新奇度和预测误差奖励不能相互冒充。"
+            }
+          ],
+          "guarantees": "表格遗憾分析有特定假设；内在奖励或 ensemble 不直接继承相同保证。",
+          "alternatives": [
+            {
+              "name": "Posterior sampling / optimism",
+              "difference": "前者按可信模型抽样，后者在可信集合中选择有利模型。"
+            },
+            {
+              "name": "新奇度 / epistemic uncertainty",
+              "difference": "访问少不等于信息有用，预测误差也可能来自不可减少的噪声。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "study-deep-distributional",
+      "track": "deep",
+      "order": 9,
+      "path": "foundations/deep/distributional/",
+      "title": "分布强化学习：Bellman 分布、分位数与风险目标",
+      "question": "学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？",
+      "objectives": [
+        "写出分布 Bellman 递推及其固定策略条件。",
+        "推导 categorical 投影和 quantile loss。",
+        "区分回报分布、参数后验和风险偏好。"
+      ],
+      "prerequisites": [
+        {
+          "term": "条件概率与期望",
+          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+        },
+        {
+          "term": "MDP 与价值",
+          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+        },
+        {
+          "term": "优化与梯度",
+          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+        }
+      ],
+      "bookSections": [
+        "Bellemare、Dabney、Munos：Distributional Perspective",
+        "Dabney et al.：Quantile Regression",
+        "Distributional Reinforcement Learning"
+      ],
+      "connectsTo": [
+        "deep-value",
+        "gvf",
+        "objectives",
+        "experiments"
+      ],
+      "executable": {
+        "file": "extended_foundations_lab.py",
+        "command": "python3 extended_foundations_lab.py test",
+        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 同一均值可以来自不同的回报分布",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "Z^\\pi(s,a)\\overset{D}{=}\\sum_{t=0}^\\infty\\gamma^tR_{t+1}\\mid S_0=s,A_0=a,\\qquad Q^\\pi(s,a)=\\mathbb E Z^\\pi(s,a)",
+              "explain": "分布来自环境、策略及初始条件下的随机轨迹。等分布符号不表示两个实际采样回报逐点相同。"
+            },
+            {
+              "kind": "p",
+              "text": "确定得到二，与一半概率得到零、一半概率得到四，均值都是二。仅预测均值无法区分二者。分布学习可以提供更丰富的预测目标，但控制器若仍按均值选动作，优化目标依然是期望收益，不自动变成风险厌恶。"
+            },
+            {
+              "kind": "p",
+              "text": "环境已完全已知时回报仍可随机，因此回报分布的宽度不等于模型的认识不确定性。外部设计者选择分布表示、支持范围以及决策采用均值还是风险泛函；运行时 agent 学习的是这一约定下的预测。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-notation",
+          "title": "2 · 条件分布的 Bellman 递推",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "(\\mathcal T^\\pi Z)(s,a)\\overset{D}{=}R+\\gamma Z(S',A'),\\quad (R,S')\\sim P(\\cdot,\\cdot\\mid s,a),\\quad A'\\sim\\pi(\\cdot\\mid S')",
+              "explain": "先采样即时奖励与后继状态，再按策略采样后继动作，最后按相应后继分布采样回报。奖励与后继状态的相关性需要保留。"
+            },
+            {
+              "kind": "p",
+              "text": "对两边取期望即可恢复通常的 Bellman 方程。这是均值方法嵌入分布方法的方式。分布递推还保留高阶结构；把每个状态动作只存成一个均值，会在这一步丢失结构。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\bar W_p(\\mathcal T^\\pi Z_1,\\mathcal T^\\pi Z_2)\\le\\gamma\\bar W_p(Z_1,Z_2),\\qquad\\bar W_p=\\sup_{s,a}W_p",
+              "explain": "在有限 p 阶矩等条件下，固定策略分布算子在相应最大 Wasserstein 距离中压缩。控制时策略随估计变化，不能直接照搬这个结论。"
+            },
+            {
+              "kind": "p",
+              "text": "标准 C51 或 QR-DQN 通常用预测分布的均值选择贪心动作，再备份被选动作的整条分布。最优期望价值可以唯一，但最优策略的回报分布不必唯一；这正是控制分析与固定策略预测不同的原因之一。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-derive",
+          "title": "3 · Categorical 表示为什么需要投影",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "Z_\\theta(s,a)=\\sum_{i=0}^{N-1}p_{\\theta,i}(s,a)\\,\\delta_{z_i},\\quad z_i=v_{\\min}+i\\Delta z,\\quad\\sum_i p_{\\theta,i}=1",
+              "explain": "位置固定、概率可学习；这里的 Dirac 是点质量，不是 TD error。网络可用 softmax 保证归一化。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\tilde z_j=\\operatorname{clip}(r+\\gamma(1-d)z_j,v_{\\min},v_{\\max}),\\quad b_j=\\frac{\\tilde z_j-v_{\\min}}{\\Delta z}",
+              "explain": "自举后的点通常不落在原网格上，因此要把概率质量投影回固定支持。"
+            },
+            {
+              "kind": "p",
+              "text": "令 $\\ell_j=\\lfloor b_j\\rfloor,u_j=\\lceil b_j\\rceil$。若二者不同，向下格点加 $p_j(u_j-b_j)$，向上格点加 $p_j(b_j-\\ell_j)$。若相同，全部质量都加到该格点；直接用两个插值权重会把整数点的质量错误清零。"
+            },
+            {
+              "kind": "math",
+              "tex": "L_{\\rm cat}(\\theta)=-\\sum_i m_i\\log p_{\\theta,i}(s,a)",
+              "explain": "投影概率 m 在当前反传中固定。该 cross-entropy 对预测概率求导，不是对采样奖励或后继 argmax 求导。"
+            },
+            {
+              "kind": "p",
+              "text": "支持外的回报被裁剪，可能改变均值。即便投影步骤数值正确，过窄支持也会造成系统误差；长生命期的奖励尺度变化尤其需要检查这一点。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-quantiles",
+          "title": "4 · 分位数回归与均值决策",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "F_Z^{-1}(\\tau)=\\inf\\{z:F_Z(z)\\ge\\tau\\},\\qquad\\tau_i=\\frac{i+\\tfrac12}{N}",
+              "explain": "QR 表示将相同质量放在可学习的位置，位置对应不同分位水平，与固定位置、学习质量的 categorical 表示相反。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\rho_\\tau(u)=u\\bigl(\\tau-\\mathbf1[u<0]\\bigr),\\qquad\\partial_\\theta\\mathbb E\\rho_\\tau(Y-\\theta)=F_Y(\\theta)-\\tau",
+              "explain": "避开质量点时是普通导数；质量点处使用次梯度。正负误差权重不对称，使最优位置落在 τ 分位数。"
+            },
+            {
+              "kind": "math",
+              "tex": "L_{\\rm QR}=\\frac1{N^2}\\sum_{i,j}\\rho_{\\tau_i}(r+\\gamma(1-d)\\theta_j^-(s',a^*)-\\theta_i(s,a))",
+              "explain": "每个当前分位数与所有目标分位数配对。本页数值核使用 pinball loss；QR-DQN 原文实践使用平滑的 quantile Huber 变体。"
+            },
+            {
+              "kind": "p",
+              "text": "QR-DQN 的平均分位点近似均值，用于常规贪心选择。IQN 把分位水平也作为网络输入，可以采样不同水平并改变分位权重。改变权重为风险敏感控制时，已经改变决策准则，不能把这种变化只归因为预测更准确。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-risk",
+          "title": "5 · 尾部风险不是认识不确定性",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\operatorname{CVaR}_{\\eta}^{\\rm lower}(Z)=\\frac1\\eta\\int_0^\\eta F_Z^{-1}(u)\\,du,\\qquad0<\\eta\\le1",
+              "explain": "本章将收益的下尾平均称为 lower CVaR；有些文献用损失上尾，符号与最优化方向需要转换。"
+            },
+            {
+              "kind": "p",
+              "text": "收益二的确定策略，下尾 CVaR 仍是二；零或四各半的策略，在最差一半的 CVaR 为零。均值相同，风险偏好却给出不同选择。对于多步风险目标，还要区分初始时刻的全回报风险与递归风险度量；逐状态贪心最大化一个 CVaR 预测不自动解决时间一致性。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "6 · 两条分布更新的精确步骤",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "从真实或 replay 数据得到 $(s,a,r,s',d)$。\n按声明的准则选后继动作；标准版本使用分布均值。\nCategorical：平移并缩放 target atoms，裁剪支持，分配质量。\n  固定投影目标，对当前动作的概率做交叉熵更新。\nQuantile：计算所有当前/目标分位数对的 TD residual。\n  固定目标，用相应分位水平的非对称损失更新位置。\n同步 target；独立报告均值收益、分布校准与风险指标。",
+              "caption": "预测对象、训练损失和行动准则应分别记录。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "7 · 投影、分位梯度和风险手算",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "支持 $(-1,0,1)$，概率 $(0.2,0.5,0.3)$，奖励 $0.5$、折扣 $0.5$。目标点为 $(0,0.5,1)$。中间点的一半质量分到零、一，所以投影概率是 $(0,0.45,0.55)$，总质量一，均值 $0.55$。若真终止且奖励零，全部质量应落在零。"
+            },
+            {
+              "kind": "p",
+              "text": "数据为 $(0,2)$，$\\tau=0.75,\\theta=0.3$。两个 pinball 梯度平均为 $(1-0.75-0.75)/2=-0.25$，梯度下降提高位置。这里上分位数为二；下一章同一数据的 0.75 expectile 却为 1.5，两种不对称回归不能混用。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "8 · 可运行分布算子",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "distributional",
+              "caption": "分类投影、pinball 次梯度和离散分布下尾 CVaR，包含整数点与部分质量的处理。"
+            },
+            {
+              "kind": "p",
+              "text": "运行 test 检查质量守恒、支持裁剪、terminal 点质量、分位梯度的有限差分和 CVaR 部分原子。它不训练 C51 或 QR-DQN 网络。Dopamine 是 Google 研究团队提供的分布 RL 实现框架；阅读具体 agent 与配置，不能把框架默认值当作所有原论文的同一实验协议。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "9 · 适用边界与 CRL 衔接",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "预测分布变宽，既可能是环境风险上升，也可能是策略覆盖改变，不能直接解释成“不知道”。",
+                "固定支持的溢出、分位数交叉与低概率尾部样本不足，是不同的数值与统计问题。",
+                "依照期望行动的 distributional agent，并没有因此满足约束安全或最坏情况保证。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "持续任务中可以为 GVF 预测整个未来信号分布，也可以研究奖励分布变化后的校准与尾部恢复。设计对照时固定行动准则，才能先测分布表示本身的影响；若同时更换风险目标，应把目标变化单独报告。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "10 · 练习与答案",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：C51 的 51 表示 51 个不同策略吗？答：不是，表示固定支持上的概率原子数。",
+                "问：原子恰落在格点时两个插值权重都为零，怎么办？答：直接把全部质量放入该格点。",
+                "问：回报方差大就应探索更多吗？答：不一定。已知的环境随机性不等于可以由数据减少的知识不确定性。",
+                "实验：将奖励从 0.5 改为五而保持支持 [-1,1]。投影全部落在一，质量仍守恒但均值被截断；这说明“测试归一化通过”不足以确认建模正确。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Bellemare、Dabney、Munos · A Distributional Perspective on Reinforcement Learning",
+          "url": "https://proceedings.mlr.press/v70/bellemare17a.html",
+          "note": "固定策略分布算子、控制的差别与 categorical 算法。"
+        },
+        {
+          "title": "Dabney et al. · Distributional Reinforcement Learning with Quantile Regression",
+          "url": "https://arxiv.org/abs/1710.10044",
+          "note": "QR-DQN、分位数投影和 quantile Huber loss。"
+        },
+        {
+          "title": "Dabney et al. · Implicit Quantile Networks",
+          "url": "https://arxiv.org/abs/1806.06923",
+          "note": "以分位水平为输入的分布表示。"
+        },
+        {
+          "title": "Google · Dopamine",
+          "url": "https://github.com/google/dopamine",
+          "note": "原研究团队框架，提供分布算法与 Atari 工程；非本页标准库核。"
+        },
+        {
+          "title": "Bellemare、Dabney、Rowland · Distributional Reinforcement Learning",
+          "url": "https://direct.mit.edu/books/oa-monograph/5590/Distributional-Reinforcement-Learning",
+          "note": "原作者体系教材，可按 Bellman 分布、投影、控制与 statistical functionals 深入。"
+        }
+      ],
+      "problem": {
+        "setting": "固定策略下，不仅预测回报均值，还预测整个回报分布，再明确控制时如何使用它。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "随机回报 $Z^\\pi(s,a)$、有限支撑点或分位数表示；$\\mathcal L(Z)$ 表示分布。"
+        ],
+        "sought": "逼近回报分布；是否改用风险目标是另一个选择。",
+        "information": "样本同时包含环境与策略随机性；不能仅由回报分散程度推断知识不足。",
+        "objective": {
+          "tex": "Z^\\pi(s,a)\\overset D=R+\\gamma Z^\\pi(S^{\\prime},A^{\\prime}),\\qquad A^{\\prime}\\sim\\pi(\\cdot\\mid S^{\\prime})",
+          "explain": "等号表示分布相等；右侧按环境核和未来随机性联合生成。均值控制仍按 $\\mathbb E[Z]$ 选动作，CVaR 等风险准则会改变问题。"
+        },
+        "assumptions": [
+          "分布的矩、固定支撑投影和距离需明确。",
+          "固定策略分布算子的收缩不能未经证明外推为所有分布控制算子的收缩。"
+        ],
+        "success": "分别报告分布拟合、均值策略收益及所声明风险指标；不能相互替代。",
+        "relations": [
+          {
+            "kind": "generalization",
+            "target": "value",
+            "explanation": "本章把固定策略预测对象由期望扩为分布，均值是其统计量；控制准则仍可保持期望。"
+          },
+          {
+            "kind": "composition",
+            "target": "objectives",
+            "explanation": "本章的分布预测需与另选的评价准则组合。默认均值控制并未改变目标；只有额外采用尾部风险准则时才改变排序，并需检查时间一致性。"
+          }
+        ],
+        "nonGoals": [
+          "把 return variance 当作后验 epistemic uncertainty。"
+        ],
+        "solution": {
+          "difficulty": "Bellman 备份后的分布未必仍落在有限参数表示中。",
+          "insight": "保留分布递推，再明确如何投影或用分位回归近似它。",
+          "steps": [
+            {
+              "sectionId": "lesson-notation",
+              "title": "定义分布版备份",
+              "explanation": "先固定策略，区分随机变量递推与其均值递推。"
+            },
+            {
+              "sectionId": "lesson-derive",
+              "title": "在离散支撑上重新分配概率质量",
+              "explanation": "Categorical 投影的边界与质量守恒是核心检查。"
+            },
+            {
+              "sectionId": "lesson-quantiles",
+              "title": "改用分位数定位分布",
+              "explanation": "分位回归估计位置，不使用同一套概率质量参数。"
+            }
+          ],
+          "guarantees": "固定策略下的理论、有限表示误差和控制改进是三层不同结论。",
+          "alternatives": [
+            {
+              "name": "C51 / quantile methods",
+              "difference": "分别固定值支撑并学习质量，或固定分位水平并学习位置。"
+            },
+            {
+              "name": "均值 / 风险控制",
+              "difference": "前者改变预测工具，后者额外改变策略评价。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "study-deep-offline",
+      "track": "deep",
+      "order": 10,
+      "path": "foundations/deep/offline/",
+      "title": "离线强化学习：数据支持、策略评估与保守改进",
+      "question": "不能补采数据时，怎样判断策略好坏，怎样避免利用没有证据的高价值动作？",
+      "objectives": [
+        "把数据支持假设写入 IS 与 doubly robust 评估。",
+        "推导 CQL 正则和 IQL expectile 的不同作用。",
+        "分开学习策略、选择超参数与独立评估。"
+      ],
+      "prerequisites": [
+        {
+          "term": "条件概率与期望",
+          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+        },
+        {
+          "term": "MDP 与价值",
+          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+        },
+        {
+          "term": "优化与梯度",
+          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+        }
+      ],
+      "bookSections": [
+        "Jiang、Li：Doubly Robust OPE",
+        "Kumar et al.：CQL",
+        "Kostrikov、Nair、Levine：IQL"
+      ],
+      "connectsTo": [
+        "control",
+        "deep-value",
+        "retention",
+        "experiments"
+      ],
+      "executable": {
+        "file": "extended_foundations_lab.py",
+        "command": "python3 extended_foundations_lab.py test",
+        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 固定数据改变了纠错方式",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "Offline RL 用已经收集的数据学习策略，训练过程中不能任意向环境补采样。Off-policy 只说明行为策略与目标策略不同；在线 SAC 也可以 off-policy，因此两个概念不等价。设计者决定数据集、保留字段、覆盖和评估权限；算法不能从没有观测的行为结果中产生证据。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathcal D=\\{\\tau_i\\}_{i=1}^n,\\quad\\tau_i\\sim\\mu,\\qquad J(\\pi)=\\mathbb E_\\pi\\sum_{t=0}^{T-1}\\gamma^tR_{t+1}",
+              "explain": "先考虑完整有限轨迹、相同环境、已记录行为概率与固定目标策略。数据缺失或策略依赖隐藏信息会改变可识别性。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\pi(a\\mid h)>0\\ \\Longrightarrow\\ \\mu(a\\mid h)>0",
+              "explain": "支持条件必须沿目标可能访问的历史成立。只在初始状态有共同动作支持还不够。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-notation",
+          "title": "2 · 重要性采样如何变换轨迹分布",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\rho_t=\\frac{\\pi(A_t\\mid H_t)}{\\mu(A_t\\mid H_t)},\\qquad w_{0:t}=\\prod_{k=0}^{t}\\rho_k",
+              "explain": "在环境与初始分布相同的前提下，轨迹概率比中的环境项抵消，只保留动作概率比。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\widehat J_{\\rm PDIS}=\\frac1n\\sum_{i=1}^n\\sum_{t=0}^{T-1}\\gamma^t w^{(i)}_{0:t}R^{(i)}_{t+1}",
+              "explain": "奖励只需用产生它之前的动作前缀校正。该形式在正确概率、支持和可积条件下无偏，但长乘积可能造成巨大方差。"
+            },
+            {
+              "kind": "p",
+              "text": "加权归一化、截断比率可以改善有限样本稳定性，却通常引入偏差。有效样本量可以提示权重集中，但不能证明未覆盖区域没有风险。若目标策略和评价器是在同一数据上选出的，还存在自适应选择偏差，不能直接援引固定策略无偏结论。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-derive",
+          "title": "3 · Doubly robust：模型预测加残差校正",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\hat V_t(s)=\\sum_a\\pi(a\\mid s)\\hat Q_t(s,a),\\quad\\hat V_T=0",
+              "explain": "有限时域价值可以随时间变化。Q 与 V 必须按同一目标策略对应，不能任取互不一致的两个网络。"
+            },
+            {
+              "kind": "math",
+              "tex": "D_T=0,\\qquad D_t=\\hat V_t(S_t)+\\rho_t\\left[R_{t+1}+\\gamma D_{t+1}-\\hat Q_t(S_t,A_t)\\right]",
+              "explain": "从轨迹末端反向递推；最终使用 $D_0$。模型提供低方差基准，概率比校正模型残差。"
+            },
+            {
+              "kind": "p",
+              "text": "正确重要性比使残差校正的期望补回模型偏差。展开递推后，模型项在条件期望中相消，从而得到目标回报。模型准确时，残差的条件均值接近零，方差往往降低；但并非每组样本中都比 IS 好。独立训练或交叉拟合 nuisance 模型，有助于避免训练误差与评价样本相关。"
+            },
+            {
+              "kind": "p",
+              "text": "“双稳健”不是两个近似有误也必然正确。需要明确哪一组条件成立、模型与策略如何拟合，以及覆盖是否足够。本页用已知行为策略与固定模型展示估计器，不用它宣称有限数据下策略安全。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-cql",
+          "title": "4 · CQL：限制没有数据支持的高值",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "L_Q=L_{\\rm Bellman}+\\alpha\\left(\\mathbb E_s\\log\\sum_a e^{Q(s,a)}-\\mathbb E_{(s,a)\\sim\\mathcal D}Q(s,a)\\right)",
+              "explain": "这是离散动作 CQL 型核心正则；完整算法还有目标网络、采样分布与正则权重等条件。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\frac{\\partial L_{\\rm reg}}{\\partial Q(s,a)}=\\operatorname{softmax}(Q(s,\\cdot))_a-p_{\\mathcal D}(a\\mid s)",
+              "explain": "正则压低高值但缺乏数据支持的动作，并相对提高数据动作。Bellman 项仍负责把价值连接到实际奖励。"
+            },
+            {
+              "kind": "p",
+              "text": "相对保守不等于每个状态动作都是真实价值的逐点下界。原论文的界有具体分布、采样和权重条件。连续动作的 log-integral 通常用采样近似；不能直接枚举所有动作。本核只检验有限动作正则及其梯度。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-iql",
+          "title": "5 · IQL：在数据动作内近似策略改进",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}L_V=\\mathbb E_{\\mathcal D}\\left[|\\tau-\\mathbf1[u<0]|u^2\\right]\\\\u=\\operatorname{sg}(Q_{\\bar\\theta}(s,a))-V_\\psi(s)\\\\\\tau>\\tfrac12\\end{gathered}",
+              "explain": "对偏高 Q 的残差赋更大权重，拟合数据动作价值的上 expectile。这里是非对称平方损失，不是上一章的分位数 pinball loss。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathbb E\\!\\left[|\\tau-\\mathbf1[Q-v<0]|(Q-v)\\right]=0",
+              "explain": "对 v 求导并令其为零得到 expectile 的平衡方程。它随残差大小变化，不只看有多少样本在两侧。"
+            },
+            {
+              "kind": "math",
+              "tex": "L_Q=\\mathbb E_{\\mathcal D}\\left[\\left(Q_\\theta(s,a)-\\operatorname{sg}\\!\\left(r+\\gamma(1-d)V_\\psi(s')\\right)\\right)^2\\right]",
+              "explain": "Q 的目标使用后继 V，不需要在未见动作上查询当前策略的 Q。V 与 Q 的更新顺序和目标副本应在实现中明确。"
+            },
+            {
+              "kind": "math",
+              "tex": "L_\\pi=-\\mathbb E_{\\mathcal D}\\left[\\operatorname{sg}\\!\\left(e^{\\beta(Q_{\\bar\\theta}(s,a)-V_\\psi(s))}\\right)\\log\\pi_\\phi(a\\mid s)\\right]",
+              "explain": "actor 做优势加权行为克隆。本章 β 是逆温度；工程里常对权重裁剪以稳定训练，裁剪会改变精确加权目标。"
+            },
+            {
+              "kind": "p",
+              "text": "IQL 避免训练目标中显式最大化未见动作，但函数逼近得到的策略仍可能泛化到数据外。不能把它理解成无条件的支持保证，也不能认为上 expectile 等于任意高质量未知动作的真实价值。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "6 · 学习与评估分成两条过程",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "评估：固定待评策略及独立数据，检查行为概率与支持。\n  从末端计算 DR，或前向累乘 PDIS 权重。\n  汇总独立轨迹，报告区间、权重集中和数据限制。\nIQL 学习：在 dataset batch 上先拟合 expectile V。\n  用固定后继 V 拟合 Q，再更新 Q 的 target 副本。\n  用 detached advantage 权重更新数据动作的 log likelihood。\nCQL 学习：在 Bellman 回归上加入声明的保守正则。\n策略选择与最终评价使用分离的数据或明确的验证协议。",
+              "caption": "离线模拟器评估若可用，是额外权限；它不是所有真实离线任务都具备的条件。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "7 · 同一小数据解释三个公式",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "bandit 两动作行为概率均为 $0.5$，目标概率 $(0.8,0.2)$，确定奖励 $(1,3)$，目标收益为 $1.4$。IS 在动作零样本上给 $1.6$，在动作一样本上给 $1.2$，平均为 $1.4$。若模型完全准确，DR 的残差为零，每个样本都返回 $1.4$；模型全零时 DR 退化为 IS。"
+            },
+            {
+              "kind": "p",
+              "text": "对同频 Q 数据 $(0,2)$，$\\tau=0.75$，expectile 方程为 $0.75(2-v)=0.25v$，解为 $v=1.5$。取 $\\beta=1$，分类 actor 的加权克隆概率与 $(e^{-1.5},e^{0.5})$ 成正比，因此高值动作概率约 $0.8808$。这不是直接执行确定 argmax。"
+            },
+            {
+              "kind": "p",
+              "text": "若数据只含动作零，即使网络把动作一的 Q 写成十，本页精确表格加权克隆仍给动作一零概率；神经泛化时不能直接援引这条表格性质。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "8 · 估计器与目标函数的可执行核",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "offline",
+              "caption": "PDIS、顺序 DR、expectile 求根、表格加权克隆与 CQL 梯度。"
+            },
+            {
+              "kind": "p",
+              "text": "运行 test 检查 DR 与零模型 IS 的一致、准确模型的基准值、零行为概率拒绝、expectile 与 quantile 的差别以及 CQL 有限差分。源码不含完整 CQL/IQL 神经训练，也不对任意数据产生置信保证。IQL 作者仓库是 JAX 实现；其中 actor.py、critic.py 与 value_net.py 分别对应上述三类更新。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "9 · 数据限制与 CRL 的历史经验",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "隐藏混杂：行为者使用了数据中未记录的信息时，仅从观察字段估计行为概率可能不足。",
+                "未知终止：人工日志截断与真正终止混用会改变 Q 和 DR 的尾部。",
+                "持续变化：不同年份或阶段的数据可能来自不同动力学，普通 stationary OPE 的环境抵消不再成立。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "CRL 中历史 replay 可以提供旧技能证据，但其时间戳、策略概率、传感器版本与任务条件同样重要。可分别比较覆盖不足和环境变化两种干预，避免把离线外推、知识遗忘与世界非平稳合并成一个指标。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "10 · 练习与答案",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：已知目标动作的概率，是否就能做 IS？答：还需对应行为概率、支持和相同环境等条件。",
+                "问：DR 中用任意 V 与 Q 都能保持同样理论性质吗？答：不能；需要其目标策略关系及所用估计条件。",
+                "问：expectile 0.75 等于样本 75% 分位数吗？答：不等于，例子中分别为 1.5 和二。",
+                "实验：固定模型为零，给两步奖励 (1,2)、比率 (2,0.5)、折扣 0.9。PDIS 和 DR 均应得到 3.8；这验证代数，不证明数据覆盖。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Jiang、Li · Doubly Robust Off-policy Value Evaluation",
+          "url": "https://proceedings.mlr.press/v48/jiang16.html",
+          "note": "顺序 doubly robust 估计器、条件和方差分析。"
+        },
+        {
+          "title": "Kumar et al. · Conservative Q-Learning",
+          "url": "https://arxiv.org/abs/2006.04779",
+          "note": "保守价值目标与理论结论的适用条件。"
+        },
+        {
+          "title": "Kumar · CQL 原作者代码",
+          "url": "https://github.com/aviralkumar2907/CQL",
+          "note": "离散与连续动作实验工程；需对照具体配置。"
+        },
+        {
+          "title": "Kostrikov、Nair、Levine · Implicit Q-Learning",
+          "url": "https://arxiv.org/abs/2110.06169",
+          "note": "expectile 价值、隐式改进与加权行为克隆。"
+        },
+        {
+          "title": "Kostrikov · IQL 原作者代码",
+          "url": "https://github.com/ikostrikov/implicit_q_learning",
+          "note": "JAX 实现，含离线训练和在线微调入口。"
+        },
+        {
+          "title": "UC Berkeley · CS 285",
+          "url": "https://rail.eecs.berkeley.edu/deeprlcourse/",
+          "note": "原课程的 exploration、model-based RL 与 offline RL 讲义和视频入口；按问题专题阅读，不必按网络规模划分领域。"
+        }
+      ],
+      "problem": {
+        "setting": "只能使用固定数据集，学习期间不能向环境补采反例。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "数据集 $\\mathcal D$、其采集协议及可用行为概率；候选策略类 $\\Pi$。"
+        ],
+        "sought": "从数据中选出可支持的高价值策略，并估计它的真实性能。",
+        "information": "未被数据支持的行为没有自动可识别的价值；行为概率未知时，某些 IS 估计器不能直接使用。",
+        "objective": {
+          "tex": "\\hat\\pi=\\mathcal A(\\mathcal D)\\in\\Pi,\\qquad J(\\hat\\pi)\\ \\text{under the real environment}",
+          "explain": "外部控制目标没有变，改变的是数据权限。CQL 和 IQL 的损失是不同保守近似机制；它们不能为任意无覆盖区域创造可辨识性。"
+        },
+        "assumptions": [
+          "评价和改进结论需覆盖、函数可实现性或模型误差等条件。",
+          "策略选择与最终评价最好使用分离数据或适当选择校正。"
+        ],
+        "success": "在允许的独立评估下报告真实收益及估计不确定性，并检查对数据外动作的依赖。",
+        "relations": [
+          {
+            "kind": "protocol",
+            "target": "control",
+            "explanation": "禁止继续交互，无法通过在线试验纠正夸大的动作价值。"
+          },
+          {
+            "kind": "composition",
+            "target": "retention",
+            "explanation": "历史数据可以帮助保留，但数据可见性不等于新情境覆盖。"
+          }
+        ],
+        "nonGoals": [
+          "仅凭固定数据确定任意未访问动作的真实效果。"
+        ],
+        "solution": {
+          "difficulty": "策略改进会偏好估计高但缺乏证据的动作，且无法在线纠正。",
+          "insight": "分开离线策略评价和保守策略改进，明确各自使用的信息假设。",
+          "steps": [
+            {
+              "sectionId": "lesson-derive",
+              "title": "校正可评价行为的估计",
+              "explanation": "Doubly robust 结合预测与残差，但仍需其条件。"
+            },
+            {
+              "sectionId": "lesson-cql",
+              "title": "限制缺乏证据的高值",
+              "explanation": "CQL 在 critic 中加入保守项，不等于已经知道数据外真值。"
+            },
+            {
+              "sectionId": "lesson-iql",
+              "title": "在数据动作内组织改进",
+              "explanation": "IQL 避免直接对任意未见动作最大化，并通过优势加权提取策略。"
+            }
+          ],
+          "guarantees": "保守性结论只在相应假设和优化条件下成立；无支持数据下存在根本不可识别性。",
+          "alternatives": [
+            {
+              "name": "OPE / offline control",
+              "difference": "前者评价给定策略，后者还根据数据选择策略。"
+            },
+            {
+              "name": "CQL / IQL",
+              "difference": "分别限制 critic 的数据外高值与在数据支持内近似策略改进。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "study-deep-model-based",
+      "track": "deep",
+      "order": 11,
+      "path": "foundations/deep/model-based/",
+      "title": "模型学习与规划：MPC、短模型 rollout 和潜在想象",
+      "question": "模型在哪里进入决策，预测误差又怎样变成控制误差？",
+      "objectives": [
+        "由监督建模到有限时域 MPC。",
+        "推导多步误差传播与短 rollout 的动机。",
+        "区分 MPC、MBPO 和 Dreamer 的模型使用位置。"
+      ],
+      "prerequisites": [
+        {
+          "term": "条件概率与期望",
+          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+        },
+        {
+          "term": "MDP 与价值",
+          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+        },
+        {
+          "term": "优化与梯度",
+          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+        }
+      ],
+      "bookSections": [
+        "PETS",
+        "Janner et al.：MBPO",
+        "Hafner et al.：DreamerV3",
+        "Algorithms for Decision Making：planning"
+      ],
+      "connectsTo": [
+        "models",
+        "planning",
+        "dyna",
+        "state",
+        "architectures"
+      ],
+      "executable": {
+        "file": "extended_foundations_lab.py",
+        "command": "python3 extended_foundations_lab.py test",
+        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 学会预测，不等于已经会规划",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "模型可以预测原状态、潜在状态、奖励、终止概率或某种技能的结果。Model-based 方法用这些预测来选择行动或训练价值与策略。仅增加一个辅助预测头，却不让它参与行动相关计算，不能据此判断已经获得模型规划的优势。神经网络、线性系统与表格模型都能承担这一角色。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\hat P_\\psi(s'\\mid s,a),\\quad \\hat r_\\psi(s,a),\\quad \\hat c_\\psi(s,a)",
+              "explain": "分别预测转移、奖励和继续概率。任务定义决定真正终止，日志截断不能自动作为零继续概率。"
+            },
+            {
+              "kind": "p",
+              "text": "外部设计者选择观察表示、模型损失、规划深度、终端价值和计算预算。运行时 agent 可以从真实经验更新模型与策略。若使用设计者提供的精确模拟器，本页称它为规划 oracle，不将模型知识计作学习得到。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-notation",
+          "title": "2 · 从单步数据学习动力学",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "L_{\\rm model}(\\psi)=-\\mathbb E_{\\mathcal D}\\log\\hat P_\\psi(S'\\mid S,A)",
+              "explain": "最大似然训练概率模型。若使用固定方差 Gaussian，负 log-likelihood 的参数相关部分等价于均方误差。"
+            },
+            {
+              "kind": "math",
+              "tex": "s_{t+1}=s_t+ba_t+\\epsilon_t,\\qquad\\hat b=\\frac{\\sum_ta_t(s_{t+1}-s_t)}{\\sum_ta_t^2}",
+              "explain": "在零均值噪声、无未建模漂移且分母非零的标量例子中，最小二乘对 b 求导得到此解。没有动作激励时不能识别增益。"
+            },
+            {
+              "kind": "p",
+              "text": "低训练误差只约束数据分布附近。优化器可能选择训练数据从未支持过的动作序列，专门利用模型的系统误差。留出数据要检查多步预测和规划实际访问的区域；多个相似网络的分歧小，也不能证明模型正确。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-derive",
+          "title": "3 · MPC 的有限时域目标与重新规划",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\hat s_{k+1}=\\hat f_\\psi(\\hat s_k,a_k),\\quad\\hat s_0=s_t",
+              "explain": "每轮规划以当前真实观察或估计状态为起点，内部向前生成候选轨迹。"
+            },
+            {
+              "kind": "math",
+              "tex": "a_{0:H-1}^*=\\arg\\max_{a_{0:H-1}}\\left[\\sum_{k=0}^{H-1}\\gamma^k\\hat r_\\psi(\\hat s_k,a_k)+\\gamma^H\\hat V(\\hat s_H)\\right]",
+              "explain": "有限时域优化中的终端价值近似更远的后果。它不是免费得到的真值，误差和训练来源都需要说明。"
+            },
+            {
+              "kind": "p",
+              "text": "MPC 只执行最优序列的第一个动作。收到新观察后重新规划，而不是盲目执行整个序列。这样可纠正部分开放环误差，但不能自动保证稳定或安全。连续动作常用 CEM、梯度或采样优化；本核用有限候选枚举，便于精确核对。"
+            },
+            {
+              "kind": "p",
+              "text": "如果规划本身每步消耗大量模型调用，真实交互样本少不等于总计算便宜。需要分别报告环境步、模型步、候选数、规划深度和墙钟时间。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-error",
+          "title": "4 · 为什么短模型 rollout 有时更可靠",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "e_{k+1}\\le L_f e_k+\\epsilon_f,\\quad e_0=0,\\qquad e_H\\le\\epsilon_f\\sum_{j=0}^{H-1}L_f^j",
+              "explain": "在相同动作序列、统一单步误差界和 Lipschitz 条件下，插入真实动力学在预测状态处的值即可得到误差递推。"
+            },
+            {
+              "kind": "math",
+              "tex": "|\\hat G-G|\\le\\sum_{k=0}^{H-1}\\gamma^k(\\epsilon_r+L_r e_k)+\\gamma^H L_Ve_H",
+              "explain": "此式还假定奖励误差界、奖励和终端价值的 Lipschitz 条件，并使用相同终端价值函数；它不是任意像素模型的通用保证。"
+            },
+            {
+              "kind": "p",
+              "text": "MBPO 从真实 replay 状态出发生成较短的模型轨迹，将这些合成样本用于 off-policy 策略学习。短分支缩短连续承受模型误差的距离，同时保留数据增广。起点覆盖不足、模型偏差和奖励模型错误仍然存在，因此 rollout 长度是一项需要验证的选择，不是越短越优的定理。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-latent",
+          "title": "5 · Dreamer 把模型计算用于想象中的策略学习",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "h_t=f_\\psi(h_{t-1},z_{t-1},a_{t-1}),\\quad z_t\\sim q_\\psi(z_t\\mid h_t,o_t),\\quad z_{t+1}\\sim p_\\psi(z_{t+1}\\mid h_{t+1})",
+              "explain": "有真实观察时 posterior 编码状态；想象时使用 prior 预测下一潜在状态。确定性记忆与随机变量承担不同角色。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathcal L_{\\rm model}=-\\mathbb E_q\\sum_t\\left[\\log p_\\psi(o_t\\mid h_t,z_t)+\\log p_\\psi(r_t\\mid h_t,z_t)-\\beta D_{\\rm KL}(q_\\psi\\Vert p_\\psi)\\right]",
+              "explain": "这是解释重建、奖励与潜在一致性的简化变分目标，不是 DreamerV3 完整工程损失。实际版本还有继续预测、KL balancing、free bits 和尺度变换等设计。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}\\hat G_t^\\lambda=\\hat r_t+\\gamma\\hat c_t\\left[(1-\\lambda)V(\\hat s_{t+1})+\\lambda\\hat G_{t+1}^\\lambda\\right]\\\\\\hat G_H^\\lambda=V(\\hat s_H)\\end{gathered}",
+              "explain": "想象轨迹中的多步目标，末端使用 critic。奖励与继续概率由模型产生，因此目标同时受模型和价值误差影响。"
+            },
+            {
+              "kind": "p",
+              "text": "Dreamer 家族在学得的世界模型中训练 actor–critic，部署通常可直接执行 actor。MPC 则在当下选择动作时做序列优化。潜在模型不意味着完全无需观察重建，也不意味着任意 latent 就是控制充分状态；应查看具体版本训练哪些预测、哪些梯度流入模型。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "6 · 三个模型使用位置",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "收集真实转移，更新模型，并在留出数据上检查误差。\nMPC：从当前状态生成候选序列，评价奖励和终端价值。\n  执行第一个动作，观察后重新规划。\nMBPO：从真实 replay 状态分支出短模型轨迹。\n  混合真实和模型数据，按声明比例更新 off-policy agent。\nDreamer：由真实序列推断潜在状态，再在 prior 中想象。\n  在想象轨迹上训练 actor 和 critic。\n分别计数真实数据、模型生成、梯度更新与决策时间。",
+              "caption": "本章把机制分别说明，不将三个名字当成同一算法的可互换实现。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "7 · 一维控制与错误模型",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "状态初值零，目标二，动作集合 $(-1,0,1)$，模型 $\\hat s'=s+a$。两步成本为每个后继状态到目标的平方距离加 $0.1a^2$。序列 $(1,1)$ 得到状态 $(1,2)$，成本 $1+0.1+0+0.1=1.2$，优于 $(1,0)$ 的 2.1。MPC 此刻只执行第一个一。"
+            },
+            {
+              "kind": "p",
+              "text": "若真实增益为 0.5，同一组三个动作一产生真实状态 $(0.5,1,1.5)$，模型却预测 $(1,2,3)$。误差是 $(0.5,1,1.5)$，恰好达到 $L_f=1,\\epsilon_f=0.5$ 的累计界。重规划可以利用新状态，但若模型增益一直错误，偏差不会自动消失。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "8 · 学模型、枚举规划与想象回报核",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "model_based",
+              "caption": "标量模型、精确枚举 MPC、误差递推与有限想象 λ-return；本核的想象区间内继续概率均为一，末端使用给定价值。"
+            },
+            {
+              "kind": "p",
+              "text": "运行 demo 得到两步最优候选与误差曲线，运行 test 检查最小二乘、规划序列及 λ 的两个极端。它不是完整 PETS、MBPO 或 Dreamer 复现。PETS 与 MBPO 作者仓库提供原论文工程；danijar/dreamerv3 明确是作者维护的重实现，不能冒充原内部实验快照。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "9 · 持续变化中的模型寿命",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "模型陈旧：动力学改变后，更多规划可能放大旧知识错误，而不是补偿它。",
+                "表示错误：低重建损失可能忽略控制相关变量；belief 与 latent 的充分性要单独检验。",
+                "未知继续概率：把任务截止和人为采样停止混为一类，会改变想象长度与价值。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "CRL 可以研究模型何时失效、哪些可复用以及每步规划预算怎样分配。有效对照包括真实模型 oracle、冻结旧模型和在线更新模型，并保持总计算预算一致。模型能支持未来新目标，才与持续构建的可复用知识直接相关。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "10 · 练习与答案",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：模型误差很小，长规划是否总是更好？答：不保证；误差累积、优化利用偏差和终端价值误差仍有影响。",
+                "问：MPC 必須执行完整最优动作序列吗？答：不必，标准 receding-horizon 只执行首动作并重新规划。",
+                "问：拟合标量增益时所有动作都是零，会得到什么？答：分母为零，数据无法识别增益，不能静默给出可信模型。",
+                "实验：保持候选动作不变，将模型增益改为 0.5，对照真实轨迹和原模型轨迹；区分模型学习带来的变化与增加规划候选数带来的变化。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Chua et al. · Deep Reinforcement Learning in a Handful of Trials",
+          "url": "https://arxiv.org/abs/1805.12114",
+          "note": "PETS 原文：概率模型与候选轨迹评估。"
+        },
+        {
+          "title": "Chua et al. · PETS 作者代码",
+          "url": "https://github.com/kchua/handful-of-trials",
+          "note": "概率动力学 ensemble 与 trajectory sampling 的原论文实现。"
+        },
+        {
+          "title": "Janner et al. · When to Trust Your Model",
+          "url": "https://arxiv.org/abs/1906.08253",
+          "note": "MBPO 的短分支 rollout、模型偏差与实践动机。"
+        },
+        {
+          "title": "Janner · MBPO 原作者代码",
+          "url": "https://github.com/jannerm/mbpo",
+          "note": "真实/模型 buffer、rollout schedule 和 SAC 工程。"
+        },
+        {
+          "title": "Hafner et al. · Mastering Diverse Domains through World Models",
+          "url": "https://arxiv.org/abs/2301.04104",
+          "note": "DreamerV3 世界模型与想象控制。"
+        },
+        {
+          "title": "Hafner · dreamerv3",
+          "url": "https://github.com/danijar/dreamerv3",
+          "note": "作者维护的重实现；仓库公开说明与原内部实现的区别。"
+        },
+        {
+          "title": "Kochenderfer、Wheeler、Wray · Algorithms for Decision Making",
+          "url": "https://algorithmsbook.com/",
+          "note": "作者书站提供决策、信念状态、模型与规划教材及配套 Julia 代码入口。"
+        },
+        {
+          "title": "UC Berkeley · CS 285",
+          "url": "https://rail.eecs.berkeley.edu/deeprlcourse/",
+          "note": "原课程的 exploration、model-based RL 与 offline RL 讲义和视频入口；按问题专题阅读，不必按网络规模划分领域。"
+        }
+      ],
+      "problem": {
+        "setting": "从真实转移学习后果模型，再决定模型计算在训练或行动的哪个位置发挥作用。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "模型 $\\hat p_\\phi$、规划时域 $H$、模型计算预算 $B$、终点价值 $\\hat V$。"
+        ],
+        "sought": "用模型辅助真实控制；模型预测准确与控制表现分别衡量。",
+        "information": "模型只在训练数据覆盖范围内获得直接约束；策略可能主动进入模型错误区域。",
+        "objective": {
+          "tex": "\\max_{a_{0:H-1}}\\mathbb E_{\\hat p_\\phi}\\!\\left[\\sum_{k=0}^{H-1}\\gamma^kR_{k+1}+\\gamma^H\\hat V(S_H)\\right]",
+          "explain": "这是 MPC 的模型内开环序列目标，执行第一个动作后重规划。MBPO 与 Dreamer 使用模型的位置不同，不都求这个动作序列问题。"
+        },
+        "assumptions": [
+          "有限模型预算；模型奖励、终止及动作语义与真实系统一致。",
+          "模型误差界需说明在哪个状态动作分布上成立。"
+        ],
+        "success": "分别控制模型质量、模型使用长度和额外计算，判断收益来自哪一部分。",
+        "relations": [
+          {
+            "kind": "composition",
+            "target": "models",
+            "explanation": "模型学习是规划的输入问题；下游查询决定需要保留哪些后果。"
+          },
+          {
+            "kind": "composition",
+            "target": "planning",
+            "explanation": "模型存在之后仍需选择备份位置、深度和预算。"
+          }
+        ],
+        "nonGoals": [
+          "用一步预测误差低证明长程规划可靠。"
+        ],
+        "solution": {
+          "difficulty": "规划越积极，越可能利用模型误差；长虚拟轨迹会累积分布偏移。",
+          "insight": "分别设计模型、使用方式与误差控制，不将所有模型方法视为同一个 rollout 算法。",
+          "steps": [
+            {
+              "sectionId": "lesson-notation",
+              "title": "先确定模型学习对象",
+              "explanation": "预测状态、奖励和终止的目标必须与后续查询一致。"
+            },
+            {
+              "sectionId": "lesson-derive",
+              "title": "用有限时域并反复重规划",
+              "explanation": "MPC 用真实新观测纠正计划，但仍依赖模型和尾值。"
+            },
+            {
+              "sectionId": "lesson-error",
+              "title": "限制模型展开的误差",
+              "explanation": "短 rollout 用真实状态作起点；长度是误差与计算的折衷。"
+            },
+            {
+              "sectionId": "lesson-latent",
+              "title": "把模型用于策略训练",
+              "explanation": "潜在想象通过学习策略传递模型收益，不等同于每次行动显式搜索。"
+            }
+          ],
+          "guarantees": "精确模型的规划性质不覆盖有偏神经模型；控制错误需结合实际访问分布分析。",
+          "alternatives": [
+            {
+              "name": "MPC / Dyna",
+              "difference": "分别直接选择当前动作与更新可复用价值。"
+            },
+            {
+              "name": "MBPO / Dreamer",
+              "difference": "模型生成的数据用途、表示空间和策略优化路径不同。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "study-deep-constraints",
+      "track": "deep",
+      "order": 12,
+      "path": "foundations/deep/constraints/",
+      "title": "约束强化学习：占据测度、拉格朗日与可行策略",
+      "question": "“回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？",
+      "objectives": [
+        "从折扣访问频率推导 CMDP 的占据流约束。",
+        "解释随机策略为何可能必要及拉格朗日乘子的方向。",
+        "区分平均代价、概率约束、硬约束和训练期安全。"
+      ],
+      "prerequisites": [
+        {
+          "term": "条件概率与期望",
+          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+        },
+        {
+          "term": "MDP 与价值",
+          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+        },
+        {
+          "term": "优化与梯度",
+          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+        }
+      ],
+      "bookSections": [
+        "Constrained Markov Decision Processes",
+        "Achiam et al.：Constrained Policy Optimization"
+      ],
+      "connectsTo": [
+        "objectives",
+        "control",
+        "planning",
+        "experiments"
+      ],
+      "executable": {
+        "file": "extended_foundations_lab.py",
+        "command": "python3 extended_foundations_lab.py test",
+        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 约束不是另一个奖励名称",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\max_\\pi J_r(\\pi),\\qquad J_c(\\pi)=\\mathbb E_\\pi\\sum_{t=0}^\\infty\\gamma^t C_{t+1}\\le d",
+              "explain": "CMDP 在回报之外声明代价预算。代价可以表示能耗、碰撞次数或其他事件，但其定义由任务提供。"
+            },
+            {
+              "kind": "p",
+              "text": "给奖励减去固定惩罚系数，是优化一个标量化目标；满足给定预算是另一个问题。除非有额外分析，不能从“惩罚很大”推出预算合格。设计者提供成本传感器、约束阈值、初始分布和事故定义；这些量并不是算法从奖励标量自动推断出的。"
+            },
+            {
+              "kind": "p",
+              "text": "这里先考虑有限状态动作、平稳转移和折扣期望代价。期望累计代价小，仍允许某些轨迹发生严重事故。若目标是每次执行都不越界、事故概率低于阈值或不可逆状态永不进入，需要不同约束与模型条件。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-notation",
+          "title": "2 · 用占据测度表示整个策略",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "x_\\pi(s,a)=(1-\\gamma)\\mathbb E_\\pi\\sum_{t=0}^\\infty\\gamma^t\\mathbf1[S_t=s,A_t=a],\\qquad x_\\pi\\ge0",
+              "explain": "规范化后的折扣占据测度总和为一。它记录状态动作被使用多少，而不只记录每个状态下的动作概率。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\sum_ax(s,a)=(1-\\gamma)\\nu(s)+\\gamma\\sum_{\\tilde s,a}P(s\\mid\\tilde s,a)x(\\tilde s,a)",
+              "explain": "把时间零与随后时刻的访问拆开。后续访问等于来自所有前驱的折扣流入，得到线性流守恒。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\pi(a\\mid s)=\\frac{x(s,a)}{\\sum_{a'}x(s,a')}",
+              "explain": "状态占据非零时可以恢复平稳随机策略；零占据状态的动作可另作定义，不能由零除法确定。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-derive",
+          "title": "3 · CMDP 的线性规划与随机化",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "(1-\\gamma)J_r=\\sum_{s,a}x(s,a)r(s,a),\\qquad(1-\\gamma)J_c=\\sum_{s,a}x(s,a)c(s,a)",
+              "explain": "归一化占据对应归一化收益与代价，因此预算也必须乘相同因子。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\max_{x\\ge0}\\sum_{s,a}x(s,a)r(s,a)\\quad\\text{s.t. flow},\\qquad\\sum_{s,a}x(s,a)c(s,a)\\le(1-\\gamma)d",
+              "explain": "已知有限模型下，目标与约束对占据测度是线性的。这个精确规划形式不等于神经策略优化已经解决可行性。"
+            },
+            {
+              "kind": "p",
+              "text": "没有约束时，有限折扣 MDP 可以找到最优确定策略；加入成本预算后，最优可行解可能需要随机化。随机化是为了在回报和代价之间满足预算，不只是训练时探索。若所有策略都超出预算，问题本身不可行，优化器不能创造一条不存在的安全策略。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-dual",
+          "title": "4 · 乘子怎样把违反预算反馈给策略",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\mathcal L(\\pi,\\lambda)=J_r(\\pi)-\\lambda(J_c(\\pi)-d),\\qquad\\lambda\\ge0",
+              "explain": "策略对拉格朗日函数做最大化，乘子对其做最小化。固定乘子相当于使用奖励减成本的目标。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}\\theta\\leftarrow\\theta+\\eta_\\theta(\\nabla J_r-\\lambda\\nabla J_c)\\\\\\lambda\\leftarrow[\\lambda+\\eta_\\lambda(\\widehat J_c-d)]_+\\end{gathered}",
+              "explain": "代价超预算时乘子上升，使下一轮策略更重视代价。正部投影保证乘子非负。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\lambda^*(J_c(\\pi^*)-d)=0",
+              "explain": "互补松弛描述理想最优解：未激活的约束可有零乘子；正乘子对应预算恰好激活。它不是每个学习迭代都应满足的恒等式。"
+            },
+            {
+              "kind": "p",
+              "text": "有限已知 CMDP 的占据线性规划可以分析对偶与可行性；神经参数化、采样噪声和同时更新可能破坏这些简洁性质。乘子振荡、成本 critic 滞后和策略表示不足都会影响实际学习，不能只看最后一次 multiplier。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-safety",
+          "title": "5 · CPO 与执行时安全的区别",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "CPO 在策略更新中近似约束代价变化，并限制 KL 信任域，试图在提高回报时维持约束。其分析依赖真实或受控的估计、局部近似和具体约束形式；样本实现并不因此成为任意轨迹的无事故证书。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\max_\\Delta g_r^\\top\\Delta\\quad\\text{s.t.}\\quad \\hat J_c+g_c^\\top\\Delta\\le d,\\qquad\\tfrac12\\Delta^\\top F\\Delta\\le\\delta",
+              "explain": "这是理解局部 constrained update 的近似优化问题。若当前策略已不可行，需恢复步或其他处理，不能默认约束一定有满足的上升方向。"
+            },
+            {
+              "kind": "p",
+              "text": "执行时 shield 或 barrier 方法限制具体动作的可行集合，常需要可靠动力学、状态估计与不变集条件。平均约束、鲁棒控制与这些执行过滤机制可以组合，但它们保护的对象不同。训练时违反多少约束，也应与最终冻结策略的代价分开报告。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "6 · 同时记录收益、代价和可行性",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "明确代价事件、预算、折扣与初始分布。\n检查是否存在已知可行基线；没有时不能假设问题可行。\n采样策略数据，分别估计 reward return 与 cost return。\n固定旧策略估计，计算策略与乘子的方向。\n投影乘子到非负区间，按声明的顺序更新策略。\n记录每轮预算违反、训练期累计代价与独立评估。\n需要硬执行保证时另行验证安全模型和动作过滤器。",
+              "caption": "本页数值核采用旧策略与旧乘子同时计算两方向，避免时间顺序含糊。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "7 · 一个必须混合的最优策略",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "单状态两动作，奖励为 $(1,3)$，代价为 $(0,2)$。使用规范化代价预算 $0.6$，选择动作一的概率为 $p$。奖励为 $1+2p$，代价为 $2p$，所以最优可行概率 $p=0.3$，收益为 $1.6$。确定选高奖励动作不可行，确定选低成本动作可行但次优。"
+            },
+            {
+              "kind": "p",
+              "text": "若 $\\gamma=0.9$，上述规范化预算 0.6 对应未规范化预算六，收益 1.6 对应折扣总收益十六。把 0.6 与未规范化成本二十比较，是单位错误。单状态占据 $(0.7,0.3)$ 满足流守恒。"
+            },
+            {
+              "kind": "p",
+              "text": "固定惩罚 $\\lambda<1$ 时仍倾向完全选择高成本动作；$\\lambda>1$ 时倾向低成本动作；$\\lambda=1$ 时两动作标量价值相同。正确乘子不独自指定混合比例，还需可行性和策略解。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "8 · 占据流、解析混合与 primal–dual 核",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "constraints",
+              "caption": "规范化流残差、两动作精确可行解以及同时计算的策略/乘子一步更新。"
+            },
+            {
+              "kind": "p",
+              "text": "运行 test 检查流守恒、最优混合、不可行预算拒绝和 primal 梯度有限差分。代码没有实现 CPO 的共轭梯度、线搜索或安全执行层。jachiam/cpo 提供原作者研究代码；Safety Gym 是代价环境，不是安全性证明工具。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "9 · 约束在持续任务中也会变化",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "风险漏记：成本传感器未覆盖的事故，不会被成本 critic 自动补充。",
+                "尾部不足：低频严重事故可能在平均样本里消失；要与尾部风险和置信边界区分。",
+                "非平稳阈值或动力学：旧可行策略可能变得不可行，历史成本回放也可能不再代表当前风险。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "CRL 的单生命期要求将探索成本、适应阶段事故和恢复能力计入评价，而非只测训练后的策略。状态预测、模型规划与约束优化相互影响：不能观察到危险状态的 agent，即使优化器正确，也可能无法执行所需安全控制。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "10 · 练习与答案",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：代价期望小于预算，是否保证每条轨迹安全？答：不是；这是平均约束。",
+                "问：提高固定惩罚一定能找到最优可行策略吗？答：不保证；混合策略、可行性及优化误差仍需处理。",
+                "问：所有动作成本至少一而预算 0.6，会发生什么？答：此单状态问题不可行，程序应明确拒绝。",
+                "实验：将预算从 0.6 改为一，解析最优 p 应从 0.3 变为 0.5。再检查规范化与未规范化指标是否同步改变。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Altman · Constrained Markov Decision Processes",
+          "url": "https://www.routledge.com/Constrained-Markov-Decision-Processes/Altman/p/book/9781315140223",
+          "note": "原作者专著；占据测度、线性规划与拉格朗日方法的系统来源。"
+        },
+        {
+          "title": "Achiam et al. · Constrained Policy Optimization",
+          "url": "https://proceedings.mlr.press/v70/achiam17a.html",
+          "note": "CMDP、约束策略改进与局部信任域近似。"
+        },
+        {
+          "title": "Achiam · CPO 原作者代码",
+          "url": "https://github.com/jachiam/cpo",
+          "note": "原研究工程；算法实现与环境依赖应分别阅读。"
+        },
+        {
+          "title": "OpenAI · Safety Gym",
+          "url": "https://github.com/openai/safety-gym",
+          "note": "原团队的带成本环境，用于约束学习评估；不提供普遍安全保证。"
+        },
+        {
+          "title": "Kochenderfer、Wheeler、Wray · Algorithms for Decision Making",
+          "url": "https://algorithmsbook.com/",
+          "note": "作者书站提供决策、信念状态、模型与规划教材及配套 Julia 代码入口。"
+        }
+      ],
+      "problem": {
+        "setting": "除了收益，还规定累计成本预算；允许的策略必须同时满足目标和约束。",
+        "given": [
+          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
+          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
+          "成本 $C_{t+1}$、预算 $b$，$J_C(\\pi)=\\mathbb E_\\pi[\\sum_{t\\ge0}\\gamma^tC_{t+1}]$。"
+        ],
+        "sought": "在可行策略集合中最大化收益，必要时采用随机化策略。",
+        "information": "成本是额外观测信号；执行时安全约束若要求每步成立，需要另给可验证信息。",
+        "objective": {
+          "tex": "\\max_\\pi J(\\pi)\\quad\\text{s.t.}\\quad J_C(\\pi)\\le b",
+          "explain": "这是期望累计成本约束。它不等价于每条轨迹、每个时刻都安全，也不等价于预设一个固定惩罚系数。"
+        },
+        "assumptions": [
+          "可行集非空；成本尺度与时间聚合明确。",
+          "强对偶及线性规划解释依赖相应有限凸表示条件。"
+        ],
+        "success": "同时报告收益、约束违反量、置信区间和可行运行比例。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "objectives",
+            "explanation": "本章从一般问题规格中选取有期望累计成本预算的 CMDP；逐步安全等其他约束不由这个特例涵盖。"
+          },
+          {
+            "kind": "objective-change",
+            "target": "control",
+            "explanation": "相对仅按收益排序的控制，本章增加成本可行性条件，再在可行集合内最大化收益；固定惩罚权重不是同一个问题。"
+          }
+        ],
+        "nonGoals": [
+          "从平均约束满足推出零事故或逐步安全保证。"
+        ],
+        "solution": {
+          "difficulty": "最高收益策略可能不可行；固定惩罚难以事先对应指定预算。",
+          "insight": "用占据测度定义可行策略，再将约束违反反馈给乘子和策略更新。",
+          "steps": [
+            {
+              "sectionId": "lesson-notation",
+              "title": "把策略转成长期访问量",
+              "explanation": "占据流约束连接局部转移与整个策略表现。"
+            },
+            {
+              "sectionId": "lesson-derive",
+              "title": "在可行集合里求最优",
+              "explanation": "线性例子展示为何随机化可以成为必要条件。"
+            },
+            {
+              "sectionId": "lesson-dual",
+              "title": "把预算误差反馈给惩罚强度",
+              "explanation": "乘子方向来自对偶问题，不能随意将负成本当成另一种奖励。"
+            }
+          ],
+          "guarantees": "期望 CMDP 保证、CPO 局部近似与执行时安全是不同强度的结论。",
+          "alternatives": [
+            {
+              "name": "固定 penalty / dual learning",
+              "difference": "前者指定权衡，后者根据违反预算调节权衡。"
+            },
+            {
+              "name": "CMDP / safety shield",
+              "difference": "前者约束长期统计，后者在执行时限制具体动作。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "study-deep-multi-agent",
+      "track": "deep",
+      "order": 13,
+      "path": "foundations/deep/multi-agent/",
+      "title": "多智能体：博弈、局部信息与集中训练",
+      "question": "其他参与者也在学习时，“最优策略”和“环境变化”应怎样定义？",
+      "objectives": [
+        "区分共同回报、零和与一般和目标。",
+        "推导对手策略变化产生的有效转移变化。",
+        "解释 centralized critic、反事实 baseline 与单调价值分解。"
+      ],
+      "prerequisites": [
+        {
+          "term": "条件概率与期望",
+          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+        },
+        {
+          "term": "MDP 与价值",
+          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+        },
+        {
+          "term": "优化与梯度",
+          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+        }
+      ],
+      "bookSections": [
+        "Multi-Agent Reinforcement Learning：Games、Solution Concepts、Deep MARL",
+        "MADDPG",
+        "COMA",
+        "QMIX"
+      ],
+      "connectsTo": [
+        "state",
+        "control",
+        "credit",
+        "meta",
+        "experiments",
+        "architectures"
+      ],
+      "executable": {
+        "file": "extended_foundations_lab.py",
+        "command": "python3 extended_foundations_lab.py test",
+        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 多个决策者不意味着相同目标",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "Stochastic game 在状态、转移与奖励之外加入多个行动者。共同回报问题追求团队收益；零和问题中一方收益等于另一方损失；一般和问题允许利益部分一致、部分冲突。不能把团队回报最大化、利用某个对手和逼近 Nash 均衡都叫同一种“最优”。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathbf A_t=(A_t^1,\\ldots,A_t^n),\\quad S_{t+1}\\sim P(\\cdot\\mid S_t,\\mathbf A_t),\\quad R_{t+1}^i=r_i(S_t,\\mathbf A_t)",
+              "explain": "这里为简洁写确定的期望奖励函数；转移和实际奖励也可以随机。联合动作决定世界后续。"
+            },
+            {
+              "kind": "p",
+              "text": "设计者规定参与者、奖励、通信与训练信息。运行时每个 actor 能使用的信息可能很少。将多个实体全部交给一个观察完整状态的中央控制器，与多个仅有局部历史的 agent，是不同的信息条件。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-notation",
+          "title": "2 · Dec-POMDP 与执行权限",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}H_t^i=(O_0^i,A_0^i,\\ldots,O_t^i)\\\\A_t^i\\sim\\pi_i(\\cdot\\mid H_t^i)\\\\\\pi(\\mathbf a\\mid\\mathbf h)=\\prod_i\\pi_i(a_i\\mid h_i)\\end{gathered}",
+              "explain": "该因子化形式假定没有额外共享随机协调变量；允许通信或共同随机信号时，策略信息结构需要相应扩展。"
+            },
+            {
+              "kind": "p",
+              "text": "Dec-POMDP 通常描述共享团队奖励、局部观察与分散行动。每个 agent 的局部 history 不一定足以重建共同 belief，也不知道同伴看到了什么。集中训练允许 critic 使用联合状态或其他 agent 的动作，但执行 actor 仍必须遵守局部信息限制。"
+            },
+            {
+              "kind": "p",
+              "text": "这就是 CTDE 的核心：训练信息可以更丰富，部署时动作计算仍可分散。若 actor 的归一化器、输入特征或 recurrent 初始状态暗中依赖全局信息，就会破坏这一约定。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-derive",
+          "title": "3 · 别人学习，会改变我的有效环境",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "P_t^i(s'\\mid s,a_i)=\\sum_{\\mathbf a_{-i}}P(s'\\mid s,a_i,\\mathbf a_{-i})\\pi_{-i,t}(\\mathbf a_{-i}\\mid s)",
+              "explain": "此式为全状态可见、给定其他 agent Markov 策略的简化情形。底层世界转移可以固定，但对单个学习者的边缘转移随别人策略改变。"
+            },
+            {
+              "kind": "p",
+              "text": "因此旧 replay 不只可能来自自己的旧策略，也可能来自不同的同伴或对手。集中 critic 把联合动作纳入条件，可缓解一部分归因问题；它不能自动消除对手更新、数据陈旧和未知策略带来的所有非平稳性。"
+            },
+            {
+              "kind": "math",
+              "tex": "Q_i^\\pi(s,\\mathbf a)=r_i(s,\\mathbf a)+\\gamma\\mathbb E_{s',\\mathbf a'\\sim\\pi}Q_i^\\pi(s',\\mathbf a')",
+              "explain": "此式先取 Markov 联合策略。历史依赖策略还需把相关记忆并入评价条件；固定这些策略后才是固定的价值预测问题。若各策略同时变化，目标也随之变化。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-games",
+          "title": "4 · 零和的 minimax 与一般和均衡",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "v^*=\\max_x\\min_y x^\\top Ay",
+              "explain": "在有限双人零和矩阵博弈中，x 与 y 是概率单纯形中的混合策略。确定最佳动作通常无法防止被对手利用。"
+            },
+            {
+              "kind": "math",
+              "tex": "J_i(\\pi_i^*,\\pi_{-i}^*)\\ge J_i(\\pi_i,\\pi_{-i}^*)\\quad\\text{对每个 }i,\\pi_i",
+              "explain": "Nash 条件要求单方偏离不能提高自己的收益，不保证团队最优或社会福利最大。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\operatorname{Gap}(x,y)=\\max_{x'}x'^\\top Ay-\\min_{y'}x^\\top Ay'",
+              "explain": "零和 saddle-point gap 为非负，平衡时为零。只对一个固定弱对手取得高回报，不足以说明 gap 小。"
+            },
+            {
+              "kind": "p",
+              "text": "一般和博弈可以有多个均衡，其收益与稳定性不同。自我博弈训练的高胜率可能反映对某组对手的专门适应；应使用独立对手集合、交叉对战和对应 solution concept，而非只报告自身最近策略间的胜负。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-credit",
+          "title": "5 · 集中 critic 与团队信用",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "对于历史依赖 actor，以下精确形式以 $X=(S,\\mathbf H)$ 表示包含状态与所需历史的集中上下文。实际 critic 可以使用更小的输入，但若丢失预测未来所需的记忆，就还存在状态逼近误差。集中信息必须是训练协议允许获得的，而不是部署时凭空新增的观察。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\nabla_{\\theta_i}J_i\\ \\propto\\ \\mathbb E_\\pi[\\nabla_{\\theta_i}\\log\\pi_i(A_i\\mid H_i)\\,Q_i^\\pi(X,\\mathbf A)]",
+              "explain": "在相应策略梯度条件与占据加权下，集中 Q 可以为局部 actor 提供训练信号；执行不需要把 Q 的全部信息传给 actor。"
+            },
+            {
+              "kind": "math",
+              "tex": "A_i(X,\\mathbf A)=Q(X,\\mathbf A)-\\sum_{a_i'}\\pi_i(a_i'\\mid H_i)Q(X,(a_i',\\mathbf A_{-i}))",
+              "explain": "COMA 型 baseline 固定其他动作，仅对本 agent 的动作求策略平均。这是对联合 Q 的反事实比较，不等同于现实世界的无假设因果识别。"
+            },
+            {
+              "kind": "p",
+              "text": "baseline 在给定其他变量后不依赖实际采样的当前动作，故它乘 score 的条件期望为零。这保留梯度方向的期望，同时尝试降低团队共同回报造成的方差。若 critic 错误或遗漏历史，优势仍可能误导行动。"
+            },
+            {
+              "kind": "p",
+              "text": "MADDPG 对连续动作使用集中 critic 与局部确定性 actor，让 critic 条件化联合动作；COMA 使用离散随机策略与上述 baseline。两者都使用训练期额外信息，但梯度和适用动作类型并不相同。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-factorization",
+          "title": "6 · QMIX 的可分散 argmax 及表示限制",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "Q_{\\rm tot}=f_s(Q_1(H_1,a_1),\\ldots,Q_n(H_n,a_n)),\\qquad\\frac{\\partial f_s}{\\partial Q_i}\\ge0",
+              "explain": "mixer 对各局部值单调，训练时还可由全局状态调节。非负权重是实现单调性的一种方式。"
+            },
+            {
+              "kind": "math",
+              "tex": "(\\arg\\max_{a_1}Q_1,\\ldots,\\arg\\max_{a_n}Q_n)\\in\\arg\\max_{\\mathbf a}Q_{\\rm tot}",
+              "explain": "因为增大任一局部值不会减小联合值，分别选择局部最大值就能达到该表示的联合最大值。平局时可有多个最优动作。"
+            },
+            {
+              "kind": "p",
+              "text": "这条性质解决的是该函数类中的 greedy 执行，不保证任意团队价值都能被表示。若 agent 一偏好哪个动作取决于 agent 二的动作，单一局部排序就可能不足。价值分解的可扩展性来自结构约束，同时也承担结构偏差。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "7 · 声明信息边界后组织训练",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "定义共同、零和或一般和奖励及目标 solution concept。\n逐步收集每个 agent 的局部历史、联合动作与允许的训练状态。\n固定目标策略版本，用联合样本更新 centralized critic 或 mixer。\n更新局部 actor，或按局部 Q 做分散 greedy 行动。\n记录 replay 中的同伴/对手版本和 reset 权限。\n执行评估时移除训练专属输入。\n按目标报告团队收益、cross-play、best response 或 exploitability。",
+              "caption": "不能用共同回报环境中的一次胜利证明对抗博弈中的稳健性。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "8 · 两个矩阵说明不同问题",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "Matching Pennies 的行玩家收益矩阵为 $\\bigl(\\begin{smallmatrix}1&-1\\\\-1&1\\end{smallmatrix}\\bigr)$。若以概率 $p$ 选第一行，对两列的收益分别为 $2p-1$ 与 $1-2p$。最大化二者的较小值在 $p=0.5$ 达到零。纯策略对纯策略的 saddle gap 可为二，即使某一场获得一。"
+            },
+            {
+              "kind": "p",
+              "text": "团队矩阵为 $\\bigl(\\begin{smallmatrix}3&0\\\\0&2\\end{smallmatrix}\\bigr)$。若同伴以概率 0.2 选第一列，自己两动作价值是 $(0.6,1.6)$；若概率改为 0.8，则是 $(2.4,0.4)$。自己没有改变、底层矩阵没有改变，最佳动作却反转。"
+            },
+            {
+              "kind": "p",
+              "text": "同一团队矩阵中，实际动作是两人均选零，本 agent 策略均匀。反事实 baseline 为 1.5，优势为 3−1.5=1.5。对自己两种动作按策略求平均，优势均值恰好为零，验证了 baseline 的条件消去性质。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "9 · 博弈解与信用的可运行核",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "multi_agent",
+              "caption": "二维 minimax 的精确候选求解、零和 gap、反事实 baseline 与非负线性 mixer 的 greedy 一致性。"
+            },
+            {
+              "kind": "p",
+              "text": "运行 test 检查 matching pennies、被支配动作、优势条件均值和单调 mixer。这里没有训练 MADDPG、COMA 或 QMIX 网络。OpenAI maddpg 是原论文代码入口，PyMARL 包含原团队多种合作算法；OpenSpiel 用于更广泛游戏与 solution concept 实验；MARL 书站另有作者代码、练习与讲义。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "10 · 多智能体适应与 CRL 的交集",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "共同信息不足：共享奖励不能让局部 agent 自动知道同伴的私有观察。",
+                "策略分布变化：旧对手、旧搭档和当前参与者可能不一致，评估应指定群体分布。",
+                "训练状态泄漏：中央 critic 可以用的信息不一定可以进入执行策略。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "长期协作和对抗都要求持续识别参与者、保留可迁移技能并适应变化。可以冻结世界物理动力学，只改变同伴策略，研究 agent state 与元适应；再单独改变物理过程。这样的实验能区分社会非平稳与外部世界变化，避免把所有效果笼统归为 CRL。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "11 · 练习与答案",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：环境物理转移固定，独立学习者面对的过程就平稳吗？答：不一定，其他策略变化会改变其边缘转移和奖励。",
+                "问：CTDE 是否允许部署时使用全局状态？答：只有执行协议本来允许时才可以；否则违背信息边界。",
+                "问：QMIX 能表示任意合作价值矩阵吗？答：不能，单调局部排序限制表示能力。",
+                "实验：在团队矩阵中改变同伴第一列概率，求两动作等值点。方程 3p=2(1−p)，阈值为 0.4；这不是自身参数更新造成的变化。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Bernstein et al. · The Complexity of Decentralized Control of MDPs",
+          "url": "https://pubsonline.informs.org/doi/10.1287/moor.27.4.819.297",
+          "note": "分散控制与局部信息条件的原始理论研究。"
+        },
+        {
+          "title": "Lowe et al. · Multi-Agent Actor-Critic",
+          "url": "https://arxiv.org/abs/1706.02275",
+          "note": "MADDPG 与混合合作—竞争环境。"
+        },
+        {
+          "title": "OpenAI · MADDPG",
+          "url": "https://github.com/openai/maddpg",
+          "note": "原论文算法工程，阅读 centralized critic 与局部 actor 输入。"
+        },
+        {
+          "title": "Foerster et al. · Counterfactual Multi-Agent Policy Gradients",
+          "url": "https://arxiv.org/abs/1705.08926",
+          "note": "COMA baseline 与团队信用分配。"
+        },
+        {
+          "title": "Rashid et al. · QMIX",
+          "url": "https://proceedings.mlr.press/v80/rashid18a.html",
+          "note": "单调混合与分散 greedy 一致性。"
+        },
+        {
+          "title": "Oxford · PyMARL",
+          "url": "https://github.com/oxwhirl/pymarl",
+          "note": "原团队合作 MARL 框架，含 QMIX、COMA 等具体实现。"
+        },
+        {
+          "title": "DeepMind · OpenSpiel",
+          "url": "https://github.com/google-deepmind/open_spiel",
+          "note": "博弈环境与算法平台，适合检查不同 solution concept。"
+        },
+        {
+          "title": "Albrecht、Christianos、Schäfer · MARL 教材",
+          "url": "https://marl-book.com/",
+          "note": "作者免费教材、视频课程、讲义与练习入口；先读 games 与 solution concepts。"
+        },
+        {
+          "title": "MARL 教材作者代码",
+          "url": "https://github.com/marl-book/codebase",
+          "note": "教材配套自包含 Python 算法，与原论文工程用途不同。"
+        }
+      ],
+      "problem": {
+        "setting": "多个决策者同时影响环境。它们可能共享目标，也可能具有相互冲突的收益。",
+        "given": [
+          "智能体集合 $i=1,\\ldots,N$，联合策略 $\\pi=(\\pi_1,\\ldots,\\pi_N)$，每个参与者的目标 $J_i(\\pi)$。",
+          "执行时局部历史 $H_t^i$；训练时额外可见量必须明确声明。"
+        ],
+        "sought": "先选择解概念：团队最优、零和 minimax 或一般和均衡，再设计相应学习器。",
+        "information": "集中训练信息不自动在分散执行时可得；其他学习者改变策略会改变个体所见过程。",
+        "objective": {
+          "tex": "J_i(\\pi_i^*,\\pi_{-i}^*)\\ge J_i(\\pi_i,\\pi_{-i}^*)\\quad\\text{for every }i,\\pi_i",
+          "explain": "这是 Nash 条件：其他策略固定时无人能单边获益。它不同于最大化总收益；团队和零和只是特殊收益结构。"
+        },
+        "assumptions": [
+          "信息结构与允许策略类固定；精确最优或均衡未必容易计算。",
+          "把其他智能体当环境时，必须处理其策略学习造成的非平稳性。"
+        ],
+        "success": "按所声明解概念评价：团队收益、可利用性或单边偏离收益，而非只看训练均值。",
+        "relations": [
+          {
+            "kind": "generalization",
+            "target": "control",
+            "explanation": "多个优化者产生多个目标及战略反馈，不能直接使用单智能体最优策略概念。"
+          },
+          {
+            "kind": "composition",
+            "target": "state",
+            "explanation": "局部信息需要记忆；集中 critic 不会替执行策略提供缺失观察。"
+          }
+        ],
+        "nonGoals": [
+          "把一个训练稳定的联合策略自动称为 Nash 均衡。"
+        ],
+        "solution": {
+          "difficulty": "其他参与者也在改变行为，局部信用和局部信息又限制各自的学习。",
+          "insight": "先固定收益与信息结构，再选择均衡求解、集中 critic 或价值分解等不同机制。",
+          "steps": [
+            {
+              "sectionId": "lesson-games",
+              "title": "先确定什么叫更好的联合行为",
+              "explanation": "零和与一般和采用不同解概念，团队最优也不等于任意均衡。"
+            },
+            {
+              "sectionId": "lesson-credit",
+              "title": "用集中信息帮助训练信用",
+              "explanation": "反事实基线处理个体动作贡献，但不改变执行时信息权限。"
+            },
+            {
+              "sectionId": "lesson-factorization",
+              "title": "让集中价值支持分散选择",
+              "explanation": "QMIX 的单调结构使局部 argmax 可组合，同时限制可表达联合价值。"
+            }
+          ],
+          "guarantees": "特定博弈或分解结构的结果不等于一般多智能体持续学习收敛。",
+          "alternatives": [
+            {
+              "name": "团队优化 / Nash",
+              "difference": "一个共同目标与多方单边偏离条件是不同问题。"
+            },
+            {
+              "name": "集中 critic / 单调价值分解",
+              "difference": "前者辅助局部策略梯度，后者施加支持分散 argmax 的表示约束。"
+            }
+          ]
+        }
       }
     }
   ]

@@ -8,6 +8,82 @@
 - 完成开发选择、独立测试、整次运行配对 bootstrap 的可执行实验。
 - 分别解释在线收益、冻结诊断、恢复、失败和跨任务推广。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+确定有限数据能够支持哪种算法结论；实现一致、机制解释、独立比较和适用范围分别需要证据。
+
+### 给定条件与符号
+
+- 完整算法、封存配置、预定寿命与世界/任务分布。
+- 开发与测试拆分、随机单位、基线、指标、资源和特权信息预算。
+
+### 需要求解的对象
+
+声明评价量的估计、差值与不确定性，以及与该估计范围匹配的结论。
+
+### 信息与数据权限
+
+学习器只见所选动作的已到达后果；实验控制器可管理种子与诊断，但变化时间、潜在未选奖励和测试排序不得回流到封存算法选择。
+
+$$
+\Delta_T=\mathbb E_\xi[X(A,h_A,\xi;T)-X(B,h_B,\xi;T)],\qquad X(A,h,\xi;T)=\frac1T\sum_{t=0}^{T-1}R_{t+1}
+$$
+
+$A,B$ 为完整算法，$h_A,h_B$ 为开发后封存的配置，$\xi$ 为运行随机性，$T$ 为寿命。目标是有限寿命在线平均差；无限奖励率、最佳调参器性能和最后冻结策略分数是其他量。整次运行是本章的独立单位。
+
+### 成立条件与解的含义
+
+- 独立测试不参与设计选择；配对需有合理共同外生随机性并保留各自闭环轨迹。
+- 区间依赖独立单位和重采样协议；时间点不作为独立重复，缺失失败和非有限运行有预定处理。
+
+判断准则：手算/有限差分/边界测试与所写更新一致；开发测试无重叠；整次运行差值及区间可重算，保留负差、失败和全部预算，结论限定于覆盖条件。
+
+### 适用边界
+
+- 测试通过不是算法长期有效或回报优势的证据。
+- 开发集最高分和tiny有符号差不能直接称为已证优势。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 改变信息或数据协议 · [持续控制与学习智能体比较](control.md)：完整生命期控制比较要求独立世界、封存设计和可实现比较器。
+
+- 组合不同学习问题 · [可塑性与特征更新](plasticity.md)：可塑性假设需要匹配probe与干预，在线奖励曲线不足以定位原因。
+
+- 组合不同学习问题 · [知识保留与再适应](retention.md)：冻结诊断、恢复和在线表现估计不同对象，副本评价不回流训练。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+研究者选择、时间依赖与信息不公平会使高曲线看似有优势，即使差异来自预算或噪声。
+
+### 本章的核心思路
+
+先固定估计对象与独立单位，再分离选择和测试；实现与机制证据单独连接到回报比较。
+
+1. [隔离配置选择与性能估计](experiments.md#lesson-derive)：因为开发赢家带有选择噪声，用独立测试评价封存配置；若要评价搜索器，需重复整个搜索。
+
+2. [以完整生命期处理依赖](experiments.md#lesson-randomness)：因为同曲线时间点共享参数和探索历史，整次运行作为独立单位，配对按允许的共同随机性定义。
+
+3. [报告差值和范围而非赢家标签](experiments.md#lesson-intervals)：因为有限样本有不确定性，对整次运行重采样并保留负差、失败与选择规则，再限制结论范围。
+
+结论与条件：独立测试可避免复用选择噪声；bootstrap区间依赖数据和采样假设，不证明未知任务普适优势或机制因果性。
+
+### 相关方法改变了什么
+
+- 实现测试：核对更新与边界，不能替代环境收益实验。
+
+- 受控机制实验：用干预与匹配资源检验具体解释，范围通常较窄。
+
+- 独立寿命比较：估计封存算法的在线差值及不确定性，推广需追加未见条件。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -424,7 +500,7 @@ $$
 
 ## 10 · 在线评价与冻结诊断
 
-在线主评价问：这个学习过程在真实经历中赚到了多少？冻结诊断问：从同一个历史起点出发，接下来继续更新是否有帮助？在可复制模拟器中，可以复制学习器与环境状态，再分别继续学习和冻结参数。诊断交互不回灌主生命期。
+在线主评价问：这个学习过程在真实经历中获得了多少回报？冻结诊断问：从同一个历史起点出发，接下来继续更新是否有帮助？在可复制模拟器中，可以复制学习器与环境状态，再分别保持更新和冻结参数。诊断交互不回灌主生命期。
 
 | 需要隔离的对象 | 正确做法 | 改变它会引入的混杂 |
 | --- | --- | --- |
@@ -435,7 +511,7 @@ $$
 
 本章 bandit 没有循环状态和归一化。run_lifetime 的 freeze_at 仅停止价值和计数更新，动作仍按当前价值与相同的探索规则产生。测试比较冻结前缀和独立重建的同一前缀，并检查主运行计数未受影响。这是较简单的冻结语义；深度 agent 需要列出更多持久状态。
 
-冻结后变差，支持该分支时段继续学习有益。冻结后不变差，可能因为策略已足够好、环境未再挑战它，或学习器本来就没有学会。旧任务回访也只是诊断：若真实世界不能重新访问旧情境，完整遗忘矩阵无法仅凭单条在线轨迹识别。
+冻结后变差，支持该分支时段保持更新有益。冻结后不变差，可能因为策略已足够好、环境未再挑战它，或学习器本来就没有学会。旧任务回访也只是诊断：若真实世界不能重新访问旧情境，完整遗忘矩阵无法仅凭单条在线轨迹识别。
 
 <a id="lesson-branches"></a>
 
@@ -471,6 +547,620 @@ $$
 从精确测试到受控学习曲线，再到多运行基准。每一层支持不同强度的结论。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-experiments) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=experiments) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=experiments)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+
+- [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+- [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
+
+#### 时间信用分配与离策略多步学习
+
+当前反馈如何修正过去的决策与预测，哪些历史信息可以压缩成迹？
+
+前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。
+
+- [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+
+#### 持续控制、平均奖励与重置
+
+当学习、行动和恢复占用同一条时间轴时，应优化什么，又怎样探索？
+
+平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
+
+- [Rethinking the Foundations for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rethinking-crl-foundations)
+- [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
+
+#### 新学习能力、知识保留与负迁移
+
+学得慢是失去学习能力、旧知识有害，还是必须保护的知识发生干扰？
+
+可塑性看新知识能否学会，保留看旧能力是否下降，负迁移看过去学习是否使新任务差于从头学习。网络回收、函数正则、双学习器和预训练适配对应不同机制，不应只用一个平均回报解释全部现象。
+
+- [Understanding Plasticity in Neural Networks](https://yingwen.io/zh/continual-rl/research/#recent-understanding-plasticity)
+- [Mitigating Plasticity Loss in Continual Reinforcement Learning by Reducing Churn](https://yingwen.io/zh/continual-rl/research/#recent-c-chain-churn)
+- [Prevalence of Negative Transfer in Continual Reinforcement Learning: Analyses and a Simple Baseline](https://yingwen.io/zh/continual-rl/research/#recent-reset-and-distill)
+- [Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-continual-vla-simple-recipe)
+- [Parseval Regularization for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-parseval-continual-geometry)
+
+#### 学习规则本身的适应
+
+谁在调整学习过程，依据哪些经验，付出多少外部训练成本？
+
+在线步长元梯度、跨任务算法发现、知识整合与局部更新控制并非同一设定。逐项写清智能体内部的更新、设计者的预训练和调参，以及测试时仍能变化的量，才能判断真正的适应来自哪里。
+
+- [Discovering state-of-the-art reinforcement learning algorithms](https://yingwen.io/zh/continual-rl/research/#recent-disco-rl)
+- [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [Position: Lifetime tuning is incompatible with continual reinforcement learning](https://yingwen.io/zh/continual-rl/research/#recent-lifetime-tuning)
+- [The Cell Must Go On: Agar.io for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-agarcl)
+- [OGBench: Benchmarking Offline Goal-Conditioned RL](https://yingwen.io/zh/continual-rl/research/#recent-ogbench-goal-evaluation)
+- [Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-continual-vla-simple-recipe)
+- [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+- [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
+- [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
+- [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+
+#### 完整智能体与研究基础
+
+长期能力应怎样定义，各个机制又怎样共同产生它？
+
+形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+
+- [Rethinking the Foundations for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rethinking-crl-foundations)
+
+### OGBench: Benchmarking Offline Goal-Conditioned RL
+
+Seohong Park, Kevin Frans, Benjamin Eysenbach, Sergey Levine
+
+ICLR 2025 · 2025 · 评价与实验协议
+
+#### 研究问题
+
+一个目标条件算法表现不好，是长时域、轨迹拼接、视觉表示还是随机性造成的？
+
+#### 关键机制
+
+OGBench 用不同环境类型与数据集分别施加这些困难，并提供统一的目标条件基线。固定离线数据让算法面对相同经验，从而将学习机制的差异与在线探索能力的差异暂时分离。
+
+#### 证据
+
+论文提供八类环境、八十五个数据集和六类算法实现。价值在于可复用的实验接口与困难分解，而不只是汇总一个排行榜。
+
+#### 条件与限制
+
+固定数据不检验智能体如何主动获得未来经验，也不直接检验单次生命的灾难性变化、恢复或长期资源管理。它适合 CRL 子问题实验，不是完整 CRL 的替代品。
+
+#### 阅读与实验
+
+先选择只改变一种困难的两个数据集，再比较 HIQL 与平坦目标策略。把观察到的差异写成可检验机制假设，而不是直接归因于“层次更好”。
+
+#### 原文与相关入口
+
+- [论文](https://arxiv.org/abs/2410.20092)：ICLR 2025；环境、数据与基线定义。
+- [作者基准库](https://github.com/seohongpark/ogbench)：数据获取、环境与统一算法实现。
+
+#### 作者代码
+
+[基准作者维护的官方实现。](https://github.com/seohongpark/ogbench)
+
+离线目标环境、数据集与标准化基线。
+
+### Understanding Plasticity in Neural Networks
+
+Clare Lyle, Zeyu Zheng, Evgenii Nikishin, Bernardo Avila Pires, Razvan Pascanu, Will Dabney
+
+ICML 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+学习变慢一定意味着网络已饱和或特征秩下降吗？
+
+#### 关键机制
+
+论文通过新目标拟合实验研究可塑性，并分析优化几何与曲率的影响。某些表示统计与学习能力下降会同时出现，却不是所有设置中的充分解释。评价对象从“网络看起来是否健康”转向“在受控更新预算内还能学会什么”。
+
+#### 证据
+
+受控探针与 RL 实验展示了不同机制之间的区别，并检验网络设计和优化过程的作用。它为可塑性研究提供诊断方式，而不是单一通用修复算法。
+
+#### 条件与限制
+
+探针目标、优化器和步数会改变测得的可塑性。相关性不等于所有控制任务中的因果机制；探针训练也不能写回被评价的在线智能体。
+
+#### 阅读与实验
+
+复制同一个检查点，在副本上拟合两类新目标。保持训练预算一致，并报告探针过程与真实环境回报之间的区别。
+
+#### 原文与相关入口
+
+- [ICML 2023 原文](https://proceedings.mlr.press/v202/lyle23b.html)：可塑性探针、优化几何与诊断边界。
+
+### Mitigating Plasticity Loss in Continual Reinforcement Learning by Reducing Churn
+
+Hongyao Tang, Johan Obando-Ceron, Pablo Samuel Castro, Aaron Courville, Glen Berseth
+
+ICML 2025 · 2025 · 直接研究持续学习
+
+#### 研究问题
+
+一次局部更新为什么会在其他输入上引发大幅预测变化，并损害后续学习？
+
+#### 关键机制
+
+C-CHAIN 抑制相对于近期参考网络的函数输出变化，降低一次更新在其他样本上造成的 churn。论文把该现象与经验神经切线核及学习动力学联系起来。正则化对象是函数变化，不是直接把所有参数锁在旧值附近。
+
+#### 证据
+
+作者在持续 Gym Control、ProcGen、DMC 和 MinAtar 序列中比较，并提供对应环境和算法代码。
+
+#### 条件与限制
+
+近期函数稳定性不等于长期任务知识保留；参考样本和参考网络也占资源。若环境突然发生真实变化，过强抑制输出变化可能延迟必要适应。
+
+#### 阅读与实验
+
+将 churn 按旧分布、新分布分别计算，并同时画适应速度。这样才能区分“减少无关干扰”和“阻止有用改变”。
+
+#### 原文与相关入口
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/tang25g.html)：机制、理论分析与持续实验。
+- [作者代码](https://github.com/bluecontra/C-CHAIN)：四类持续环境的基线和 C-CHAIN 对照实现。
+
+#### 作者代码
+
+[作者仓库，README 说明依赖的 TRAC、CleanRL 与 MinAtar 基础实现。](https://github.com/bluecontra/C-CHAIN)
+
+持续控制环境与 C-CHAIN 对照实验。
+
+### Revisiting Adam for Streaming Reinforcement Learning
+
+Florin Gogianu, Luțu Adrian-Cătălin, Razvan Pascanu
+
+RLC 2026 / RLJ 预会议版 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+流式 RL 的不稳定来自 Adam 本身，还是目标导数、方差与超参数的组合？
+
+#### 关键机制
+
+论文重新分析自适应更新的信噪比，将 Adam 的稳定项与目标导数尺度联系起来，并研究有界导数的回报分布学习及多步更新。它改变的是目标与更新的配合，而非简单沿用批量训练时的默认配置。
+
+#### 证据
+
+作者在大规模 Atari 流式实验中展示了具有竞争力的结果，并重新比较早期流式方法。正式 RLJ 入口收录为 RLC 2026 预会议论文。
+
+#### 条件与限制
+
+主体实验采用经典回合式 Atari 的流式学习协议，不是任意非平稳终生适应的证据。这些结果也不否定归一化、资格迹或更新约束在其他任务中的价值。版本、调参预算和目标分布必须对齐。
+
+#### 阅读与实验
+
+建立二维对照：固定目标换优化器，固定优化器换目标。将调参种子与最终测试分开，再判断改进来自哪一个因素。
+
+#### 原文与相关入口
+
+- [RLC 2026 论文入口](https://rlj.cs.umass.edu/2026/papers/Paper131.html)：会议收录信息与论文。
+- [作者预印本](https://arxiv.org/abs/2605.06764)：Adam 尺度分析、回报分布目标与实验协议。
+
+### Discovering state-of-the-art reinforcement learning algorithms
+
+Junhyuk Oh, Gregory Farquhar, Iurii Kemaev, Dan A. Calian, Matteo Hessel, Luisa Zintgraf, Satinder Singh, Hado van Hasselt, David Silver
+
+Nature · 2025 · 支持方法与理论
+
+#### 研究问题
+
+除了学习策略，能否从大量学习过程里学出更有效的 RL 更新规则？
+
+#### 关键机制
+
+DiscoRL 用外层优化评价执行若干内层更新后的行为表现，学习价值、策略与辅助预测之间的更新方式。被训练的对象是学习算法本身，而不仅是某个任务的策略参数。内外两层有各自的数据、时间尺度与计算预算。
+
+#### 证据
+
+论文报告跨环境发现更新规则与迁移到未见环境的结果，并公开配套算法实现。它展示了自动算法发现的可能性，但依赖大规模外层训练。
+
+#### 条件与限制
+
+外层在大量环境和设备上的搜索属于设计者侧资源，不能记作测试智能体单次生命内的自主学习。公开规则的执行成本与发现该规则的成本应分别报告。
+
+#### 阅读与实验
+
+画出内层参数和外层参数的更新依赖，再列出测试时哪些量被冻结。与在线 IDBD 比较时，先区分跨任务算法发现和单流步长追踪。
+
+#### 原文与相关入口
+
+- [Nature 原文](https://www.nature.com/articles/s41586-025-09761-x)：算法发现过程、外层资源与泛化实验。
+- [作者实现](https://github.com/google-deepmind/disco_rl)：配套代码与发现的更新规则。
+
+#### 作者代码
+
+[Google DeepMind 的论文配套仓库。](https://github.com/google-deepmind/disco_rl)
+
+DiscoRL 配套实现与学习到的更新规则；具体训练资源以仓库说明为准。
+
+### Prevalence of Negative Transfer in Continual Reinforcement Learning: Analyses and a Simple Baseline
+
+Hongjoon Ahn, Jinu Hyeon, Youngmin Oh, Bosun Hwang, Taesup Moon
+
+ICLR 2025 · 2025 · 直接研究持续学习
+
+#### 研究问题
+
+一个网络还能拟合新目标，为什么先前训练仍可能让它在新任务上学得更慢？
+
+#### 关键机制
+
+论文把任务之间的负迁移与一般可塑性损失区分开。Reset & Distill 在新任务开始时重置在线 actor 和 critic，避免旧初始化阻碍学习；随后离线蒸馏当前策略与旧专家的动作分布以整合知识。适应和保留通过不同过程实现。
+
+#### 证据
+
+作者在控制与游戏任务中分析负迁移，并在长 MetaWorld 序列上检验该基线。原文直接提供实现地址。
+
+#### 条件与限制
+
+任务边界、在线网络重置、旧专家和离线蒸馏都需要资源。它不能直接当作无边界、不能重置、禁止回放的单次生命方案。
+
+#### 阅读与实验
+
+除了与连续微调比较，还要与同等预算的从头训练比较。若新任务表现低于从头训练，先检查负迁移，再判断是否属于单纯容量损失。
+
+#### 原文与相关入口
+
+- [ICLR 2025 原文](https://proceedings.iclr.cc/paper_files/paper/2025/hash/ba9e3d60610f3525717665966d86e0cd-Abstract-Conference.html)：负迁移诊断、Reset & Distill 机制与边界。
+- [原文代码入口](https://github.com/hongjoon0805/Reset-Distill)：论文首页提供的作者实现。
+
+#### 作者代码
+
+[ICLR 正式论文首页明确链接的代码。](https://github.com/hongjoon0805/Reset-Distill)
+
+Reset & Distill 以及任务序列实验。
+
+### Rethinking the Foundations for Continual Reinforcement Learning
+
+Esraa Elelimy, David Szepesvari, Martha White, Michael Bowling
+
+RLC 2025 / RLJ · 2025 · 定义与架构观点
+
+#### 研究问题
+
+如果智能体终生交互且世界不断变化，传统形式化和评价对象遗漏了什么？
+
+#### 关键机制
+
+论文重新审视状态、时间与累计奖励评价中的隐含假设，并讨论以交互历史和偏离遗憾等对象描述持续学习。研究重点从“在固定任务上最终收敛到什么”转向“在持续过程里，什么样的行为比较才有意义”。
+
+#### 证据
+
+这是形式化与研究基础的论证，提出可继续研究的定义和问题；不是一个已经完成全部工程验证的通用智能体。
+
+#### 条件与限制
+
+对常见形式化局限的讨论不意味着 MDP、折扣回报或平均奖励在各自条件下无效。评价框架还需要与具体可计算算法和实验协议连接。
+
+#### 阅读与实验
+
+选择一个有不可逆代价的环境，分别写出最终任务分数、终生在线收益和比较策略集合。检验它们是否会给同一行为排出不同顺序。
+
+#### 原文与相关入口
+
+- [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_243.pdf)：形式化动机、定义与论证。
+- [RLJ 论文入口](https://rlj.cs.umass.edu/2025/papers/Paper243.html)：作者与正式收录信息。
+
+### Position: Lifetime tuning is incompatible with continual reinforcement learning
+
+Golnaz Mesbahi, Parham Mohammad Panahi, Olya Mastikhina, Steven Tang, Martha White, Adam White
+
+ICML 2025 Position Paper · 2025 · 评价与实验协议
+
+#### 研究问题
+
+如果设计者用完整未来生命反复调参，实验还在测智能体面对未知变化的能力吗？
+
+#### 关键机制
+
+论文限制调参可访问的生命阶段，并比较这种选择方式与利用完整生命回报挑选配置的差异。外部设计者掌握未来变化信息，可能使一个并不自适应的固定算法显得适应良好。核心改变发生在评价协议，而不是 TD 更新公式。
+
+#### 证据
+
+作者用持续、非平稳设置中的深度 RL 实验说明超参数选择可以改变方法比较。该工作属于立场论文，论证与示例用于推动更符合问题目标的评价。
+
+#### 条件与限制
+
+允许多少开发阶段经验需要按应用规定，不存在由该论文推出的普适固定比例。仅限制时间前缀也不能替代独立测试种子和计算预算控制。
+
+#### 阅读与实验
+
+对同一配置集合分别按开发前缀和完整生命选择超参数，再在独立测试生命上比较。报告两种选择使用了哪些未来信息。
+
+#### 原文与相关入口
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/mesbahi25a.html)：调参协议、论证与示例实验。
+
+### The Cell Must Go On: Agar.io for Continual Reinforcement Learning
+
+Mohamed A. Mohamed, Kateryna Nekhomiazh, Vedant Vyas, Marcos M. José, Andrew Patterson, Marlos C. Machado
+
+arXiv 预印本 · 2025 · 评价与实验协议
+
+#### 研究问题
+
+如何在持续、动态的高维交互里，同时研究记忆、探索、信用分配与学习能力保持？
+
+#### 关键机制
+
+AgarCL 提供持续运行的游戏环境，并用分解的小任务暴露不同困难。完整环境把这些机制放回同一交互循环，小任务则便于定位失败原因。游戏中的复活事件与把整个世界和智能体都重新开始不是同一种重置。
+
+#### 证据
+
+论文提供环境、基线与可塑性方法比较；部分常见修复在其测试中改善有限。这说明保持可塑性并不能单独代替记忆、探索和长期信用分配。
+
+#### 条件与限制
+
+一个游戏不能代表全部真实持续问题。小任务与完整游戏的协议需要分别阅读；此处仅按可确认的预印本状态收录，不把投稿信息写成会议录用。
+
+#### 阅读与实验
+
+先在一个小任务中验证机制，再检验它在完整环境中的作用是否仍存在。将世界重置、角色复活、参数重置和数据清空分开记录。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2505.18347)：环境设计、分解任务与基线结果。
+- [作者环境仓库](https://github.com/machado-research/AgarCL)：环境安装、接口和运行示例；算法基线与环境本体分开。
+
+#### 作者代码
+
+[Machado 研究团队的环境实现。](https://github.com/machado-research/AgarCL)
+
+AgarCL 环境与示例，非所有算法结果的单一训练脚本。
+
+### Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning
+
+Jiaheng Hu, Jay Shim, Chen Tang, Yoonchang Sung, Bo Liu, Peter Stone, Roberto Martín-Martín
+
+RLC 2026 · 2026 · 直接研究持续学习
+
+#### 研究问题
+
+大规模预训练的视觉—语言—动作模型，是否仍需要复杂机制才能顺序学习控制任务？
+
+#### 关键机制
+
+论文研究对预训练 VLA 进行顺序强化学习，并以低秩适配等相对简单的训练流程检验持续学习。预训练表示、可更新参数子空间和 RL 目标共同决定迁移与遗忘，不能只把结果归因于单一保留正则项。
+
+#### 证据
+
+作者在多种 VLA 与长期任务基准上比较，并提供实验代码。RLJ 的 RLC 2026 论文页与论文脚注分别给出正式入口和作者仓库。
+
+#### 条件与限制
+
+预训练数据和算力属于外部资源，任务与重置协议也影响难度。该结果不意味着从零训练的网络不会遗忘，更不意味着任意无边界任务流只需微调。
+
+#### 阅读与实验
+
+固定预训练模型，分别改变可训练参数量和任务顺序。报告预训练资源、每任务在线数据、回放或重置条件，再与传统 CRL 方法比较。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2603.11653)：VLA 持续学习设置、机制与比较。
+- [RLC 2026 / RLJ 论文页](https://rlj.cs.umass.edu/2026/papers/Paper84.html)：会议原文入口；PDF 脚注链接作者代码。
+- [作者实现](https://github.com/UT-Austin-RobIn/continual-vla-rl)：持续 VLA 的训练与评价代码。
+
+#### 作者代码
+
+[UT Austin RobIn 实验室的原论文仓库。](https://github.com/UT-Austin-RobIn/continual-vla-rl)
+
+预训练 VLA 的顺序 RL 训练和论文评价。
+
+### Recurrent Reinforcement Learning with Memoroids
+
+Steven Morad, Chris Lu, Ryan Kortvelesy, Stephan Liwicki, Jakob Foerster, Amanda Prorok
+
+NeurIPS 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+当记忆网络能够保存信息时，训练序列的切分是否仍会阻止学习器给早期信息分配信用？
+
+#### 关键机制
+
+Memoroids 将一类线性递归模型写成结合运算，利用并行 scan 处理长序列；Tape-Based Batching 将多个完整回合接入同一条 tape，用显式边界处理状态重置，减少分段、补零和截断反传带来的问题。
+
+#### 证据
+
+论文在 POPGym 等部分可观测任务和循环价值学习中比较分段与 tape 训练，并研究观测敏感度、样本效率及运行时间。
+
+#### 条件与限制
+
+并行 scan 和长序列反传使用保存的序列与批处理资源，不属于严格逐步、每条经验只使用一次的 RTRL。结合结构也不使任意非线性 RNN 都能采用同样的 scan。
+
+#### 阅读与实验
+
+固定同一种记忆模型，对照截断长度、完整回合和流式在线导数；分别检查活动能记多久、梯度能传多久、持久内存与训练峰值内存。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://papers.nips.cc/paper_files/paper/2024/file/19f7f755908372efb25826d61959cdf9-Paper-Conference.pdf)：结合运算、inline reset、Tape-Based Batching 与实验。
+- [作者公开版本](https://arxiv.org/html/2402.09900v3)：附录给出不同递归模型与回报的 memoroid 写法。
+
+#### 作者代码
+
+[论文附录原链接 memory-monoids 对应作者 Prorok Lab 的现有 memoroids 仓库；README 标明论文。](https://github.com/proroklab/memoroids)
+
+memory 模型、buffer、losses 与 segment_dqn/tape_dqn 对照。
+
+### Parseval Regularization for Continual Reinforcement Learning
+
+Wesley Chung, Lynn Cherif, David Meger, Doina Precup
+
+NeurIPS 2024 · 2024 · 直接研究持续学习
+
+#### 研究问题
+
+仅在初始化时保持良好的权重几何，是否足以让很晚出现的新任务仍容易学习？
+
+#### 关键机制
+
+在选定隐藏层加入 $\lambda\|WW^\top-sI\|_F^2$，持续约束行向量的范数与角度；输出层及额外尺度设计保留表达能力。它维护学习的几何条件，并不直接保存旧任务标签或预测。
+
+#### 证据
+
+作者在 Gridworld、CARL、MetaWorld 任务序列中检验，并拆分范数与角度约束。稳定秩、Jacobian 与熵属于诊断量，不单独构成可塑性或保留的因果证明。
+
+#### 条件与限制
+
+约束会限制函数类；输出行数大于输入维度时，全部行正交不可实现。非线性门控仍能切断梯度。有限任务序列的结果不保证无限生命内有效，也不是无任务信息的万能机制。
+
+#### 阅读与实验
+
+同预算比较仅初始化正交、持续范数约束、持续角度约束和完整正则；同时记录新目标拟合、真实回报、旧功能与额外计算。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/file/e6df4efa20adf8ef9acb80e94072a429-Paper-Conference.pdf)：目标函数、容量限制、角度/范数消融及持续任务协议。
+- [作者版本记录](https://arxiv.org/abs/2412.07224)：正式会议年份为 2024。
+
+#### 作者代码
+
+[仓库明确标为 NeurIPS 2024 官方实现。](https://github.com/wechu/parseval_reg)
+
+PPO、任务序列、正则化与网络结构消融。
+
+### An Empirical Study of Deep Reinforcement Learning in Continuing Tasks
+
+Yi Wan, Dmytro Korenkevych, Zheqing Zhu
+
+arXiv 预印本 · 2025 · 评价与实验协议
+
+#### 研究问题
+
+把环境作为持续的转移过程后，无重置、预设重置和智能体控制重置怎样改变学习难点？
+
+#### 关键机制
+
+构造三类 continuing 协议，将重置后的收益纳入同一条持续过程；对深度控制算法及不同 reward centering 方法进行比较。重置权限属于环境/接口设计，而不是一个可以隐藏的评测便利。
+
+#### 证据
+
+作者公开 MuJoCo 与 Atari testbeds、训练和评价配置。论文报告中心化在多种方法中的收益，同时保留大折扣及无重置恢复困难等限制。
+
+#### 条件与限制
+
+continuing 指非回合式持续交互，不自动意味着环境任意非平稳或无限容量学习。仓库 citation 中的 2024 草稿年与 arXiv 2025 发布年不同；此处按可核验预印本记录，不指定未确认的会议。
+
+#### 阅读与实验
+
+先固定重置转移、成本和时间，再比较目标与算法；分别评价全程学习收益、冻结策略奖励率及失败恢复。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2501.06937)：三类持续协议与深度中心化实验；2025 年 arXiv 首稿。
+
+#### 作者代码
+
+[论文对应 Meta 作者团队的研究仓库，README 明确区分三个 reset 协议。](https://github.com/facebookresearch/DeepRL-continuing-tasks)
+
+testbeds、Pearl 算法、experiments 配置与评测/作图。
+
+### How Should We Meta-Learn Reinforcement Learning Algorithms?
+
+Alexander David Goldie, Zilin Wang, Jaron Cohen, Jakob Foerster, Shimon Whiteson
+
+RLC 2025 / RLJ · 2025 · 评价与实验协议
+
+#### 研究问题
+
+算法表示、发现算法的方法和测试智能体的学习成本，应该如何独立比较？
+
+#### 关键机制
+
+对 RL 流程的不同组件进行算法发现，比较黑盒学习、神经/符号蒸馏与 LLM 代码提案。学习器的表示形式和搜索过程分开定义，才能识别泛化、可解释性和成本之间的取舍。
+
+#### 证据
+
+论文直接比较元训练、元测试、样本成本、训练时间与可解释性，作者代码按发现方法和评价入口组织。
+
+#### 条件与限制
+
+跨环境发现规则主要发生在设计者侧，不等于运行智能体已能终生修改规则。论文的训练任务和预算范围不支持所有算法发现方法的普适排序。
+
+#### 阅读与实验
+
+固定被学习组件、输入权限、元训练数据和发现预算；封存规则后再检验未见环境、长生命与未通知漂移。
+
+#### 原文与相关入口
+
+- [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_218.pdf)：比较对象、元训练/测试与多维成本。
+- [RLJ 论文记录](https://rlj.cs.umass.edu/2025/papers/Paper218.html)：作者与正式会议收录。
+
+#### 作者代码
+
+[论文提供、仓库标为官方的作者实现。](https://github.com/AlexGoldie/learn-rl-algorithms)
+
+learning_algorithms 中各发现方法与独立 evaluation 流程。
+
+### Does Zero-Shot Reinforcement Learning Exist?
+
+Ahmed Touati, Jérémy Rapin, Yann Ollivier
+
+ICLR 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+没有事先指定奖励时，怎样学一套预测表示，日后接收新奖励就能选行为？
+
+#### 关键机制
+
+Forward–Backward 表示联合学习行为条件的未来占用与奖励读出，而非先固定任意编码器再学习 successor features。新奖励被映射到任务向量，策略根据这个向量直接行动；该论文系统比较 FB 与多种 SF 基础特征。
+
+#### 证据
+
+原文在固定离线 replay buffers 上比较零样本任务迁移，借此把表示学习与探索数据的质量分开。不同特征与数据覆盖产生显著差异，不能仅靠“所有奖励”的理论目标预测实际效果。
+
+#### 条件与限制
+
+假定共享动力学与可用经验覆盖。无下游梯度更新不等于无预训练成本；有限秩、近似训练和奖励估计都有误差。新动力学、历史混叠和严格一次使用经验均须另测。
+
+#### 阅读与实验
+
+同一 buffer 对比随机特征、谱特征与联合 FB，再独立换 buffer。奖励读出误差、占用误差与新任务回报分别报告，避免把数据覆盖优势记成表示优势。
+
+#### 原文与相关入口
+
+- [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
+- [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
+
+#### 作者代码
+
+[论文作者团队仓库；归档工程，依赖和旧环境需单独核验。](https://github.com/facebookresearch/controllable_agent)
+
+FB 与 SF 的训练、固定数据实验及奖励查询示例。
+
 
 <a id="chapter-code"></a>
 

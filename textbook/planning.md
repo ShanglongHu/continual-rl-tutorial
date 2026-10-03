@@ -9,6 +9,84 @@
 - 把 option model 变成正确 backup，推导收缩和模型误差放大。
 - 解释 MPC、MCTS/MuZero 与 Dreamer 在何时计算、更新对象、误差来源上的差异。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+已有规则模拟器或学得后果模型，在有限额外计算内改善价值或当前决策。模型查询不作为真实环境证据。
+
+### 给定条件与符号
+
+- 奖励与转移/技能模型、当前状态及可能的尾值和行为先验。
+- 候选行为、搜索时域、备份/模拟次数和行动延迟预算。
+
+### 需要求解的对象
+
+当前模型下可用的价值/动作近似，以及明确分离模型、截断和求解误差的实际控制。
+
+### 信息与数据权限
+
+规划只查询已给定或由过去经验学得的模型；真实行动后获得新观测，再根据协议重规划或更新模型。
+
+$$
+\hat J_H(a_{0:H-1};s)=\mathbb E_{\hat P}\!\left[\sum_{k=0}^{H-1}\gamma^k\hat r(S_k,a_k)+\gamma^H\hat V(S_H)\mid S_0=s\right]
+$$
+
+$\hat P,\hat r$ 为当前模型，$H$ 为规划时域，$\hat V$ 为尾值，$\gamma$ 为原始步折扣。这是MPC型局部模型目标；Dyna/option迭代求模型固定点，MCTS自适应搜索，想象训练将计算存入actor，不能全部视作同一求解器。
+
+### 成立条件与解的含义
+
+- 收缩结论需固定合法模型和相同候选集；option模型已含时长折扣，不能再乘一次。
+- 模型误差、模型外查询与尾值误差均影响真实后果；静态离线覆盖不能免费推广到长期漂移。
+
+判断准则：小链优先传播按前驱得到1、0.9、0.81；option固定点约14.736842，枚举MPC首动作+1；一般任务同时报告模型内值、真实收益和行动延迟。
+
+### 适用边界
+
+- 规划次数增加不保证真实回报增加。
+- 区域谱距离不自动等于最优单向到达时间。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 推广：放宽条件 · [Dyna 与模型学习](dyna.md)：规划还包含行动时搜索、技能备份与想象训练，Dyna仅是其中一种组合。
+
+- 组合不同学习问题 · [转移模型与后果模型](models.md)：模型的下游误差决定规划结果；更多求解计算不能消除错误模型。
+
+- 组合不同学习问题 · [Options 与技能发现](options.md)：技能模型将多个原始步压缩成一次备份，同时引入合法启动、随机时长与学习成本。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+短视搜索漏掉远期收益，长展开积累模型误差；计算应投向哪些分支也是决策。
+
+### 本章的核心思路
+
+将模型、尾值和计算调度分别定义，选择展开或摊销机制并保留真实反馈校准。
+
+1. [为价值传播分配有限备份](planning.md#lesson-priority)：因为后继变化只影响部分前驱，用优先队列传播而非重算全部状态。
+
+2. [按行为跨度拆分备份](planning.md#lesson-options)：因为技能执行跨越多个原始步，option备份使用已经联合折扣的终点后果，不能再折扣一次。
+
+3. [将短期搜索与长期尾值连接](planning.md#lesson-search)：因为长展开会累积模型误差，MPC用短展开加尾值，MCTS把有限模拟分配给所需分支。
+
+4. [按部署延迟摊销模型计算](planning.md#lesson-imagination)：因为部署不总能支付树搜索，想象actor把模型计算存入参数；需检验模型偏差是否被固化。
+
+结论与条件：固定精确有限折扣option模型在给定集合上可收缩；MPC/MCTS有限求解与学得深度模型没有本章提供的真实最优保证。
+
+### 相关方法改变了什么
+
+- Dyna/优先传播：学习时更新价值，调度备份而非搜索全部动作序列。
+
+- MPC/MCTS：行动时分别优化序列或分配树搜索，支付当前决策延迟。
+
+- 想象训练actor：模型计算摊销进策略，部署快但可能固化模型偏差。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -71,9 +149,9 @@ $$
   1. 3. 用真实 target 更新 Q(s,a)
   1. 4. model(s,a) ← 本次观察（仅确定平稳环境可直接覆盖）
   1. 5. 重复 n 次：
-       1. 从已见过的 (s_m,a_m) 抽样
-       1. 从 model 得到 r_m,s_m′,terminal_m
-       1. 用模型 target 更新 Q(s_m,a_m)
+       1. 从已见过的 $(s_m,a_m)$ 抽样
+       1. 从 model 得到 $r_m,s_m^{\prime}$,`terminal_m`
+       1. 用模型 target 更新 $Q(s_m,a_m)$
   1. 6. 到 s′；只有环境真的终止且协议允许才 reset
 1. 评估：冻结探索/学习开关或明确在线评估协议，按真实交互统计回报
 
@@ -116,7 +194,7 @@ $$
 (TV)(s)=\max_{o\in\mathcal O(s)}\left[r_o(s)+\sum_jp_o^\gamma(j|s)V(j)\right]
 $$
 
-r_o 是技能内真实折扣 reward，p_o^γ 是 E[γ^τ 1{终点=j}]。有 primitive actions 时也可把它们作为 τ=1 的 options 放入同一集合；这是统一接口，不是强制用长技能替代所有短动作。
+$r_o$ 是技能内真实折扣 reward，$p_o^γ$ 是 $E[γ^τ 1\{S_{t+τ}=j\}]$。有 primitive actions 时也可把它们作为 τ=1 的 options 放入同一集合；这是统一接口，不是强制用长技能替代所有短动作。
 
 若有准确的“走到门口”模型，一次 backup 就可把门外的新价值传到门内起点，而 primitive-action backup 通常要逐步传播。模型的学习和维护当然也要花经验与算力；不能只报告规划阶段少了几步，把技能发现成本全部藏掉。
 
@@ -132,7 +210,7 @@ $$
 \begin{aligned}\|\hat V^*-V^*\|_\infty&\leq\kappa\|\hat V^*-V^*\|_\infty+\|(\hat T-T)V^*\|_\infty\\ \|\hat V^*-V^*\|_\infty&\leq\frac{\varepsilon_r+\varepsilon_p\|V^*\|_\infty}{1-\kappa}\end{aligned}
 $$
 
-这里要求学得的算子也具有不超过 κ 的收缩率；每个候选 reward 误差至多 ε_r，折扣终点向量的 L1 误差至多 ε_p。由加减 T̂V* 与三角不等式得到第一行，再移项。该界是同一有限 option 集合上的模型误差传播，不是任意神经网络规划的保证。
+这里要求学得的算子也具有不超过 κ 的收缩率；每个候选 reward 误差至多 $ε_r$，折扣终点向量的 L1 误差至多 $ε_p$。由加减 T̂V* 与三角不等式得到第一行，再移项。该界是同一有限 option 集合上的模型误差传播，不是任意神经网络规划的保证。
 
 平均奖励目标需要另一种分析。跨技能的 differential backup 包含持续时间成本：$Q(s,o)=\mathbb E[R_{\rm sum}-g\tau+h(S_{\rm end})]$，其中 $g$ 是每个原始时间步的奖励率，$h$ 是相对价值。取 $\gamma=1$ 后，上面的折扣收缩证明不再成立，还需要参考状态、归一化或其他结构条件。按技能调用次数而非原始时间计算平均奖励，会改变优化目标。
 
@@ -140,7 +218,7 @@ $$
 
 ## 5. MPC 与 MCTS：在行动前计算什么
 
-Dyna 主要把计算存进长期价值/策略参数；MPC 主要为眼前动作做有限时域优化。当前状态固定，给定候选动作序列 a₀,…,a_{H−1}，用模型 rollout 计算其收益，再找最好的序列；只执行第一步，拿到新的真实状态后重新优化，称 receding horizon。反馈来自每次重规划，而不是把整段序列不加修正地执行完。
+Dyna 主要把计算存进长期价值/策略参数；MPC 主要为眼前动作做有限时域优化。当前状态固定，给定候选动作序列 $a_0,\ldots,a_{H-1}$，用模型 rollout 计算其收益，再找最好的序列；只执行第一步，拿到新的真实状态后重新优化，称 receding horizon。反馈来自每次重规划，而不是把整段序列不加修正地执行完。
 
 $$
 \max_{a_{0:H-1}}\ \mathbb E_{\hat P}\!\left[\sum_{k=0}^{H-1}\gamma^k\hat r(s_k,a_k)+\gamma^H\hat V(s_H)\right]
@@ -164,7 +242,7 @@ $$
 a=\arg\max_a\left[Q(s,a)+c\,P_{\rm prior}(a|s)\frac{\sqrt{\sum_bN(s,b)}}{1+N(s,a)}\right]
 $$
 
-N 是当前搜索树的访问次数，P_prior 是网络或其他来源给出的先验。它们是搜索期的局部状态，不等于训练 replay 的采样频率。
+N 是当前搜索树的访问次数，$P_{prior}$ 是网络或其他来源给出的先验。它们是搜索期的局部状态，不等于训练 replay 的采样频率。
 
 **算法：算法伪代码**
 
@@ -206,7 +284,7 @@ $$
 \psi_i(s)=\frac{\phi_i(s)}{\sqrt{\lambda_i}},\qquad d_k^2(s,g)=\sum_{i=1}^{k}\frac{(\phi_i(s)-\phi_i(g))^2}{\lambda_i}
 $$
 
-ALLO 学到非平凡特征 φ_i 及其特征值 λ_i；按特征值缩放以后，低频的长程结构获得相应权重。这里用 ψ 表示规划坐标，与 successor features 中同名符号的定义不同。
+ALLO 学到非平凡特征 $φ_i$ 及其特征值 $λ_i$；按特征值缩放以后，低频的长程结构获得相应权重。这里用 ψ 表示规划坐标，与 successor features 中同名符号的定义不同。
 
 缩放并非仅为好看。对连通无向图，采用组合 Laplacian 的完整非零特征系，可将随机游走的往返时间写成谱距离；这给出了为什么结构距离能反映绕墙难度的依据。实际神经估计、特征截断和数据覆盖会引入误差，有向不可逆控制也不自动满足同样的精确等式。
 
@@ -418,6 +496,70 @@ Dyna 的五状态小链会学到贪心状态值 $[0.729,0.81,0.9,1,0]$。训练�
 
 研究上更有辨识力的问题是：“每步有限 B 次计算，应优先验证哪个模型、更新哪个技能模型、还是改进哪个价值？”这连接了变化检测、价值相关模型误差、元学习计算分配与长期知识维护。把所有预算都放进更大模型，并不能自动解决这一调度问题。
 
+<a id="research-planning-allocation-and-error"></a>
+
+## 研究专题 A · 规划预算应分给可靠且会改变决策的查询
+
+TD-MPC2 的短模型加终点价值、DINO-WM 的视觉目标搜索、Dreamer 的 imagined actor 学习，都把预测变成决策，但将计算放在不同位置。CRL 还要问：新经验改变了哪项知识，有限计算应重算哪些决策？扩大 horizon、增加候选序列和增加梯度更新，分别消耗不同资源，不能只写成统一的“更多规划”。
+
+$$
+\hat J(a_{0:H-1})=\sum_{k=0}^{H-1}\gamma^k\hat r(\hat z_k,a_k)+\gamma^H\hat V(\hat z_H),\qquad \hat z_{k+1}=f(\hat z_k,a_k)
+$$
+
+短期模型承担 H 步后果，critic 承担剩余长期价值。改变 H 会同时改变模型误差、价值误差和计算成本；用 V 书写为通用接口，具体 TD-MPC2 的价值估计和策略先验须照原算法。
+
+$$
+|\hat J-J|\leq\sum_{k=0}^{H-1}\gamma^k\varepsilon_{r,k}+\gamma^H\varepsilon_{V,H}
+$$
+
+这是对于同一固定候选序列，在各步奖励贡献与终点价值贡献已有相应误差界时的直接三角不等式。ε 包括状态预测造成的偏差，不是仅在真实状态上测到的 one-step loss；候选经优化后走到数据外，原先的界也可能不适用。
+
+手算：两个候选的真实收益为 1.0 与 0.9，如果每个候选估计误差不超过 0.02，排序可靠；若误差上界为 0.1，搜索器可能稳定地选择较差动作。选择更多候选还可能发现更多能利用模型误差的轨迹。只有预测总体平均误差低，没有 planner 实际查询上的校准，不能断言增加搜索一定有益。
+
+| 预算变量 | 改善的潜在瓶颈 | 必须同时观察 |
+| --- | --- | --- |
+| 模型 horizon H | 终点价值短视 | rollout 偏差与远期 critic 误差 |
+| 候选数 / 优化轮次 | 动作序列搜索不足 | 查询是否离开数据支持，决策延迟 |
+| 想象 actor 更新 | 部署策略尚未吸收模型知识 | 模型偏差写入参数后能否由真实数据纠正 |
+| option model backup | 原始步传播过慢 | 技能版本、真实时长与维护成本 |
+| 近期模型再训练 | 变化后旧模型过期 | 旧区域知识是否被不必要地忘掉 |
+
+**算法：测试规划计算的收益，也计入计算对交互频率的影响**
+
+1. 计算匹配的规划实验（拟议）：
+  1. 给每个环境步固定总毫秒/模型调用预算
+  1. 对同一状态保存真实执行后的结果，记录所选候选的预测偏差
+  1. 分别改变 H、候选数和 actor 更新数；其余预算匹配
+  1. 在隐藏动力学变化后统计首批错误、恢复时间及全程收益
+  1. 记录动作等待造成的真实时间损失；模拟次数不能算成环境证据
+
+研究空缺是由真实后续数据学习预算分配，而不是始终固定一个大搜索。预测不确定性只是一种候选信号；它须与动作排序敏感性、模型更新时间和实际延迟共同验证。该分配方案属于本教材的研究提案，不是 TD-MPC2 或视觉 world-model 原文已证明的持续学习机制。
+
+<a id="research-planning-objective-sensitive-contract"></a>
+
+## 研究专题 B · 更换目标后，哪些规划知识仍可复用
+
+将“换任务”视为一个统一事件会掩盖接口差异。SF/GPI 在共享动力学与线性奖励族中复用未来特征；VE 模型只保持特定策略/价值的 backup；视觉目标模型按潜在距离搜索；风险敏感规划还要求对应回报分布。规划复用的前提，必须从新目标会查询什么反推。
+
+| 变化 | 可能直接复用 | 先失效的对象 |
+| --- | --- | --- |
+| 只换线性奖励权重 | 固定策略 SF，及准确的奖励特征累计 | 若新奖励不在张成空间，读出不够 |
+| 只换后续价值函数 | 相同技能的 reward/endpoint model | 仅对旧 critic 等价的压缩模型可能不足 |
+| 从期望改为尾部风险 | 保留相应分布/摘要的模型 | 均值价值等价模型 |
+| 更换视觉目标 | 稳定 encoder 与覆盖目标的动作模型 | 潜在距离未反映任务或目标不在支持内 |
+| 动力学变化 | 可保留未受影响区域/技能知识 | 旧 SF、局部模型和区域可达图 |
+| 技能策略/停止变化 | 环境的一步动力学模型可能可复用 | 旧 option 后果与时长模型 |
+
+$$
+Q_o(s;V,g)=\mathbb E\!\left[R_{\rm sum}-g\tau+V(S_{\rm end})\mid s,o\right]
+$$
+
+平均奖励的技能选择以原始时间的机会成本 gτ 计价。这与折扣 terminal weight 接口不同；研究新的风险目标还须指定对整个随机回报怎样取风险函数，不能先对每一部分随意取 CVaR 再相加。
+
+例子：技能 A 保证 10 步到目标，技能 B 平均 8 步但偶尔耗时 100 步。平均时间目标与 deadline 失败概率可以偏好不同技能，即使二者终点相同。只学“成功率”或“平均持续时间”无法同时回答所有问题；planner 应先给出查询，再选择需要维护的后果统计。
+
+实验设计以同一批冻结技能为起点，分别改变奖励权重、deadline、风险度量和动力学，比较重用、局部重学与全部重学。模型查询误差与实际收益应成对记录；奖励改变适应快，并不能替代动力学变化恢复快的证据。Distributional Model Equivalence 提供风险目标的理论反例，持续技能后果的尾部维护则仍需未来数据和校准实验。
+
 <a id="lesson-check"></a>
 
 ## 12. 诊断与自测答案
@@ -450,6 +592,393 @@ Dyna 的五状态小链会学到贪心状态值 $[0.729,0.81,0.9,1,0]$。训练�
 训练时想象与决策时搜索不是同一算法接口。比较时要同时限定模型调用和环境交互。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-planning) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=planning) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=planning)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 子任务、技能与经验获取
+
+哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
+
+Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+
+- [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
+- [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
+- [Foundation Policies with Hilbert Representations](https://yingwen.io/zh/continual-rl/research/#recent-hilbert-foundation-policies)
+
+#### 后果模型、知识保留与规划
+
+学会预测后果，何时能真正改善决策？
+
+模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+
+- [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
+- [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
+- [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
+- [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
+- [Distributional Model Equivalence for Risk-Sensitive Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-distributional-model-equivalence)
+- [TD-MPC2: Scalable, Robust World Models for Continuous Control](https://yingwen.io/zh/continual-rl/research/#recent-tdmpc2-decision-time-model)
+- [DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning](https://yingwen.io/zh/continual-rl/research/#recent-dino-wm-feature-planning)
+- [V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning](https://yingwen.io/zh/continual-rl/research/#recent-vjepa2-action-conditioned)
+
+#### 完整智能体与研究基础
+
+长期能力应怎样定义，各个机制又怎样共同产生它？
+
+形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+
+- [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
+- [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
+
+### Reward-Respecting Subtasks for Model-Based Reinforcement Learning
+
+Richard S. Sutton, Marlos C. Machado, G. Zacharias Holland, David Szepesvari, Finbarr Timbers, Brian Tanner, Adam White
+
+Artificial Intelligence · 2023 · 支持方法与理论
+
+#### 研究问题
+
+学到一个能到达子目标的技能之后，为什么它仍可能不适合主任务规划？
+
+#### 关键机制
+
+STOMP 把子任务、option、模型和规划连起来。子任务保留原任务的路径奖励，并用带有特征偏好的终止价值表达目标；学习得到策略和终止规则后，再预测该行为的累计奖励与折扣终点。这样，技能不会因为只追求到达子目标而忽略途中代价。
+
+#### 证据
+
+论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+
+#### 条件与限制
+
+终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+
+#### 阅读与实验
+
+在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+
+#### 原文与相关入口
+
+- [期刊论文](https://doi.org/10.1016/j.artint.2023.104001)：STOMP 与奖励感知子任务的正式论文。
+- [作者预印本](https://arxiv.org/abs/2202.03466)：最初预印本早于期刊年份；阅读停止收益的精确定义。
+
+### Laplacian Keyboard: Beyond the Linear Span
+
+Siddarth Chandrasekar, Marlos C. Machado
+
+arXiv 预印本 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+从一组谱技能出发，能否解决超出原特征线性奖励空间的新任务？
+
+#### 关键机制
+
+Laplacian 特征先定义行为基，并借助后继特征预测各行为的后果。固定任务权重的价值组合受特征张成空间限制；论文进一步使用随状态变化的元策略，在不同位置组合已有行为。关键变化是组合规则从一组全局固定权重变为状态相关的行为选择。
+
+#### 证据
+
+论文对行为基与任务组合给出理论分析，并报告有限环境中的组合实验。它延续 eigenoptions 与 successor features 的路线，同时解释了为什么单纯线性读出会遇到表达边界。
+
+#### 条件与限制
+
+理论结论依赖具体的行为基、近似误差和任务条件。技能集合的长期生成、淘汰与非平稳模型维护仍是另外的问题；此处按预印本收录，不指定未经确认的会议。
+
+#### 阅读与实验
+
+构造一个必须在中途切换方向的奖励任务。分别比较固定权重的技能选择与状态相关切换，并解释性能差异来自哪里。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/abs/2602.07730)：阅读线性张成空间的限制及状态相关组合机制。
+
+### Mastering diverse control tasks through world models
+
+Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, Timothy Lillicrap
+
+Nature · 2025 · 支持方法与理论
+
+#### 研究问题
+
+同一套世界模型训练与控制方法，能否减少跨任务重新设计损失和超参数的需求？
+
+#### 关键机制
+
+DreamerV3 从经验学习递归潜在状态、奖励和延续预测，再在潜在想象轨迹上学习 actor 和 critic。尺度稳健的表示与损失设计使同一配置可以适用于多种任务。模型是用于决策的学习接口，不必生成完整真实世界。
+
+#### 证据
+
+论文在大量视觉和状态控制任务上报告了广泛表现。关键含义是共享算法配置；这些结果主要来自分别训练的任务智能体，不是一个智能体按顺序学会全部任务。
+
+#### 条件与限制
+
+经验重放、批量训练和模型想象都有资源成本。模型偏差、表示遗忘与长期任务切换仍需要专门实验，不能由多任务覆盖范围自动推出持续学习能力。
+
+#### 阅读与实验
+
+把状态更新、模型训练、想象起点和策略更新四种分布分别写清。比较真实交互步数之外，还应记录想象步数和优化次数。
+
+#### 原文与相关入口
+
+- [Nature 原文](https://www.nature.com/articles/s41586-025-08744-2)：方法和任务协议；区分共享配置与单智能体持续学习。
+- [作者维护的实现](https://github.com/danijar/dreamerv3)：公开实现的版本与论文实验环境应分别记录。
+
+#### 作者代码
+
+[作者发布的重实现；不把当前分支当作原论文实验的冻结快照。](https://github.com/danijar/dreamerv3)
+
+DreamerV3 的作者维护公开实现及运行配置。
+
+### The OaK Architecture: A Vision of SuperIntelligence from Experience
+
+Richard S. Sutton
+
+RLC 2025 讲座 / Oak Lab · 2025 · 定义与架构观点
+
+#### 研究问题
+
+持续学习是否只是在一个现成 actor–critic 上加入抗遗忘机制，还是需要重新安排知识构造与使用？
+
+#### 关键机制
+
+OaK 提出从经验持续形成状态、预测知识、子任务、时间抽象与模型，并让这些知识服务规划的架构方向。这里的重点是模块之间怎样产生可复用知识，而不只是保留某个固定策略网络的参数。
+
+#### 证据
+
+官方页面提供 Richard Sutton 的架构讲座与相关研究入口。STOMP、预测学习和在线特征学习等论文可以检验其中具体组件，但不能自动验证整体架构。
+
+#### 条件与限制
+
+这是研究愿景与架构讲解，不是一套已公布完整训练配方、统一基准结果和可复现端到端代码的系统。资源分配、问题生成、知识替换与模块相互干扰仍需明确算法。
+
+#### 阅读与实验
+
+为每个模块写出输入、输出、更新频率和资源上限。再选择一个双模块接口做可证伪实验，例如技能模型改善是否真的减少规划误差。
+
+#### 原文与相关入口
+
+- [Oak Lab 官方讲座页面](https://oaklab.ai/posts/the-oak-architecture)：讲座入口与架构研究方向。
+- [Oak Lab 研究主页](https://oaklab.ai/)：区分已发表研究、技术文章和仍在预告中的项目。
+
+### Foundation Policies with Hilbert Representations
+
+Seohong Park, Tobias Kreiman, Sergey Levine
+
+ICML 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+如何从无任务标签的离线轨迹形成既能按方向调用、又能用于目标任务的策略接口？
+
+#### 关键机制
+
+HILP 先学习近似保存时间距离的 Hilbert 表示，再以潜在位移与方向的内积训练方向条件策略。新任务通过奖励回归、目标方向或分层调用选择策略条件，结构表示也支持测试时规划。
+
+#### 证据
+
+ICML 原文与作者项目包含零样本 RL、离线目标条件 RL 及规划实验；官方仓库将 zero-shot 与 goal-conditioned 两套实现分开。
+
+#### 条件与限制
+
+精确时间距离不总能无损嵌入有限维对称欧氏距离，尤其有向不可逆行为；理论充分条件与近似神经实验需区分。方向条件策略没有自动获得任意停止条件或完整技能后果模型。
+
+#### 阅读与实验
+
+固定离线数据分别测距离误差、方向执行误差、奖励可表达误差与高层收益。让同一视觉观测对应不同历史，检查仅观测编码是否足够，之后再讨论 CRL 状态维护。
+
+#### 原文与相关入口
+
+- [ICML 2024 原文](https://proceedings.mlr.press/v235/park24g.html)：Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。
+- [作者项目与公式](https://seohong.me/projects/hilp/)：时间距离与方向奖励接口。
+- [官方实现](https://github.com/seohongpark/HILP)：hilp_zsrl 与 hilp_gcrl 对应不同实验。
+
+#### 作者代码
+
+[作者项目直接链接并标为 official implementation。](https://github.com/seohongpark/HILP)
+
+离线预训练、零样本奖励适配及目标条件实验。
+
+### The Value Equivalence Principle for Model-Based Reinforcement Learning
+
+Christopher Grimm, André Barreto, Satinder Singh, David Silver
+
+NeurIPS 2020 · 2020 · 支持方法与理论
+
+#### 研究问题
+
+模型容量有限时，必须预测全部状态细节，还是只须保持规划会查询的量？
+
+#### 关键机制
+
+Value equivalence 以策略集合和函数集合定义模型规格：模型对这些函数进行这些策略的 Bellman backup，应与真实环境相同。扩大查询族会缩小可接受模型族；它把“决策相关”从口号变成有条件的等价关系。
+
+#### 证据
+
+论文给出等价模型类的性质及有限实验，并解释若干隐式模型方法。后续 Proper Value Equivalence（NeurIPS 2021）研究策略价值固定点等价及规划充分性。
+
+#### 条件与限制
+
+少数当前 critic 的 backup 相同，不说明所有新奖励、新策略或风险目标都相同。精确算子等价与神经损失在样本上较小不同；奖励或查询族变化后须重新验证。
+
+#### 阅读与实验
+
+保存独立的 planner 查询集，直接测 target 误差和动作排序。用未参与模型拟合的价值函数检验迁移，并与像素误差对照，找出模型实际保留的信息。
+
+#### 原文与相关入口
+
+- [NeurIPS 2020 原文](https://papers.nips.cc/paper/2020/hash/3bb585ea00014b0e3ebe4c6dd165a358-Abstract.html)：VE 依赖策略与函数集合。
+- [Proper Value Equivalence · NeurIPS 2021](https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html)：多步算子、固定点与规划充分性；不是任意潜在网络的保证。
+
+### Distributional Model Equivalence for Risk-Sensitive Reinforcement Learning
+
+Tyler Kastner, Murat A. Erdogdu, Amir-massoud Farahmand
+
+NeurIPS 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+模型正确预测期望回报，能否同时支持避开低概率灾难的决策？
+
+#### 关键机制
+
+论文证明 proper value equivalence 对风险敏感规划不足，再以回报分布与统计摘要定义更强的模型等价。完整分布覆盖更多风险度量，有限摘要则限制可支持的风险目标；相应 Bellman 闭合性质决定摘要能否递推。
+
+#### 证据
+
+正式原文包含理论、表格反例与大规模实验，并直接给出 distribution-equivalence 作者仓库。它检验的是特定风险敏感目标下的模型学习与规划接口。
+
+#### 条件与限制
+
+正确均值和方差不自动保证尾部概率或 CVaR；有限 quantile 表示与投影也有近似误差。静态模型等价不保证新环境中的风险校准，更不等于安全约束保证。
+
+#### 阅读与实验
+
+构造均值相同、尾部不同的两动作，先验证期望控制无法区分，再用指定风险度量评价。训练分布、投影和风险目标必须匹配，不能在评估时随意换风险函数。
+
+#### 原文与相关入口
+
+- [NeurIPS 2023 原文](https://proceedings.neurips.cc/paper_files/paper/2023/hash/b0cd0e8027309ea050951e758b70d60e-Abstract-Conference.html)：proper VE 的不足、统计摘要与 Bellman 闭合。
+- [作者实现](https://github.com/tylerkastner/distribution-equivalence)：原文第 7 节直接链接的实验代码。
+
+#### 作者代码
+
+[正式原文第 7 节提供的作者仓库。](https://github.com/tylerkastner/distribution-equivalence)
+
+分布模型等价与风险敏感实验；不提供任意任务的安全证书。
+
+### TD-MPC2: Scalable, Robust World Models for Continuous Control
+
+Nicklas Hansen, Hao Su, Xiaolong Wang
+
+ICLR 2024 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+如何让短期动力学与长期价值分工，并在动作选择时继续使用模型？
+
+#### 关键机制
+
+TD-MPC2 学习无需观测 decoder 的潜在动力学、奖励、价值与策略先验。决策时优化有限动作序列，用终点价值补上未展开的后果；执行第一步后，利用新观测重新规划。
+
+#### 证据
+
+正式会议原文报告 104 个在线任务和单一大型多任务智能体的实验。官方仓库包含模型训练与计划接口，适合与 Dreamer 的想象 actor 学习比较计算位置。
+
+#### 条件与限制
+
+跨任务共享超参数和多任务能力不是单条生命流中持续适应的证据。replay、任务条件、模型更新、决策延迟等成本需进入 CRL 协议；长程 critic 错误不能被短期模型精度自动修复。
+
+#### 阅读与实验
+
+固定模型，对比无终点价值、不同 horizon 和不同规划预算；再固定预算比较部署 actor 与决策时搜索。环境变化后同时记录模型校准、critic 误差和恢复收益。
+
+#### 原文与相关入口
+
+- [ICLR 2024 原文](https://proceedings.iclr.cc/paper_files/paper/2024/hash/cf73d57b6dcda32b293df7c2d5341f49-Abstract-Conference.html)：短期预测、终点价值、多任务协议。
+- [作者实现](https://github.com/nicklashansen/tdmpc2)：训练、模型与 plan 函数分别阅读。
+
+#### 作者代码
+
+[作者维护的原论文代码。](https://github.com/nicklashansen/tdmpc2)
+
+TD-MPC2 的单任务/多任务训练和决策时规划。
+
+### DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning
+
+Gaoyue Zhou, Hengkai Pan, Yann LeCun, Lerrel Pinto
+
+ICML 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+预训练视觉表示能否直接成为动作后果预测与目标规划的接口？
+
+#### 关键机制
+
+冻结 DINOv2 空间 patch 特征，用离线动作轨迹学习未来特征预测器；测试时优化动作序列，让预测特征接近目标图像特征。没有重建图像、奖励模型或逆模型，不表示没有动作条件的动力学训练。
+
+#### 证据
+
+ICML 原文在六类环境检验视觉目标规划，作者仓库公开数据、部分检查点、训练与 CEM 规划入口。零样本指给定已训练模型后解决目标，无额外任务策略训练。
+
+#### 条件与限制
+
+依赖视觉预训练与离线交互覆盖；patch 相近不总等于任务完成或风险相同。原实验不证明冻结视觉表示能适应长期新物体、新动作语义或隐藏状态。
+
+#### 阅读与实验
+
+分别改变背景、物体属性、控制动力学与目标分布。把冻结 encoder 和联合更新 encoder 分开，对照视觉距离、真实成功与模型误差，观察表示漂移的依赖成本。
+
+#### 原文与相关入口
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/zhou25t.html)：正式发表入口；早期 ICLR 投稿页不能替代此状态。
+- [作者项目代码](https://github.com/gaoyuezhou/dino_wm)：train.py、plan.py、数据与已公开模型检查点范围。
+
+#### 作者代码
+
+[原作者 Gaoyue Zhou 的论文配套仓库。](https://github.com/gaoyuezhou/dino_wm)
+
+DINO 特征预测、离线环境数据与目标规划；README 公开部分环境检查点。
+
+### V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning
+
+Mahmoud Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba Komeili, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, Nicolas Ballas
+
+arXiv 预印本（此处采用 2025 首稿） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+无动作标注的视频预训练，与能接受机器人动作的规划模型之间还缺哪一步？
+
+#### 关键机制
+
+V-JEPA 2 先学被遮蔽视频的潜在特征预测；V-JEPA 2-AC 冻结编码器，再用机器人轨迹训练动作条件预测器。控制以目标图像的特征差为代价进行 MPC；视频理解、动作条件预测和真实控制是三个独立证据层。
+
+#### 证据
+
+2025 首稿报告以大规模视频预训练，再用不到 62 小时 DROID 交互视频后训练，在两个实验室以图像目标做真实机器人规划。论文单独讨论相机位置、长程规划与图像目标的局限。
+
+#### 条件与限制
+
+无任务奖励并不等于无动作、无机器人状态或无外部数据。零样本部署未持续更新模型，也未发现和维护 options。官方仓库现含 V-JEPA 2.1，复现首稿须记录配置和模型版本。
+
+#### 阅读与实验
+
+按视觉编码、动作坐标、后果模型、目标代价逐项做迁移检验。若引入在线更新，记录模型更新使旧目标接口失效的程度，测未来交互收益，而非仅用 frozen probe 证明 CRL。
+
+#### 原文与相关入口
+
+- [2025 首稿](https://arxiv.org/abs/2506.09985v1)：action-free 预训练、2-AC 后训练、真实规划与第 4.3 节限制；此处不赋予未核实会议状态。
+- [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。
+
+#### 作者代码
+
+[Meta FAIR 官方仓库；首稿模型与后续版本需按配置区分。](https://github.com/facebookresearch/vjepa2)
+
+官方视频表征与动作条件模型；数据、机器人部署条件与检查点分别核验。
+
 
 <a id="chapter-code"></a>
 
@@ -487,7 +1016,7 @@ python3 examples/knowledge_algorithms_lab.py planning
 
 - [Hansen, Su & Wang — TD-MPC2 · ICLR 2024](https://arxiv.org/abs/2310.16828)：短期潜在模型、终点价值与策略先验如何共同支持决策时优化；区分多任务预训练与持续适应。
 
-- [TD-MPC2 作者实现](https://github.com/nicklashansen/tdmpc2)：沿模型损失、计划函数和策略先验阅读，比较计算发生在训练时还是决策时。
+- [作者实现](https://github.com/nicklashansen/tdmpc2)：训练、模型与 plan 函数分别阅读。
 
 - [Shehmar et al. — Laplacian Representations for Decision-Time Planning · ICML 2026](https://proceedings.mlr.press/v306/shehmar26a.html)：ALPS 正式论文：特征值缩放、区域子目标和短时域规划；实验设定为离线目标条件 RL。
 
@@ -498,3 +1027,27 @@ python3 examples/knowledge_algorithms_lab.py planning
 - [ALPS 高层路径 — planner/hierarchical.py](https://github.com/machado-research/ALPS/blob/main/planner/hierarchical.py)：plan 管理当前区域与中间目标；compute_cluster_path 调用图最短路。该实现不指定边权时比较的是跨越区域的次数。
 
 - [ALPS 低层优化 — planner/optimizer.py](https://github.com/machado-research/ALPS/blob/main/planner/optimizer.py)：rollout_prior_mean 生成先验引导的动作序列；_cem_core 按代价筛选 elite 并更新分布；optimize_trajectory 将这些步骤接起来。
+
+- [ICML 2024 原文](https://proceedings.mlr.press/v235/park24g.html)：Hilbert 距离、策略提示和定理前提；不是 ICLR 论文。
+
+- [作者项目与公式](https://seohong.me/projects/hilp/)：时间距离与方向奖励接口。
+
+- [官方实现](https://github.com/seohongpark/HILP)：hilp_zsrl 与 hilp_gcrl 对应不同实验。
+
+- [NeurIPS 2020 原文](https://papers.nips.cc/paper/2020/hash/3bb585ea00014b0e3ebe4c6dd165a358-Abstract.html)：VE 依赖策略与函数集合。
+
+- [Proper Value Equivalence · NeurIPS 2021](https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html)：多步算子、固定点与规划充分性；不是任意潜在网络的保证。
+
+- [NeurIPS 2023 原文](https://proceedings.neurips.cc/paper_files/paper/2023/hash/b0cd0e8027309ea050951e758b70d60e-Abstract-Conference.html)：proper VE 的不足、统计摘要与 Bellman 闭合。
+
+- [作者实现](https://github.com/tylerkastner/distribution-equivalence)：原文第 7 节直接链接的实验代码。
+
+- [ICLR 2024 原文](https://proceedings.iclr.cc/paper_files/paper/2024/hash/cf73d57b6dcda32b293df7c2d5341f49-Abstract-Conference.html)：短期预测、终点价值、多任务协议。
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/zhou25t.html)：正式发表入口；早期 ICLR 投稿页不能替代此状态。
+
+- [作者项目代码](https://github.com/gaoyuezhou/dino_wm)：train.py、plan.py、数据与已公开模型检查点范围。
+
+- [2025 首稿](https://arxiv.org/abs/2506.09985v1)：action-free 预训练、2-AC 后训练、真实规划与第 4.3 节限制；此处不赋予未核实会议状态。
+
+- [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。

@@ -8,6 +8,84 @@
 - 独立推导 Bellman 方程、线性 TD、资格迹、GTD2/TDC、GTD($\lambda$) 与 Emphatic TD 的更新。
 - 逐行运行多问题共享经验的学习循环，检查解析解、off-policy 发散反例与实现时序。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+在指定行为条件下预测某种信号的累计量，例如到充电点前的能耗；信号不必是任务奖励。
+
+### 给定条件与符号
+
+- 每个问题的目标策略、cumulant、延续规则和条件状态。
+- 真实行为数据及行为概率；固定特征/网络类和更新预算。
+
+### 需要求解的对象
+
+各个给定预测题目的条件期望；稳定估计和预测发现是另外需要声明的子问题。
+
+### 信息与数据权限
+
+$b$ 生成动作，$\pi$ 定义假想未来行为；由已到达转移构造 $C_{t+1}$ 与 $\gamma_{t+1}$。行为支持目标动作时才可计算 $\rho_t=\pi(A_t\mid S_t)/b(A_t\mid S_t)$。
+
+$$
+v_{\pi,c,\gamma}(s)=\mathbb E_\pi\!\left[\sum_{k=0}^{\infty}\left(\prod_{j=1}^{k}\gamma_{t+j}\right)C_{t+k+1}\,\middle|\,S_t=s\right]
+$$
+
+$C$ 是由信号规则 $c$ 生成的累计信号，$\gamma$ 为转移延续因子，空乘积为1。事件上停止仍保留该步信号。线性GTD的投影Bellman目标是求解代理，未必等于最小真实预测误差。
+
+### 成立条件与解的含义
+
+- 分析期间环境、目标策略与表示固定，状态Markov且累计量存在；延续矩阵谱半径小于1提供唯一解条件。
+- 离策略需要覆盖；GTD/ETD稳定性须满足相应线性、遍历和步长条件，不推广为任意深网定理。
+
+判断准则：有限题目直接解线性Bellman系统核对预测与单位；在离策略反例上分开测价值误差、发散和重要性比方差。
+
+### 适用边界
+
+- 离策略预测稳定不等于得到全局最优控制。
+- 事件终止预测不要求重置真实环境。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 推广：放宽条件 · [价值预测与资格迹](value.md)：本章将任务奖励推广为指定累计信号，并允许转移依赖的延续规则；目标策略仍须单独给定。
+
+- 组合不同学习问题 · [智能体状态与递归学习](state.md)：预测可作状态坐标，但覆盖少量问题不证明所有相关历史已被保留。
+
+- 组合不同学习问题 · [转移模型与后果模型](models.md)：设计奖励与折扣终点信号可以预测模型输出；普通单个GVF不等于完整后果模型。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+自然语言题目容易混淆累计信号与终止计时；实际行为又可能不同于假想行为。
+
+### 本章的核心思路
+
+先明确问题三元组，再分开处理Bellman递推、行为纠偏与逼近稳定性。
+
+1. [固定题目语义和计时](gvf.md#gvf-semantics)：因为能耗、到达概率和折扣到达量不同，先由cumulant与延续写出累计量和Bellman方程。
+
+2. [由真实行为估计目标行为](gvf.md#gvf-offpolicy)：因为样本动作由行为策略产生，用记录概率的比率纠偏并检查支持，缺失覆盖不能靠加小常数修复。
+
+3. [以辅助量估计投影目标方向](gvf.md#gvf-gtd)：因为重要性比不保证共享线性参数稳定，GTD用辅助向量估计投影Bellman目标所需的条件量，并保留所写主/辅助更新。
+
+4. [用强调权重处理另一种逼近](gvf.md#gvf-etd)：因为状态分布也影响稳定性与逼近解，ETD递推follow-on与强调权重；它不只是替换GTD的迹，需分别检验加权固定点和方差。
+
+结论与条件：可积且延续矩阵满足条件时题目有确定解；线性GTD/ETD的理论依赖其假设，神经递归GVF不因此自动稳定。
+
+### 相关方法改变了什么
+
+- 普通TD：低成本一步自举，离策略共享逼近下可能发散。
+
+- GTD2/TDC：借助辅助量优化投影Bellman相关目标，需区分目标与更新式。
+
+- Emphatic TD：调整历史和状态强调权重，目标权重及方差与GTD不同。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -225,7 +303,7 @@ $$
 
 第一行的期望是 $\beta(b_c-Aw-C_xh)$，第二行的期望是 $\alpha A^\top h$。辅助量跟踪得足够好时主更新逼近下降方向。两行都用旧 w、旧 h；源代码先缓存，不先改 h 再计算主方向。
 
-在前面的两状态例子，$C_x$=1.3，理想下降方向为 −(.68²/1.3)w，与普通 TD 的 +.68w 方向相反。步长缩放不改变方向；GTD2 改变的是期望更新本身。随机收敛理论还需固定策略/特征、覆盖、矩阵条件和合适步长；不能把这个期望例子推广成任意神经网络的收敛保证。
+在前面的两状态例子，$C_x$=1.3，理想下降方向为 $-(.68^2/1.3)w$，与普通 TD 的 +.68w 方向相反。步长缩放不改变方向；GTD2 改变的是期望更新本身。随机收敛理论还需固定策略/特征、覆盖、矩阵条件和合适步长；不能把这个期望例子推广成任意神经网络的收敛保证。
 
 <a id="gvf-tdc"></a>
 
@@ -235,7 +313,7 @@ $$
 A^\top h=C_xh-\mathbb E_b[\rho\gamma'x'x^\top]h\ \approx\ b_c-Aw-\mathbb E_b[\rho\gamma'x'x^\top]h
 $$
 
-由于 $\mathbb E[\rho\mid s]=1$，Aᵀ 的第一项可写为 $C_x$。只有当 h 接近自己的固定点时，$C_xh$ 才可用 $b_c-Aw$ 替代。这样获得 TDC 的期望方向，不意味着它与 GTD2 每一步相同。
+由于 $\mathbb E[\rho\mid s]=1$，$A^T$ 的第一项可写为 $C_x$。只有当 h 接近自己的固定点时，$C_xh$ 才可用 $b_c-Aw$ 替代。这样获得 TDC 的期望方向，不意味着它与 GTD2 每一步相同。
 
 $$
 \begin{gathered}w_{t+1}=w_t+\alpha\rho_t[\delta_t x_t-\gamma_{t+1}x_{t+1}(x_t^\top h_t)]\\h_{t+1}=h_t+\beta[\rho_t\delta_t-x_t^\top h_t]x_t\end{gathered}
@@ -247,12 +325,12 @@ $$
 \begin{gathered}e_t=\rho_t(\gamma_t\lambda e_{t-1}+x_t)\\w_{t+1}=w_t+\alpha[\delta_t e_t-\gamma_{t+1}(1-\lambda)x_{t+1}(e_t^\top h_t)]\\h_{t+1}=h_t+\beta[\delta_t e_t-x_t(x_t^\top h_t)]\end{gathered}
 $$
 
-这里称 GTD($\lambda$) 的是 RLPark 使用的 TDC-style 形式。$\lambda$=0 时 $e=\rho x$，正好退化为前面的 TDC，而不是 GTD2。辅助更新的投影项仍是 x(xᵀh)，不能把其中每个 x 都替换成 e。
+这里称 GTD($\lambda$) 的是 RLPark 使用的 TDC-style 形式。$\lambda$=0 时 $e=\rho x$，正好退化为前面的 TDC，而不是 GTD2。辅助更新的投影项仍是 $x(x^Th)$，不能把其中每个 x 都替换成 e。
 
 - 保存旧 w、h 和上一时刻的 $\gamma$、迹。
 - 用当前 c 和 $\gamma_{t+1}$ 计算 $\delta$。
 - 用当前 $\rho$、进入当前的 $\gamma$ 更新 e。
-- 从旧 h 计算 eᵀh 与 xᵀh，再生成两个增量。
+- 从旧 h 计算 $e^Th$ 与 $x^Th$，再生成两个增量。
 - 应用增量；最后保存 $\gamma_{t+1}$ 供下一个转移使用。
 
 本章 $\lambda$ 为常数。若使用状态相关 $\lambda$，下一状态 continuation 中的 $\lambda$ 下标也要按该算法原定义重新核对，不同下标约定对应不同的前向回报与资格迹。GTD 系列牺牲了额外向量与步长调节成本，以处理特定离策略函数逼近问题；它并不总是在有限样本上最快。
@@ -461,7 +539,7 @@ counterexample 用完整期望更新复现第 7 节反例：TD 权重远离 0，
 | --- | --- | --- |
 | MC / n-step / TD($\lambda$) / true-online | 回报估计、信用时域与在线等价性 | 不改变给定 c、$\gamma$、$\pi$ 所定义的真值；有限表示下 fixed point/逼近可能随算法而变 |
 | Ordinary IS-TD / GTD2 / TDC / GTD($\lambda$) / ETD | 离策略估计、梯度方向或有效状态权重 | 不是同一套迹加不同算法名 |
-| LSTD / LSPE 等最小二乘预测 | 累计线性系统并求解 | 通常需 O(d²) 存储/计算及求解开销；遗忘因子和非平稳跟踪另需设计 |
+| LSTD / LSPE 等最小二乘预测 | 累计线性系统并求解 | 通常需 $O(d^2)$ 存储/计算及求解开销；遗忘因子和非平稳跟踪另需设计 |
 | Horde / nexting | 问题集合和共享经验的调度 | Horde 是组织方式，nexting 强调多个近未来尺度；都不是新的单个 loss |
 | TD networks / GVFN | 预测之间的依赖及递归表示 | 如果 cumulant 或输入依赖其他可学习预测，目标会移动，还需要跨预测/时间的信用 |
 | Successor features | 把 cumulant 扩成特征向量，并按奖励权重复用 | 每个坐标可视为预测；适用的奖励族和动力学条件要成立 |
@@ -504,6 +582,76 @@ $$
 
 因此，研究预测知识至少包含三个可分别检验的问题：预测对象能否表达所需信息，学习器能否在当前经验分布下准确跟踪，以及这些预测是否改善决策。它们对应问题设计、预测算法和下游使用三类实验。
 
+<a id="research-gvf-measures-and-readouts"></a>
+
+## 研究专题 A · 从有限预测向量到可查询的未来占用
+
+GVF 的基本单位是一个明确的问题；successor features 将有限个信号在同一策略下的未来累计组成向量。当未来奖励尚未知时，新的问题是：有限信号族遗漏了什么，能否学一个可被更多信号查询的未来占用？FB 和 SF² 分别给出低秩占用与生成式 successor measure 两条路线。它们扩展预测对象，而不取消目标策略、时域和覆盖要求。
+
+$$
+\mu_\gamma^\pi(B\mid s,a)=(1-\gamma)\sum_{k=0}^{\infty}\gamma^k\Pr_\pi(S_{t+k+1}\in B\mid S_t=s,A_t=a),\qquad Q_c^\pi(s,a)=\frac{1}{1-\gamma}\int c(x)\,\mu_\gamma^\pi(dx\mid s,a)
+$$
+
+此处明确采用从下一状态开始、归一化的占用约定，且 cumulant 为到达状态函数 c(x)、固定 0≤γ<1。一般转移 cumulant 或动作相关奖励须扩展所占用的对象；状态相关 continuation 也不能机械使用这条固定折扣归一化。
+
+若每步信号是“到达充电区”，占用积分给折扣访问累计；它可以反复计数，不是首次到达概率。若希望在首次事件停止，必须把 stopping 规则写进问题，或扩展状态为尚未到达/已到达。给 γ=0.9 时，归一化占用对充电区的质量为 0.2，累计访问期望便为 2；把质量 0.2 当成累计值会少掉因子 10。
+
+$$
+\mu_\gamma^\pi(\cdot\mid s,a)=(1-\gamma)P(\cdot\mid s,a)+\gamma\,\mathbb E_{S'\sim P,\,A'\sim\pi}[\mu_\gamma^\pi(\cdot\mid S',A')]
+$$
+
+measure Bellman 方程是分布的混合：部分目标来自真实一步后果，部分来自下一状态策略条件的长期预测。生成式 bootstrap 仍会传播估计误差；无需显式长 rollout 不代表没有长期误差。
+
+$$
+\psi^\pi(s,a)=\frac{1}{1-\gamma}\int\phi(x)\,\mu_\gamma^\pi(dx\mid s,a),\qquad r_w(x)=\phi(x)^\top w\Rightarrow Q_w^\pi(s,a)=\psi^\pi(s,a)^\top w
+$$
+
+SF 是占用分布在有限特征上的投影。奖励张成空间、固定策略与不变动力学一起决定复用边界；这条线性价值恒等式不能直接推广到任意 learned embedding。
+
+Does Zero-Shot RL Exist?（ICLR 2023）将 FB 与不同 SF 基础特征放在同一固定数据上比较，说明联合学习可读出的占用结构与任意自监督特征并不等价。其最优性目标和有限神经训练结果需分开看：良好的 buffer 覆盖是迁移结果的一部分，不是凭空从零样本查询产生的经验。
+
+实验可从固定策略、固定动力学开始：学习占用或 SF 后冻结表示，公布一组未参与表示训练的 cumulants；分别测查询读出误差、行为覆盖和下游控制。再改变策略、动力学或 continuation，每次只放宽一个复用前提。研究空缺是有限预算下怎样选择需保留的查询、检测新查询超出表示范围，并用未来经验补齐。
+
+<a id="research-gvf-flow-feature-boundaries"></a>
+
+## 研究专题 B · SF² 的线性结构究竟在哪一层
+
+SF²（ICLR 2026）将未来占用作为生成式预测问题，再让控制器使用压缩特征。这条链值得逐层核对：它不是将所有 GVF 统一为一个线性 TD 网络，也不是自动学习完整 agent state。原文的结构约束加在生成向量场上，而不是最终的 reward readout 或 critic 上。
+
+$$
+u_\theta(x,k,s,a)=\zeta_\theta(x,k)^\top\psi_\theta(s,a),\qquad \frac{dx_k}{dk}=u_\theta(x_k,k,s,a),\qquad Q_\omega(s,a)=g_\omega(\psi_\theta(s,a))
+$$
+
+x 是生成的未来状态位置，k∈[0,1] 是噪声到目标分布的生成时间，ψ 是当前状态动作的条件特征，ζ 是随 x 与 k 改变的矩阵投影。g 可以非线性；k 不等于环境原始步数，也不是 GVF 的 discount。
+
+$$
+\mathcal L_{\rm flow}=(1-\gamma)\mathcal L_{\rm one\ step}+\gamma\mathcal L_{\rm bootstrap}
+$$
+
+两项分别拟合真实下一状态的 flow target 与下一个状态动作条件的目标向量场，具体采样路径、目标网络及停止梯度按原文算法实现。这里表示混合结构，不声称两项可由普通标量 TD error 直接替代。
+
+即使 u 对 ψ 线性，求解 ODE 时 x 随 ψ 改变，而 ζ 又依赖 x；因此最终样本与其统计量一般可非线性依赖 ψ。由“生成向量场线性”跳到“任意新奖励的 Q 都可线性读出”，少了一个实质性证明或实验。原文在小生成时间下给出的 SR-like 更新联系也被明确限定为近似解释。
+
+| 待证明的命题 | 原文提供什么 | 可增加什么检验 |
+| --- | --- | --- |
+| 能预测多步未来占用 | flow 与 successor mixture 的训练结构 | 独立未来轨迹上的分布距离和多模态覆盖 |
+| ψ 适合原任务控制 | 与 TD3/SAC 联合的控制实验 | 同 backbone、相同 update ratio 与模型调用预算的对照 |
+| ψ 支持线性新查询 | 不由向量场分解自动推出 | 冻结 ψ，以线性 head 预测新 cumulants；对照非线性 head |
+| ψ 能作为递归 agent state | 不是该工作直接研究的对象 | 同观测不同历史、递归更新和梯度信用实验 |
+| 适合 strict streaming | 作者算法含 replay、批次与目标网络 | 单次经验协议需要另行设计并报告 |
+
+**算法：不同证据层逐次扩展，保留作者协议与新 CRL 协议的区别**
+
+1. 读作者实现时（不在教材中声称已复现）：
+  1. 追踪 networks 中 ψ、ζ 与非线性 Q 的维度
+  1. 追踪 losses 中 one-step、bootstrap、critic loss 的梯度路径
+  1. 核对 target ψ/ζ 更新时序、γ 与 ODE 积分步数
+  1. 固定 replay 与 update ratio，先复现原任务对照
+  1. 冻结 ψ 后做新 cumulant 的线性/非线性读出
+  1. 最后才改变动力学或改为流式经验协议
+
+对持续预测的启发是将“预测内容丰富”与“下游可便宜查询”分开优化。生成器可以保留多模态未来，而有限特征有助于低成本控制；两者之间是否形成可持续维护、可迁移且资源有界的知识接口，仍是可检验的研究问题。
+
 <a id="lesson-check"></a>
 
 ## 16 · 习题与讨论
@@ -538,6 +686,356 @@ $$
 标量奖励价值是 GVF 的一种特例。定义多个问题不等于已经学出有用状态或控制策略。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-gvf) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=gvf) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=gvf)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+
+- [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
+- [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
+- [When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-self-prediction-auxiliary-tasks)
+- [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
+- [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+
+#### 时间信用分配与离策略多步学习
+
+当前反馈如何修正过去的决策与预测，哪些历史信息可以压缩成迹？
+
+前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。
+
+- [Deep Reinforcement Learning with Gradient Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces)
+- [Expected Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-expected-eligibility-traces)
+
+#### 后果模型、知识保留与规划
+
+学会预测后果，何时能真正改善决策？
+
+模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+
+- [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Deep Reinforcement Learning with Gradient Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces)
+
+#### 完整智能体与研究基础
+
+长期能力应怎样定义，各个机制又怎样共同产生它？
+
+形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+
+- [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
+- [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
+- [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
+- [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+
+### Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks
+
+Khurram Javed, Haseeb Shah, Richard S. Sutton, Martha White
+
+JMLR 24 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+如果每次观测只处理一次，如何学习包含历史信息的状态，而不保存一段序列做反向传播？
+
+#### 关键机制
+
+一般递归网络的实时递归学习需要维护庞大的参数—状态敏感度。CCN 限制列之间的递归依赖，并逐步构造新特征，使敏感度可以局部计算。它通过改变网络结构和构造过程降低求导成本，而不是把任意稠密 RNN 的完整导数免费变小。
+
+#### 证据
+
+论文分析受限结构的计算性质，并在动物学习启发的预测问题和 Atari 策略评价中检验预测效率。这里的 Atari 结果主要是预测已有策略的回报，不等于从头训练完整控制智能体。
+
+#### 条件与限制
+
+结构约束、构造顺序和被冻结的旧特征共同限制函数类。监督预测和策略评价上的优势，还需要在会主动改变数据分布的控制闭环中检验。
+
+#### 阅读与实验
+
+先写出递归状态对参数的敏感度递推，再检查哪些跨列项被结构消除。比较 CCN、截断 BPTT 与 RTU 时，同时计入状态、梯度缓存和每步计算。
+
+#### 原文与相关入口
+
+- [JMLR 原文与论文入口](https://www.jmlr.org/papers/v24/23-0367.html)：从网络结构、敏感度传播与预测实验三部分阅读。
+
+### Towards model-free RL algorithms that scale well with unstructured data
+
+Joseph Modayil, Zaheer Abbas
+
+arXiv 预印本 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+大量原始观测中只有少数局部组合与奖励有关，智能体能否逐步构造有用的预测特征？
+
+#### 关键机制
+
+Nibbler 将预测问题的构造和预测结果的复用结合起来：选择局部输入、学习与奖励相关的通用价值预测，再将预测作为后续学习的特征。GVF 在这里不是一个新的优化器，而是描述“预测什么、在什么行为下预测”的问题接口。
+
+#### 证据
+
+作者在组合式合成环境中增加观测规模，报告了利用任务结构的样本效率。环境可以具有指数增长的状态组合，但学习器不必显式枚举全部状态。
+
+#### 条件与限制
+
+这不是对任意高维观测的线性样本复杂度保证。局部可分解结构、候选问题与特征构造规则仍是关键条件；从该实验族迁移到视觉控制需要额外验证。
+
+#### 阅读与实验
+
+把一条预测完整写成累积量、延续条件、目标策略和输入特征四项，再指出它如何进入主任务的价值函数。区分问题生成带来的收益与增加参数量带来的收益。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/abs/2311.02215)：问题族、Nibbler 构造过程与扩展性实验。
+
+### When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning
+
+Claas A. Voelcker, Tyler Kastner, Igor Gilitschenski, Amir-massoud Farahmand
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+预测下一潜在状态、重建观测和学习价值，为什么会产生不同的表示？
+
+#### 关键机制
+
+论文在含干扰因素的线性问题中分析辅助目标的学习动力学。潜在状态自预测与价值学习共同作用时可能保留决策相关结构，但单独训练同一目标未必得到最有用的特征。目标的作用取决于它和 TD 目标怎样共享表示。
+
+#### 证据
+
+线性分析给出可检查的条件，并用神经网络实验检验部分预测。结果不支持“任何自监督预测都能改善 RL”这种无条件判断。
+
+#### 条件与限制
+
+线性分析中的观测映射、优化过程与神经网络控制并不完全等价。项目仓库入口不等于已经提供完整可复现实验实现，因此这里不列为可运行代码。
+
+#### 阅读与实验
+
+固定编码器容量，分别比较仅 TD、仅辅助任务和联合训练。记录价值误差与任务收益，不要只用辅助损失下降评价表示。
+
+#### 原文与相关入口
+
+- [RLC 2024 论文入口](https://rlj.cs.umass.edu/2024/papers/Paper197.html)：原文、线性假设与神经网络实验。
+- [作者预印本](https://arxiv.org/abs/2406.17718)：便于追踪论文版本。
+
+### Deep Reinforcement Learning with Gradient Eligibility Traces
+
+Esraa Elelimy, Brett Daley, Andrew Patterson, Marlos C. Machado, Adam White, Martha White
+
+RLC 2025 / RLJ · 2025 · 支持方法与理论
+
+#### 研究问题
+
+资格迹怎样与明确的梯度目标结合，而不是直接把线性半梯度规则搬到深度网络？
+
+#### 关键机制
+
+论文从广义投影 Bellman 误差出发构造多步目标，推导带资格迹的梯度学习方法。前向视角连接多步回报与经验重放，后向视角通过递推迹分配信用。目标函数、辅助估计器和迹的更新共同决定算法，不只是选择一个较大的 λ。
+
+#### 证据
+
+作者给出多种算法并在 MuJoCo、MinAtar 等任务中比较。代码同时提供相关梯度算法与实验设置，可以把推导中的量映射到实际更新。
+
+#### 条件与限制
+
+线性 GTD 的收敛条件不能自动赋予非线性实现全局收敛保证。重放版本与流式版本的数据使用预算也不能混为一谈。
+
+#### 阅读与实验
+
+从一段短轨迹分别计算前向多步目标和后向迹。随后对照原代码检查辅助网络、目标与主网络参数使用的是更新前还是更新后的值。
+
+#### 原文与相关入口
+
+- [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_302.pdf)：目标、算法推导与实验。
+- [作者算法库](https://github.com/esraaelelimy/gtd_algos)：论文提供的梯度 TD 与资格迹实现。
+
+#### 作者代码
+
+[原论文链接的作者仓库。](https://github.com/esraaelelimy/gtd_algos)
+
+论文梯度算法、资格迹和实验配置。
+
+### The OaK Architecture: A Vision of SuperIntelligence from Experience
+
+Richard S. Sutton
+
+RLC 2025 讲座 / Oak Lab · 2025 · 定义与架构观点
+
+#### 研究问题
+
+持续学习是否只是在一个现成 actor–critic 上加入抗遗忘机制，还是需要重新安排知识构造与使用？
+
+#### 关键机制
+
+OaK 提出从经验持续形成状态、预测知识、子任务、时间抽象与模型，并让这些知识服务规划的架构方向。这里的重点是模块之间怎样产生可复用知识，而不只是保留某个固定策略网络的参数。
+
+#### 证据
+
+官方页面提供 Richard Sutton 的架构讲座与相关研究入口。STOMP、预测学习和在线特征学习等论文可以检验其中具体组件，但不能自动验证整体架构。
+
+#### 条件与限制
+
+这是研究愿景与架构讲解，不是一套已公布完整训练配方、统一基准结果和可复现端到端代码的系统。资源分配、问题生成、知识替换与模块相互干扰仍需明确算法。
+
+#### 阅读与实验
+
+为每个模块写出输入、输出、更新频率和资源上限。再选择一个双模块接口做可证伪实验，例如技能模型改善是否真的减少规划误差。
+
+#### 原文与相关入口
+
+- [Oak Lab 官方讲座页面](https://oaklab.ai/posts/the-oak-architecture)：讲座入口与架构研究方向。
+- [Oak Lab 研究主页](https://oaklab.ai/)：区分已发表研究、技术文章和仍在预告中的项目。
+
+### Expected Eligibility Traces
+
+Hado van Hasselt, Sephora Madjiheurem, Matteo Hessel, David Silver, André Barreto, Diana Borsa
+
+AAAI 2021（2020预印本） · 2021 · 支持方法与理论
+
+#### 研究问题
+
+当前误差能否同时更新本次未走过、但也可能到达当前状态的过去路径？
+
+#### 关键机制
+
+学习给定当前状态的资格迹条件均值，再用当前TD误差更新该均值所指向的过去预测。递归混合在实际轨迹迹与预测的期望迹之间插值；预测对象是过去资格，而非未来奖励。
+
+#### 证据
+
+原文在Markov状态与相应条件下证明更新均值相同、逐分量方差不增，并在路径汇合问题检验预测效率。信用章精确枚举一个正例和一个状态混叠反例。
+
+#### 条件与限制
+
+不完整观察、参数漂移和近似迹预测器会破坏无偏条件。全参数期望迹预测还有输出维度和计算成本；小实验不复现作者的神经实验。
+
+#### 阅读与实验
+
+保持奖励边际分布一致，仅改变奖励是否依赖隐藏的过去路径。先测信用均值与方差，再研究agent state能否恢复条件独立。
+
+#### 原文与相关入口
+
+- [作者原文](https://arxiv.org/html/2007.01839)：Lemma 1、Proposition 1及ET(λ,η)递归混合。
+- [AAAI发表版本](https://ojs.aaai.org/index.php/AAAI/article/view/17200)：正式会议年份为2021。
+
+### Does Zero-Shot Reinforcement Learning Exist?
+
+Ahmed Touati, Jérémy Rapin, Yann Ollivier
+
+ICLR 2023 · 2023 · 支持方法与理论
+
+#### 研究问题
+
+没有事先指定奖励时，怎样学一套预测表示，日后接收新奖励就能选行为？
+
+#### 关键机制
+
+Forward–Backward 表示联合学习行为条件的未来占用与奖励读出，而非先固定任意编码器再学习 successor features。新奖励被映射到任务向量，策略根据这个向量直接行动；该论文系统比较 FB 与多种 SF 基础特征。
+
+#### 证据
+
+原文在固定离线 replay buffers 上比较零样本任务迁移，借此把表示学习与探索数据的质量分开。不同特征与数据覆盖产生显著差异，不能仅靠“所有奖励”的理论目标预测实际效果。
+
+#### 条件与限制
+
+假定共享动力学与可用经验覆盖。无下游梯度更新不等于无预训练成本；有限秩、近似训练和奖励估计都有误差。新动力学、历史混叠和严格一次使用经验均须另测。
+
+#### 阅读与实验
+
+同一 buffer 对比随机特征、谱特征与联合 FB，再独立换 buffer。奖励读出误差、占用误差与新任务回报分别报告，避免把数据覆盖优势记成表示优势。
+
+#### 原文与相关入口
+
+- [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
+- [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
+
+#### 作者代码
+
+[论文作者团队仓库；归档工程，依赖和旧环境需单独核验。](https://github.com/facebookresearch/controllable_agent)
+
+FB 与 SF 的训练、固定数据实验及奖励查询示例。
+
+### Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations
+
+Haosen Shi, Jianda Chen, Sinno Jialin Pan
+
+ICLR 2026 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+能否直接学习多步未来状态的分布，并把它压缩为适合控制学习的特征？
+
+#### 关键机制
+
+SF² 以 flow matching 估计 successor measure，将条件向量场分解为未来位置及生成时间的投影与当前状态动作特征的乘积。特征进入 TD3/SAC 的 critic；线性的是向量场对条件特征的分解，critic 本身可以非线性。
+
+#### 证据
+
+正式原文给出 mixture Bellman 结构、生成式 bootstrap 与控制实验，并提供作者 JAX/Brax 仓库。实验研究在线收集数据下的 off-policy 控制，并使用 replay、批次与目标网络。
+
+#### 条件与限制
+
+“online policy learning”不代表 strict streaming。生成时间不是环境时间；向量场线性不保证任意奖励价值线性。文中与 SR 的小生成时间联系是近似动机，未证明递归 agent state 或任意持续变化下的充分性。
+
+#### 阅读与实验
+
+对齐模型调用与梯度预算，拆分直接预测、bootstrap、critic 联合训练。冻结特征后比较线性与非线性读出，再测新奖励和动力学变化，才能检验预测知识的可复用程度。
+
+#### 原文与相关入口
+
+- [ICLR 2026 正式原文](https://proceedings.iclr.cc/paper_files/paper/2026/hash/48acf4b231771e693f42305b4c9b4c9f-Abstract-Conference.html)：第 2–3 节和算法附录；区分 flow 时间、环境时间与近似 SR 联系。
+- [原文链接的作者实现](https://github.com/Shiien/successor-flow-representation-implementation)：SAC/TD3、flow 特征、对照和 sweep 配置。
+
+#### 作者代码
+
+[正式论文摘要直接链接的作者代码。](https://github.com/Shiien/successor-flow-representation-implementation)
+
+基于 JAX/Brax 的 SF² 控制实验；不包含自动 GVF 问题发现或完整持续架构。
+
+### The Value Equivalence Principle for Model-Based Reinforcement Learning
+
+Christopher Grimm, André Barreto, Satinder Singh, David Silver
+
+NeurIPS 2020 · 2020 · 支持方法与理论
+
+#### 研究问题
+
+模型容量有限时，必须预测全部状态细节，还是只须保持规划会查询的量？
+
+#### 关键机制
+
+Value equivalence 以策略集合和函数集合定义模型规格：模型对这些函数进行这些策略的 Bellman backup，应与真实环境相同。扩大查询族会缩小可接受模型族；它把“决策相关”从口号变成有条件的等价关系。
+
+#### 证据
+
+论文给出等价模型类的性质及有限实验，并解释若干隐式模型方法。后续 Proper Value Equivalence（NeurIPS 2021）研究策略价值固定点等价及规划充分性。
+
+#### 条件与限制
+
+少数当前 critic 的 backup 相同，不说明所有新奖励、新策略或风险目标都相同。精确算子等价与神经损失在样本上较小不同；奖励或查询族变化后须重新验证。
+
+#### 阅读与实验
+
+保存独立的 planner 查询集，直接测 target 误差和动作排序。用未参与模型拟合的价值函数检验迁移，并与像素误差对照，找出模型实际保留的信息。
+
+#### 原文与相关入口
+
+- [NeurIPS 2020 原文](https://papers.nips.cc/paper/2020/hash/3bb585ea00014b0e3ebe4c6dd165a358-Abstract.html)：VE 依赖策略与函数集合。
+- [Proper Value Equivalence · NeurIPS 2021](https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html)：多步算子、固定点与规划充分性；不是任意潜在网络的保证。
+
 
 <a id="chapter-code"></a>
 
@@ -581,3 +1079,21 @@ python3 examples/gvf_lab.py test
 - [GVFN · 作者代码](https://github.com/mkschleg/GVFN)：问题参与递归状态之后，需要额外处理表示与预测依赖。
 
 - [GVFHordes.jl · 作者问题库](https://github.com/mkschleg/GVFHordes.jl)：按 cumulant / discount / policy 组织问题接口；可与本页 question 函数逐项对应。
+
+- [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
+
+- [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
+
+- [ICLR 2026 正式原文](https://proceedings.iclr.cc/paper_files/paper/2026/hash/48acf4b231771e693f42305b4c9b4c9f-Abstract-Conference.html)：第 2–3 节和算法附录；区分 flow 时间、环境时间与近似 SR 联系。
+
+- [原文链接的作者实现](https://github.com/Shiien/successor-flow-representation-implementation)：SAC/TD3、flow 特征、对照和 sweep 配置。
+
+- [NeurIPS 2020 原文](https://papers.nips.cc/paper/2020/hash/3bb585ea00014b0e3ebe4c6dd165a358-Abstract.html)：VE 依赖策略与函数集合。
+
+- [Proper Value Equivalence · NeurIPS 2021](https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html)：多步算子、固定点与规划充分性；不是任意潜在网络的保证。
+
+- [Barreto et al. · Successor Features for Transfer in Reinforcement Learning](https://arxiv.org/abs/1606.05312)：有限奖励特征、固定策略 SF 与 GPI 的经典机制桥梁。
+
+- [Touati & Ollivier · Learning One Representation to Optimize All Rewards](https://arxiv.org/abs/2103.07945)：FB 表示的理论出发点；探索/经验覆盖、近似误差及奖励查询约定。
+
+- [Sutton, Bowling & Pilarski · The Alberta Plan for AI Research](https://arxiv.org/abs/2208.11173)：状态、预测、时间抽象与规划的研究纲领，不是完成全闭环的报告。

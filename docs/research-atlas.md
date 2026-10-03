@@ -6,6 +6,59 @@
 
 评价的是最终策略，还是整个学习生命期？
 
+### 奖励表示与奖励学习：目标怎样进入智能体？
+
+问题设定：设计者拥有偏好，智能体只能接收有限观测和奖励。奖励可能手写，也可能由人的比较或示范推断。必须分开目标变化、奖励估计变化与环境变化。
+
+已有认识：期望效用与局部加性奖励需要不同条件。势函数塑形在边界条件满足时保持策略排序；偏好模型可以从片段比较中学习。
+
+尚缺什么：新行为会改变奖励模型的数据分布。有限反馈下，怎样保持奖励语义并防止代理失效仍是开放问题。
+
+#### 方法与条件
+
+- **表示条件与奖励状态**：用反例检查原状态是否丢失时间结构；必要时显式增加奖励自动机或记忆。
+  条件与代价：更大状态不保证任意偏好都可由有限计算表示。
+- **偏好学习与重标记**：比较损失更新奖励模型；控制器使用更新后的信号并产生新经验。
+  条件与代价：反馈噪声、片段选择和奖励模型版本都属于协议。
+
+#### 相互竞争的解释
+
+- 收益可能来自更接近真实目标，也可能只是更稠密的反馈。
+- 奖励下降可能来自目标变化、模型外推错误或控制器失去可塑性。
+
+#### 可执行实验
+
+假设：相同反馈预算下，版本一致的经验重标记可减少奖励模型更新后的控制滞后。
+
+设计：固定环境与真实评价，仅改变奖励模型；再独立改变真实目标。设置训练分布内与新策略片段两种偏好测试。
+
+对照：真奖励诊断、固定模型、不重标记、全部重标记；匹配查询与计算预算。
+
+测量：原任务收益、偏好校准、奖励投机行为、适应成本与反馈数。
+
+什么结果会反驳该解释：若优势只来自更高反馈量，或训练奖励提高但真实评价下降，则不支持目标学习改进。
+
+#### 教材与研究者
+
+[奖励假设与奖励设计](../textbook/reward-design.md) · [交互、奖励与优化目标](../textbook/objectives.md) · [智能体状态与递归学习](../textbook/state.md) · [持续控制与学习智能体比较](../textbook/control.md) · [目标条件化与子任务构造](../textbook/goals.md) · [实验设计、统计与算法测试](../textbook/experiments.md)
+
+[Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/) · [David Abel](https://yingwen.io/zh/continual-rl/resource/S08/) · [Michael Bowling](https://yingwen.io/zh/continual-rl/resource/S17/) · [Satinder Singh](https://yingwen.io/zh/continual-rl/resource/S41/) · [Will Dabney](https://yingwen.io/zh/continual-rl/resource/S65/)
+
+#### 实验平台
+
+- [解析小 MDP 与短序列](experiments.md)：已知转移、已知目标、固定种子的低维问题。 精确最优值、有限差分、前后向等价、机制反例。 边界：用来验证算法与解释，不估计复杂任务性能。
+
+#### 原文与代码
+
+- [Bowling et al. · Settling the Reward Hypothesis](https://proceedings.mlr.press/v202/bowling23a.html)（ICML 2023）：区分期望效用表示与逐步 Markov 奖励表示；时间一致性是额外条件。
+  undefined
+- [Abel et al. · On the Expressivity of Markov Reward](https://arxiv.org/abs/2111.00876)（NeurIPS 2021）：给定状态和奖励输入后，并非所有任务偏好都能由固定 Markov 奖励表达。
+  undefined
+- [Lee et al. · PEBBLE](https://arxiv.org/abs/2106.05091)（2021）：用预训练与奖励重标记提高偏好反馈的利用率。反馈模型与策略的数据分布共同变化。
+  [B-Pref / PEBBLE 作者代码](https://github.com/rll-research/BPref)：奖励模型、查询策略、回放重标记与训练配置。
+
+---
+
 ### 01 · 什么目标能够评价一个始终在学习的智能体？
 
 问题设定：智能体只有有限存储和每步计算时间。学习改变其后续行为，环境可能持续而不终止，也可能存在成本不为零的重置。比较前需规定奖励、时间单位、评价时域和可用干预。平稳环境仍可能对有限资源智能体提出长期学习需求。
@@ -42,7 +95,7 @@
 
 #### 教材与研究者
 
-[交互、奖励与优化目标](../textbook/objectives.md) · [平均奖励与差分价值](../textbook/average.md) · [实验设计、统计与算法测试](../textbook/experiments.md)
+[交互、奖励与优化目标](../textbook/objectives.md) · [持续控制与学习智能体比较](../textbook/control.md) · [平均奖励与差分价值](../textbook/average.md) · [实验设计、统计与算法测试](../textbook/experiments.md)
 
 [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/) · [A. Rupam Mahmood](https://yingwen.io/zh/continual-rl/resource/S05/) · [David Abel](https://yingwen.io/zh/continual-rl/resource/S08/) · [Michael Bowling](https://yingwen.io/zh/continual-rl/resource/S17/)
 
@@ -224,7 +277,7 @@
 
 #### 教材与研究者
 
-[控制问题与广义策略迭代](../textbook/control.md) · [深度价值学习](../textbook/deep-value.md) · [策略梯度与 actor–critic](../textbook/policy.md) · [最大熵控制](../textbook/soft-control.md) · [知识保留与再适应](../textbook/retention.md)
+[持续控制与学习智能体比较](../textbook/control.md) · [深度价值学习](../textbook/deep-value.md) · [策略梯度与 actor–critic](../textbook/policy.md) · [最大熵控制](../textbook/soft-control.md) · [知识保留与再适应](../textbook/retention.md)
 
 [Doina Precup](https://yingwen.io/zh/continual-rl/resource/S07/) · [Csaba Szepesvári](https://yingwen.io/zh/continual-rl/resource/S15/) · [Hado van Hasselt](https://yingwen.io/zh/continual-rl/resource/S61/) · [Wang Chi Cheung](https://yingwen.io/zh/continual-rl/resource/S98/)
 
@@ -698,7 +751,7 @@
 
 #### 教材与研究者
 
-[知识保留与再适应](../textbook/retention.md) · [控制问题与广义策略迭代](../textbook/control.md) · [转移模型与后果模型](../textbook/models.md) · [实验设计、统计与算法测试](../textbook/experiments.md)
+[知识保留与再适应](../textbook/retention.md) · [持续控制与学习智能体比较](../textbook/control.md) · [转移模型与后果模型](../textbook/models.md) · [实验设计、统计与算法测试](../textbook/experiments.md)
 
 [Doina Precup](https://yingwen.io/zh/continual-rl/resource/S07/) · [George Konidaris](https://yingwen.io/zh/continual-rl/resource/S09/) · [Sarath Chandar](https://yingwen.io/zh/continual-rl/resource/S13/) · [Razvan Pascanu](https://yingwen.io/zh/continual-rl/resource/S14/) · [Michael L. Littman](https://yingwen.io/zh/continual-rl/resource/S42/) · [Samuel Kessler](https://yingwen.io/zh/continual-rl/resource/S100/) · [Piotr Miłoś](https://yingwen.io/zh/continual-rl/resource/S103/)
 
@@ -780,7 +833,7 @@
 
 ---
 
-### 14 · 应当探索什么、练习什么，以及如何保留继续学习的机会？
+### 14 · 应当探索什么、练习什么，以及如何保留未来交互与学习的机会？
 
 问题设定：智能体的行为决定未来数据。新奇、可学习性、学习进展和任务收益并不一致。课程 teacher 能否选目标、改环境或重置，也会从根本上改变问题。
 
@@ -812,7 +865,7 @@
 
 测量：有用覆盖、噪声区域停留、首次任务发现、恢复成功、失能时间、外在累计奖励和人工干预。
 
-什么结果会反驳该解释：去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善可继续学习能力，则需更换机制解释。
+什么结果会反驳该解释：去掉 teacher 的环境筛选权限后优势消失，或探索仅增加覆盖而未改善后续学习能力，则需更换机制解释。
 
 #### 教材与研究者
 

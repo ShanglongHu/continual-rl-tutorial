@@ -36,7 +36,7 @@ Eligibility trace 可记成 e ← γλe + 当前特征，再用 TD 误差 δ 更
 
 先会手算线性预测，再阅读复杂的 streaming actor–critic。
 
-符号：xₜ 是状态特征向量；w 是权重；γ 是折扣，λ 控制迹的衰减。以下为 on-policy 线性预测的 accumulating traces。
+符号：$x_t$ 是状态特征向量；w 是权重；γ 是折扣，λ 控制迹的衰减。以下为 on-policy 线性预测的 accumulating traces。
 
 用线性函数预测价值，并构造一步自举目标。
 

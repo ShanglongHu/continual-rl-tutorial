@@ -8,6 +8,78 @@
 - 求解局部 KL 约束，理解 Fisher、共轭梯度与回溯。
 - 按优势符号解释 PPO，并固定旧策略、优势与 critic target。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+已有旧策略生成的一批轨迹，希望在有限数据下改变策略，又不让分布变化破坏局部近似。
+
+### 给定条件与符号
+
+- 状态 $s\in\mathcal S$、动作 $a\in\mathcal A$；转移与奖励核 $p(s^{\prime},r\mid s,a)$。
+- 初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\le\gamma<1$；$J(\pi)=\mathbb E_{d_0,\pi,p}[\sum_{t\ge0}\gamma^tR_{t+1}]$。
+- 旧策略 $\pi_{\rm old}$、其折扣占用分布 $d_{\rm old}$、优势估计 $\hat A$、KL 预算 $\delta>0$。
+
+### 需要求解的对象
+
+选择局部策略更新；真实外部目标是 J，局部 surrogate 只是可计算替代。
+
+### 信息与数据权限
+
+更新时不能立即知道新策略的完整占用分布；重复使用同批数据会逐渐偏离采样策略。
+
+$$
+\max_\theta\mathbb E_{s\sim d_{\rm old},a\sim\pi_{\rm old}}\!\left[\frac{\pi_\theta(a\mid s)}{\pi_{\rm old}(a\mid s)}\hat A(s,a)\right]\quad\text{s.t.}\quad\mathbb E_{d_{\rm old}}[D_{\rm KL}(\pi_{\rm old}\|\pi_\theta)]\le\delta
+$$
+
+这是常用平均 KL 信赖域近似。严谨性能界中的最坏状态分布偏差、优势误差与实践平均约束不能混为一谈。
+
+### 成立条件与解的含义
+
+- 旧策略支持需覆盖所评价动作；批内旧 log-prob 和优势版本固定。
+- Fisher 与局部二次近似要求适当数值条件。
+
+判断准则：同时记录实际 KL、clip fraction、收益和 value 误差；clipping 生效不是改善证明。
+
+### 适用边界
+
+- 声称 PPO clipping 严格限制所有状态的 KL 或保证单调提高收益。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 限制表示或采用近似 · [策略梯度与 actor–critic](../../textbook/policy.md)：用旧策略分布下的局部代理目标近似真实收益变化。
+
+- 改变信息或数据协议 · [流式更新与稳定性](../../textbook/streaming.md)：多轮批内优化不同于每步只消费一次新经验。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+改变动作概率还会改变未来状态分布，旧数据只直接描述旧策略。
+
+### 本章的核心思路
+
+限制更新尺度以维持局部比较的可信度，并明确理论界与实际近似之间的差距。
+
+1. [从真实性能差分找到近似位置](trust-region.md#lesson-derive)：用旧占用分布替代新占用分布是关键近似。
+
+2. [用局部几何求受限步长](trust-region.md#lesson-local)：TRPO 借助 Fisher、共轭梯度和回溯近似求解信赖域问题。
+
+3. [用裁剪代理简化优化](trust-region.md#lesson-ppo)：PPO 对有利的比率变化设置分支，但没有把实际约束精确解出来。
+
+结论与条件：理想信赖域理论有优势和分布条件；实际平均 KL 与裁剪目标不自动继承全部保证。
+
+### 相关方法改变了什么
+
+- TRPO / PPO：分别近似求约束更新与优化裁剪代理目标。
+
+- Clip / KL penalty：前者截取目标分支，后者在目标中惩罚偏离，二者都需观测实际分布变化。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -252,6 +324,8 @@ PPO 的参数复用和 replay 不是一回事。它复用的是最近采样策�
 - 问：为何使用 CG 而不直接求逆？答：网络参数很多，存储曲率矩阵需要平方级空间；Hessian-vector product 不需要显式矩阵。
 - 实验：把一维例子的 δ 增大，比较二次预测 KL 与实际 KL，并观察回溯是否缩步；再将优势都设为零，确认参数保持不变。
 
+
+
 <a id="chapter-code"></a>
 
 ## 下载与运行
@@ -284,8 +358,11 @@ python3 examples/deep_textbook_lab.py test
 
 ## 与教材主线的衔接
 
+本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+[领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
+
 - [策略梯度与 actor–critic](../../textbook/policy.md)
-- [控制问题与广义策略迭代](../../textbook/control.md)
 - [实验设计、统计与算法测试](../../textbook/experiments.md)
 
 对应原始材料：Sutton & Barto §13.2–13.5；TRPO §3–5；PPO §3。本文为原创讲解，原书、论文与上游代码保留各自许可。

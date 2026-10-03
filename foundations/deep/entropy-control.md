@@ -8,6 +8,80 @@
 - 计算 tanh 与动作缩放后的概率密度。
 - 区分 actor、critic、温度三类梯度与停止梯度位置。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+控制目标同时评价外部奖励和策略随机性；随机 actor 的密度进入价值与策略更新。
+
+### 给定条件与符号
+
+- 状态 $s\in\mathcal S$、动作 $a\in\mathcal A$；转移与奖励核 $p(s^{\prime},r\mid s,a)$。
+- 初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\le\gamma<1$；$J(\pi)=\mathbb E_{d_0,\pi,p}[\sum_{t\ge0}\gamma^tR_{t+1}]$。
+- 可微密度 $\pi_\theta(a\mid s)$、温度 $\alpha\ge0$；连续动作密度相对于指定坐标与基准测度定义。
+
+### 需要求解的对象
+
+求最大熵目标下的策略与 soft 价值，而非只给普通奖励策略增加探索噪声。
+
+### 信息与数据权限
+
+使用 replay 转移和当前 actor 采样动作；需要正确的变换后动作密度。
+
+$$
+J_\alpha(\pi)=\mathbb E_\pi\!\left[\sum_{t\ge0}\gamma^t\{R_{t+1}-\alpha\log\pi(A_t\mid S_t)\}\right]
+$$
+
+熵项是优化目标的一部分。连续微分熵依赖动作坐标，温度与奖励尺度必须一起解释。
+
+### 成立条件与解的含义
+
+- 目标与对数密度可积；有界动作变换包含 Jacobian。
+- 自动温度调整还引入目标熵约束及其可行性。
+
+判断准则：分别检查外部收益、熵、温度和密度数值；不能把 entropy bonus 算入环境奖励率后与无熵算法直接比较。
+
+### 适用边界
+
+- 把自动温度当作任意任务都不需要调目标熵的保证。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 限制表示或采用近似 · [最大熵控制](../../textbook/soft-control.md)：本章用神经 critic、连续 actor 和 replay 近似同一个最大熵问题；与相关章共享 soft 目标，而非再次改变目标。
+
+- 改变评价目标 · [持续控制与学习智能体比较](../../textbook/control.md)：相对只评价外部奖励的控制，本章把策略熵纳入优化目标，因而改变 Bellman 方程与策略改善对象。
+
+- 改变评价目标 · [平均奖励与差分价值](../../textbook/average.md)：本章相对平均奖励控制同时采用折扣时间聚合与熵项；若研究平均奖励 soft 控制，还须另定该目标，不能只将折扣设为一。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+策略既决定采样动作，也决定自己的密度惩罚；有界动作变换会改变密度。
+
+### 本章的核心思路
+
+从最大熵目标推导 soft 备份，再用重参数化构造可微 actor 更新。
+
+1. [先改变价值对象](entropy-control.md#lesson-derive)：熵进入后继 soft value，普通 Q target 不能原样使用。
+
+2. [保持采样动作与密度一致](entropy-control.md#lesson-density)：tanh 变换的 Jacobian 是概率公式的一部分。
+
+3. [把随机性要求写成约束](entropy-control.md#lesson-temperature)：温度更新的符号来自对偶方向，不靠经验记忆正负号。
+
+结论与条件：精确 soft 策略改善与深度 replay 实现不同；函数逼近和数据覆盖仍限制实践。
+
+### 相关方法改变了什么
+
+- 固定 / 自适应温度：前者指定奖励与熵权衡，后者试图满足另给的熵水平。
+
+- TD3 / SAC：不只是确定性与随机性区别，优化目标和 critic 定义也不同。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -202,6 +276,8 @@ Spinning Up 的 SAC 教学实现使用固定 alpha，适合对照核心损失和
 - 问：连续动作的目标熵为负是否错误？答：不错误，微分熵可为负并依赖动作单位。
 - 实验：将动作尺度从一改为二，确认 log-density 减少 log2；保持目标熵不变时观察温度梯度如何变化，再讨论怎样平移目标以保持同等约束。
 
+
+
 <a id="chapter-code"></a>
 
 ## 下载与运行
@@ -233,6 +309,10 @@ python3 examples/deep_textbook_lab.py test
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
+
+本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+[领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 
 - [最大熵控制](../../textbook/soft-control.md)
 - [策略梯度与 actor–critic](../../textbook/policy.md)

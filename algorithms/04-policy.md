@@ -8,6 +8,82 @@
 - 由 TD error 递推计算 GAE，正确处理终止、截断和 rollout 边界。
 - 手算 PPO 的正负 advantage 裁剪，并运行有真实采样循环的最小实现。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+直接改善参数化随机策略；策略变化也改变后续数据分布。先以固定有限时域推导，再区分自举优势和旧数据代理。
+
+### 给定条件与符号
+
+- 初始分布、环境接口、有限时域与回报准则。
+- 可微策略类、采样长度、优势估计器、优化次数和数据权限。
+
+### 需要求解的对象
+
+策略参数及指定回报目标的梯度估计；critic为估计辅助量，PPO裁剪目标为局部代理。
+
+### 信息与数据权限
+
+$\tau$ 是由策略 $\pi_\theta$ 产生的轨迹。PPO保存采样时旧动作概率，不能在每轮优化中重算分母；时间截断与真实终止分别处理。
+
+$$
+\max_\theta J(\theta),\qquad J(\theta)=\mathbb E_{\tau\sim p_\theta}\!\left[\sum_{t=0}^{T-1}R_{t+1}\right]
+$$
+
+$\theta$ 为策略参数，$p_\theta$ 为策略诱导的轨迹分布，$T$ 为固定有限时域。本章先用不折扣目标；若改为从起点严格折扣，梯度需相应时间/占用权重。PPO旧数据裁剪代理最大化不等于精确最大化此 $J$。
+
+### 成立条件与解的含义
+
+- 环境与初始分布不依赖策略参数；score求导需可交换期望与求导等正则条件。
+- baseline不依赖当前动作且actor将其视为固定权重；近似critic、GAE和数据重用引入的误差分别声明。
+
+判断准则：小bandit上梯度方向与精确期望/有限差分一致，正负优势裁剪分支及GAE边界正确；收益以新交互评估，不由actor loss替代。
+
+### 适用边界
+
+- PPO裁剪不提供所有状态上的硬KL信赖域。
+- 局部梯度方向不保证有限大步后回报单调增加。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 限制表示或采用近似 · [持续控制与学习智能体比较](../textbook/control.md)：参数化策略梯度提供局部策略改善，不穷举完整有限资源学习器。
+
+- 组合不同学习问题 · [时间信用分配与资格迹](../textbook/credit.md)：GAE和多步优势为动作梯度分配时间信用，不是独立控制目标。
+
+- 改变评价目标 · [最大熵控制](../textbook/soft-control.md)：相对最大熵控制，本章基本目标只累计外部奖励；若另外加入熵项就改变该基本目标。PPO与SAC的数据协议差异还需另行说明。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+环境奖励不可直接沿动作反传，完整回报的梯度估计又有较大方差；重复优化会离开采样策略。
+
+### 本章的核心思路
+
+先对轨迹概率求导，再用因果性和baseline减少无关噪声，最后明确控制旧数据代理的偏移。
+
+1. [沿概率而非环境奖励求导](../textbook/policy.md#lesson-derive)：因为动作改变轨迹分布，用log-derivative将真实回报转为采样score权重。
+
+2. [用critic与多步优势降低等待](../textbook/policy.md#policy-gae)：因为完整回报长且噪声大，TD与GAE用估计补尾；critic误差和混合长度带来相应偏差。
+
+3. [限制旧数据的局部优化激励](../textbook/policy.md#policy-ppo)：因为新策略会偏离旧采样分布，保存旧概率并按优势符号裁剪PPO代理，再以新交互验证。
+
+结论与条件：精确score和合格baseline保持期望梯度；近似critic/均匀rollout/裁剪代理需各自解释，PPO本章实现没有全局最优或硬信赖域保证。
+
+### 相关方法改变了什么
+
+- REINFORCE：完整采样回报提供梯度权重，等待和方差较大。
+
+- Actor–critic/GAE：以自举价值与多步优势替代完整回报，依赖critic质量。
+
+- PPO/TRPO：分别通过裁剪代理与约束近似管理策略变化，求解成本和保证不同。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -227,6 +303,111 @@ CRL 中固定 rollout 收集长短、更新 epoch 数和每步延迟可能决定
 从 REINFORCE 到 actor–critic，评论家提供低方差学习信号。PPO 的批量多轮更新与严格流式协议不同。
 
 [分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-policy) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=policy) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=policy)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 时间信用分配与离策略多步学习
+
+当前反馈如何修正过去的决策与预测，哪些历史信息可以压缩成迹？
+
+前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。
+
+- [IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures](https://yingwen.io/zh/continual-rl/research/#recent-vtrace-impala)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+
+#### 学习规则本身的适应
+
+谁在调整学习过程，依据哪些经验，付出多少外部训练成本？
+
+在线步长元梯度、跨任务算法发现、知识整合与局部更新控制并非同一设定。逐项写清智能体内部的更新、设计者的预训练和调参，以及测试时仍能变化的量，才能判断真正的适应来自哪里。
+
+- [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+
+### Intentional Updates for Streaming Reinforcement Learning
+
+Arsalan Sharifnassab, Mohamed Elsayed, Kris De Asis, A. Rupam Mahmood, Richard S. Sutton
+
+ICML 2026 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+能否先规定本次更新应产生多大作用，再反推合适的参数更新尺度？
+
+#### 关键机制
+
+Intentional 方法以局部线性近似连接参数变化和预测变化。critic 以减少一定比例的 TD 误差为目标，actor 控制策略输出变化的局部代理量；再结合资格迹和逐坐标尺度，求出这一次更新的强度。这是有目标的局部更新控制，不是对长期表现求导的元梯度。
+
+#### 证据
+
+论文给出推导和流式控制比较，ICML 2026 正式论文入口与作者实现均可用。实现将优化器与 actor–critic 交互区分开，便于检查更新时序。
+
+#### 条件与限制
+
+Taylor 近似在大更新时可能失准。采样动作上的对数概率变化不等于精确的全分布 KL 上界；熵项与 TD 误差符号也必须按原算法处理。
+
+#### 阅读与实验
+
+在一次更新前后直接测量预测变化，并与线性估计比较。分别测试正、负 TD 误差和很小梯度的情形，不要只检查参数是否有限。
+
+#### 原文与相关入口
+
+- [ICML 2026 原文](https://proceedings.mlr.press/v306/sharifnassab26a.html)：正式会议版本与更新意图的定义。
+- [作者实现](https://github.com/sharifnassab/Intentional_RL)：重点对照 optimizer.py 与 intentional_ac.py。
+
+#### 作者代码
+
+[原论文作者提供的实现。](https://github.com/sharifnassab/Intentional_RL)
+
+Intentional 更新与流式 actor–critic。
+
+### IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures
+
+Lasse Espeholt, Hubert Soyer, Rémi Munos, Karen Simonyan, Volodymyr Mnih, Tom Ward, Yotam Doron, Vlad Firoiu, Tim Harley, Iain Dunning, Shane Legg, Koray Kavukcuoglu
+
+ICML 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+actor采样策略落后于learner时，如何校正状态价值与策略更新？
+
+#### 关键机制
+
+V-trace用截断ρ校正当前TD误差，用独立截断c控制后续误差传播，再用下一状态V-trace目标构造actor优势。ρ上限还决定表格固定点对应的截断策略。
+
+#### 证据
+
+原文分析固定点并检验分布式多任务训练。固定版本作者代码明确区分clipped_rhos、cs、反向scan与pg_advantages。
+
+#### 条件与限制
+
+IMPALA保存短轨迹并批量训练，不属于严格单样本流式协议。截断后价值可能对应不同于原目标的策略；信用章bandit示例显示0.8变为0.5。
+
+#### 阅读与实验
+
+独立改变策略滞后、ρ上限和c上限。记录目标策略变化与传播长度，不把两种截断都只解释为方差控制。
+
+#### 原文与相关入口
+
+- [ICML原文](https://proceedings.mlr.press/v80/espeholt18a.html)：V-trace固定点与分布式实验。
+- [作者固定实现](https://github.com/google-deepmind/scalable_agent/blob/6c0c8a701990fab9053fb338ede9c915c18fa2b1/vtrace.py)：from_importance_weights与下一状态actor目标。
+
+#### 作者代码
+
+[原作者团队仓库的固定版本。](https://github.com/google-deepmind/scalable_agent/tree/6c0c8a701990fab9053fb338ede9c915c18fa2b1)
+
+IMPALA原始TensorFlow实现与V-trace；运行需要原项目环境。
+
 
 <a id="chapter-code"></a>
 

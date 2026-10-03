@@ -1,8 +1,12 @@
 # CRL：长期交互中的学习、适应与知识积累
 
-先建立评价与控制，再理解函数近似带来的训练问题，最后研究长期交互中的适应与知识积累。这是先修关系，不是后来的算法取代前面的算法。
+运行时，智能体与世界形成交互闭环；外部设计者选择奖励、初始化、数据权限、调参与预算。经典方法、神经表示和持续学习描述不同维度，可以共同用于同一智能体。下面按教学先修组织，不把三册视为互斥问题类，也不要求读完全部分支才开始研究。
 
-持续强化学习不是 DQN 或 PPO 之后的一种统一更新式。它研究一个受资源限制的智能体，如何在长时间交互中持续学习并使用经验。任务切换、无重置、固定内存、可塑性和知识构建是相关但不同的问题。先明确哪些条件改变，再选择需要研究的机制。
+[领域总览与问题地图](field-framework.md) · [奖励假设与设计](../textbook/reward-design.md) · [持续控制：比较完整学习器](../textbook/control.md)
+
+基础目录包含表格方法、函数逼近与深度核心算法。深度拓展中的部分可观测、探索、回报分布、离线数据、模型、约束和多智能体是并列研究分支，可按问题选择。
+
+持续强化学习研究受资源限制的完整智能体怎样在长期交互中适应环境、选择行动并积累知识。经典或深度方法都可以成为其部件。先区分运行时的智能体—世界闭环与外部设计者的奖励、初始化、调参和重置权限，再定义表现与可实现的比较者，最后选择机制。
 
 学习目标：
 
@@ -10,51 +14,56 @@
 - 能分开状态、预测、信用分配、流式更新和元学习，并说明它们怎样组合。
 - 能从一个最小反例出发，设计具有对照、独立测试和明确估计对象的研究实验。
 
-## 1 · 从一次训练到长期学习协议
+## 1 · 完整学习器、目标与长期交互协议
 
-说一个任务是“持续”的时候，究竟增加了什么条件？
+比较的是当前策略，还是包含内部状态与更新规则的完整智能体？
 
 Continuing 指任务没有自然终点；online 指数据到来后学习；严格 streaming 通常进一步限制经验重放与逐步预算；continual 关注学习能否长期持续。这些维度互不等价。固定环境中也可能需要不断学习，分任务的基准则可能允许任意 reset。
 
-从经典 RL 进入 CRL，先写清六项：哪些规律或任务改变，智能体能否看到变化标记，能否重置环境，哪些学习状态跨阶段保留，可用内存与计算如何随时间增长，以及最终估计什么表现。不能同时改动所有条件后只归因于一个算法部件。
+比较持续学习方案时，写清六项：哪些规律或任务改变，智能体能否看到变化标记，能否重置环境，哪些内部学习状态跨阶段保留，内存与计算如何计量，以及最终估计什么表现。设计者在完整测试生命期上挑超参数，与智能体根据已到达经验更新参数，是两种不同的信息权限。
+
+当前动作分布相同，不意味着未来学习能力相同。一个学习率为零的贪心智能体和一个持续更新的智能体可以从相同 Q 值出发，却在奖励改变后获得不同收益。价值仍可在历史和完整算法条件下定义；把历史写进状态，并不自动解决表示、覆盖与有限计算问题。
 
 长期在线效用要把学习期间的奖励也计入。平均奖励率是 continuing 问题的一种目标，折扣目标也是另一种合法选择；二者可能偏好不同策略。平均奖励的稳态存在、对初始状态的依赖和差分价值定义需要链结构条件。CRL 不要求所有任务一律改用 average reward。
 
 $$
-J_T=\mathbb E\!\left[\frac1T\sum_{t=0}^{T-1}R_{t+1}\right],\qquad \rho_\pi=\lim_{T\to\infty}\frac1T\mathbb E_\pi\!\left[\sum_{t=0}^{T-1}R_{t+1}\right]
+\begin{aligned}\bar J_T(\mathcal A,e)&=\mathbb E_{\mathcal A,e}\!\left[\frac1T\sum_{t=0}^{T-1}R_{t+1}\right],\\g(\mathcal A,e)&=\lim_{T\to\infty}\bar J_T(\mathcal A,e)\quad\text{若极限存在}.\end{aligned}
 $$
 
-Jₜ 是指定有限寿命内的平均表现；ρπ 是在极限存在等条件下固定策略的长期奖励率。终点冻结策略的测试回报是第三种量。
+A 包含行动规则、更新规则、内部状态与初始化；e 指定世界条件。有限生命期平均表现不要求稳态存在。一般非平稳学习过程的极限可能不存在；冻结策略的价值又是另一评价对象。
 
 ### 动手与核对
 
-[下载 objectives_lab.py](../examples/objectives_lab.py)
+[下载 continual_control_lab.py](../examples/continual_control_lab.py)
 
 在保存该文件的目录运行：
 
 ```sh
-python3 examples/objectives_lab.py lifetime
-python3 examples/objectives_lab.py test
+python3 examples/continual_control_lab.py demo
+python3 examples/continual_control_lab.py test
 ```
 
-预期检查：早期达到 .6 的策略累计回报为 6；晚期达到 1 的策略累计回报为 2，但最终冻结测试更高。
+预期检查：相同初始贪心策略，学习率 0、0.1、1 的十步回报分别为 0、3、9；不可逆反例中从初始世界的回报差为 96，沿实际历史的局部平均差仅 .02。
 
-实验范围：确定性对照用于区分评价对象，不推断任何训练算法的优越性。
+实验范围：已知小世界用于检验完整学习器与不同比较标准；没有声称真实单生命期中可同时观察两个算法的反事实。
 
-自测：两个方法最后测试回报相同，但一个前半程几乎不获奖励。若部署时训练也要付出代价，哪个指标能暴露差异？
+自测：两个智能体现在的动作分布相同，能否只用一个冻结策略价值判断未来谁更好？
 
-解答：报告整个寿命的累计或平均在线回报，并提供分窗口曲线。只看最后冻结策略会遗漏学习过程中的代价。
+解答：不能。未来结果还依赖其更新规则、内部记忆、资源及世界条件。可以定义包含后续学习的条件价值，但不能把当前冻结策略的价值与之混为一谈。
 
-完整教材：
+完整推导与问题衔接：
 
+- [持续控制与学习智能体比较](../textbook/control.md)
+- [奖励假设与奖励设计](../textbook/reward-design.md)
 - [交互、奖励与优化目标](../textbook/objectives.md)
 - [平均奖励与差分价值](../textbook/average.md)
 - [实验设计、统计与算法测试](../textbook/experiments.md)
 
 原文、课程与实现：
 
-- [Abel 等 · A Definition of Continual Reinforcement Learning](https://arxiv.org/abs/2307.11046)：从学习与行为类的关系定义持续学习；不把 CRL 限定为外部任务切换。
-- [Mesbahi 等 · Lifetime tuning is incompatible with continual reinforcement learning](https://proceedings.mlr.press/v267/mesbahi25a.html)：讨论用完整部署寿命调参的评价问题；说明开发协议为何属于 CRL 问题设定。
+- [Abel 等 · A Definition of Continual Reinforcement Learning](https://arxiv.org/abs/2307.11046)：相对于 agent basis 定义持续学习；不把 CRL 限定为外部任务切换。
+- [Elelimy 等 · Rethinking the Foundations for Continual Reinforcement Learning](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_243.pdf)：学习规则、历史依赖世界与偏离比较；与从初始世界比较总回报的含义分开。
+- [Mesbahi 等 · Lifetime tuning is incompatible with continual reinforcement learning](https://proceedings.mlr.press/v267/mesbahi25a.html)：外部设计者用完整部署寿命调参与在线因果更新的信息权限不同。
 - [Sutton & Barto · Reinforcement Learning, 第二版](http://incompleteideas.net/book/the-book-2nd.html)：第 10.3 节：平均奖励和差分价值。
 
 ## 2 · 状态与预测知识的分工
@@ -92,7 +101,7 @@ python3 examples/gvf_lab.py test
 
 解答：目标策略答案为 1/(1-.5)=2。若不做适当 off-policy 处理而学到行为策略的问题，答案会是 .5/(1-.5)=1。
 
-完整教材：
+完整推导与问题衔接：
 
 - [智能体状态与递归学习](../textbook/state.md)
 - [通用价值函数与预测知识](../textbook/gvf.md)
@@ -137,7 +146,7 @@ python3 examples/lifelong_algorithms_lab.py test
 
 解答：不违反。压缩学习状态不是保存样本后重新训练；仍需报告这些状态的内存和每步计算。若保存整段轨迹反复更新，则是另一种协议。
 
-完整教材：
+完整推导与问题衔接：
 
 - [时间信用分配与资格迹](../textbook/credit.md)
 - [流式更新与稳定性](../textbook/streaming.md)
@@ -183,7 +192,7 @@ python3 examples/state_meta_lab.py test
 
 解答：不一定。这可能是预设的尺度控制。若规则或其参数根据过去更新对后续学习效果的影响被训练，才明确涉及本节的学习规则适应。
 
-完整教材：
+完整推导与问题衔接：
 
 - [元学习与学习规则的适应](../textbook/meta.md)
 
@@ -193,7 +202,7 @@ python3 examples/state_meta_lab.py test
 - [Finn 等 · MAML](https://proceedings.mlr.press/v70/finn17a.html)：任务内适应与任务外目标的设定。
 - [Duan 等 · RL²](https://arxiv.org/abs/1611.02779)：用循环活动承载任务内适应的不同路线。
 
-## 5 · 旧知识保留与继续学习的能力
+## 5 · 知识保留与可塑性
 
 一个学了很久的网络变差，是忘记了，还是学不进了？
 
@@ -207,7 +216,7 @@ $$
 F_A=J_A(\theta_{\rm before})-J_A(\theta_{\rm after}),\qquad P_C(K)=L_C(\theta_{\rm aged}^{(K)})-L_C(\theta_{\rm fresh}^{(K)})
 $$
 
-Fₐ 表示旧任务收益下降；P꜀ 在匹配 K 次新任务学习后比较损失。这里用较小损失为好，正值表示 aged 学得较差；二者不能互相替代。
+$F_a$ 表示旧任务收益下降；$P_c$ 在匹配 K 次新任务学习后比较损失。这里用较小损失为好，正值表示 aged 学得较差；二者不能互相替代。
 
 ### 动手与核对
 
@@ -228,7 +237,7 @@ python3 examples/lifelong_algorithms_lab.py test
 
 解答：不够。还要检验旧知识损失、后续多任务表现，以及相同预算下的 fresh、随机替换和优化器重置对照。持续积累要求保留与新学习共同受益或明确权衡。
 
-完整教材：
+完整推导与问题衔接：
 
 - [知识保留与再适应](../textbook/retention.md)
 - [可塑性与特征更新](../textbook/plasticity.md)
@@ -273,9 +282,9 @@ python3 examples/knowledge_algorithms_lab.py test
 
 自测：一个技能有时一步结束、有时三步结束。只保存平均时长，再用 γ 的平均时长次方乘终点价值，是否一般正确？
 
-解答：不正确。需要期望中的 γ^τ 与终点价值乘积；指数非线性，且时长可能与终点相关。正确模型保存相应的折扣终点权重。
+解答：不正确。需要期望中的 $γ^τ$ 与终点价值乘积；指数非线性，且时长可能与终点相关。正确模型保存相应的折扣终点权重。
 
-完整教材：
+完整推导与问题衔接：
 
 - [目标条件化与子任务构造](../textbook/goals.md)
 - [Options 与技能发现](../textbook/options.md)
@@ -324,7 +333,7 @@ python3 examples/lifelong_algorithms_lab.py test
 
 解答：不能。误差也可能来自学习器状态丢失。要区分环境变化、表示变化、统计量重置和预测器遗忘。
 
-完整教材：
+完整推导与问题衔接：
 
 - [探索与经验选择](../textbook/exploration.md)
 - [目标条件化与子任务构造](../textbook/goals.md)
@@ -372,7 +381,7 @@ python3 examples/experiment_design_lab.py test
 
 解答：不能。这会漏掉更慢的六条。应同时报告恢复比例、观察上限和删失信息；需要总体时间摘要时采用适当的删失处理。
 
-完整教材：
+完整推导与问题衔接：
 
 - [实验设计、统计与算法测试](../textbook/experiments.md)
 - [持续学习的智能体架构](../textbook/architectures.md)

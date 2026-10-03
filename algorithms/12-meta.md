@@ -9,6 +9,82 @@
 - 完整理解 MAML、RL²、PEARL、meta-gradient RL 与 learned update rules 的训练/测试循环及 reset 边界。
 - 用可运行的有限差分、手算与机制反例验证代码，并设计适用于持续交互而非仅任务重置的评测。
 
+<a id="problem-definition"></a>
+
+## 本章的问题定义
+
+更新规则或初始化也需由经验改善。单一流的在线元梯度与跨任务元训练具有不同数据、重置和评价单位。
+
+### 给定条件与符号
+
+- 内层学习状态、可微更新映射和可选元参数。
+- 固定外部评价、适应长度、后续评价数据、元训练/测试任务与重置权限。
+
+### 需要求解的对象
+
+使指定外层评价改善的初始化、步长、目标或更新规则；不能通过改写评价标准降低外层损失。
+
+### 信息与数据权限
+
+内层状态 $w_t$ 含权重及影响更新的优化器/迹；经验 $\xi_t$ 已到达。跨任务训练允许声明的训练任务，测试任务未来不得参与外层选择。
+
+$$
+w_{t+1}=F_\eta(w_t,\xi_t),\qquad \min_\eta\mathcal J(\eta)=\mathbb E[J(w_{t+K},\xi_{t+K:t+K+M};\eta_{\rm eval})]
+$$
+
+$\eta$ 为元参数，$F_\eta$ 为更新规则，$K$ 为适应长度，$M$ 为后续评价长度；$J$ 是外层损失（例如负回报），$\eta_{\rm eval}$ 固定评价约定。期望所覆盖的任务、随机性和生命周期必须声明；适应后表现与全程收益不同。
+
+### 成立条件与解的含义
+
+- 固定数据导数需可微更新；完整RL期望导数还包括采样分布依赖，不能由固定轨迹链式法则自动得到。
+- 对角、截断和一阶近似明确丢弃哪些敏感度；任务边界、参数/context reset和元训练成本计入协议。
+
+判断准则：小问题多步元敏感度与有限差分一致；在独立后续数据或未见任务上、匹配适应与计算预算评价固定外层目标；在线协议无未来回流。
+
+### 适用边界
+
+- 在完整测试寿命上挑超参数不是智能体在线元学习。
+- 跨任务快速适应不自动证明单一无重置生命期持续学习。
+
+### 与其他问题的关系
+
+关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
+
+- 组合不同学习问题 · [时间信用分配与资格迹](../textbook/credit.md)：元敏感度追踪更新规则对后续学习的影响，不是过去预测的普通资格迹。
+
+- 改变信息或数据协议 · [流式更新与稳定性](../textbook/streaming.md)：元梯度若缓存rollout或展开图，不自动满足严格流式；预算限制可用近似。
+
+- 组合不同学习问题 · [奖励假设与奖励设计](../textbook/reward-design.md)：内在奖励或训练目标可作为元参数，由固定外部评价选择。
+
+<a id="problem-solution"></a>
+
+## 从问题到方法
+
+### 直接求解的难点
+
+一次规则改变会通过许多后续更新影响表现；改变策略还改变未来样本。
+
+### 本章的核心思路
+
+把内层全部状态纳入更新映射，先求完整敏感度，再声明哪些路径为降低成本而近似。
+
+1. [传播规则对未来状态的影响](../textbook/meta.md#lesson-derive)：因为元参数既直接改变本次更新又经旧状态间接传播，Jacobian递推包含两条路径。
+
+2. [按在线预算压缩敏感度](../textbook/meta.md#lesson-idbd)：因为完整矩阵昂贵，IDBD保留对角，TIDBD/Metatrace还需处理bootstrap和迹；它们不是精确链式法则。
+
+3. [对齐训练/测试适应单位](../textbook/meta.md#lesson-meta-rl)：因为MAML、context与学习更新规则改变不同内层对象，分别声明任务分布、reset和外层封存，独立评价适应。
+
+结论与条件：固定数据和元参数下完整敏感度递推是链式法则；截断/一阶/对角更新改变导数。没有相应采样路径估计时不能称为完整RL无偏元梯度。
+
+### 相关方法改变了什么
+
+- IDBD/TIDBD/Metatrace：在线适应学习参数，以结构近似减少敏感度成本。
+
+- MAML：跨任务学习适合少量梯度更新的初始化。
+
+- RL²/PEARL与learned rules：前者主要适应活动/context，后者学习更新信号，参数和reset边界不同。
+
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -554,7 +630,7 @@ DiscoRL（Nature 2025）延续 LPG 的可学习更新规则路线，并扩大算
 
 ## 11. 前沿问题：元目标短视、规则表示与发现预算
 
-第一条问题是元目标的时间范围。只沿 $K$ 步内层更新求导，容易偏好立即降低误差的更新，而忽视更久以后的表示学习或探索。Bootstrapped Meta-Learning（ICLR 2022）在可微展开得到 $w_K$ 后，继续学习以产生未来目标 $\widehat w$，再让 $w_K$ 在选定的距离下接近这个目标。计算图仍只穿过前 $K$ 步，目标分支停止梯度；额外未来学习需要计算与数据，但不必保存同等长度的反传图。
+第一条问题是元目标的时间范围。只沿 $K$ 步内层更新求导，容易偏好立即降低误差的更新，而忽视更久以后的表示学习或探索。Bootstrapped Meta-Learning（ICLR 2022）在可微展开得到 $w_K$ 后，执行额外内层更新以产生未来目标 $\widehat w$，再让 $w_K$ 在选定的距离下接近这个目标。计算图仍只穿过前 $K$ 步，目标分支停止梯度；额外未来学习需要计算与数据，但不必保存同等长度的反传图。
 
 $$
 w_K=F_\eta^{(K)}(w_0),\qquad \widehat w=\operatorname{sg}\bigl(T^{(L)}(w_K)\bigr),\qquad J_{\rm BMG}=D\bigl(\widehat w,w_K\bigr)
@@ -656,6 +732,67 @@ def meta_demo():
 
 原始实现中，MAML-RL 的 maml_vpg.py 连接适应前后 surrogate 与内层计算图；PEARL 的 agent.py 实现 context、posterior 与潜变量采样，sac.py 组织 critic/encoder 更新；DiscoRL 的 disco.py 定义更新规则接口与持久元状态。检查这些接口后，再恢复配置中的环境、采样量和外层预算，才能比较完整算法。
 
+<a id="research-trac-scale-adaptation"></a>
+
+## 研究专题 A · TRAC：参考位移与多时间尺度的在线适应
+
+IDBD 追踪步长如何影响后续误差；TRAC 的适应对象是参数相对参考点的位移尺度。它将基础优化器与一维在线 tuner 组合，让近期证据决定离初始化多远。参考点是正则化锚，不是已证明安全的策略。
+
+$$
+\theta_{t+1}=\theta_{\rm ref}+s_{t+1}(\theta^{\rm Base}_{t+1}-\theta_{\rm ref}),\quad s_{t+1}=\sum_j s_{t+1,j}
+$$
+
+论文 Algorithm 1 的参数化。只有 s∈[0,1] 才是凸组合，范围之外会外推；典型实测范围不能被写成普适约束。
+
+$$
+z_t=\langle g_t,\theta_t-\theta_{\rm ref}\rangle,\quad v_{t,j}=\beta_j^2v_{t-1,j}+z_t^2,\quad u_{t,j}=\beta_j u_{t-1,j}-z_t
+$$
+
+采用损失下降梯度约定。不同 β 保留不同时间范围；正内积表示增大位移的局部损失代价，负内积支持增大位移。回报上升梯度需改符号。
+
+$$
+s_{t+1,j}=\frac{\epsilon}{\operatorname{erfi}(1/\sqrt2)}\operatorname{erfi}\!\left(\frac{u_{t,j}}{\sqrt{2v_{t,j}}+\epsilon}\right)
+$$
+
+论文 tuner 的决策形式。稳定 erfi、初期尺度与裁剪都是实现条件；任意 sigmoid 不能替代后仍称原算法。
+
+若参考点为 0，基础点为 2，尺度 0.2 时部署点为 0.4，尺度 1 时为 2。同一方向产生不同偏移。此时 $g=+1$ 表示继续增大位移局部有害，$g=-1$ 则相反。这个例子解释反馈符号，并不证明任意 RL 梯度下都选择最优正则。
+
+原作者 trac.py 从已缩放的部署点重建未缩放位移，加入基础 optimizer 增量，再重新缩放；inner product 使用重建方向并含非负尺度处理。它与抽象 Algorithm 1 的参数化需分别核对。基础动量、参考参数和 tuner 统计都需跨日志分段保留，复现应固定代码版本。
+
+- 先冻结梯度序列，打印基础/部署位移及各 u/v/s；检查零梯度、符号和状态保存恢复。
+- 同一 Adam 与学习率下比较固定尺度、固定 L2、单 tuner 与多个 tuner；匹配 warm-start 和调参预算。
+- 未通知变化后同时测适应、旧功能与初期代价。凸在线损失遗憾不等于非凸、策略依赖采样的深度 RL 终生回报保证。
+
+<a id="research-rule-discovery-resources"></a>
+
+## 研究专题 B · 算法表示、规则搜索与部署成本
+
+RLC 2025 的 How Should We Meta-Learn Reinforcement Learning Algorithms? 将学习的组件与发现它的方法分开比较。更新规则可以是神经函数、符号公式或代码；它可以通过进化搜索、蒸馏、代码提案等过程产生。表示的可解释性不能代替发现预算与部署效果。
+
+$$
+\eta^*=\operatorname*{arg\,max}_{\eta\in\mathcal U}\mathbb E_{E\sim\mathcal D_{\rm train}}[J_H(\mathcal A_\eta,E)],\qquad J_H=\mathbb E[\sum_{t=0}^{H-1}R_{t+1}]
+$$
+
+统一比较接口，不是论文全部方法共用的具体损失。U 是规则类，H 是外层生命长度；输入权限、状态与规则容量改变都会改变 U。
+
+| 层次 | 应固定或记录 | 混淆 |
+| --- | --- | --- |
+| 发现 | 训练环境、模拟步、搜索次数、设备时间 | 用更多搜索发现的规则却不报告搜索资源。 |
+| 部署 | 每步延迟、规则网络与持久 meta-state | 只计 agent 权重，不计学习规则本身。 |
+| 泛化 | 未见任务、奖励尺度、漂移与生命长度 | 看完整测试未来再选规则，称作在线适应。 |
+
+最小研究可只学习 critic 更新中的一个小函数，固定 actor、网络、数据权限及内层预算，比较不同发现方式。封存规则后，测试十倍生命长度和未通知变化。这样能识别收益来自规则结构、搜索方法还是外部资源。作者 AlexGoldie/learn-rl-algorithms 按发现方法与评价流程组织实现。
+
+**算法：算法发现比较流程**
+
+1. 注册被替换组件、可读变量、训练环境与发现预算
+1. 独立记录每种搜索方法的全部提案和失败
+1. 封存规则及外层选择，不读取测试未来轨迹
+1. 新 agent 按相同初始化运行，报告全程收益和部署成本
+
+若规则本身也要在单生命内持续学习，还必须定义在线外层目标、旧/新经验分配、外层状态与内层 optimizer 的相容性。跨任务规则迁移是一个研究轴，部署智能体终生修改规则是另一个闭环，不能从前者直接宣称后者已解决。
+
 <a id="lesson-check"></a>
 
 ## 15. 诊断、自测与研究起点
@@ -697,6 +834,405 @@ def meta_demo():
 IDBD 适应步长，MAML 学初始化，context-based meta-RL 推断任务；内外层目标与数据权限不同。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-meta) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=meta) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=meta)
+
+## 持续强化学习：近期研究与原始实现
+
+从问题设定进入机制，再比较证据、成立条件和实验资源。理论结果、算法实验、基准和架构观点承担不同作用。
+
+### 问题支线
+
+#### 时间信用分配与离策略多步学习
+
+当前反馈如何修正过去的决策与预测，哪些历史信息可以压缩成迹？
+
+前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。
+
+- [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+
+#### 新学习能力、知识保留与负迁移
+
+学得慢是失去学习能力、旧知识有害，还是必须保护的知识发生干扰？
+
+可塑性看新知识能否学会，保留看旧能力是否下降，负迁移看过去学习是否使新任务差于从头学习。网络回收、函数正则、双学习器和预训练适配对应不同机制，不应只用一个平均回报解释全部现象。
+
+- [Prevalence of Negative Transfer in Continual Reinforcement Learning: Analyses and a Simple Baseline](https://yingwen.io/zh/continual-rl/research/#recent-reset-and-distill)
+- [Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-fame-fast-meta-learners)
+- [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-trac-online-regularization)
+
+#### 学习规则本身的适应
+
+谁在调整学习过程，依据哪些经验，付出多少外部训练成本？
+
+在线步长元梯度、跨任务算法发现、知识整合与局部更新控制并非同一设定。逐项写清智能体内部的更新、设计者的预训练和调参，以及测试时仍能变化的量，才能判断真正的适应来自哪里。
+
+- [Step-size Optimization for Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-step-size-optimization)
+- [Learning from experience instead of curated datasets](https://yingwen.io/zh/continual-rl/research/#recent-oak-network-idbd)
+- [Discovering state-of-the-art reinforcement learning algorithms](https://yingwen.io/zh/continual-rl/research/#recent-disco-rl)
+- [Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-fame-fast-meta-learners)
+- [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+- [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-trac-online-regularization)
+- [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
+- [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
+
+#### 持续问题与可比较实验
+
+一个基准究竟检验了哪种困难，又把哪些适应工作留给设计者？
+
+离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
+
+- [Position: Lifetime tuning is incompatible with continual reinforcement learning](https://yingwen.io/zh/continual-rl/research/#recent-lifetime-tuning)
+- [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
+
+### Intentional Updates for Streaming Reinforcement Learning
+
+Arsalan Sharifnassab, Mohamed Elsayed, Kris De Asis, A. Rupam Mahmood, Richard S. Sutton
+
+ICML 2026 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+能否先规定本次更新应产生多大作用，再反推合适的参数更新尺度？
+
+#### 关键机制
+
+Intentional 方法以局部线性近似连接参数变化和预测变化。critic 以减少一定比例的 TD 误差为目标，actor 控制策略输出变化的局部代理量；再结合资格迹和逐坐标尺度，求出这一次更新的强度。这是有目标的局部更新控制，不是对长期表现求导的元梯度。
+
+#### 证据
+
+论文给出推导和流式控制比较，ICML 2026 正式论文入口与作者实现均可用。实现将优化器与 actor–critic 交互区分开，便于检查更新时序。
+
+#### 条件与限制
+
+Taylor 近似在大更新时可能失准。采样动作上的对数概率变化不等于精确的全分布 KL 上界；熵项与 TD 误差符号也必须按原算法处理。
+
+#### 阅读与实验
+
+在一次更新前后直接测量预测变化，并与线性估计比较。分别测试正、负 TD 误差和很小梯度的情形，不要只检查参数是否有限。
+
+#### 原文与相关入口
+
+- [ICML 2026 原文](https://proceedings.mlr.press/v306/sharifnassab26a.html)：正式会议版本与更新意图的定义。
+- [作者实现](https://github.com/sharifnassab/Intentional_RL)：重点对照 optimizer.py 与 intentional_ac.py。
+
+#### 作者代码
+
+[原论文作者提供的实现。](https://github.com/sharifnassab/Intentional_RL)
+
+Intentional 更新与流式 actor–critic。
+
+### Step-size Optimization for Continual Learning
+
+Thomas Degris, Khurram Javed, Arsalan Sharifnassab, Yuxin Liu, Richard S. Sutton
+
+arXiv 预印本 · 2024 · 支持方法与理论
+
+#### 研究问题
+
+误差变大时，应该减小步长过滤噪声，还是增大步长追踪真实变化？
+
+#### 关键机制
+
+论文区分梯度归一化与步长优化。IDBD 类方法以 $\alpha_i=\exp(\beta_i)$ 保证步长为正，并用权重对过去步长的敏感度估计改变 $\beta_i$ 是否有利。持续学习中，静止的无关方向适合很小步长，而持续变化的有用方向需要保留追踪能力。
+
+#### 证据
+
+作者用权重翻转和带噪追踪等线性学习问题比较机制，显示相似的误差幅度可以要求相反的步长反应。
+
+#### 条件与限制
+
+这些可分析任务不是深度控制上的普适优越性证据。元步长、近似敏感度与输入尺度仍会影响结果；步长自适应并没有消除全部外部设计参数。
+
+#### 阅读与实验
+
+分别增加观测噪声和目标漂移速度，检查步长是否采取不同反应。若只记录平均误差，就看不到噪声过滤与追踪之间的区别。
+
+#### 原文与相关入口
+
+- [作者论文](https://arxiv.org/abs/2401.17401)：步长优化与归一化的对照实验。
+
+### Discovering state-of-the-art reinforcement learning algorithms
+
+Junhyuk Oh, Gregory Farquhar, Iurii Kemaev, Dan A. Calian, Matteo Hessel, Luisa Zintgraf, Satinder Singh, Hado van Hasselt, David Silver
+
+Nature · 2025 · 支持方法与理论
+
+#### 研究问题
+
+除了学习策略，能否从大量学习过程里学出更有效的 RL 更新规则？
+
+#### 关键机制
+
+DiscoRL 用外层优化评价执行若干内层更新后的行为表现，学习价值、策略与辅助预测之间的更新方式。被训练的对象是学习算法本身，而不仅是某个任务的策略参数。内外两层有各自的数据、时间尺度与计算预算。
+
+#### 证据
+
+论文报告跨环境发现更新规则与迁移到未见环境的结果，并公开配套算法实现。它展示了自动算法发现的可能性，但依赖大规模外层训练。
+
+#### 条件与限制
+
+外层在大量环境和设备上的搜索属于设计者侧资源，不能记作测试智能体单次生命内的自主学习。公开规则的执行成本与发现该规则的成本应分别报告。
+
+#### 阅读与实验
+
+画出内层参数和外层参数的更新依赖，再列出测试时哪些量被冻结。与在线 IDBD 比较时，先区分跨任务算法发现和单流步长追踪。
+
+#### 原文与相关入口
+
+- [Nature 原文](https://www.nature.com/articles/s41586-025-09761-x)：算法发现过程、外层资源与泛化实验。
+- [作者实现](https://github.com/google-deepmind/disco_rl)：配套代码与发现的更新规则。
+
+#### 作者代码
+
+[Google DeepMind 的论文配套仓库。](https://github.com/google-deepmind/disco_rl)
+
+DiscoRL 配套实现与学习到的更新规则；具体训练资源以仓库说明为准。
+
+### Principled Fast and Meta Knowledge Learners for Continual Reinforcement Learning
+
+Ke Sun, Hongming Zhang, Jun Jin, Chao Gao, Xi Chen, Wulong Liu, Linglong Kong
+
+ICLR 2026 · 2026 · 直接研究持续学习
+
+#### 研究问题
+
+快速学习新任务和整合旧知识，能否由不同学习器承担并以明确目标连接？
+
+#### 关键机制
+
+FAME 的快速学习器适应当前任务，元学习器整合此前知识。论文按旧策略的重要访问分布度量价值或策略变化，再据此构造减少遗忘的整合目标。自适应预热决定如何利用旧知识初始化或约束早期行为，以减少负迁移。
+
+#### 证据
+
+论文分析价值型和策略型版本，并在像素与连续控制任务序列中比较。作者提供官方实现，可追踪快速适应与知识整合两个阶段。
+
+#### 条件与限制
+
+设定要求相同状态与动作空间、已知任务边界以及额外整合计算。这里的 meta learner 主要是知识整合模块，不应因名称就当作通过长期回报反向求导的在线元梯度算法。脑机制类比也不是神经科学实验证据。
+
+#### 阅读与实验
+
+分别报告新任务前向迁移、旧任务保留和两个学习阶段的计算量。改变任务相似性，检验自适应预热是否确实避免有害旧知识。
+
+#### 原文与相关入口
+
+- [ICLR 2026 原文](https://proceedings.iclr.cc/paper_files/paper/2026/hash/2230ffcd5da10015ce0c6ce588fc2936-Abstract-Conference.html)：任务边界假设、遗忘度量与快慢知识机制。
+- [FAME 官方实现](https://github.com/datake/FAME)：论文链接的快速学习与知识整合代码。
+
+#### 作者代码
+
+[论文与仓库均注明为官方实现。](https://github.com/datake/FAME)
+
+FAME 的价值型、策略型持续学习实验。
+
+### Prevalence of Negative Transfer in Continual Reinforcement Learning: Analyses and a Simple Baseline
+
+Hongjoon Ahn, Jinu Hyeon, Youngmin Oh, Bosun Hwang, Taesup Moon
+
+ICLR 2025 · 2025 · 直接研究持续学习
+
+#### 研究问题
+
+一个网络还能拟合新目标，为什么先前训练仍可能让它在新任务上学得更慢？
+
+#### 关键机制
+
+论文把任务之间的负迁移与一般可塑性损失区分开。Reset & Distill 在新任务开始时重置在线 actor 和 critic，避免旧初始化阻碍学习；随后离线蒸馏当前策略与旧专家的动作分布以整合知识。适应和保留通过不同过程实现。
+
+#### 证据
+
+作者在控制与游戏任务中分析负迁移，并在长 MetaWorld 序列上检验该基线。原文直接提供实现地址。
+
+#### 条件与限制
+
+任务边界、在线网络重置、旧专家和离线蒸馏都需要资源。它不能直接当作无边界、不能重置、禁止回放的单次生命方案。
+
+#### 阅读与实验
+
+除了与连续微调比较，还要与同等预算的从头训练比较。若新任务表现低于从头训练，先检查负迁移，再判断是否属于单纯容量损失。
+
+#### 原文与相关入口
+
+- [ICLR 2025 原文](https://proceedings.iclr.cc/paper_files/paper/2025/hash/ba9e3d60610f3525717665966d86e0cd-Abstract-Conference.html)：负迁移诊断、Reset & Distill 机制与边界。
+- [原文代码入口](https://github.com/hongjoon0805/Reset-Distill)：论文首页提供的作者实现。
+
+#### 作者代码
+
+[ICLR 正式论文首页明确链接的代码。](https://github.com/hongjoon0805/Reset-Distill)
+
+Reset & Distill 以及任务序列实验。
+
+### Learning from experience instead of curated datasets
+
+Oak Lab
+
+Oak Lab 技术博文 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+有用信号稀疏且大量输入是噪声时，在线学习规则如何分配不同方向的更新能力？
+
+#### 关键机制
+
+博文从含稀有有效特征的线性预测问题出发，对比统一步长与 IDBD 的逐权重适应，再展示 NetworkIDBD 在非线性带噪观测中的例子。核心主张是让长期学习效果影响信用和步长分配，而不只依据当前梯度幅度归一化。
+
+#### 证据
+
+公开页面提供受控噪声特征任务和 NoisyMNIST 示例。它们是机制演示，便于理解有效信号密度与输入规模的关系。
+
+#### 条件与限制
+
+该页面不是完整 CRL 控制论文，也未给出可直接复现所有图表的完整代码和算法推导。监督噪声任务的结果不能证明一般 SGD 或所有深度 RL 都无法从经验学习。
+
+#### 阅读与实验
+
+先复现线性噪声特征问题，分开改变有效特征稀疏度与噪声维数。进入控制前，再加入策略改变数据分布这一因素。
+
+#### 原文与相关入口
+
+- [Oak Lab 原始博文](https://oaklab.ai/posts/learning-from-experience-instead-of-curated-datasets)：2026 年 7 月 13 日；受控实验、NetworkIDBD 示例与研究动机。
+
+### Position: Lifetime tuning is incompatible with continual reinforcement learning
+
+Golnaz Mesbahi, Parham Mohammad Panahi, Olya Mastikhina, Steven Tang, Martha White, Adam White
+
+ICML 2025 Position Paper · 2025 · 评价与实验协议
+
+#### 研究问题
+
+如果设计者用完整未来生命反复调参，实验还在测智能体面对未知变化的能力吗？
+
+#### 关键机制
+
+论文限制调参可访问的生命阶段，并比较这种选择方式与利用完整生命回报挑选配置的差异。外部设计者掌握未来变化信息，可能使一个并不自适应的固定算法显得适应良好。核心改变发生在评价协议，而不是 TD 更新公式。
+
+#### 证据
+
+作者用持续、非平稳设置中的深度 RL 实验说明超参数选择可以改变方法比较。该工作属于立场论文，论证与示例用于推动更符合问题目标的评价。
+
+#### 条件与限制
+
+允许多少开发阶段经验需要按应用规定，不存在由该论文推出的普适固定比例。仅限制时间前缀也不能替代独立测试种子和计算预算控制。
+
+#### 阅读与实验
+
+对同一配置集合分别按开发前缀和完整生命选择超参数，再在独立测试生命上比较。报告两种选择使用了哪些未来信息。
+
+#### 原文与相关入口
+
+- [ICML 2025 原文](https://proceedings.mlr.press/v267/mesbahi25a.html)：调参协议、论证与示例实验。
+
+### Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning
+
+Aneesh Muppidi, Zhiyu Zhang, Heng Yang
+
+NeurIPS 2024 · 2024 · 直接研究持续学习
+
+#### 研究问题
+
+未知环境变化时间和速度时，怎样在线决定参数应离参考初始化多远？
+
+#### 关键机制
+
+TRAC 在基础优化器外维护一组具有不同遗忘时间尺度的一维 tuner，根据梯度与参考方向的内积调整参数位移尺度。它通过数据驱动的缩放联系到正则化，而不是对未来任务回报进行长窗口元梯度反传。
+
+#### 证据
+
+作者在 Procgen、Atari 与 Gym Control 变化序列中比较适应与可塑性，并分析在线凸优化对该设计的启发。
+
+#### 条件与限制
+
+凸在线优化中的遗憾理论不等于非凸、策略依赖采样的深度 RL 收敛定理。“parameter-free”不表示没有基础学习率、初始化、时间尺度网格、warm-start 或协议选择。
+
+#### 阅读与实验
+
+记录 tuner 尺度、距参考点的位移、旧分布干扰与变化后适应。用相同基础优化器比较固定尺度、单时间尺度和多时间尺度。
+
+#### 原文与相关入口
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/file/5b76d77e7095c6480ed827b85f0c2878-Paper-Conference.pdf)：Algorithm 1–2、正则化联系与持续实验。
+- [作者论文 v3](https://arxiv.org/html/2405.16642v3)：区分凸理论、RL 经验结果与初期表现限制。
+
+#### 作者代码
+
+[作者项目页与仓库均明确标为官方实现。](https://github.com/ComputationalRobotics/TRAC)
+
+trac.py、PyTorch/JAX optimizer 包与控制/视觉实验。
+
+### How Should We Meta-Learn Reinforcement Learning Algorithms?
+
+Alexander David Goldie, Zilin Wang, Jaron Cohen, Jakob Foerster, Shimon Whiteson
+
+RLC 2025 / RLJ · 2025 · 评价与实验协议
+
+#### 研究问题
+
+算法表示、发现算法的方法和测试智能体的学习成本，应该如何独立比较？
+
+#### 关键机制
+
+对 RL 流程的不同组件进行算法发现，比较黑盒学习、神经/符号蒸馏与 LLM 代码提案。学习器的表示形式和搜索过程分开定义，才能识别泛化、可解释性和成本之间的取舍。
+
+#### 证据
+
+论文直接比较元训练、元测试、样本成本、训练时间与可解释性，作者代码按发现方法和评价入口组织。
+
+#### 条件与限制
+
+跨环境发现规则主要发生在设计者侧，不等于运行智能体已能终生修改规则。论文的训练任务和预算范围不支持所有算法发现方法的普适排序。
+
+#### 阅读与实验
+
+固定被学习组件、输入权限、元训练数据和发现预算；封存规则后再检验未见环境、长生命与未通知漂移。
+
+#### 原文与相关入口
+
+- [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_218.pdf)：比较对象、元训练/测试与多维成本。
+- [RLJ 论文记录](https://rlj.cs.umass.edu/2025/papers/Paper218.html)：作者与正式会议收录。
+
+#### 作者代码
+
+[论文提供、仓库标为官方的作者实现。](https://github.com/AlexGoldie/learn-rl-algorithms)
+
+learning_algorithms 中各发现方法与独立 evaluation 流程。
+
+### A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning
+
+Martha White, Adam White
+
+arXiv预印本 · 2016 · 支持方法与理论
+
+#### 研究问题
+
+不同状态的预测可靠性不同，固定λ是否浪费了多步信用？
+
+#### 关键机制
+
+将下一处bootstrap选择写成局部偏差平方与回报方差的折中，得到$λ=b^2/(b^2+\operatorname{Var}(G))$。完整λ-greedy还用在线预测器估计回报均值和二阶矩。
+
+#### 证据
+
+原文给出状态相关λ的目标、增量算法和多个预测设置的实验。信用章仅核对已知统计量下的局部最优与变量λ恒等式。
+
+#### 条件与限制
+
+局部贪心目标不是整条轨迹的联合最优。逼近误差、统计滞后和非平稳性会影响λ估计；辅助资源需要计入比较。
+
+#### 阅读与实验
+
+先让噪声方差变化，再让bootstrap可靠性变化。比较固定λ、已知统计参照和在线估计，分别观察目标偏差与适应速度。
+
+#### 原文与相关入口
+
+- [作者原文](https://arxiv.org/html/1607.00446)：局部目标、状态λ、均值／二阶矩预测与完整算法。
+
 
 <a id="chapter-code"></a>
 
@@ -750,12 +1286,20 @@ python3 examples/state_meta_lab.py meta
 
 - [Flennerhag 等：Bootstrapped Meta-Learning（ICLR 2022）](https://arxiv.org/abs/2109.04504)：用未来学习产生停止梯度的目标，区分元目标的有效时间范围与反传展开长度。
 
-- [Goldie 等：How Should We Meta-Learn RL Algorithms?（RLC 2025）](https://rlj.cs.umass.edu/2025/papers/Paper218.html)：比较算法发现方法，并同时分析泛化、可解释性、采样成本与训练时间。
+- [RLJ 论文记录](https://rlj.cs.umass.edu/2025/papers/Paper218.html)：作者与正式会议收录。
 
-- [RLC 2025 算法发现比较：作者代码](https://github.com/AlexGoldie/learn-rl-algorithms)：learning_algorithms 下按 black-box learning、LLM discovery 和两类 distillation 分目录；评价入口独立于发现过程。
+- [How Should We Meta-Learn Reinforcement Learning Algorithms? · 作者实现](https://github.com/AlexGoldie/learn-rl-algorithms)：learning_algorithms 中各发现方法与独立 evaluation 流程。 论文提供、仓库标为官方的作者实现。
 
 - [Discovering state-of-the-art reinforcement learning algorithms（Nature 2025）](https://www.nature.com/articles/s41586-025-09761-x)：DiscoRL 的原论文；区分环境间规则迁移和单一 agent 的持续学习。
 
 - [DiscoRL 作者仓库](https://github.com/google-deepmind/disco_rl)：元训练、评价入口与配置；区分规则发现预算和新 agent 的训练预算。
 
 - [DiscoRL 固定版本更新规则源码](https://github.com/google-deepmind/disco_rl/blob/9059a29f7121d60948f25ef165e08e050e9399c8/disco_rl/update_rules/disco.py)：重点读 agent 输出契约、规则输入、辅助预测目标与持久 meta-state。
+
+- [NeurIPS 2024 原文](https://proceedings.neurips.cc/paper_files/paper/2024/file/5b76d77e7095c6480ed827b85f0c2878-Paper-Conference.pdf)：Algorithm 1–2、正则化联系与持续实验。
+
+- [作者论文 v3](https://arxiv.org/html/2405.16642v3)：区分凸理论、RL 经验结果与初期表现限制。
+
+- [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning · 作者实现](https://github.com/ComputationalRobotics/TRAC)：trac.py、PyTorch/JAX optimizer 包与控制/视觉实验。 作者项目页与仓库均明确标为官方实现。
+
+- [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_218.pdf)：比较对象、元训练/测试与多维成本。
