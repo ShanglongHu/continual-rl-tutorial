@@ -10,6 +10,8 @@
 
 [跨学科补充篇：学习、心智与意识](docs/supplements.md)提供 12 章独立阅读。内容包括学习与记忆、控制论、有限理性、具身与延展认知、意识理论和心灵哲学。每章有概念讲解、具体例子、注释书目与思考问题。它们不是算法的先修要求，也不要求每种思想都对应一个智能体模块。[完整 Markdown](docs/supplements-full.md)
 
+[强化学习需要怎样的世界？](docs/worlds.md)是一篇独立长文。从世界、接口、目标和交互协议出发，解释经典任务、标志性成果、大模型与具身环境，以及持续学习基准。讨论信息、时间、资源和行动后果如何改变研究问题，并提出可检验的未来世界构建设想。[图文版](https://yingwen.io/zh/continual-rl/worlds/)
+
 Tutorials are currently in Chinese. Original code is MIT; original tutorial text is CC BY 4.0. Third-party works keep their own licenses.
 
 ## 从哪里开始

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source": "https://yingwen.io/zh/continual-rl/",
-  "source_export_sha256": "64cdab493b9452af611c05f706a5c871ba9d577145f37418b367bb11928f39cf",
+  "source_export_sha256": "960372fc1153bf9f37769defbf3005bdb679bfad66f2ce00d5e3d5953f9cce6b",
   "files": {
     "algorithms/01-value.md": {
       "sha256": "673186b94fb8a07b3289252bc8653b6cad5186ae9b5af57cea92f0b180db2afa",
@@ -116,7 +116,7 @@
       "source_sha256": "8c80547578e6747cf31dc4d48ada3a0926baf8cda055be332f0c636ceb6cd342"
     },
     "data/site-export.json": {
-      "sha256": "64cdab493b9452af611c05f706a5c871ba9d577145f37418b367bb11928f39cf",
+      "sha256": "960372fc1153bf9f37769defbf3005bdb679bfad66f2ce00d5e3d5953f9cce6b",
       "source_sha256": null
     },
     "data/supplements.json": {
@@ -126,6 +126,10 @@
     "data/textbook-map.json": {
       "sha256": "0358cafb37631f6a0b7d0b2de68b003e96c496b784efcd35081802502f351c5c",
       "source_sha256": "0358cafb37631f6a0b7d0b2de68b003e96c496b784efcd35081802502f351c5c"
+    },
+    "data/worlds.json": {
+      "sha256": "92ec0f5a05fb3db63a5dac623a8a5aed4806b47822371047e4828e9fb4d49f53",
+      "source_sha256": "92ec0f5a05fb3db63a5dac623a8a5aed4806b47822371047e4828e9fb4d49f53"
     },
     "docs/advanced.md": {
       "sha256": "1e3a758de24731d927ba8f629cd076ad1ca841d6803eadc013e8639ae4837031",
@@ -234,6 +238,10 @@
     "docs/tutorial.md": {
       "sha256": "cf5ae27b7dca005d4c0bab5dbfd5142d34b92dbeb8749d385319783ba50a6fce",
       "source_sha256": "cf5ae27b7dca005d4c0bab5dbfd5142d34b92dbeb8749d385319783ba50a6fce"
+    },
+    "docs/worlds.md": {
+      "sha256": "441ca56212bff610e09c248d77a3319f359e3ba6af2bdcc759d7a434c5fe27c4",
+      "source_sha256": "441ca56212bff610e09c248d77a3319f359e3ba6af2bdcc759d7a434c5fe27c4"
     },
     "examples/algorithm_testing_lab.py": {
       "sha256": "9dadf01125f9ee3617cc63dec3581281755c0661d864fe1a9197adfc52b50ea9",

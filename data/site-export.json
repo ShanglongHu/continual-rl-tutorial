@@ -819,6 +819,18 @@
       "target": "docs/tutorial.md",
       "sha256": "cf5ae27b7dca005d4c0bab5dbfd5142d34b92dbeb8749d385319783ba50a6fce",
       "page": null
+    },
+    {
+      "file": "worlds.json",
+      "target": "data/worlds.json",
+      "sha256": "92ec0f5a05fb3db63a5dac623a8a5aed4806b47822371047e4828e9fb4d49f53",
+      "page": null
+    },
+    {
+      "file": "worlds.md",
+      "target": "docs/worlds.md",
+      "sha256": "441ca56212bff610e09c248d77a3319f359e3ba6af2bdcc759d7a434c5fe27c4",
+      "page": "worlds/"
     }
   ],
   "chapters": [
