@@ -18,6 +18,22 @@ spec.loader.exec_module(gallery)
 
 
 class GalleryTests(unittest.TestCase):
+    def test_clear_retention_plot_uses_same_complete_population(self):
+        selected={key:path for key,path in runtime.discover().items() if key in ('extended-clear','extended-fresh_ac')}
+        self.assertEqual(len(selected),2)
+        with tempfile.TemporaryDirectory() as temp,patch.object(runtime,'discover',return_value=selected):
+            out=Path(temp)
+            runtime.experiment(list(selected),[0,1],40,out/'clear')
+            diagnostics=gallery.verified_gallery(out)[4]
+            for key in selected:
+                values=[]
+                for seed in (0,1):
+                    rows=[json.loads(line) for line in (out/'clear'/key/('seed-'+str(seed))/'events.jsonl').read_text().splitlines()]
+                    values.append(rows[-1]['old_return'])
+                points=diagnostics[(key,'old_return')]
+                self.assertEqual(points[-1]['n'],2)
+                self.assertAlmostEqual(points[-1]['mean'],sum(values)/2)
+
     def test_retention_diagnostic_reuses_all_registered_seeds(self):
         selected={key:path for key,path in runtime.discover().items() if key in ('ewc','online_sgd','reservoir_replay')}
         with tempfile.TemporaryDirectory() as temp,patch.object(runtime,'discover',return_value=selected):
@@ -49,7 +65,9 @@ class GalleryTests(unittest.TestCase):
                 self.assertTrue(required<=members)
                 for name in ('LICENSE','LICENSE-CODE','LICENSE-DOCS.md'):
                     self.assertEqual(archive.read(name),(ROOT/name).read_bytes())
-                self.assertFalse(any('.git' in Path(name).parts or Path(name).parts[0] in ('results','tests') for name in members))
+                self.assertTrue({'tests/test_extended_classic.py','tests/test_extended_adaptation.py',
+                                 'tests/test_extended_knowledge.py','tests/test_extended_multiagent.py'}<=members)
+                self.assertFalse(any('.git' in Path(name).parts or Path(name).parts[0]=='results' for name in members))
                 unpack=out/'unpacked-code'
                 archive.extractall(unpack)
                 listed=subprocess.run([sys.executable,'implementations/runtime.py','--list'],cwd=unpack,check=True,text=True,capture_output=True)

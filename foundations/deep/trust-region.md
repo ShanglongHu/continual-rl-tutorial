@@ -170,6 +170,38 @@ clipping 不是把网络参数投影回某个约束集，也不强制所有概�
 
 配套代码记录 $\widehat{\mathrm{KL}}=\operatorname{mean}(r-1-\log r)$。在旧策略采样、归一化策略与适当覆盖下，其期望对应旧到新 KL。单批估计仍有误差。代码在更新前检查这个量并提前停止，最后一次更新仍可能越过阈值，所以它不是硬约束。
 
+<a id="experiment-deep-ppo"></a>
+
+### 实验：实验 · PPO 的旧数据、多轮更新与裁剪
+
+PPO 的完整更新流程能否在同一小任务上带来可见收益？
+
+**环境与可用信息。** DeadlineChain：位置 0–4、左右动作、边界截断。观测为五维位置 one-hot 加剩余时间比例。到位置 4 得 1 并终止；其他步得 −0.02。12 步截止也是任务真实终止，且剩余时间可观测。每回合重新从位置 0 开始，网络跨回合保留。
+
+**设置。** 1200 个真实步、同样的 6→32 tanh actor/critic 和初始化；actor Adam 0.003、critic Adam 0.01。每 60 步收集一批，γ=1、GAE λ=0.95，优势标准化，clip=0.2，最多 4 次 actor 更新，估计 KL 超过 0.03 时提前停；critic 做 4 次更新。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** ppo.py 保存采样时的旧 log-prob 和旧价值。裁剪目标对正负优势分别起作用；多轮优化不重算旧策略概率。该实验的 VPG 对照每个完整回合只进行一次策略更新。
+
+**测量。** 纵轴是冻结 argmax 行为的原环境回报。应把数据采集步数、重复梯度更新与 rollout 边界分开；图不是 clip 单组件消融。
+
+```bash
+python3 implementations/deep/ppo.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/deep-ppo/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 600 步和第 1200 步，PPO 与 VPG 的平均冻结回报均为 0.94，五个 seed 在这些检查点也相同。这里没有实测终点优势；小链可能无法区分两套训练程序。
+
+**结论边界。** PPO 与 VPG 同时在采样分段、GAE、优势标准化和更新次数上不同。不能把这张图称为“裁剪提升”的因果证据。argmax 行为相同不代表两者动作概率相同。
+
+**继续实验。** 保持同一 rollout、同一更新次数与同一优势，仅开关裁剪。记录概率比、KL 和 clip fraction，再观察重新采样后的收益。
+
+[源码](../../implementations/deep/ppo.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-ppo/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-ppo/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-ppo/curves.json)
+
 <a id="lesson-algorithm"></a>
 
 ## 5 · 两类算法的精确更新次序

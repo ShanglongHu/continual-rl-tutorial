@@ -12,7 +12,7 @@ import posixpath
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
-from urllib.parse import urljoin, urlsplit, unquote
+from urllib.parse import urljoin, urlsplit, unquote, quote
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = "https://yingwen.io/zh/continual-rl/"
@@ -39,7 +39,34 @@ def rewrite_markdown(text: str, source: str, target: str, links: dict[str, str],
         href = match.group(1)
         absolute = urljoin(SITE + "download/" + source, href)
         parts = urlsplit(absolute)
-        if parts.netloc != "yingwen.io" or not parts.path.startswith(PREFIX):
+        if parts.netloc != "yingwen.io" or parts.scheme not in {"http", "https"}:
+            return match.group(0)
+        if parts.path.startswith("/crl-code/"):
+            # Only inspect published Python source roots. Download bundles,
+            # results and query-bearing links keep their website semantics.
+            online = parts._replace(scheme="https").geturl()
+            if not parts.query:
+                try:
+                    original_path = unquote(urlsplit(href).path, errors="strict")
+                    decoded = unquote(parts.path[len("/crl-code/"):], errors="strict")
+                    asset = PurePosixPath(decoded)
+                    safe = (not asset.is_absolute() and bool(asset.parts)
+                            and asset.parts[0] in {"implementations", "tests"}
+                            and asset.suffix == ".py"
+                            and not any(piece in {".", ".."} for piece in original_path.split("/"))
+                            and ".." not in asset.parts
+                            and not any(char in decoded for char in ("\\", "\x00")))
+                    if safe:
+                        resolved = (ROOT / asset).resolve()
+                        if resolved.is_relative_to(ROOT.resolve()) and resolved.is_file():
+                            relative = posixpath.relpath(asset.as_posix(), posixpath.dirname(target))
+                            return "](" + quote(relative, safe="/.-_~") + ("#" + parts.fragment if parts.fragment else "") + ")"
+                except (OSError, RuntimeError, ValueError, UnicodeError):
+                    # Invalid encodings and escaping/broken symlinks must never
+                    # become repository-relative file references.
+                    pass
+            return "](" + online + ")"
+        if not parts.path.startswith(PREFIX):
             return match.group(0)
         key = unquote(parts.path[len(PREFIX):])
         destination = links.get(key)

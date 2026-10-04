@@ -152,6 +152,38 @@ $$
 
 目标网络降低标签在连续梯度步之间的变化速度。Replay 将连续经验重新抽样，提高数据复用并减弱相邻样本的相关性。二者没有把数据变成来自真实分布的独立样本，也没有消除策略导致的覆盖偏差。
 
+<a id="experiment-deep-double_dqn"></a>
+
+### 实验：实验 · 分开选动作与评价动作的 Double DQN
+
+同一网络、回放和目标同步下，更换 bootstrap 的动作选择方式会怎样？
+
+**环境与可用信息。** DeadlineChain：位置 0–4、左右动作、边界截断。观测为五维位置 one-hot 加剩余时间比例。到位置 4 得 1 并终止；其他步得 −0.02。12 步截止也是任务真实终止，且剩余时间可观测。每回合重新从位置 0 开始，网络跨回合保留。
+
+**设置。** 1200 个真实步。两者用 6→32 tanh→2 网络、相同 seed 的 PyTorch 默认随机初始化和复制的目标网络；Adam 0.003，γ=0.99，Huber 损失，梯度范数上限 10。replay 容量 4000、批量 32，每两步一次更新，每 100 步硬同步。ε 从 1 降到最低 0.05。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** double_dqn.py 用在线网络选择后继动作，用目标网络评价该动作；dqn.py 对目标网络直接取最大。两者都停止整个 critic target 的梯度。
+
+**测量。** 每 60 步冻结网络，在隔离环境执行 12 个贪心回合。图中是未折扣环境回报；训练 target 使用 γ=0.99。此图没有直接测量 Q 高估偏差。
+
+```bash
+python3 implementations/deep/double_dqn.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/deep-double_dqn/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 600 步两者平均冻结回报都是 0.94；第 1200 步 Double DQN 为 0.94，DQN 为 0.936。短链上两者几乎打平，这个小差异不能证明普遍优势或已解决高估。
+
+**结论边界。** 任务是可观测有限时域小链，不是 Atari。网络是 tanh MLP，不是卷积网络；模型大小、回放次数及更新比固定。真正的 deadline 终止与外部时间截断不能混用。
+
+**继续实验。** 先对同一小批次打印选中动作和两种 target，再在相同模型下测对解析 Q 的误差。只比较环境回报，能否判断差异来自高估？
+
+[源码](../../implementations/deep/double_dqn.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-double_dqn/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-double_dqn/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-double_dqn/curves.json)
+
 <a id="lesson-algorithm"></a>
 
 ## 4 · 一次交互与一次优化的精确次序

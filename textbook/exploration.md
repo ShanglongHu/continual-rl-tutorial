@@ -144,6 +144,38 @@ $$
 
 如果表示也不停学习，同一个物理状态可能被重新映射到未访问位置。此时 bonus 反映的是编码漂移，不一定是真实知识增加；固定随机表示、冻结评测编码和原始状态覆盖可帮助分离这两者。
 
+<a id="experiment-count_bonus"></a>
+
+### 实验：实验 · 新奇奖励可以暂时偏离原任务
+
+简单链已能用 ε-greedy 探索时，额外访问奖励是否仍会更快找到原任务的最优行为？
+
+**环境与可用信息。** 六格链从状态 0 出发，左右移动，到第 5 格终止并奖励 1，其余转移奖励 −0.01。环境平稳，折扣 0.95。五个非终止状态各有两个 Q 值，初值全零。
+
+**设置。** 五种子各 1200 个真实转移。Q-learning 步长 0.2，ε=0.1。每次访问先将状态动作计数加 1，再给训练目标加入 0.2/sqrt(N)；无 bonus 对照其余规则相同。终点之后重置到 0。
+
+**检验的机制。** 少访问的状态动作会得到较大正奖励，策略可能因此停留或绕行。随着计数增加，人工奖励衰减。它改变训练目标，但评价始终使用原环境奖励。
+
+**测量。** 纵轴是冻结贪心策略从 0 出发的原奖励折扣回报。代码对确定性策略中的循环求精确无限和；没有把卡住的轨迹按某个有利截止删掉。最短路径的值约为 0.7774。
+
+```bash
+python3 implementations/continual/count_bonus.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/count_bonus/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 615 步，有 bonus 的平均原任务回报为 0.1910，无 bonus 对照五条都已达到 0.7774。第 1200 步两者都达到 0.7774。此处额外新奇奖励延迟了原任务行为形成，末尾没有差异。
+
+**结论边界。** 短小平稳链没有困难的稀疏探索瓶颈。这不是密度模型 pseudo-count 的验证，也不是对所有探索奖励的否定。计数新奇不等于信息增益或外部效用。
+
+**继续实验。** 先分别记录访问覆盖与原任务回报，观察二者能否反向变化。再增加链长度、改变 bonus 系数，明确在哪个任务难度区间 bonus 的探索收益超过目标偏移的代价。
+
+[源码](../implementations/continual/count_bonus.py) · [逐种子记录](https://yingwen.io/crl-code/results/count_bonus/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/count_bonus/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/count_bonus/curves.json)
+
 <a id="lesson-rnd"></a>
 
 ## 3 · RND：把熟悉程度变成一个可训练的预测任务
@@ -170,6 +202,38 @@ Jθ 为预测网络输出的 Jacobian。intrinsic reward 先由更新前 θ 计�
 原始 RND 使用 actor–critic/PPO 系统，并区分外部与内部奖励的价值估计。完整实现还包含观测归一化、内部奖励缩放、预测器更新比例、两个折扣因子、终止语义与优势混合。本页表格示例只保留预测误差与更新次序，完整神经网络实验使用文末作者代码。
 
 固定 target 降低了一类“预测环境随机下一帧”问题，却不消除全部噪声陷阱：随机像素可以产生不断变化的输入，预测器容量和覆盖仍有限。更重要的是，持续学习中 predictor 也会遗忘；旧状态预测误差重新升高可能只是内部退化。评价应同时检查覆盖和预测器保留，而不是把每一次高误差都叫信息增益。
+
+<a id="experiment-rnd_exploration"></a>
+
+### 实验：实验 · 预测误差作为内奖，未必优于无偏随机游走
+
+RND 的误差确实参与了 Q 更新，是否意味着访问覆盖一定扩大？
+
+**环境与可用信息。** 12 格反射边界链，从 0 开始，无终止也无外部奖励。观测为 one-hot。固定随机目标网络与独立预测网络均为 12–12–3 tanh MLP；权重取 U(−0.6,0.6)，偏置为零。
+
+**设置。** 五种子各 1200 个转移，Q 初值为零，Q 步长 0.2、γ=0.99、ε=0.15。预测器每步以均方误差 SGD 更新，步长 0.03。内奖使用本次预测器更新前的误差。对照仍训练相同预测器，但不将误差交给 Q。
+
+**检验的机制。** 新奇误差随训练变化，Q 又需要追踪这些变化。无内奖时全零 Q 的平局随机打破，使行为接近随机游走；这在小反射链中本身就是强覆盖基线。
+
+**测量。** 纵轴为截至当前真正到达过的状态数除以 12，范围为 0 到 1。它不是 return，也不是模型不确定性的校准误差。原始日志另有 novelty_mse 和 predictor_updates。
+
+```bash
+python3 implementations/extended_knowledge/rnd_exploration.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/rnd_exploration/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 600 步，RND 平均覆盖率为 0.85，对照为 1.00；末尾为 0.90 对 1.00。因此这个小任务没有显示内奖收益。预测误差作为奖励的机制可以正确运行，同时控制效果仍不理想。
+
+**结论边界。** 本组件没有 PPO、双 critic、观测归一化和内奖归一化，不是 RND Atari 系统。访问覆盖也不足以证明探索了任务相关信息。
+
+**继续实验。** 先比较 bonus 的衰减速度与 Q 的追踪速度，排查旧内奖残留。随后加入明确的稀有远端事件，仍用原事件发现率评价，不通过提高内奖累计值来定义成功。
+
+[源码](../implementations/extended_knowledge/rnd_exploration.py) · [逐种子记录](https://yingwen.io/crl-code/results/rnd_exploration/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/rnd_exploration/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/rnd_exploration/curves.json)
 
 <a id="lesson-uncertainty"></a>
 
@@ -253,6 +317,38 @@ $$
 这只是一个简化的决策接口。用学习估计 P̂ 过滤并不自动给真实安全保证；需要校准、保守不确定性界、分布外检测或外部安全机制。
 
 “Leave no Trace”同时学习前向任务与 reset 行为，展示了恢复应成为学习系统的一部分。不同任务中的失败集与允许干预必须明确。研究报告至少记录恢复成功率、恢复耗时、不可逆失败和人工干预次数；不能只保留 forward policy 的成功回合。
+
+<a id="experiment-recovery_filter"></a>
+
+### 实验：实验 · 前向收益高，可能只是把恢复成本藏起来了
+
+只最大化前进行为收益时，加入从实际结果学习的恢复过滤能否减少全流程损失？
+
+**环境与可用信息。** 三种前进行为的收益为 0、0.4、1，环境中的真实恢复概率分别为 0.98、0.6、0.05。恢复失败扣除 2。过滤器看不到真实概率，只收到实际成功或失败结果。每个 trial 允许重新开展下一次试验。
+
+**设置。** 五种子各 1200 个恢复 trial。每个动作的恢复后验从 Beta(1,1) 开始；前 30 次轮流收集证据，危险尝试同样计入总分。随后 ε=0.2 的前向收益提议器选动作，过滤器要求后验均值至少 0.75；无合格动作时选估计最高者。
+
+**检验的机制。** 前向 Q 只估计动作收益，过滤器另管恢复可行性。过滤使提议被替换为恢复概率较高的行为。它不提供置信下界，也不把“相对最安全”误称为“保证安全”。
+
+**测量。** 纵轴是所有 trial 的累计净奖励均值，包含预热和失败成本。日志另记 reset_failure_rate 与 interventions。若只报告前向收益，会遗漏本实验的主要问题。
+
+```bash
+python3 implementations/extended_knowledge/recovery_filter.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/recovery_filter/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 reset_trials。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 末尾五种子平均净奖励为 −0.0517，无过滤对照为 −0.7945。过滤减少了损失，但自己的均值仍然为负；该结果不能被写成零失败或安全证书。
+
+**结论边界。** 这是三动作恢复概率组件，不包含学习一个多步恢复策略，也不是真正不可重置的单生命期。对照的提议器没有直接优化净奖励，因此差异部分来自目标分工，而非新估计器必然优越。
+
+**继续实验。** 加入直接学习净奖励的强基线，再比较后验均值过滤与保守置信下界过滤。若要研究单生命期，应让某些失败真正结束交互，并把丢失的后续学习机会计入评价。
+
+[源码](../implementations/extended_knowledge/recovery_filter.py) · [逐种子记录](https://yingwen.io/crl-code/results/recovery_filter/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/recovery_filter/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/recovery_filter/curves.json)
 
 <a id="lesson-example"></a>
 
@@ -339,7 +435,7 @@ python examples/lifelong_algorithms_lab.py test
 
 <a id="research-cpsrl-resampling"></a>
 
-## 研究专题 A · CPSRL：世界不重置，探索假设可重采样
+## CPSRL：世界不重置，探索假设可重采样
 
 每步换一个可信模型，行动可能相互抵消；永久坚持初始抽样，又可能长期错过新证据。CPSRL（RLC 2024）以随机时钟决定更换整条探索假设，时钟不会调用环境 reset。
 
@@ -380,7 +476,7 @@ $$
 
 <a id="research-morefree-data-and-goals"></a>
 
-## 研究专题 B · MoReFree：真实探索与模型内目标分布
+## MoReFree：真实探索与模型内目标分布
 
 无 reset 世界中，最大化覆盖可能长期停留在任务无关区域。MoReFree（TMLR 2025）同时改变真实目标调度与 imagination training：任务目标、返回初始区域和探索目标彼此配合。返回由真实动作实现，日志块边界不会将物理世界复位。
 

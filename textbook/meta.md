@@ -248,6 +248,38 @@ def idbd_step(weights, beta, history, features, target, meta_rate=0.01):
     return new_weights, new_beta, new_history, error
 ```
 
+<a id="experiment-idbd"></a>
+
+### 实验：实验 · 一次权重反转能否激发逐特征步长适应？
+
+在完全相同的观测流上，改变学习规则的历史敏感度能否影响反转后的追踪速度？
+
+**环境与可用信息。** 输入为 [1,u]，u 均匀取自 [−1,1]。真权重前 600 步为 [0.2,0.7]，之后变成 [−0.2,−0.7]。标签另加标准差 0.03 的高斯噪声。算法看不到真权重，也不接收任务边界通知。
+
+**设置。** 五种子各 1200 个样本。初始权重和敏感度全零，对数步长均为 log(0.03)，IDBD 元步长 0.01。对照是固定步长 0.03 的 LMS。每样本更新一次，无回放；两者使用相同种子的输入和噪声。
+
+**检验的机制。** IDBD 先由当前误差与旧敏感度更新对数步长，再更新权重和敏感度。元状态记录过去步长如何影响当前权重，不是把过去奖励向前传播的资格迹。
+
+**测量。** 纵轴为当前真函数的解析无噪声 MSE，不含不可约标签噪声。第 601 步目标才反转；反转前后应分别读图，不把目标变化造成的跳升当成数值发散。
+
+```bash
+python3 implementations/continual/idbd.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/idbd/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 反转后第 750 步，IDBD 的五种子平均 MSE 为 0.0288，固定步长为 0.0391；第 900 步为 0.000865 对 0.00211。末尾两者均在数万分之一量级。这里显示的是该配置下的追踪差异，不是对所有任务的显著优势。
+
+**结论边界。** 只有两个相关特征、一次变化，也没有 TD 自举。当前日志没有保存逐坐标步长，因而不能仅凭误差曲线声称已经直接观察到特征选择。
+
+**继续实验。** 先补记每个坐标的步长和敏感度。再加入无关特征，并让相关特征的变化速度不同。预先固定任务族和调参预算，检验“区分特征”与“统一增大学习率”两种解释。
+
+[源码](../implementations/continual/idbd.py) · [逐种子记录](https://yingwen.io/crl-code/results/idbd/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/idbd/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/idbd/curves.json)
+
 <a id="lesson-tidbd"></a>
 
 ## 4. TIDBD：bootstrap 与资格迹改变了什么？
@@ -393,6 +425,38 @@ class LinearMetatrace:
         return result
 ```
 
+<a id="experiment-extended-metatrace"></a>
+
+### 实验：实验 · 元参数确实变化，也可能没有带来可见的行为收益
+
+Metatrace 学出的步长与固定步长不同，是否就意味着最终策略更好？
+
+**环境与可用信息。** 五位置、12 步有限时域链；输入为位置 one-hot 加剩余步数，终点奖励 1，其余 −0.02。价值函数线性，策略为 softmax，18 个参数全零初始化。
+
+**设置。** 种子 0–4，各 1200 个环境转移。归一化 scalar Metatrace 初始 α=0.03、元步长 0.01、γ=1、λ=0.8，使用 U=V+0.5 log π，熵系数为零。固定 AC 采用相同 U、迹与初始 α，但不做元更新。
+
+**检验的机制。** 权重迹负责延迟信用；元资格迹与敏感度负责步长的历史影响。真实终止后权重迹与元迹清零，步长及参数敏感度跨回合保留。这里实现的是 scalar 归一化变体，不是每个参数一个独立步长。
+
+**测量。** 主图是冻结贪心回报。原始日志另记 step_size 和 meta_sensitivity_norm。先确认元状态实际变化，再检查行为指标是否真的改善；不要用元参数在变化替代性能证据。
+
+```bash
+python3 implementations/extended_adaptation/metatrace.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-metatrace/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 从第 60 步到末尾，两种方法五种子的贪心回报均为 0.94。Metatrace 末尾步长约为 0.0847–0.1082，明显不同于固定 0.03，但当前行为指标已经饱和，不能分辨优势。
+
+**结论边界。** 短链、线性 critic、单个全局元步长；没有 vector/mixed 版本，也没有长时非平稳控制。局部敏感度近似不等于完整非线性策略训练历史的精确梯度。
+
+**继续实验。** 先增加随机策略价值与样本累计奖励指标，再考虑更长延迟或奖励尺度变化。若只换一个更困难任务而不保留同骨干对照，仍无法判断元历史是不是收益来源。
+
+[源码](../implementations/extended_adaptation/metatrace.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-metatrace/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-metatrace/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-metatrace/curves.json)
+
 <a id="lesson-meta-rl"></a>
 
 ## 6. Meta-gradient RL：根据后续表现选择学习目标
@@ -449,6 +513,38 @@ def lambda_return_sensitivity(rewards, next_values, bootstrap, gamma=0.9, lam=0.
         dg, dl = new_dg, new_dl
     return g, dg, dl
 ```
+
+<a id="experiment-extended-meta_gradient"></a>
+
+### 实验：实验 · 对验证轨迹求元梯度，能否学出有用的 λ？
+
+元梯度能通过一次价值更新传回 λ，但它在当前预算内是否改变了实际学习过程？
+
+**环境与可用信息。** 五个非终止状态的一维对称随机游走，从中间状态开始。到右端奖励 1，左端奖励 0，γ=1。真值依次为 1/6 到 5/6。每条轨迹最多 24 个转移；预算截断继续自举，真实终点不自举。
+
+**设置。** 五种子各运行 1200 个训练批。每批独立采集训练与验证两条轨迹。价值初始为零，内层 SGD 步长 0.1；λ=sigmoid(β) 初始为 0.8，元步长 0.02，β 限于 [−4,4]。对照保留同样采样与元梯度计算，只将元更新率设为零。
+
+**检验的机制。** 训练轨迹构造 λ-return 并产生一次可微价值更新。验证轨迹用固定 λ=1 的目标评价新参数，再将导数传回 β。旧价值自举停止梯度，但 λ 对训练回报的依赖保留。
+
+**测量。** 主图使用相对解析真值的冻结 MSE；横轴是训练批，不是环境步。五次运行实际分别使用约 2.06–2.14 万个转移。原始日志的 learned_lambda 与 meta_gradient 是判断元学习是否真正起作用的必要补充。
+
+```bash
+python3 implementations/extended_adaptation/meta_gradient.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-meta_gradient/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 training_batches。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 批，元学习 MSE 为 0.00714235，固定 λ 为 0.00714212，几乎重合。学出的 λ 仅为 0.80008–0.80042。这证明实现产生了非零元更新，但不能证明当前设置学出了有用的新目标。
+
+**结论边界。** 只反传一批内的更新，没有 actor、跨批长元历史或 IMPALA 系统。两条轨迹意味着额外环境查询。微小带符号的最终差值不是效能证据。
+
+**继续实验。** 先检查 β 的有限差分导数，再预先设计不同奖励噪声与延迟的任务族。扫描元步长时同时报告固定 λ 网格基线，检验自适应是否胜过直接选一个常数。
+
+[源码](../implementations/extended_adaptation/meta_gradient.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-meta_gradient/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-meta_gradient/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-meta_gradient/curves.json)
 
 <a id="lesson-output-steps"></a>
 
@@ -734,7 +830,7 @@ def meta_demo():
 
 <a id="research-trac-scale-adaptation"></a>
 
-## 研究专题 A · TRAC：参考位移与多时间尺度的在线适应
+## TRAC：参考位移与多时间尺度的在线适应
 
 IDBD 追踪步长如何影响后续误差；TRAC 的适应对象是参数相对参考点的位移尺度。它将基础优化器与一维在线 tuner 组合，让近期证据决定离初始化多远。参考点是正则化锚，不是已证明安全的策略。
 
@@ -766,7 +862,7 @@ $$
 
 <a id="research-rule-discovery-resources"></a>
 
-## 研究专题 B · 算法表示、规则搜索与部署成本
+## 算法表示、规则搜索与部署成本
 
 RLC 2025 的 How Should We Meta-Learn Reinforcement Learning Algorithms? 将学习的组件与发现它的方法分开比较。更新规则可以是神经函数、符号公式或代码；它可以通过进化搜索、蒸馏、代码提案等过程产生。表示的可解释性不能代替发现预算与部署效果。
 

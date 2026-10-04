@@ -132,6 +132,38 @@ $$
 
 这展示了“致命三元组”：自举、离策略和函数逼近同时存在时可能不稳定。它不是说每一个包含三者的算法都会发散，也不是说去掉任一项就无需其他条件。神经网络、目标网络与回放会改变动力学，需要另外检查。
 
+<a id="experiment-baird_expected_td"></a>
+
+### 实验：实验 · 去掉噪声与非线性，TD 仍能发散
+
+已知真值可表示、输入已归一化且每步使用精确期望时，离策略半梯度为什么仍会越学越错？
+
+**环境与可用信息。** Baird 星形七状态、八维固定线性特征，每个特征向量单位长度。目标策略总转移到下状态，行为状态分布均匀。奖励全零，γ=0.99，真值全零。
+
+**设置。** 五种子各运行 1200 个精确七状态 sweep，不是 1200 个环境步。步长 0.05，初始参数接近全 1，其中下状态专有坐标为 10，其他坐标加入 ±0.01 的种子扰动。对照用同一已知模型求 Bellman 残差真梯度。
+
+**检验的机制。** 所有状态项先用同一旧参数计算再同时更新。没有采样噪声、神经网络、回放或优化器矩。差异来自更新方向及其优化目标；残差梯度对照不是把半梯度 TD 的同一个固定点简单稳定化。
+
+**测量。** 图中纵轴为 log10(1+价值 RMSE)，只压缩显示尺度。原始 rmse 与 parameter_norm 都保留，训练没有裁剪。不要把纵轴 2.64 误读为原始误差只有 2.64。
+
+```bash
+python3 implementations/nonlinear_diagnostics/baird_expected_td.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/baird_expected_td/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 expected_sweeps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 半梯度 TD 的平均图值由约 0.529 增至 2.641；五种子原始 RMSE 末尾约为 436–438。残差梯度末尾图值约 0.271，未发生同样增长。该反例直接说明不稳定并非只能归因于深网或随机噪声。
+
+**结论边界。** 精确模型 sweep 不是严格流式算法；特征冗余，参数解不唯一。有限预算中残差梯度仍有非零价值误差，不能把下降曲线写成已经达到真值。
+
+**继续实验。** 对期望 TD 更新矩阵检查特征值，再将步长减半并延长横轴，区分“增长较慢”与“根本稳定”。保持原始 RMSE 和对数图同时可见。
+
+[源码](../../implementations/nonlinear_diagnostics/baird_expected_td.py) · [逐种子记录](https://yingwen.io/crl-code/results/baird_expected_td/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/baird_expected_td/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/baird_expected_td/curves.json)
+
 <a id="lesson-derive"></a>
 
 ## 3 · 三种误差与 MSPBE 的推导

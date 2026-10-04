@@ -158,6 +158,38 @@ $$
 
 Tree Backup 不依赖普通轨迹比率，因此可以处理不同于目标的行为分支，但这不等于没有数据覆盖要求。目标概率为零的采样分支不会把更深信息传回；很小概率也会衰减深层信用。
 
+<a id="experiment-retrace"></a>
+
+### 实验：实验 · 后继误差传播多远，取决于什么系数？
+
+都保留三步、都使用目标策略的完整动作期望，Retrace 与 Tree Backup 的误差传播为何仍不同？
+
+**环境与可用信息。** 六格终止链，末端奖励 1，其余 −0.01，γ=0.95。从 0 开始。目标与行为策略完全相同，每个状态向左 0.2、向右 0.8。十个状态动作估值全零；本实验只做固定策略评价。
+
+**设置。** 五种子各 1200 个环境转移，步长 0.1。最多保存三条转移；三步成熟后更新最早状态动作，真实终止时依次处理余下短目标。预算用尽但未成熟的尾段不强制终止。每个目标的递推使用当时冻结的 Q。
+
+**检验的机制。** 两者的 TD 残差都包含完整目标动作期望。Retrace 以 λ min(1,ρ) 传播后续残差；这里 λ=0.8 且 ρ=1，因此系数为 0.8。Tree Backup 的对应系数是采样动作的目标概率：向右 0.8，向左 0.2。两者并非仅仅换了名字。
+
+**测量。** 纵轴是五个非终止状态、两个动作的均方根价值误差，真值由固定策略的精确模型解产生。不是贪心回报，也不是对最优 Q 的误差。
+
+```bash
+python3 implementations/extended_classic/retrace.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/retrace/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 600 步，Retrace 的平均 RMSE 为 0.1413，Tree Backup 为 0.1932；末尾为 0.0299 对 0.0579。该同策略设置下，更长保留的左动作后续误差与较快误差下降相伴，但没有单独改变一个系数的因果消融。
+
+**结论边界。** 当前比率恒为 1，未实际检验离策略比率裁截的主要价值。三步有限缓冲也不等于无限前向回报或无缓冲流式迹；不能将结果写成 Retrace 离策略稳定性实验。
+
+**继续实验。** 选一段先左后右的三步轨迹，逐项手算两种目标。若改用不同的行为策略，必须在采样和概率比两处同步修改，并保持评价目标不变，随后再研究比率方差。
+
+[源码](../../implementations/extended_classic/retrace.py) · [逐种子记录](https://yingwen.io/crl-code/results/retrace/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/retrace/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/retrace/curves.json)
+
 <a id="q-sigma"></a>
 
 ## 5 · Q(σ)：逐层混合采样与期望

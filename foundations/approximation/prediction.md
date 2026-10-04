@@ -189,6 +189,38 @@ $$
 
 TD 每步需要 $O(d)$ 计算与内存。直接 LSTD 需要 $O(d^2)$ 存储，批量求解通常需要 $O(d^3)$ 计算。样本不足或特征相关可使矩阵奇异；加正则项会改变估计问题，不能把正则后的解称为原方程的精确解。
 
+<a id="experiment-gradient_mc"></a>
+
+### 实验：实验 · 两个共享参数，怎样从回报或 Bellman 方程得到？
+
+同样的线性表示，逐样本梯度与累计正规方程究竟用了哪些不同的信息？
+
+**环境与可用信息。** 五状态等概率随机游走，从中间开始；左终点奖励 0、右终点奖励 1，γ=1。每状态特征为 [1,s/6]，仅有两个共享权重。真值恰好可由权重 [0,1] 表示，因此没有不可约表示误差。
+
+**设置。** 五种子各 1200 个真实转移，权重从零开始，输入轨迹匹配。Gradient MC 等完整回合结束后，从后向前用每次访问的完整回报做 SGD，α=0.03。LSTD 每步累计二乘二 A 矩阵和二维 b，再求解加 0.00001 对角正则的线性方程；没有 SGD 步长。
+
+**检验的机制。** Gradient MC 对固定回报标签的平方误差求梯度。LSTD 累计当前特征与特征差的外积，求经验 TD 正规方程，不是把 MC 的同一个损失换成更好的优化器。前者保留本回合，后者保留全部历史的矩统计。
+
+**测量。** 图中用当前参数计算五状态真实价值 RMSE。相同环境步数不等于相同存储或计算：LSTD 每步解一个小方程组；MC 只在终止时进行一串更新。
+
+```bash
+python3 implementations/extended_classic/gradient_mc.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/gradient_mc/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 15 步，MC 的平均 RMSE 为 0.420，LSTD 为 0.504；第 300 步变为 0.210 对 0.0311；末尾为 0.1314 对 0.0278。LSTD 在后段更准确，但早期仍受有限数据和矩阵条件影响，MC 也持续受固定步长的轨迹噪声影响。
+
+**结论边界。** 真值可表示，不能用本图展示 MC 投影与 TD 固定点的结构性差异。二乘二求解很便宜，不代表高维方法成本。固定正则会改变有限前缀解；没有测量最小奇异值，不能仅凭曲线确认某个尖峰的成因。
+
+**继续实验。** 先记录矩阵条件数并核对终点特征为零。再去掉能表达斜率的特征，枚举访问分布下的 MC 投影与 TD 固定点，分开研究“表示不够”与“估计还不准”。
+
+[源码](../../implementations/extended_classic/gradient_mc.py) · [逐种子记录](https://yingwen.io/crl-code/results/gradient_mc/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/gradient_mc/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/gradient_mc/curves.json)
+
 <a id="lesson-example"></a>
 
 ## 5 · 手算：同一表示下的两种正确答案

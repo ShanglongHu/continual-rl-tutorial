@@ -159,6 +159,38 @@ $$
 
 把各状态的方程堆叠。Pπ 是策略诱导转移矩阵；只保留非终止状态时，行和可以小于一。有限折扣条件保证可逆，程序通常使用迭代或线性求解而非显式求逆。
 
+<a id="experiment-iterative_policy_evaluation"></a>
+
+### 实验：实验 · Bellman 方程求的是哪个策略的价值？
+
+固定同一个转移模型和策略，仅改变读取旧值或新值的顺序，会不会改变最终评价对象？
+
+**环境与可用信息。** 六格确定性链，0–4 为非终止状态，5 为终点。在最左端向左仍停在原地。进入终点奖励 1，其余转移奖励 −0.01，γ=0.95。固定策略每个状态向左概率 0.2、向右概率 0.8；此处不改善策略。
+
+**设置。** 价值从零开始。每轮扫描五个非终止状态，枚举两个动作的已知模型。同步评价整轮只读旧价值；原地对照按状态 0 到 4 更新，可以读到本轮已更新值。保存的五个 seed 都运行 1200 轮，但算法无采样随机性。
+
+**检验的机制。** 两种扫描都应用同一个固定策略的 Bellman 期望关系。同步和原地是求解器差别，不是两个不同的控制目标。原地方法可能更快传播信息，但传播效果也受扫描方向与转移结构影响。
+
+**测量。** 纵轴是相对于独立线性方程解的最大绝对价值误差，不是相对于最优价值的误差。横轴一轮包含五次状态备份；它不表示五次真实环境交互。
+
+```bash
+python3 implementations/extended_classic/iterative_policy_evaluation.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/iterative_policy_evaluation/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 model_sweeps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 15 轮，同步误差为 0.01164，原地为 0.000406；第 60 轮为约 0.000000000388 与浮点精度。末尾两者均在浮点精度。五条完全重合的曲线反映确定性计算，不是统计置信度很高。
+
+**结论边界。** 已知小模型、固定策略和折扣收缩使问题可精确求解。它没有学习模型，没有采样误差，也没有评价一个不断改变的学习器。
+
+**继续实验。** 先用当前策略概率建立线性方程，再故意换成逐状态取最大动作，观察求解对象怎样从策略评价变成最优控制。将原地扫描顺序反转，验证“相同固定点”不意味着“相同中间过程”。
+
+[源码](../../implementations/extended_classic/iterative_policy_evaluation.py) · [逐种子记录](https://yingwen.io/crl-code/results/iterative_policy_evaluation/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/iterative_policy_evaluation/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/iterative_policy_evaluation/curves.json)
+
 <a id="mdp-optimal"></a>
 
 ## 5 · 最优价值与动作选择

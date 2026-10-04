@@ -170,6 +170,38 @@ $$
 
 相对保守不等于每个状态动作都是真实价值的逐点下界。原论文的界有具体分布、采样和权重条件。连续动作的 log-integral 通常用采样近似；不能直接枚举所有动作。本核只检验有限动作正则及其梯度。
 
+<a id="experiment-deep-cql"></a>
+
+### 实验：固定数据中的保守项：限制外推，不创造缺失证据
+
+训练不再采集新经验时，降低未见动作的估值能否改变策略？
+
+**环境与可用信息。** 位置 0–4 的 DeadlineChain，动作是左／右；观测是位置 one-hot 和剩余时间比例。到位置 4 得 1 并终止，其余每步 −0.02；12 步期限也是问题的真实终止。每回合从 0 开始。训练数据预先用独立 seed 2026 采集 512 条转移，行为以 0.65 概率向右。训练期不与环境交互。
+
+**设置。** 本图实际运行 1200 个预算单位，训练种子为 0–4。这里的预算单位是训练 batch，不是环境步。每批从同一固定数据重采样 32 条；32 隐单元，Adam 0.003，折扣 0.99，Polyak 0.02。每批 CQL 与普通离线 Q-learning 均有一次优化器调用。
+
+**检验的机制。** CQL 在半平方 TD 损失之外，加权重为 1 的 logsumexp 动作值减数据动作值。离散动作可精确求和；没有连续动作采样和自适应 Lagrange 权重。
+
+**测量。** 冻结贪心策略在独立环境中的回报用于评价，不把评价经验加入固定数据。五个 seed 改变网络初始化和数据重采样，而不是产生五套离线数据。
+
+```bash
+python3 implementations/deep/cql.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/deep-cql/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 training_batches。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 600 个 batch 两者均约 0.94；1200 个 batch 分别为 0.94 与 0.932。当前数据已经足以学到近最优路线，不能用此例证明保守正则对严重覆盖不足普遍有效。
+
+**结论边界。** 它没有扫描数据质量、行为分布和缺失动作，无法证明 D4RL 性能或无覆盖区域的可靠估计。保守偏置还可能压低需要但少见的动作。
+
+**继续实验。** 在训练前固定不同的行为策略与数据量；冻结所有数据再比较普通 Q、CQL 和 IQL。把数据 seed 与训练 seed 分开，不能看过测试回报后挑最好数据集。
+
+[源码](../../implementations/deep/cql.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-cql/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-cql/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-cql/curves.json)
+
 <a id="lesson-iql"></a>
 
 ## 5 · IQL：在数据动作内近似策略改进

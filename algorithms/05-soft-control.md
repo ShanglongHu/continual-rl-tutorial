@@ -192,6 +192,38 @@ $$
 
 软更新系数 $\eta$ 的不同工程约定可能相反，有的写 polyak 接近 1 作为旧参数保留率。本章式子中 $\eta$ 是新参数占比；照抄变量名却不对式子是常见错误。
 
+<a id="experiment-deep-sac"></a>
+
+### 实验：实验 · 连续 SAC 的梯度路径与真实控制结果
+
+把 tanh 随机策略、双 critic 和固定温度接成完整训练循环后，结果是什么？
+
+**环境与可用信息。** BoundedLQ：观测为位置 x 和剩余时间比例；动作 u∈[−1,1]。位置按 0.92x+0.3u 更新并截到 [−3,3]；奖励为 $-(x^2+0.05u^2)$。初态均匀取自 [−1,1]，40 步是真实有限时域终止。
+
+**设置。** 1200 个真实步，种子默认初始化 32 单元 tanh 隐层；SAC Gaussian actor、两个 critic，温度固定 0.1，不学习温度。actor Adam 0.001，critic Adam 0.002，γ=0.99，replay 4000、批量 32；第 32 步起每步更新，前 64 步均匀探索，目标软更新新参数占比 0.02。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** sac.py 的 critic target 使用当前随机策略和目标双 Q；actor 更新冻结 Q 参数但保留 Q 对动作的导数。_common.py 的 GaussianActor 在 tanh 后校正 log-prob。对照 DDPG 使用确定性 actor、单 critic 和标准差 0.15 的动作噪声。
+
+**测量。** 每 60 步用固定评价种子 991 的 12 个回合评价。SAC 执行 tanh(mean)，不是随机动作；纵轴是未折扣的外部奖励总和，不含熵项。
+
+```bash
+python3 implementations/deep/sac.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/deep-sac/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** SAC 的平均评价回报从初始化 −21.609 变为第 600 步 −21.157，再到第 1200 步 −0.690；DDPG 对应为 −5.967、−4.474、−2.353。初期 SAC 明显更差，后期均值更高；DDPG 末端 seed 标准差约 2.350，不能只报两个终点数字。
+
+**结论边界。** actor 架构和初始行为分布不同，即使 seed 相同也不是完全同参数对照。这是两个完整方法的短任务比较，不隔离熵、双 Q 或随机策略的单项作用；也不覆盖自动温度和单次生命持续任务。
+
+**继续实验。** 在同一网络、replay 和数据预算下比较固定温度的多个取值。分别报告随机行为外部收益、确定性评价和含熵目标，解释三者为何可能不同。
+
+[源码](../implementations/deep/sac.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-sac/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-sac/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-sac/curves.json)
+
 <a id="lesson-example"></a>
 
 ## 5 · 两个动作的解析答案

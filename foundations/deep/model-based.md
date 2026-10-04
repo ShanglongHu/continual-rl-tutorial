@@ -168,6 +168,38 @@ $$
 
 MBPO 从真实 replay 状态出发生成较短的模型轨迹，将这些合成样本用于 off-policy 策略学习。短分支缩短连续承受模型误差的距离，同时保留数据增广。起点覆盖不足、模型偏差和奖励模型错误仍然存在，因此 rollout 长度是一项需要验证的选择，不是越短越优的定理。
 
+<a id="experiment-learned_model_mpc"></a>
+
+### 实验：只执行计划的第一步：短视与有限时域规划
+
+奖励模型已经学会每一步后果，为什么一步贪心仍可能无法完成任务？增加搜索深度会解决哪些问题，又留下哪些问题？
+
+**环境与可用信息。** 六格确定性链，从0开始，左右动作在左边界截断。到5真正终止并回到0；其余期望奖励−0.01。终点奖励均值前600步为1，之后为0.5，所有奖励观测另加标准差0.02的高斯噪声。状态完全可观测。
+
+**设置。** 5个种子，各1200个真实转移。经验模型从空开始，只从已发生转移更新奖励均值与转移频数；未访问动作的乐观值为0.05。γ=0.95、ε=0.1。候选每步递归规划5层，对照1层；都只执行首动作后重新规划。
+
+**检验的机制。** 一步规划无法表达先付出若干步小代价再获得终点奖励。多层搜索组合模型后果，但不会自动消除奖励噪声、旧均值或错误模型。模型预测和真实执行是不同事件。
+
+**测量。** 图为冻结当前规划策略在真实均值奖励下的解析折扣回报，不含评估采样噪声。同时看模型奖励RMSE；模型误差下降不保证动作排序立刻正确。
+
+```bash
+python3 implementations/continual/learned_model_mpc.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/learned_model_mpc/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 奖励降低后的最终检查点，五步规划回报为0.37015，一步版本为−0.2；后者对应持续支付−0.01而不抵达终点的循环。五种子这里得到同样冻结策略，并不意味着其训练轨迹相同。
+
+**结论边界。** 有限小树可完整递归，计算开销未与一步版本匹配。它不是TD-MPC2或Dreamer的潜在模型工程，也没有模型不确定性或安全约束。
+
+**继续实验。** 逐个增加搜索深度，找出首次能将终点收益传回起点的深度。然后冻结在变化前的奖励模型，重复搜索；解释为什么更多搜索无法自行发现第601步的新奖励。
+
+[源码](../../implementations/continual/learned_model_mpc.py) · [逐种子记录](https://yingwen.io/crl-code/results/learned_model_mpc/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learned_model_mpc/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learned_model_mpc/curves.json)
+
 <a id="lesson-latent"></a>
 
 ## 5 · Dreamer 把模型计算用于想象中的策略学习

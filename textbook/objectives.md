@@ -523,6 +523,38 @@ def shaping_comparison(rewards, potentials, gamma):
                 boundary=boundary, expected=original + boundary)
 ```
 
+<a id="experiment-potential_shaping"></a>
+
+### 实验：实验 · 保持最优策略，不等于保持学习轨迹
+
+势函数塑形保持正确目标时，有限预算曲线是否必须更好？
+
+**环境与可用信息。** 六格确定性链：从 0 开始，左右动作，左边界停留。到位置 5 得 1 并终止，其他转移得 −0.01。观测就是位置。真实终止后从 0 开始；折扣为 0.95，任务没有中途变化。
+
+**设置。** 各运行 1200 个真实环境步；Q 全零，学习率 0.2，ε-greedy 的 ε=0.1，并列最优训练动作均匀选择。两者只有训练奖励不同。势函数为非终止状态的 −(5−s)/5，终点势为 0。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** potential_shaping.py 仅以势差改变训练奖励；评价仍使用未塑形环境奖励。两者都从 Q=0 起步，这不等同于把两者初始 Q 按势函数做对应平移。
+
+**测量。** 主图是冻结贪心策略从状态 0 出发的精确折扣回报，包含可能无限循环的几何尾项，不是训练奖励或完整生命期所得。
+
+```bash
+python3 implementations/continual/potential_shaping.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/potential_shaping/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 15 步时塑形的均值为 0.38644，对照为 −0.2；到 1200 步，塑形为 0.58193，对照为 0.77741。塑形的末端标准差约 0.43711。早期较好、晚期反差说明目标保持不保证任意初始化与有限探索下的学习优势。
+
+**结论边界。** 固定势、正确终点势和静止链满足本实验所用边界约定。有限预算的一条失败曲线不是对最优策略保持结论的反例；本图也没有测真实学习过程的总收益。
+
+**继续实验。** 把初始 Q 按势函数对应平移，再检查相同行为随机数下两种方法的动作和更新是否对应。改变终点势后先推导边界项，再运行。
+
+[源码](../implementations/continual/potential_shaping.py) · [逐种子记录](https://yingwen.io/crl-code/results/potential_shaping/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/potential_shaping/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/potential_shaping/curves.json)
+
 <a id="lesson-subtasks"></a>
 
 ## 8. 总任务、目标条件子任务和预测知识
@@ -622,6 +654,72 @@ $\lambda,\beta$ 为行为规则；$\mathcal H^{P,\lambda}$ 是有非零概率的
 这一定义是相对于四项给定量的性质：环境、性能、候选集合与基底。换基底或改变预算可能改变判定；只观察有限日志无法证明无限时间永不到达。它与本章的有限生命期评分互补：前者定义持续性的结构性质，后者比较指定期限内的实际表现，不能相互代替。
 
 未知但平稳的有限 bandit 仍需要学习，而每个已确定的环境都存在最优固定拉臂策略。不过，存在一个使用真实臂均值的 oracle 策略，并不说明未知模型的有限预算学习器能立即执行它；也不能只凭这一事实完成 Abel 定义中的判定。要一起分析信息、准则、候选集合和基底，而不只检查转移函数有没有时间下标。
+
+<a id="experiment-bandit_constant_step"></a>
+
+### 实验：实验 · 把探索期间的代价计入评价
+
+评价整个学习器时，为何不能只看最后认为哪个动作最好？
+
+**环境与可用信息。** 无状态三臂 Bernoulli 赌博机，三动作奖励 1 的概率固定为 0.2、0.5、0.8，其他情况奖励 0。无回合终止、无变化信号；每次拉臂计一个真实交互。
+
+**设置。** 1200 次拉臂，初始动作估计和计数为 0。两者都用 ε=0.1 的 ε-greedy；固定步长为 0.1，样本均值对被选动作使用其访问次数的倒数。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** 控制器每次先选动作、获得真实奖励，再更新该动作估计。日志中的累计奖励保留了所有早期探索成本，没有用最后的最优动作均值回填历史。
+
+**测量。** 纵轴为从起点至当前时刻的实际平均奖励。它和固定动作 2 的期望奖励 0.8 是不同评价对象：前者包含学习，后者是固定策略的参照。
+
+```bash
+python3 implementations/classic/bandit_constant_step.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/bandit_constant_step/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 1200 步时固定步长与样本均值的全程平均奖励分别为 0.73917、0.76283，均未达到始终选择已知最优臂的参照 0.8。差距包含合法探索和估计错误，不能直接全称为算法实现故障。
+
+**结论边界。** 没有冻结策略的独立评测曲线，因此不能从现有图计算“最终能力减去学习代价”。已知最优臂是分析参照，未作为控制器的初始知识。
+
+**继续实验。** 新增隔离的冻结分支评估最终动作分布，并保留原来的全程收益指标。若冻结评测数据被用于选择在线动作，评价协议发生了什么变化？
+
+[源码](../implementations/classic/bandit_constant_step.py) · [逐种子记录](https://yingwen.io/crl-code/results/bandit_constant_step/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/bandit_constant_step/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/bandit_constant_step/curves.json)
+
+
+
+<a id="experiment-learner_control_online"></a>
+
+### 实验：实验 · 评价完整学习过程，而不是重置后的最终策略
+
+已有一套能行动的参数后，环境改变时继续更新参数有什么作用？
+
+**环境与可用信息。** 单次生命的走廊世界。大厅可花 1 步、付出 0.05 奖励成本探测当前正确路线，或选择左/右路线。进入路线花 1 步、奖励 −0.02；再走 2 步，中间奖励 −0.02。正确到达得 1 并回大厅；错误到达得 −0.4，随后必须经历 4 个各得 −0.05 的恢复步。观测含阶段、剩余行进/恢复时间与已选路线；只有探测会返回路况线索。600 步起正确路线由左改右，不提供变化通知。
+
+**设置。** 1200 个原始步，Q 与率全零，线索记忆初始为空，ε=0.15，差分 Q 步长 0.1，率步长 0.005。前 400 步两分支完全相同；随后对照保留该检查点的 Q/率并禁写，在线分支继续更新。两者都不重置世界、记忆和 RNG；新探测线索仍更新记忆。冻结与变化时刻由实验预先固定，与总预算无关。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** online_differential_q.py 每个真实步用奖励减率加后继最大 Q 的差分误差同时更新 Q 和率。frozen_parameters.py 在 400 步后仅禁用这两项写入。动作依赖观测阶段与记忆线索；冻结参数不等于冻结活动状态，更不等于清空记忆。
+
+**测量。** 主图是从第 1 步起累加的真实奖励除以原始步数。探测、行进、失败和恢复都计入。另看最近 100 步收益、恢复步数、参数更新次数与记忆写入次数；没有免费评估回合。
+
+```bash
+python3 implementations/learner_control/online_differential_q.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/learner_control_online/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 400 步时两者全程奖励率均为 0.23686，参数和历史逐项一致；600 步时都为 0.24734。变化后在线分支在 800 步降到 0.20124，1200 步回到 0.22632；冻结分支最终为 0.12787。末尾 100 步奖励率分别为 0.27234、0.02152。冻结分支仍平均写入记忆 60 次，失败不是因为记忆被清空。
+
+**结论边界。** 这是共同检查点之后的有限持续控制比较，不是一般偏离遗憾估计。环境只有可恢复代价，没有不可逆陷阱；不提供外部重置。观察记忆可能过时，非平稳条件下差分 Q 没有在此得到收敛证明；一个冻结检查点也不代表最优固定控制器。
+
+**继续实验。** 检查同 seed 在 400 步前的 Q、率、记忆与 RNG 完全一致。把未来变化从 600 改到 900，400 步前必须不变。再单独冻结记忆写入，明确那是新增消融，不能与冻结参数混为一谈。
+
+[源码](../implementations/learner_control/online_differential_q.py) · [逐种子记录](https://yingwen.io/crl-code/results/learner_control_online/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learner_control_online/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learner_control_online/curves.json)
 
 <a id="lesson-code"></a>
 

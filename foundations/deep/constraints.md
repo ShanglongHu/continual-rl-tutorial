@@ -174,6 +174,38 @@ $$
 
 有限已知 CMDP 的占据线性规划可以分析对偶与可行性；神经参数化、采样噪声和同时更新可能破坏这些简洁性质。乘子振荡、成本 critic 滞后和策略表示不足都会影响实际学习，不能只看最后一次 multiplier。
 
+<a id="experiment-cmdp_primal_dual"></a>
+
+### 实验：奖励提高，不代表满足成本约束
+
+同一个策略梯度中加入对偶乘子，能否追踪平均成本限制？
+
+**环境与可用信息。** 单状态两动作，奖励是均值 0.2／0.9 的 Bernoulli 随机变量；动作 1 的成本为 1，动作 0 为 0。要求期望成本不超过 0.4。没有转移、回合与延迟后果。
+
+**设置。** 本图实际运行 1200 个预算单位，训练种子为 0–4。预算为独立拉臂；策略是 sigmoid(logit)，logit 和乘子从 0 开始。actor 与乘子均使用 0.15 除以时间平方根的步长，先读取旧乘子，再分别计算新值；乘子投影到非负。
+
+**检验的机制。** actor 对奖励减乘子乘成本做 score-function 更新；乘子因实际成本超过预算而增大。对照忽略约束，因此不是同一可行集合内的竞争方法。
+
+**测量。** 主图测动作 1 概率到解析可行最优 0.4 的距离。日志另记录期望收益、正成本违反和乘子。概率距离不等于已经满足约束。
+
+```bash
+python3 implementations/extended_classic/cmdp_primal_dual.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/cmdp_primal_dual/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 1200 步时概率绝对误差均值约 0.0465，对照约 0.4083。约束更新使概率更接近目标，但有限步随机迭代不保证每一步都可行。
+
+**结论边界。** 这是静态平均约束的单状态机制，不是安全探索、多状态 CMDP 求解或逐轨迹零违反保证。忽略约束的对照可以有更高奖励，但解决了不同问题。
+
+**继续实验。** 把目标从平均成本改为任何时候都不得执行危险动作：原始对偶算法是否仍满足要求？分别画成本违反、收益和乘子，不只画距离。
+
+[源码](../../implementations/extended_classic/cmdp_primal_dual.py) · [逐种子记录](https://yingwen.io/crl-code/results/cmdp_primal_dual/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/cmdp_primal_dual/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/cmdp_primal_dual/curves.json)
+
 <a id="lesson-safety"></a>
 
 ## 5 · CPO 与执行时安全的区别

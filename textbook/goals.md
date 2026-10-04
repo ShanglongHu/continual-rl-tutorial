@@ -168,6 +168,38 @@ HER 再增加一个数据操作：先真实执行原目标 g，保留轨迹；�
 
 在确定性且目标无关的环境中，原转移仍是新目标下同一个状态—动作对的有效结果。随机环境里，按后来实际发生的结果选择新目标，可能条件化转移噪声：例如偶然成功的随机结果，被过度表示为可稳定达成的目标。此时标准 HER 不普遍给出无偏 Bellman 样本。课程分布还会改变训练目标的权重，因此重标记后的训练误差与原目标分布上的成功率需要分别评价。
 
+<a id="experiment-her_replay"></a>
+
+### 实验：HER究竟改了哪部分经验
+
+失败轨迹能怎样成为另一个目标的成功轨迹，又不伪造世界的转移？
+
+**环境与可用信息。** 七格确定性链，状态和目标均为0—6，左右动作在边界截断；动力学与目标无关。从3开始，每回合目标从其他六格随机选择。到达目标奖励0并终止该目标任务，其余奖励−1；12步上限是截断，不是物理终止。
+
+**设置。** 5个种子，各1200个真实转移。表格目标条件Q零初始化，步长0.2、γ=0.95、ε=0.4。两方法都做一次当前转移更新，且每步至多2次回放。HER额外将完整轨迹中已经发生的未来后继选作目标；普通回放只保存原目标标签。
+
+**检验的机制。** 原始状态、动作、后继和物理终止事实不变，只换目标并重算目标奖励与目标终止。若起点已经满足新目标，该样本跳过，不能训练已经终止的任务继续离开。时间截断允许bootstrap。
+
+**测量。** 冻结贪心策略，在42个不同起点—目标组合上测12步内到达率。横轴为真实转移；回放次数与缓冲大小另记。训练目标、回放目标和评估目标分布需要分别描述。
+
+```bash
+python3 implementations/extended_knowledge/her_replay.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/her_replay/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 600步HER到达率0.6619，普通回放0.7619；1200步分别为0.8333±0.0753与0.8095±0.0292。HER并未全程领先，末端差异也很小。图说明实际目标重标记流程可运行，不说明HER在此设置稳定更强。
+
+**结论边界。** 表格小链，非机器人神经HER。回放缓存随数据增长，且HER保存更多标签；环境步和每步回放数匹配不等于存储量匹配。
+
+**继续实验。** 挑一条未达原目标的三步轨迹，列出所有可合法选用的future目标。分别修改reward、目标done和物理done，核对只有前两者可以随目标改变；再以等缓存容量重跑比较。
+
+[源码](../implementations/extended_knowledge/her_replay.py) · [逐种子记录](https://yingwen.io/crl-code/results/her_replay/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/her_replay/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/her_replay/curves.json)
+
 <a id="lesson-subtasks"></a>
 
 ## 3. 从到达目标到有停止规则的子任务
@@ -236,6 +268,38 @@ $$
 | 学习进度驱动 | 按能力变化分配练习 | 区分噪声、遗忘和真正进步 |
 | 奖励相关子任务 | 改变行为学习的 cumulant / stopping value | 与最短路径、随机技能比较规划收益 |
 | 持续目标发现 | 候选产生、评估、保留与淘汰共同在线变化 | 计入候选学习与模型维护的算力/内存成本 |
+
+<a id="experiment-learning_progress"></a>
+
+### 实验：“现在学什么”先用可检查的小问题检验
+
+最近预测误差变化大，是否就代表值得投入更多样本的可学习任务？
+
+**环境与可用信息。** 这是任务选择子机制，不是完整MDP控制。每轮选择三个回归任务之一，观察均匀分布于[-1,1]的x及目标y；前两个为y=x和y=−2x，第三个y为单位高斯噪声。没有环境奖励、状态转移或终止；平方误差只是调度信号。
+
+**设置。** 5个种子，各1200个训练样本。三个斜率参数零初始化，平方损失SGD步长0.05。每任务保存最近20个更新前误差，比较前后两个10样本窗口的均值差绝对值；收集满20个样本后用ε=0.2选择最高进展任务。对照均匀抽任务。
+
+**检验的机制。** 调度器只看已到达样本的误差，不读取真实斜率。绝对窗口差也会把噪声造成的升降算作进展；因此高进展不必意味着可降低的误差或下游有用性。
+
+**测量。** 图为冻结参数后三任务均匀平均的解析预测MSE，包括第三任务不可约噪声贡献1/3。另看各任务的采样次数，而不只看调度器偏爱的任务自身损失。
+
+```bash
+python3 implementations/extended_knowledge/learning_progress.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/learning_progress/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 training_examples。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 最终自适应调度MSE为0.33626±0.00343，均匀调度为0.33798±0.00608，都接近1/3噪声下限。这个结果未显示明确课程优势，也提示任务容易时复杂调度可能没有必要。
+
+**结论边界。** 没有目标可达性、动作执行成本、目标生成或机器人区域划分。不能把这个回归课程组件写成完整内在动机智能体。
+
+**继续实验。** 只提高噪声任务的方差，保持两个可学习任务不变。检查它是否吸走更多预算。再用误差下降的有符号差替换绝对差，明确这改变了什么调度假设。
+
+[源码](../implementations/extended_knowledge/learning_progress.py) · [逐种子记录](https://yingwen.io/crl-code/results/learning_progress/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learning_progress/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learning_progress/curves.json)
 
 <a id="lesson-example"></a>
 

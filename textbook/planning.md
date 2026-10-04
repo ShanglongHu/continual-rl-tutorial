@@ -159,6 +159,38 @@ $$
 
 规划预算 $n=0$ 时退化为 Q-learning；预算增加时，价值更充分地接近当前模型的固定点，模型误差的影响也更充分。经验重放和 Dyna 都可重复训练；区别在于 Dyna 提供可查询的后果预测。若确定性模型仅存储并抽取旧转移，它在这一层面就与重放接近；概率、泛化或期望模型则提供了额外预测能力。
 
+<a id="experiment-differential_dyna"></a>
+
+### 实验：平均奖励规划：每次备份也必须减去奖励率
+
+没有折扣终点时，Dyna怎样将学得模型用于控制？更多模型计算换来了多少真实样本收益？
+
+**环境与可用信息。** 三状态、两动作的完全可观测持续MDP，不终止。奖励矩阵依次为(0.1,−0.05)、(0.5,0.05)、(0.2,1.2)。各状态两动作的主后继依次为(1,2)、(0,2)、(0,1)；以0.8概率去主后继，余下0.2概率均匀落到三状态。
+
+**设置。** 5个种子，各1200个真实转移。Q和奖励率从0起，行为ε=0.25，主步长0.08、奖励率步长为其0.1倍。每步用真实样本更新Q及奖励率，累计奖励均值和转移频数，再做5次已见状态—动作的模型期望备份。对照只有真实Differential Q更新。
+
+**检验的机制。** 模型目标为 $\hat r(s,a)-\bar r+\sum_j\hat P(j|s,a)\max_bQ(j,b)$。没有用高折扣近似平均奖励；规划阶段也从当前奖励率出发。模型仅含已访问对，真实P只用于评价。
+
+**测量。** 图为冻结当前贪心策略的精确长期平均奖励，不是探索行为的经验奖励率。另记录累计真实回报、奖励率估计、模型转移误差和额外备份次数。
+
+```bash
+python3 implementations/average_systems/differential_dyna.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/differential_dyna/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第600步Dyna为0.5970，纯真实更新为0.5320±0.0958；第1200步二者均为0.5970。规划帮助这个有限任务更早找到较好策略，没有提高其最终可达到的最优奖励率。
+
+**结论边界。** 每个真实步多做5次模型备份，总计6000次；并未匹配计算预算。环境固定、表格化，不能外推到非平稳SMDP或非线性平均奖励收敛。
+
+**继续实验。** 同时按真实环境步与总备份次数绘制横轴。再故意固定错误奖励率，只改这个变量，观察Q的相对值、公共漂移与最终策略分别发生什么变化。
+
+[源码](../implementations/average_systems/differential_dyna.py) · [逐种子记录](https://yingwen.io/crl-code/results/differential_dyna/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/differential_dyna/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/differential_dyna/curves.json)
+
 <a id="lesson-priority"></a>
 
 ## 3. Prioritized sweeping：为什么从后往前算
@@ -214,6 +246,38 @@ $$
 
 平均奖励目标需要另一种分析。跨技能的 differential backup 包含持续时间成本：$Q(s,o)=\mathbb E[R_{\rm sum}-g\tau+h(S_{\rm end})]$，其中 $g$ 是每个原始时间步的奖励率，$h$ 是相对价值。取 $\gamma=1$ 后，上面的折扣收缩证明不再成立，还需要参考状态、归一化或其他结构条件。按技能调用次数而非原始时间计算平均奖励，会改变优化目标。
 
+<a id="experiment-option_value_iteration"></a>
+
+### 实验：时间抽象能加速传播，但不会免费得到模型
+
+已知完整option模型后，一次长程备份能比原始动作备份传播更远吗？这个比较有没有省略技能学习成本？
+
+**环境与可用信息。** 七格确定性链，左右原始动作、到6终止；非终点奖励−0.02、终点1，γ=0.9。另给定一个内部向右概率0.8、每个非终点以0.3概率停止的随机option。规划阶段直接使用精确的奖励及折扣终点模型，无真实交互。
+
+**设置。** 5个种子，各1200次随机状态备份，初值0。每次选一个0—5状态，候选在两个原始动作与一个option间取最大值；对照仅有两个原始动作。两者用相同状态采样序列。
+
+**检验的机制。** 一次option查询返回 $R_o(s)+\sum_jM_o(s,j)V(j)$；M已经包含 $\gamma^\tau$。保留原始动作后，最优可达价值没有因为加入这个固定option而降低。加速来自跨多步后果的传播，而非更高奖励目标。
+
+**测量。** 纵轴是相对精确原始动作最优价值的最大绝对误差。横轴是状态备份数，不是环境步，也不是完整浮点计算量。
+
+```bash
+python3 implementations/extended_knowledge/option_value_iteration.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/option_value_iteration/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 model_backups。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 40次状态备份时，有option的平均最大误差为0.0854，原始动作版本为0.2580；600次时两者都达到数值零误差。它展示传播速度差异，而不是最终策略质量差异。
+
+**结论边界。** option模型提前精确求解，没有计入模型数据与求解成本。每次状态备份额外评价一个稠密option模型，也不是等计算成本。
+
+**继续实验。** 把准确模型替换为上一模型实验的学习快照，再按相同状态顺序规划。保持学习数据固定，增加规划次数；判断残余误差来自有限搜索还是错误模型。
+
+[源码](../implementations/extended_knowledge/option_value_iteration.py) · [逐种子记录](https://yingwen.io/crl-code/results/option_value_iteration/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/option_value_iteration/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/option_value_iteration/curves.json)
+
 <a id="lesson-search"></a>
 
 ## 5. MPC 与 MCTS：在行动前计算什么
@@ -255,6 +319,38 @@ N 是当前搜索树的访问次数，$P_{prior}$ 是网络或其他来源给出
 1. 若训练网络：用搜索后的根分布作策略监督，用实际/估计 return 作价值监督
 
 MuZero 把观测历史编码成根 latent，用可学习 dynamics 递推 latent 与 reward，再预测 policy/value 供搜索；不要求 decoder 还原每个像素。学到的模型仍可能被搜索利用其误差。mctx 是研究团队的 JAX 搜索库，提供 model/recurrent 接口与搜索算法；它不是完整 MuZero 训练系统，也不自动附带环境、replay 与网络训练。
+
+<a id="experiment-learned_model_mpc"></a>
+
+### 实验：只执行计划的第一步：短视与有限时域规划
+
+奖励模型已经学会每一步后果，为什么一步贪心仍可能无法完成任务？增加搜索深度会解决哪些问题，又留下哪些问题？
+
+**环境与可用信息。** 六格确定性链，从0开始，左右动作在左边界截断。到5真正终止并回到0；其余期望奖励−0.01。终点奖励均值前600步为1，之后为0.5，所有奖励观测另加标准差0.02的高斯噪声。状态完全可观测。
+
+**设置。** 5个种子，各1200个真实转移。经验模型从空开始，只从已发生转移更新奖励均值与转移频数；未访问动作的乐观值为0.05。γ=0.95、ε=0.1。候选每步递归规划5层，对照1层；都只执行首动作后重新规划。
+
+**检验的机制。** 一步规划无法表达先付出若干步小代价再获得终点奖励。多层搜索组合模型后果，但不会自动消除奖励噪声、旧均值或错误模型。模型预测和真实执行是不同事件。
+
+**测量。** 图为冻结当前规划策略在真实均值奖励下的解析折扣回报，不含评估采样噪声。同时看模型奖励RMSE；模型误差下降不保证动作排序立刻正确。
+
+```bash
+python3 implementations/continual/learned_model_mpc.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/learned_model_mpc/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 奖励降低后的最终检查点，五步规划回报为0.37015，一步版本为−0.2；后者对应持续支付−0.01而不抵达终点的循环。五种子这里得到同样冻结策略，并不意味着其训练轨迹相同。
+
+**结论边界。** 有限小树可完整递归，计算开销未与一步版本匹配。它不是TD-MPC2或Dreamer的潜在模型工程，也没有模型不确定性或安全约束。
+
+**继续实验。** 逐个增加搜索深度，找出首次能将终点收益传回起点的深度。然后冻结在变化前的奖励模型，重复搜索；解释为什么更多搜索无法自行发现第601步的新奖励。
+
+[源码](../implementations/continual/learned_model_mpc.py) · [逐种子记录](https://yingwen.io/crl-code/results/learned_model_mpc/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learned_model_mpc/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learned_model_mpc/curves.json)
 
 <a id="lesson-tdmpc"></a>
 
@@ -498,7 +594,7 @@ Dyna 的五状态小链会学到贪心状态值 $[0.729,0.81,0.9,1,0]$。训练�
 
 <a id="research-planning-allocation-and-error"></a>
 
-## 研究专题 A · 规划预算应分给可靠且会改变决策的查询
+## 规划预算应分给可靠且会改变决策的查询
 
 TD-MPC2 的短模型加终点价值、DINO-WM 的视觉目标搜索、Dreamer 的 imagined actor 学习，都把预测变成决策，但将计算放在不同位置。CRL 还要问：新经验改变了哪项知识，有限计算应重算哪些决策？扩大 horizon、增加候选序列和增加梯度更新，分别消耗不同资源，不能只写成统一的“更多规划”。
 
@@ -537,7 +633,7 @@ $$
 
 <a id="research-planning-objective-sensitive-contract"></a>
 
-## 研究专题 B · 更换目标后，哪些规划知识仍可复用
+## 更换目标后，哪些规划知识仍可复用
 
 将“换任务”视为一个统一事件会掩盖接口差异。SF/GPI 在共享动力学与线性奖励族中复用未来特征；VE 模型只保持特定策略/价值的 backup；视觉目标模型按潜在距离搜索；风险敏感规划还要求对应回报分布。规划复用的前提，必须从新目标会查询什么反推。
 

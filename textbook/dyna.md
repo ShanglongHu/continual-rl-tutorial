@@ -158,6 +158,38 @@ $$
 
 不能把规划生成的转移重新当成真实样本去更新同一个模型，否则会用自己的想象强化自己的错误；也不能把 n 次规划算作 n 个真实环境步。在报告中分别记录 real steps、model updates、planning backups 和实际运行时间。
 
+<a id="experiment-dyna_q"></a>
+
+### 实验：同一批真实经验，增加五次模型备份
+
+Dyna怎样在没有再访问上游状态时传播新奖励？这五次更新能否算成五条额外真实经验？
+
+**环境与可用信息。** 六格确定性链，状态0—5完全可观测；从0开始，左移不越过0，右移到5得到1并终止，其他转移奖励−0.01。终止后从0重开。这张实测图用γ=0.95，与正文手算两步例子的参数分开。
+
+**设置。** 5个种子，各1200个真实转移。Q零初始化、模型初始为空，Q步长0.2，ε=0.1。每步先做真实Q-learning，记录确定性后果，再从已见状态—动作中均匀抽样做5次备份。对照相同任务的Q-learning，无模型备份。
+
+**检验的机制。** 模型记忆已观察的奖励、后继与真正终止；规划使用当前Q重新评价旧后果。因此新的下游价值可传到尚未再次真实访问的上游。想象不会增加模型对未知世界的观测。
+
+**测量。** 图为从0执行冻结确定性贪心策略的精确折扣回报；循环用几何级数计入，而非事后强制结束。另记模型备份数，避免将计算量藏在环境步横轴之后。
+
+```bash
+python3 implementations/classic/dyna_q.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/dyna_q/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 首个15步检查点，Dyna平均回报0.5819，纯Q-learning为−0.2；到615步二者均为0.7774075。差别主要出现在样本有限的早期，不是更高的最终最优值。
+
+**结论边界。** Dyna额外做6000次模型备份，没有等计算预算或变化检测。只记最后一次后果的模型在此确定性环境成立，不能不加修改地用于随机转移。
+
+**继续实验。** 先将规划次数设0，逐步核对与相同Q-learning实现的目标。随后比较相同真实步与相同总备份两张图。若加入随机滑动，先修改模型表示再运行。
+
+[源码](../implementations/classic/dyna_q.py) · [逐种子记录](https://yingwen.io/crl-code/results/dyna_q/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/dyna_q/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/dyna_q/curves.json)
+
 <a id="lesson-example"></a>
 
 ## 4 · 两步链说明规划为什么能传播新奖励
@@ -219,6 +251,38 @@ prioritized sweeping 用模型预测的备份残差安排更新；后继值改�
 - 如果规划误差很大只是因为模型本身错误，优先更新可能把错误放大；应同时监测模型真实性和价值残差。
 
 Dyna-Q+ 给长期未尝试的行为加随时间增长的探索奖励，鼓励重新检查世界；它不是通过旧模型自行检测变化。奖励的时间单位、未尝试动作的初始化、访问时间更新必须一致，才能解释实验。
+
+<a id="experiment-prioritized_sweeping"></a>
+
+### 实验：把有限规划预算沿前驱传播
+
+均匀重想已见状态是否会浪费备份？当下游价值变化时，怎样找到可能受影响的前驱？
+
+**环境与可用信息。** 与前一个Dyna实验相同的六格确定性链：到5奖励1并终止，其他奖励−0.01，左边界截断，状态完全可观测。终止后从0开始新回合。
+
+**设置。** 5个种子，各1200个真实转移；γ=0.95、步长0.2、ε=0.1。真实转移只更新模型、前驱索引与优先队列；每步最多弹出5项，队列为空则少做。优先级为模型Bellman残差绝对值，入队阈值为1e−8。图中对照为无规划Q-learning。
+
+**检验的机制。** 先备份残差大的状态—动作，再将其价值变化传给前驱。此实现不像前一个Dyna入口那样额外做一次直接真实Q更新；比较时必须看具体调度，不能只按算法名称假设更新次数。
+
+**测量。** 图为冻结贪心策略回报，另读实际模型备份次数。最多5次不等于每步恰好5次；优先队列重复与陈旧项也会消耗计算。
+
+```bash
+python3 implementations/classic/prioritized_sweeping.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/prioritized_sweeping/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 15步时五种子均达到0.7774075，而Q-learning为−0.2；最终两者相同。这个图展示在很小链上的快速奖励传播，没有证明优先扫描对所有图结构都优于均匀Dyna。
+
+**结论边界。** 当前配对基线不是同预算的均匀Dyna，不能据图把全部提升归给优先级。静态确定性链也不检验模型变化后前驱索引的维护。
+
+**继续实验。** 用相同总模型备份预算加入均匀Dyna对照，固定状态—动作访问日志。再让一条边改变目的地，检查旧前驱关系是否被删除，避免在失效边上反复规划。
+
+[源码](../implementations/classic/prioritized_sweeping.py) · [逐种子记录](https://yingwen.io/crl-code/results/prioritized_sweeping/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/prioritized_sweeping/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/prioritized_sweeping/curves.json)
 
 <a id="lesson-branches"></a>
 

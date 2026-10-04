@@ -168,6 +168,38 @@ $$
 
 Expected Sarsa 将下一动作样本替换为当前策略下的价值期望，降低这部分采样方差。将其替换为最大动作价值则得到 Q-learning 风格目标，目标策略与探索行为分离。共享参数时，这个改变引入离策略稳定性问题，不能仅视为低方差替换。
 
+<a id="experiment-semi_gradient_sarsa"></a>
+
+### 实验：实验 · 共享特征怎样把一次 Sarsa 更新扩散到其他状态？
+
+只有六个权重的动作价值近似器，能否在六格链上形成正确动作排序？
+
+**环境与可用信息。** 六格链从 0 出发，进入终点奖励 1，其余 −0.01，γ=0.95。每个动作有三个共享多项式特征：常数、归一化位置和位置平方。两个动作使用互不重叠的参数块，共六个零初始化权重。
+
+**设置。** 五种子各 1200 个环境转移。训练采用 ε=0.1 的行为策略，Sarsa 步长 0.05。先按旧参数选后继动作，再用该动作价值自举；真实终点用零后继特征。图中基线为十项表格 first-visit MC control，整回合后用样本平均更新。
+
+**检验的机制。** Sarsa 只对当前动作的特征块求导，但该块在多个位置复用，因此一次更新会改变多个状态的动作价值。策略改善需要动作排序正确，不要求所有价值数值都精确。此处还同时改变了表示、步长和更新时间。
+
+**测量。** 主图冻结当前参数，执行确定性贪心策略，精确计算原奖励折扣回报；遇到循环时求无限尾和。它不是训练期 ε-greedy 的回报，也不展示每个状态动作的估值误差。
+
+```bash
+python3 implementations/extended_classic/semi_gradient_sarsa.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/semi_gradient_sarsa/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 60 步，五条 Sarsa 曲线均达到最短路径回报 0.7774，MC 对照均值为 0.1910；第 600 步两者都达到 0.7774。后续主图饱和，无法判断价值预测是否还在变化。
+
+**结论边界。** 该比较不是同表示消融，不能把所有早期差异归功于自举或共享特征。平稳短链也没有检验函数逼近控制的稳定性，更不能代替持续非平稳控制评价。
+
+**继续实验。** 增加表格 Sarsa 与相同多项式表示的 Gradient MC control，构成表示和更新目标的二维对照。另画十个 Q 估值及实际 ε-greedy 回报，检查贪心成功是否掩盖估计误差或探索成本。
+
+[源码](../../implementations/extended_classic/semi_gradient_sarsa.py) · [逐种子记录](https://yingwen.io/crl-code/results/semi_gradient_sarsa/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/semi_gradient_sarsa/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/semi_gradient_sarsa/curves.json)
+
 <a id="lesson-example"></a>
 
 ## 5 · 手算一个动作块的更新

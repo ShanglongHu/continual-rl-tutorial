@@ -175,6 +175,38 @@ d 是本次经验中的真实终止标志。状态值式模型对当前动作取
 
 终止反例：本步奖励为 $1$、$\gamma=0.9$、技能本身的 $\beta_o(s')=0$，旧奖励模型在终止状态误估为 $5$。遗漏 $d$ 会得到目标 $1+0.9\times5=5.5$；正确目标为 $1$。即使控制价值在终止状态固定为零，也不能替代奖励模型自己的停止屏蔽。
 
+<a id="experiment-option_model"></a>
+
+### 实验：为什么终点模型的一行不应归一化到1
+
+同一个终点在不同时间到达，会怎样改变规划所需的模型？逐步TD与等整段完成的MC在学同一个对象吗？
+
+**环境与可用信息。** 七格链，状态可观测，左右动作在边界截断。固定option以0.8概率右移，以0.2概率左移；每到达一个非终点状态以0.3概率停止。到6奖励1且强制停止，其他步奖励−0.02。每个option停止后从0—5均匀重新启动，因此这是模型识别实验，不是无重置持续控制。
+
+**设置。** 5个种子，各1200个原始转移，γ=0.9、模型步长0.15，模型零初始化。TD每个原始步更新启动于当前状态的模型；MC等待完整执行，只更新本次启动状态。预算尾部的未完成option不作为MC完整样本。
+
+**检验的机制。** 同时学习 $R_o(s)$ 与 $M_o(s,j)=\mathbb E[\gamma^\tau\mathbf1\{S_{t+\tau}=j\}]$。后者的行和是 $\mathbb E[\gamma^\tau]$，保留时间与终点的关联；归一化或再乘一次γ会改变规划语义。TD通过“现在停止／继续执行”的混合备份传播这两个对象。
+
+**测量。** 图为六个起点的奖励模型及七维折扣终点模型的联合RMSE；真值由固定策略精确求解。另记录完成option数与起点0的终点行质量。
+
+```bash
+python3 implementations/extended_knowledge/option_model.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/option_model/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 1200步TD联合RMSE为0.0308±0.0168，MC为0.0775±0.0115。这里TD每步都能更新，MC只在完成时更新起点；差异同时包含更新频率和bootstrap，不是单独比较一个无偏与有偏估计量。
+
+**结论边界。** 技能策略与终止固定，模型表格化。没有非线性模型、选项变化或模型驱动控制；联合RMSE还把不同分量混在一起，需要查看分量误差。
+
+**继续实验。** 将两个可能终点的时长改为不同分布，比较联合折扣质量与“平均折扣×终点概率”。再把M行归一化用于规划，手算一个后继价值向量，找出产生偏差的项。
+
+[源码](../implementations/extended_knowledge/option_model.py) · [逐种子记录](https://yingwen.io/crl-code/results/option_model/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/option_model/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/option_model/curves.json)
+
 <a id="lesson-expectation"></a>
 
 ## 3. 期望模型为什么有时够用，有时必错
@@ -235,6 +267,38 @@ $$
 1. 如果学习了新的专门策略，把它连同其 SF 加入集合；预算有限时须选择保留项
 
 在精确 $Q$、相同动力学和折扣下，GPI 不劣于被比较的各个策略；近似保证取决于统一价值误差界。奖励不在当前 $\phi$ 的线性张成空间，或动力学改变导致旧 $\psi$ 失效时，需要重新估计相应误差。SF 预测策略产生的累计特征，option 定义执行与停止，option model 预测停止时后果；三者可以组合，但承担不同职责。
+
+<a id="experiment-successor_features_gpi"></a>
+
+### 实验：后继特征复用的究竟是动力学还是奖励
+
+奖励权重已知地变化时，为什么无需将所有长期预测从零重学？固定基础策略为什么可能已足够？
+
+**环境与可用信息。** 单状态、两动作、无终止；每个动作都返回同一状态。转移特征是动作的二维one-hot向量。γ=0.8；前600步奖励权重为(0.2,1)，随后为(1,0.2)，变化后的权重直接提供给算法。行为始终均匀选动作。
+
+**设置。** 5个种子，各1200个真实动作。两个基础策略分别总选动作0与总选动作1；所有策略—动作的SF从0起、步长0.1，更新读取同一旧副本。GPI用已学SF与给定权重选动作；对照始终使用基础策略0。
+
+**检验的机制。** 用 $\psi^\pi(s,a)^\top w$ 估计新奖励下价值，再对库内策略与动作取最大值。策略索引不能去掉，否则会把不同未来行为的占据量混在一起。权重变化不改变转移特征的累计定义。
+
+**测量。** 图为所选确定性策略的解析折扣价值，不是训练行为的回报。此单状态问题中，总选奖励为1的动作值为5，总选奖励为0.2的动作值为1。
+
+```bash
+python3 implementations/continual/successor_features_gpi.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/successor_features_gpi/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 已记录的检查点中，GPI在前后两阶段均为5；固定策略0前半段为1，变化后也为5。基线后半段变好是因为任务奖励改到它偏爱的动作，不是它开始适应。五种子策略价值一致，也不代表SF数值完全相同。
+
+**结论边界。** 新奖励权重有特权地直接提供；没有奖励辨识、未知目标发现或表示迁移。单状态任务也不能说明GPI在长程复杂导航上的优势。
+
+**继续实验。** 不再直接告知奖励权重，添加独立的在线奖励回归。将奖励辨识误差与SF误差分开记录，再观察变化后的延迟来自哪一个模块。
+
+[源码](../implementations/continual/successor_features_gpi.py) · [逐种子记录](https://yingwen.io/crl-code/results/successor_features_gpi/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/successor_features_gpi/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/successor_features_gpi/curves.json)
 
 <a id="lesson-example"></a>
 
@@ -425,9 +489,41 @@ Dreamer 类方法在真实序列上学习模型，再从后验状态启动想象
 | Generative latent model | 多步想象与分布性后果 | 表示充分性、分布外误差、多步滚动 |
 | Value-equivalent / decision-oriented model | 保留下游决策所需量 | 保证通常相对于某类策略/价值，不是全世界精确模型 |
 
+<a id="experiment-integrated_cumulative_model"></a>
+
+### 实验：累计样本更多，不一定更适合当前模型查询
+
+外部奖励或技能改变后，全历史平均模型与固定步长模型会怎样影响适应？只看末尾窗口会得出相同结论吗？
+
+**环境与可用信息。** 七状态环，观测就是当前状态0—6。原始动作左移或右移；0.1概率停在原位，否则向选定方向移动。每步外部奖励为“到达当前奖励位置的指示量−0.02”。前600步奖励位置为1，随后为4；变化时刻不传给智能体。环境不终止、不重置。子目标1和4由设计者给定；技能在到达相应目标或执行满6个原始步时停止。
+
+**设置。** 5个种子0—4，各1200个真实环境步。高层ε=0.2；技能内ε=0.1。每个原始转移用Q-learning更新两个给定子任务，步长0.25、折扣0.95；到达子目标得1，否则−0.01。高层差分SMDP步长0.1，奖励率增量为0.002倍TD误差。技能完成后才提交内部贪心策略；预算尾端尚未完成的技能不伪造终止。 两者每个完成的高层动作后做4次规划。候选模型用1/n步长累计均值；对照第一次样本全量写入，之后固定步长0.2。两者均在内部技能策略改变时失效相应模型及高层Q。
+
+**检验的机制。** 模型分别估计完成动作的外部总奖励、总时长和终点指示量；平均奖励规划使用“总奖励−奖励率×时长＋终点价值”。累计平均长期保留旧后果，固定步长更重视近期后果，但方差更大。子任务人工奖励不进入这个外部后果模型。
+
+**测量。** 同时看最近100步奖励与生命期奖励率；模型奖励误差只在模型已存在且动作完成的样本上记录，不能当全状态无偏误差。
+
+```bash
+python3 implementations/integrated_agents/integrated_cumulative_model.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/integrated_cumulative_model/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 最终累计模型末窗奖励0.364，高于近期模型0.328；但生命期奖励率为0.247，低于近期模型0.270。800步时累计模型末窗为0.098，近期为0.114。结论依赖是否重视过渡期损失，不能只选终点排名。
+
+**结论边界。** 两条闭环轨迹与技能版本变化也不同，因此不是同一固定数据集上的纯模型回归比较。只有一次奖励位置改变，尚无多次变化或变化速度扫描。
+
+**继续实验。** 先冻结技能并用同一日志训练两种模型，单独测奖励与时长误差。再恢复闭环行动。比较这两阶段，区分模型记忆机制与它改变数据分布后的反馈。
+
+[源码](../implementations/integrated_agents/integrated_cumulative_model.py) · [逐种子记录](https://yingwen.io/crl-code/results/integrated_cumulative_model/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/integrated_cumulative_model/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/integrated_cumulative_model/curves.json)
+
 <a id="research-model-query-equivalence"></a>
 
-## 研究专题 A · 模型充分性由规划查询与风险目标共同决定
+## 模型充分性由规划查询与风险目标共同决定
 
 本章的期望模型已说明线性价值下哪些统计足够。Value Equivalence（NeurIPS 2020）进一步把模型规格写成查询集合：指定哪些策略与后续函数，要求模型在这些查询上生成正确 backup。模型可以舍弃不影响这些计算的细节；当规划器或奖励改变时，原先可忽略的细节也可能变成必要知识。
 
@@ -460,7 +556,7 @@ $$
 
 <a id="research-model-frozen-visual-dynamics"></a>
 
-## 研究专题 B · 冻结视觉特征后的动力学：DINO-WM 与 V-JEPA 2-AC
+## 冻结视觉特征后的动力学：DINO-WM 与 V-JEPA 2-AC
 
 两条近年的视觉模型路线都把“看到什么”与“执行动作后发生什么”分开，但外部经验来源不同。DINO-WM（ICML 2025）在 DINOv2 patch 特征上用离线行为轨迹拟合动力学；V-JEPA 2（2025 首稿）先以无动作标注的视频学潜在预测，再冻结编码器，用机器人交互轨迹训练 2-AC 动作条件预测器。没有像素 decoder，并不意味着没有动力学数据。
 

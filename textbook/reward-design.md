@@ -246,6 +246,38 @@ def shaping_residual(rewards, potentials, gamma):
 
 平均奖励下可用未折扣势差。若势有界，T 步平均塑形奖励为 [Φ(sT)−Φ(s0)]/T，极限为零。这里保持的是长期奖励率；暂态收益与差分价值可以改变。
 
+<a id="experiment-potential_shaping"></a>
+
+### 实验：实验 · 势差奖励的保证与短预算失败
+
+正确的势函数塑形为什么仍可能使有限预算结果更差？
+
+**环境与可用信息。** 六格确定性链：从 0 开始，左右动作，左边界停留。到位置 5 得 1 并终止，其他转移得 −0.01。观测就是位置。真实终止后从 0 开始；折扣为 0.95，任务没有中途变化。
+
+**设置。** 各运行 1200 个真实环境步；Q 全零，学习率 0.2，ε-greedy 的 ε=0.1，并列最优训练动作均匀选择。两者只有训练奖励不同。势函数为非终止状态的 −(5−s)/5，终点势为 0。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** shape 使用原奖励加 0.95 倍后继势减当前势；真实终点势为 0。Q-learning 在塑形奖励上训练，chain_score 始终在原奖励上评分。
+
+**测量。** 比较原任务冻结贪心折扣回报。训练塑形奖励会改变数值尺度，不能把它和未塑形回报直接画成同一性能指标。
+
+```bash
+python3 implementations/continual/potential_shaping.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/potential_shaping/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 步塑形均值为 0.58193，未塑形基线为 0.77741；塑形标准差约 0.43711。现有结果不是正向成功案例，应保留为“策略集合保持不等于有限样本加速”的实例。
+
+**结论边界。** 两者从相同的零 Q 开始，并未采用理论上对应的势移初值。探索路径和访问频率会因此改变；这是平稳短链，不是自动设计奖励或跨任务泛化。
+
+**继续实验。** 逐轨迹重算塑形回报与原回报之差，核对终点项。随后分别改变势的方向、尺度和初始化，判断哪一项改变目标，哪一项只改变学习过程。
+
+[源码](../implementations/continual/potential_shaping.py) · [逐种子记录](https://yingwen.io/crl-code/results/potential_shaping/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/potential_shaping/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/potential_shaping/curves.json)
+
 <a id="lesson-example"></a>
 
 ## 6. 三个会改变结论的细节
@@ -309,6 +341,38 @@ def preference_loss_gradient(theta, feature_difference, label):
 
 Christiano 等人的工作把片段偏好学习与深度 RL 结合。PEBBLE 进一步使用无监督预训练和经验重标记以提高反馈利用率。二者都不能仅凭训练比较准确率证明奖励在新行为上可靠。策略会主动寻找模型给高分的行为，因而会改变奖励模型的输入分布。
 
+<a id="experiment-preference_reward"></a>
+
+### 实验：实验 · 从有噪声的片段比较学习奖励
+
+只知道两个轨迹片段谁更好，能否学到解释偏好的奖励特征？
+
+**环境与可用信息。** 全部长度 3 的二动作序列，共 8 个片段。输入特征是右动作数与转向次数；不存在在线环境终止或控制器。标签由两片段特征差的线性得分经 sigmoid 产生 Bernoulli 偏好，生成权重为 (1,−0.7)。
+
+**设置。** 每步随机取两个片段并获得 1 个偏好标签，共 1200 个标签；奖励权重从 (0,0) 开始，SGD 步长 0.08。完整模型学习两维，基线冻结转向权重为 0。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** preference_reward.py 优化 Bradley–Terry 交叉熵，梯度由预测偏好概率减真实随机标签，再乘片段特征差得到。已知生成权重只用于数据生成和隔离评价，不直接提供训练梯度。
+
+**测量。** 枚举全部 64 个有序片段对，以真实偏好概率计算期望交叉熵。它包含不可约标签噪声，正确模型的交叉熵也不必为 0。
+
+```bash
+python3 implementations/extended_knowledge/preference_reward.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/preference_reward/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 preference_labels。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 个标签后，完整特征模型的平均交叉熵为 0.55666，单特征基线为 0.59108。完整模型第 600 步为 0.55282，后面略升，符合固定步长随机估计可能波动的现象。
+
+**结论边界。** 这是奖励拟合组件，不含人类标注、主动查询、神经奖励模型或策略优化闭环。较低偏好交叉熵不证明训练出的控制器有更高真实收益。
+
+**继续实验。** 给所有片段添加同一常数奖励，偏好概率会变吗？再构造训练中未出现的转向模式，分别测奖励模型误差和最终策略收益。
+
+[源码](../implementations/extended_knowledge/preference_reward.py) · [逐种子记录](https://yingwen.io/crl-code/results/preference_reward/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/preference_reward/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/preference_reward/curves.json)
+
 <a id="lesson-irl"></a>
 
 ## 8. 从示范中推断奖励：一个可手算的 MaxEnt IRL
@@ -343,6 +407,38 @@ def maxent_loss_gradient(theta, features, empirical_mean):
 ```
 
 相同行为可能由多个奖励解释。势函数变换就是一类不可辨识性来源。示范也可能受动作限制、错误信念或有限计算影响。CIRL 把人和机器人放进一个合作的部分信息博弈。Inverse Reward Design 则把手写代理奖励及其训练环境当作有关真实目标的证据。这些方法改变了推断问题，不是直接读出人的“真正奖励”。
+
+<a id="experiment-maxent_irl"></a>
+
+### 实验：实验 · 全轨迹配分函数与示范特征匹配
+
+从有限示范拟合 MaxEnt 轨迹分布时，特征遗漏与采样误差怎样出现？
+
+**环境与可用信息。** 四层二动作确定性 DAG，枚举 16 条完整轨迹，走满 4 步后结束。特征为右动作数与转向次数；专家全轨迹概率正比于 exp(0.8×右动作数−0.5×转向数)。这是奖励推断，不执行新的控制策略。
+
+**设置。** 每个 seed 先固定采样 64 条专家示范，共 256 个示范动作；参数从 (0,0) 开始。做 1200 次全批梯度更新，步长 0.05。对照只学习右动作特征；此处横轴是梯度更新，不是新增环境数据。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** maxent_irl.py 精确枚举全轨迹 log-sum-exp，梯度为模型期望特征减示范经验特征。不能用逐个状态独立归一化的局部 softmax 替代这个全轨迹配分函数。
+
+**测量。** 纵轴是对真实专家全轨迹分布的冻结交叉熵，而不是对 64 条训练示范的损失。后者下降不保证前者逐步下降。
+
+```bash
+python3 implementations/extended_knowledge/maxent_irl.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/maxent_irl/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 gradient_updates。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 次更新，完整模型的平均交叉熵为 2.19096，单特征基线为 2.24758；第 600 次已分别约 2.19095 和 2.24758。继续优化几乎不再改善当前评价，新增迭代不能替代新增示范。
+
+**结论边界。** 有限确定性轨迹枚举，不是随机动力学中的 causal entropy IRL。64 条示范带来估计误差；奖励不可辨识也未因优化收敛而消失。没有在线策略学习结果。
+
+**继续实验。** 固定示范不变，比较更多更新与更多示范。再给所有完整轨迹奖励加同一常数，验证概率不变，并解释为何奖励参数不一定唯一。
+
+[源码](../implementations/extended_knowledge/maxent_irl.py) · [逐种子记录](https://yingwen.io/crl-code/results/maxent_irl/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/maxent_irl/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/maxent_irl/curves.json)
 
 <a id="lesson-constraints"></a>
 

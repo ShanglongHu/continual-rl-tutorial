@@ -150,6 +150,38 @@ $$
 
 若 J 是从固定起点的严格折扣目标，轨迹求和形式中需要相应 $\gamma$^t 权重，或等价地在折扣占用分布下取样。很多实现直接对 rollout 的每个时刻均匀平均，再使用 $\gamma$ 折扣的 critic；这是常见代理方式，不能不说明就称与任意 J 完全同一梯度。
 
+<a id="experiment-deep-vpg"></a>
+
+### 实验：实验 · 完整回报与一步 critic 提供不同的策略学习信号
+
+策略梯度的目标相同，等待回报与借助 critic 会怎样改变有限预算学习？
+
+**环境与可用信息。** DeadlineChain：位置 0–4、左右动作、边界截断。观测为五维位置 one-hot 加剩余时间比例。到位置 4 得 1 并终止；其他步得 −0.02。12 步截止也是任务真实终止，且剩余时间可观测。每回合重新从位置 0 开始，网络跨回合保留。
+
+**设置。** 1200 个真实步；actor 为 6→32 tanh→2，critic 为 6→32 tanh→1；PyTorch 默认随机初始化，Adam 的 actor 步长 0.003、critic 步长 0.01。VPG 每个完整回合更新一次；A2C 每 60 步用收集到的一步 TD 目标更新一次。γ=1。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** vpg.py 用完整 reward-to-go 减旧 critic 得到优势；a2c.py 用一步自举 target 减旧 critic。两者策略更新都停止优势的梯度。VPG 未完成的末尾回合不参与更新。
+
+**测量。** 用隔离环境的贪心策略回报评价，而不是训练中的随机策略回报。还需读取 updated_batches：相同环境步数并没有固定 optimizer 更新次数。
+
+```bash
+python3 implementations/deep/vpg.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/deep-vpg/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 600 步 VPG 均值为 0.94，A2C 为 0.704，后者 seed 标准差约 0.528；第 1200 步两者都为 0.94。本配置说明 critic 引入后不必更早学好，但两者最终都达到最短路径行为。
+
+**结论边界。** 更新频率和监督目标同时不同，不能把全部差异只归因于 bootstrap。小环境上的终点打平也不意味着估计器方差、随机策略和计算开销相同。
+
+**继续实验。** 冻结一组完整轨迹，先比较两种优势与梯度，再做新的独立交互比较。固定样本导数正确与重新采样后表现更好，是两个命题。
+
+[源码](../implementations/deep/vpg.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-vpg/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-vpg/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-vpg/curves.json)
+
 <a id="policy-gae"></a>
 
 ## 3 · GAE 把多步 advantage 写成反向递推
@@ -194,6 +226,38 @@ $$
     1. 按给定权重优化策略、价值和熵正则项。
     1. 根据预先设定的 KL 阈值决定是否提前停止本轮优化。
   1. 用更新后的策略采集下一轮轨迹。
+
+<a id="experiment-deep-ppo"></a>
+
+### 实验：实验 · PPO 的旧数据、多轮更新与裁剪
+
+PPO 的完整更新流程能否在同一小任务上带来可见收益？
+
+**环境与可用信息。** DeadlineChain：位置 0–4、左右动作、边界截断。观测为五维位置 one-hot 加剩余时间比例。到位置 4 得 1 并终止；其他步得 −0.02。12 步截止也是任务真实终止，且剩余时间可观测。每回合重新从位置 0 开始，网络跨回合保留。
+
+**设置。** 1200 个真实步、同样的 6→32 tanh actor/critic 和初始化；actor Adam 0.003、critic Adam 0.01。每 60 步收集一批，γ=1、GAE λ=0.95，优势标准化，clip=0.2，最多 4 次 actor 更新，估计 KL 超过 0.03 时提前停；critic 做 4 次更新。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** ppo.py 保存采样时的旧 log-prob 和旧价值。裁剪目标对正负优势分别起作用；多轮优化不重算旧策略概率。该实验的 VPG 对照每个完整回合只进行一次策略更新。
+
+**测量。** 纵轴是冻结 argmax 行为的原环境回报。应把数据采集步数、重复梯度更新与 rollout 边界分开；图不是 clip 单组件消融。
+
+```bash
+python3 implementations/deep/ppo.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/deep-ppo/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 600 步和第 1200 步，PPO 与 VPG 的平均冻结回报均为 0.94，五个 seed 在这些检查点也相同。这里没有实测终点优势；小链可能无法区分两套训练程序。
+
+**结论边界。** PPO 与 VPG 同时在采样分段、GAE、优势标准化和更新次数上不同。不能把这张图称为“裁剪提升”的因果证据。argmax 行为相同不代表两者动作概率相同。
+
+**继续实验。** 保持同一 rollout、同一更新次数与同一优势，仅开关裁剪。记录概率比、KL 和 clip fraction，再观察重新采样后的收益。
+
+[源码](../implementations/deep/ppo.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-ppo/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-ppo/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-ppo/curves.json)
 
 <a id="lesson-example"></a>
 

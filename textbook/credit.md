@@ -137,6 +137,13 @@ $$
 
 这些层次可以组合。资格迹是一种时间信用机制。它可以用于逐步更新，也可以用于离线等价分析。流式协议限制数据和计算，不定义哪段历史应该得到信用。元学习调整学习规则；即使它也使用“迹”，所追踪的可能是步长对未来权重的影响，而不是过去状态对当前 TD 更新的资格。
 
+| 从熟悉的深度 RL 出发 | 新方法改变什么 | 未被这个改动解决的问题 |
+| --- | --- | --- |
+| 一步 critic TD | 资格迹把当前误差分配给早期输出梯度 | 观测是否构成充分状态；off-policy 的稳定性 |
+| PPO 中反向计算 GAE | 逐步资格更新改变数据等待和更新时序 | 多轮 PPO 更新并不等价于逐条 TD(λ) |
+| RNN 与 BPTT | RTRL 递推状态对参数的敏感度 | 它尚未决定每个动作应获得多少回报信用 |
+| 固定特征 true-online TD | 荷兰迹和预测差修正实现特定在线前向参考 | 任意神经网络加 Adam 不能继承线性等价证明 |
+
 先固定行为策略，观察一条 episode：$(S_0,R_1,S_1,\ldots,R_T,S_T)$。取常数 $\gamma,\lambda\in[0,1]$。终点特征为 $x_T=0$。推导前半部分冻结参数 $w$；之后才允许每步更新。随后分别放松同策略、固定迹长度、已知 Markov 状态和线性表示这些条件。每次放松只引入一个新的问题。
 
 Continuing task 指没有内在终点的持续交互任务；continual learning 指在长期经验中继续学习与适应。一个固定环境的 continuing task 未必包含分布变化；一串有限 episode 也可以构成持续学习。本文用“持续交互任务”指前者。日志窗口结束、环境终止和研究协议的任务切换需要分别记录。
@@ -246,6 +253,85 @@ $$
 配套代码先采用常数折扣，并将终点特征设为零。终止奖励完成更新后，新 episode 才重置资格迹。参数通常保留。单纯日志分段不提供清迹权限。
 
 Replacing trace 是另一种选择。例如二值特征被重新激活时，将其迹置一，而不是再加一。它避免重复访问使该分量持续累加，但改变了更新定义。它也不等于下面的 Dutch trace；“都是资格迹”不意味着前向解释相同。
+
+<a id="lesson-neural-streaming"></a>
+
+## 神经网络中的旧梯度：困难不是把 x 换成反向传播
+
+在固定线性特征下，过去状态的梯度就是 x，不随权重更新改变。神经网络则不同：一次更新会同时改变预测值和以后求导所用的表示。普通神经 TD(λ) 保存的是各时刻实际产生的梯度数值。它不保存旧计算图，也不自动把旧梯度搬到当前参数的局部几何中。
+
+$$
+z_t=\sum_{k=0}^t(\gamma\lambda)^{t-k}\nabla_\theta v_{\theta_k}(S_k),\qquad \bar z_t(\theta_t)=\sum_{k=0}^t(\gamma\lambda)^{t-k}\nabla_\theta v_{\theta_t}(S_k)
+$$
+
+左侧是普通在线资格保存的历史梯度和。右侧是保存整段输入后，在当前网络上重算的参考量。二者一般不同。右侧也不是自动正确或稳定的新算法；它只是明确表示“当前梯度”意味着什么。
+
+$$
+z_t-\bar z_t(\theta_t)=\sum_{k=0}^t(\gamma\lambda)^{t-k}\left[\nabla v_{\theta_k}(S_k)-\nabla v_{\theta_t}(S_k)\right]
+$$
+
+若固定输入的梯度在所经过参数区域内是 L-Lipschitz，每项范数至多为 $L\|\theta_k-\theta_t\|$。长迹、快更新和大曲率可增大差异。这个局部界不意味着长迹一定有害，更不意味着减小 λ 就解决所有信用分配问题。
+
+第二个变化来自 TD target。下一状态预测也在更新，因而原来相消的 bootstrap 项未必属于同一函数。即便把所有旧梯度重新计算，若前向和后向使用的目标时序不同，也不能得到原来的恒等式。资格过时和目标变化是两个不同误差来源。
+
+| 工程处理 | 直接改变什么 | 仍需检查什么 |
+| --- | --- | --- |
+| 减小步长／限制更新范数 | 减慢参数与表示移动 | 可能减慢变化后适应；没有修复错误期望更新方向 |
+| 目标网络 | 减慢 bootstrap 目标变化 | 当前网络的旧梯度仍变化；目标有额外滞后 |
+| Replay／短窗口重算 | 用当前网络重新处理已存输入 | 增加历史存储和优化次数；样本可能来自旧策略 |
+| 冻结 trunk／只训练输出层 | 恢复固定特征条件 | 特征可能不够表达新任务 |
+| GTD／梯度资格迹 | 从另一目标推导辅助网络与校正方向 | 辅助逼近、离策略权重、在线时序与非线性优化条件 |
+
+这些处理针对不同环节。把 replay、目标网络、归一化、梯度裁剪同时加入后，曲线变稳并不能指出原来的根因。先验证 target、终止和梯度；再一次改变一个机制，并记录每步计算、历史存储和误差，而不只记录回报。
+
+配套实验从六步链开始。奖励只在第六步出现，成功概率为 0.7，折扣为 0.9；每个非终止状态的真值是 0.7 乘以到奖励的相应折扣幂。输入是位置的两个数值特征，网络是 2–6–1 tanh。这个例子没有状态混叠、策略变化或离策略比率，因而能先隔离非线性信用与更新协议。
+
+| 入口 | 更新与资源协议 | 读结果时要回答什么 |
+| --- | --- | --- |
+| [神经 TD(λ)](https://yingwen.io/zh/continual-rl/code/neural_td_trace/) | λ=0.8；每条转移更新；只保留参数大小的迹 | 延迟结果怎样影响早期输出？旧梯度在一次参数更新后变化多少？ |
+| [神经 TD(0)](https://yingwen.io/zh/continual-rl/code/neural_td0/) | 同一网络和步长；λ=0 | 去掉长信用后，数据沿 bootstrap 链传播需要多久？ |
+| [Gradient MC](https://yingwen.io/zh/continual-rl/code/neural_gradient_mc/) | 保存六步轨迹；结束后逐样本用完整回报更新 | 去掉 bootstrap 后，等待、回报噪声和更新聚集怎样变化？ |
+
+教程仓库中的独立训练文件；默认配对基线，另存完整种子记录与图
+
+```sh
+python3 implementations/streaming_composition/neural_td_trace.py --steps 1200 --seeds 0 1 2 3 4 --out results/neural-trace-new
+python3 implementations/streaming_composition/neural_gradient_mc.py --steps 1200 --seeds 0 1 2 3 4 --out results/neural-mc-new
+```
+
+测试分别核对每个参数的有限差分梯度、冻结网络下 λ=0／0.4／1 的前后向总量恒等式，以及在线更新打破冻结参考的反例。MC 在预算末尾遇到未完成 episode 时不伪造终止；TD 也不把日志窗口当终点。短链上的学习表现不能替代复杂非线性离策略问题的稳定性证明。
+
+<a id="experiment-neural_gradient_mc"></a>
+
+### 实验：旧梯度迹与完整回报：等待、存储和bootstrap怎样交换
+
+去掉bootstrap是否一定更准确？神经网络中的trace为何不能被当作当前参数下重新计算的历史梯度？
+
+**环境与可用信息。** 六步单向链，状态0—5，只有一个继续动作。观测为归一化位置及其平方。前五步奖励0，第六步以0.7概率得1，否则0，随后真正终止并从0重开。γ=0.9；状态s真值为0.7乘0.9的(5−s)次方。
+
+**设置。** 5个种子，各1200个真实步；同一2–6–1 tanh初始化及终点奖励序列，步长0.03。MC保存最多六条转移，终止后按时间正序逐样本更新；对照TD(λ)取λ=0.8，每步立即更新、不保存轨迹。
+
+**检验的机制。** MC目标是已经观测到的完整回报，每个样本在处理时重新求梯度。TD(λ)的迹累加过去参数下的梯度，随后网络继续变化。相同环境样本数并不意味着相同写入时刻、缓存需求或完整梯度计算量。
+
+**测量。** 图为全部六状态对解析值的RMSE。另读缓冲转移数、梯度漂移与资格范数；相邻一次旧输入的梯度变化只诊断局部漂移，不测量完整历史trace误差。
+
+```bash
+python3 implementations/streaming_composition/neural_gradient_mc.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/neural_gradient_mc/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 最终MC为0.0440±0.0309，TD(0.8)为0.0478±0.0203，差异不足以说明前者更优。独立TD(0)对照最终为0.0509±0.0265，且在600步曾低于带迹版本。这个任务没有呈现“更长信用必定更好”的规律。
+
+**结论边界。** MC需要完整短回合，不能直接满足无回合、无轨迹缓冲的严格流式条件。这个带迹程序也不是true-online神经扩展或梯度TD；平稳同策略曲线不能证明离策略稳定。
+
+**继续实验。** 延长链到60步，同时记录最长等待与缓冲占用。再固定一条短轨迹和参数，对照前向λ目标与后向总方向；允许每步更新后重复检查，指出冻结等价在哪一步失去适用条件。
+
+[源码](../implementations/streaming_composition/neural_gradient_mc.py) · [逐种子记录](https://yingwen.io/crl-code/results/neural_gradient_mc/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/neural_gradient_mc/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/neural_gradient_mc/curves.json)
 
 <a id="lesson-true-online"></a>
 
@@ -364,6 +450,66 @@ def td_episode(features, rewards, initial, gamma, lam, alpha, true_online=True):
     return history
 ```
 
+<a id="experiment-true_online_td"></a>
+
+### 实验：在线前向等价不等于在任何预算下误差最小
+
+荷兰迹与预测变化修正解决的是哪个等价问题？为什么正确的true-online算法仍可能输给TD(0)？
+
+**环境与可用信息。** 五个非终止状态1—5，每回合从3开始。固定行为以0.5概率向左或右移动；抵达0得0，抵达6得1并终止，其余奖励0。观测就是状态，无控制改善。γ=1，解析价值为状态编号除以6。
+
+**设置。** 5个种子，各1200个真实转移。one-hot价值与迹从0开始；步长0.1、λ=0.8。对照TD(0)使用相同任务和步长。终止反馈先写入，再清迹及旧预测；预算尾部不补造回合终点。
+
+**检验的机制。** 荷兰迹修正当前特征再次出现时的重复信用，预测差修正处理先前参数更新改变的估计。保证所针对的对象是指定的在线前向视角，而不是比所有其他λ或学习率都更低的价值误差。
+
+**测量。** 图为五状态对解析真值的RMSE。公式等价应另看逐前缀参数比对测试；两条性能曲线接近或分离，都不能替代该等价测试。
+
+```bash
+python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/true_online_td/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第615步true-online为0.0835、TD(0)为0.1069；到1200步分别为0.0772与0.0465，后者更低。早期与终点排序不同，说明不应只挑一个有利检查点讲故事。
+
+**结论边界。** 固定λ与步长、one-hot特征和短随机游走。没有神经表示漂移、离策略比率或控制反馈，也没有为两个方法做独立而公平的调参。
+
+**继续实验。** 在同一固定轨迹上验证每个前缀的true-online参数，然后再做性能实验。将λ设0检查退化到TD(0)；增加重复访问频率，观察漏掉预测修正项时首先在哪个前缀不相等。
+
+[源码](../implementations/classic/true_online_td.py) · [逐种子记录](https://yingwen.io/crl-code/results/true_online_td/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/true_online_td/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/true_online_td/curves.json)
+
+<a id="frontier-credit-swifttd"></a>
+
+## SwiftTD：信用长度、坐标步长与有效更新率必须分别控制
+
+SwiftTD（RLC 2024）连接了三个问题：线性 true-online 信用、逐坐标步长适应，以及过大的有效更新率。它不是给 TD(λ) 换一个固定 learning rate。作者提供稠密、稀疏二值和稀疏实值三种线性实现；没有据此证明任意学习中的神经表示稳定。
+
+$$
+\alpha_i=e^{\beta_i},\qquad \tau=\sum_i\alpha_i x_i^2,\qquad a_i=\min\{1,\eta/\tau\}\alpha_i x_i,\qquad \sum_i a_i x_i=\min\{\tau,\eta\}
+$$
+
+这是作者实现中限制新资格增量尺度的部分。τ=0 时取不缩放分支。η 约束当前特征方向上的有效增量，不是简单逐个裁剪参数；完整算法还有荷兰迹、预测差修正及元敏感度。
+
+$$
+b=z^\top x,\qquad z\leftarrow z+a(1-b)
+$$
+
+这里 z 已先按 γλ 衰减，a 含坐标步长和上述共同缩放。这是源码中的资格构造顺序；只抄这一行并加普通 TD 误差，不构成完整 SwiftTD。
+
+| 代码中的变量 | 为什么不能省略 | 检查方式 |
+| --- | --- | --- |
+| `beta`、`h`、`p`、`z_bar` | 当前步长的历史影响需要敏感度与元信用 | 冻结元步长，与完整适应版比较 |
+| `v_old`、`v_delta`、`z_delta` | 区分旧预测和此前更新造成的预测变化 | 重复特征、非零初始化时逐前缀核对 |
+| `tau`、`eta`、`decay` | 限制新资格尺度，超界时衰减相关步长并调整敏感度 | 放大输入特征，记录有效率而非只记名义 α |
+
+作者仓库 src/cpp/SwiftTD.cpp 的 Step 接口先接收当前特征和刚收到的奖励，再完成上一预测的更新。因此不能把它当成完全相同参数时序的 update(s,r,s′) 而重复推进两次。终止和变折扣接口也要按库实际支持范围核对。教学神经 TD(λ) 便于观察梯度漂移，但不是 SwiftTD 的替代复现。
+
+一个研究对照应固定特征、目标和轨迹，分别关闭元步长、有效率上界和衰减。之后再学习表示。如果同时换成深网、改初始化并加入归一化，已无法从结果判断哪一项产生收益。
+
 <a id="lesson-example"></a>
 
 ## 6. 两个手算例子
@@ -451,6 +597,28 @@ def control_trace_step(q, trace, state, action, reward, next_state, next_action,
 ```
 
 频繁探索会使 Watkins 的有效信用范围很短。其他 off-policy 多步方法使用重要性比、截断比率或期望分支来处理策略差异。它们有不同目标与稳定性条件。不能只把 SARSA 的下一动作值改成 max，同时无条件保留所有旧迹，就称为 Watkins Q(λ)。
+
+<a id="frontier-credit-swift-sarsa"></a>
+
+## 从可靠预测到控制：Swift-Sarsa 保留了哪些额外依赖
+
+Swift-Sarsa（2025 扩展摘要）把 SwiftTD 的机制用于 true-online Sarsa。它的 operant-conditioning 问题让少数观测信号与延迟奖励相关，大量无关信号的出现分布漂移。这个设定把“给相关特征分配学习率”与复杂探索分开，不意味着已经解决一般视觉控制。
+
+$$
+q_j(x)=w_j^\top x,\quad A_t\sim\pi(\cdot\mid q(x_t)),\quad \delta'_t=R_t+\gamma q_{w_{t-1}}(x_t,A_t)-q_{w_{t-2}}(x_{t-1},A_{t-1})
+$$
+
+撇号误差用保存的旧预测，不能直接等同于两个值都在当前参数下计算的普通 TD 误差。原文算法另有预测变化修正。所有动作的旧资格都会衰减，只有所选动作的资格引入当前特征。
+
+因为下一动作来自实际行为，预测器与行为策略形成闭环。修改某个动作的步长，会改变其价值，再改变访问分布。用固定轨迹验证预测更新是必要单测，却不是控制效果的充分证据。
+
+| 需要回答的研究问题 | 合理的控制实验 |
+| --- | --- |
+| 无关输入很多时发生什么 | 固定少数相关信号，逐步增加噪声维数；记录各坐标步长与回报 |
+| 长期适应来自哪里 | 固定策略评价与控制分别运行；只改噪声分布或相关信号位置 |
+| 平均指标与学习目标是否一致 | 原文报告生命期平均奖励，但使用含 γ 的动作价值更新；不可因此称为 differential average-reward Sarsa |
+
+作者公开 SwiftTD 库可以验证底层线性机制。Swift-Sarsa 的完整算法在原文 Algorithm 1；本文不把另外的 Swift actor–critic 软件包当作这篇控制实验的原始复现。读者可以先将固定动作价值子问题与本章 true-online 参考对齐，再接上动作选择。
 
 <a id="lesson-off-policy"></a>
 
@@ -839,6 +1007,62 @@ def gradient_trace_equivalence(features, rewards, weights, auxiliary, gamma, lam
     return dict(forward_w=fw, backward_w=bw, forward_h=fh, backward_h=bh,
                 objective=objective)
 ```
+
+<a id="experiment-gradient_eligibility_traces"></a>
+
+### 实验：让前向与后向曲线重合：先验证双网络梯度目标
+
+辅助函数的标量迹和梯度迹各自出现在哪里？前后向重排成立需要冻结哪些量？
+
+**环境与可用信息。** 每回合仅两条转移：状态0到1再到真正终点；只有一个动作。第一奖励0，第二奖励Bernoulli(0.5)。非终止状态用两维one-hot输入，终点输入全0。γ=0.9，真值为(0.45,0.5)。
+
+**设置。** 5个种子，各1200个回合，即2400个真实转移；横轴不是环境步。价值函数与辅助函数分别为tanh线性组合，均零初始化。λ=0.8，主步长0.03、辅助步长0.1；每个回合内两网络冻结，回合后同时更新。
+
+**检验的机制。** 候选以后向递推累计辅助输出和辅助梯度；参照先显式构造完整λ目标及其全导数，再求同一个GTD2方向。两个方向由同一旧参数求出。这是在验证目标及求和重排，不是拿一个更强学习算法与弱基线赛跑。
+
+**测量。** 曲线应在浮点误差范围内重合。除RMSE外还应核对每回合的主、辅助方向；只有最终预测相近不能证明实现相同。
+
+```bash
+python3 implementations/extended_classic/gradient_eligibility_traces.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/gradient_eligibility_traces/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 episodes。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 1200回合后的两条平均RMSE均为0.0237377；差约为浮点舍入量，5种子的对应曲线重合。可见后向实现没有丢失该冻结参数参考中的项，但这不是深度控制有效性的证据。
+
+**结论边界。** 仅验证GTD2子机制。没有逐原始步写入、TDC/TDRC、控制策略变化或大型神经表示；不得据此声称任意非线性在线前缀true-online等价。
+
+**继续实验。** 先将λ设0，检查变成单步双网络方向。然后故意在两条转移之间更新主网络，保留原前向参考；解释为何不再应期待逐项相等，而不是通过调容差掩盖差异。
+
+[源码](../implementations/extended_classic/gradient_eligibility_traces.py) · [逐种子记录](https://yingwen.io/crl-code/results/gradient_eligibility_traces/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/gradient_eligibility_traces/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/gradient_eligibility_traces/curves.json)
+
+<a id="frontier-credit-operator-versus-optimizer"></a>
+
+## Stream-X 与梯度资格迹：变稳的两条路线不能混为一谈
+
+流式深度学习至少有两种不同的修复对象。一种保留半梯度方向，控制每次更新的尺度与表示数值；Stream-X 属于这条路线。另一种先改变价值估计的目标，再推导辅助网络和梯度校正；Deep RL with Gradient Eligibility Traces（RLC 2025）属于后者。
+
+$$
+u_t=\delta_tz_t,\quad w_{t+1}=w_t+\alpha D_tu_t\qquad\text{versus}\qquad \min_w\max_h\;\mathbb E[\bar\epsilon_w^\lambda(S)h(S)-\tfrac12h(S)^2]
+$$
+
+左侧 D 表示正的尺度变换；右侧指定一个具有辅助函数的目标。对不稳定线性 TD，乘一个更小的正标量并不改变增长方向的符号。逐坐标变换可能改变动力学，但也没有自动获得右侧目标的梯度解释。
+
+2024 Stream-X 的 ObGD 与 2026 修订版的逐坐标 StreamingOptimizer 不是同一更新器。另一方面，梯度资格迹的冻结参数前后向恒等式，也不等于任意步长下的在线精确等价。比较时必须固定作者版本、网络、迹、误差定义与计算协议。
+
+| 对照层次 | 应保持不变 | 实际检验的机制 |
+| --- | --- | --- |
+| 半梯度＋SGD／ObGD／StreamingOptimizer | 同一个 δ 与资格构造 | 尺度控制和数值稳定 |
+| 半梯度／GTD2／TDC／TDRC | 同一个状态输入、数据与评价目标 | 校正方向、辅助逼近与正则 |
+| 前向窗口／后向资格 | 明确各自内存与计算预算 | 保存轨迹与即时更新之间的取舍 |
+
+作者 QRC 代码同时维护标量辅助迹、辅助网络梯度迹和价值梯度迹。主辅助方向先从旧参数一起计算，再更新两个网络。其 MinAtar 与 MuJoCo 实验分别采用后向和前向训练结构；不能将两套实验统称为严格无缓冲、每步一次更新。
+
+阅读顺序是先运行 Baird、double-sampling 和非线性迹诊断，再对照作者 QRC 的 `update_step`。这样能区分目标错误、方向不稳定和更新过大，而不是把三个问题一律称为学习率没调好。
 
 <a id="lesson-actor-recurrent"></a>
 
@@ -1574,9 +1798,9 @@ python3 examples/credit_assignment_lab.py all
 
 - [van Hasselt等 · Expected Eligibility Traces · AAAI 2021](https://arxiv.org/html/2007.01839)：条件期望迹、Markov均值／逐分量方差结论、递归混合与特征混叠边界；2020年预印本。
 
-- [Elelimy等 · Deep Reinforcement Learning with Gradient Eligibility Traces · RLC 2025](https://arxiv.org/html/2507.09087v1)：广义投影目标、GTD2／TDC／TDRC三条迹；Theorem 6.1冻结双网络参数，Table 2与QRC公式中的标量H迹相对应。
+- [Elelimy et al. · Deep RL with Gradient Eligibility Traces](https://arxiv.org/html/2507.09087v1)：GPBE多步目标、冻结参数等价，以及前向PPO与后向QRC的不同协议。
 
-- [GTD资格迹作者QRC代码 · 固定版本](https://github.com/esraaelelimy/gtd_algos/blob/76293dea9b2129d55e08bfb4178618a0a26c2dd8/gtd_algos/src/algorithms/qrc.py)：update_step先共同计算主／辅助方向，再更新参数；检查完整∇δ、三条迹、正则与更新后的清迹。
+- [Gradient Eligibility Traces · 作者QRC固定实现](https://github.com/esraaelelimy/gtd_algos/blob/76293dea9b2129d55e08bfb4178618a0a26c2dd8/gtd_algos/src/algorithms/qrc.py)：三个迹与完整误差梯度；所有方向先从旧参数计算。
 
 - [Schulman等 · High-Dimensional Continuous Control Using Generalized Advantage Estimation · ICLR 2016](https://arxiv.org/html/1506.02438)：TD误差和的优势解释、bias–variance及折扣目标约定；GAE不等于完整actor迹学习协议。
 
@@ -1585,3 +1809,15 @@ python3 examples/credit_assignment_lab.py all
 - [RTU作者递归实现](https://github.com/esraaelelimy/rtus/blob/main/src/nets/rtus/non_linear_rtus.py)：FwdRealTimeNonLinearRTUs推进活动与grad_memory；自定义求导使用已存敏感度。
 
 - [Farr等 · Streaming RL under Partial Observability with RTRL · 2026 v2](https://arxiv.org/html/2605.24709v2)：2026-07-07预印本；RTU与QRC／流式AC组合、5-seed实验、masked MuJoCo负边界及需保存轨迹的敏感度诊断；未确认作者代码。
+
+- [SwiftTD · 作者实现](https://github.com/kjaved0/swifttd)：线性稠密、二值稀疏和实值稀疏版本；不能将其视为神经网络稳定性证明。
+
+- [SwiftTD · 固定版本核心更新](https://github.com/kjaved0/swifttd/blob/36ec2deb3a3adfea1dd7ee76a170ab53f4b4b466/src/cpp/SwiftTD.cpp)：Step中的旧预测、元敏感度、tau边界、荷兰迹与超界衰减。
+
+- [SwiftTD · 作者交互演示](https://khurramjaved.com/swifttd.html)：观察像素步长和有效学习率；演示是固定特征预测，不是完整Atari控制。
+
+- [Javed & Sutton · Swift-Sarsa](https://arxiv.org/html/2507.19539v1)：2025扩展摘要；Algorithm 1、operant-conditioning设置、噪声特征与生命期奖励评价。
+
+- [Stream-X · 原文及修订版](https://arxiv.org/abs/2410.14606)：读者需要区分2024 ObGD与2026修订的更新控制器，不混合超参数与源码。
+
+- [Stream-X · 作者固定版本](https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b)：2026版，先读optimizer.py、稀疏初始化及agent更新时序；代码许可证与教程原创代码不同。

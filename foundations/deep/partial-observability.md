@@ -171,6 +171,38 @@ $$
 
 对模型未知的任务，还需区分“当前状态在哪里”与“动力学是什么”两种不确定性。仅对状态做 Bayes filtering，并没有自动学习未知转移。将模型参数也作为隐变量会得到更大的信念空间，计算成本随之增加。
 
+<a id="experiment-extended-bayes_filter"></a>
+
+### 实验：实验 · 一次错误观测，应当推翻过去的全部证据吗？
+
+当隐藏状态通常保持不变、观测偶尔出错时，递归信念能否比只看当前观测更准确？
+
+**环境与可用信息。** 两个隐藏状态以 0.9 的概率保持、0.1 的概率切换。观测以 0.8 的概率报告正确状态。学习器知道这两个概率，只看到观测；真实状态仅供评价使用。初始信念为 [0.5,0.5]。
+
+**设置。** 种子 0–4，各处理 1200 条观测。Bayes filter 先传播旧信念，再用似然校正。无记忆对照每步都从均匀先验开始。两者接收相同种子的同一隐藏状态与观测流。没有梯度训练，也没有控制动作。
+
+**检验的机制。** 变化只在于是否保留上一时刻的概率分布。连续一致的观测会积累证据；孤立的相反观测不必立即翻转判断。状态真的切换时，旧信念又会使反应产生滞后。
+
+**测量。** 纵轴是观测后给真实隐藏状态分配的负对数概率，采用 0.95×旧值 + 0.05×新损失的滑动平均。越低越好。它评价概率质量，不是仅评价最可能状态是否猜对，也不是 RL 回报。
+
+```bash
+python3 implementations/extended_adaptation/bayes_filter.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-bayes_filter/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 observations。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 条观测后，五种子的平均损失为 0.353 nats，无记忆对照为 0.478 nats。记忆在该持久状态模型中有帮助，但曲线仍随错误观测与真实切换波动；滤波不是把不确定性消除为零。
+
+**结论边界。** 这是已知正确模型的状态估计，不包含未知模型学习或策略改善。图中的末值是近期损失，不是全程平均。若实际切换率与假定模型不符，旧信念也可能有害。
+
+**继续实验。** 先手算连续三次相同观测后的信念，再接入一次相反观测。然后分别只改变真实切换率与滤波器假定切换率，比较“需要更强记忆”和“模型失配”两种解释。
+
+[源码](../../implementations/extended_adaptation/bayes_filter.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-bayes_filter/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-bayes_filter/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-bayes_filter/curves.json)
+
 <a id="lesson-algorithm"></a>
 
 ## 5 · 精确 filter 与学习的 recurrent state

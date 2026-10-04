@@ -149,6 +149,38 @@ dB 由保存与采样共同决定。损失权重、batch 中新旧比例和重�
 
 强化学习还有一个监督学习没有的困难：旧 transition 由旧策略 μ 产生，当前要改进的是 π。旧奖励和转移样本在平稳环境中仍可有效，但策略梯度与多步 bootstrap 需要处理行为差异；环境动力学若也变了，动作重要性比并不能把旧世界样本变成新世界样本。
 
+<a id="experiment-reservoir_replay"></a>
+
+### 实验：实验 · 均匀保留历史，可能妨碍适应当前世界
+
+同一输入的正确答案永久反转后，旧数据回放究竟是在保护知识，还是在拟合已经失效的答案？
+
+**环境与可用信息。** 两维线性回归，输入 [1,U(−1,1)]。第 601 个样本起，真权重由 [0.2,0.7] 变为 [−0.2,−0.7]；噪声标准差 0.03。没有任务 ID，因此一个预测器不能同时为同一输入给出两个相反的条件均值。
+
+**设置。** 五种子各 1200 个真实样本，权重从零开始，步长 0.03。回放容量 32；每个新样本先训练一次，再存入 reservoir 并额外均匀回放一次。在线 SGD 每个新样本只训练一次。真实数据流配对，回放单独使用随机流。
+
+**检验的机制。** Reservoir 均匀覆盖时间索引，不偏向最新目标。第二阶段混合旧标签和新标签，相当于改变训练分布。额外计算并不能消除两个目标本身的冲突。
+
+**测量。** 同时看当前任务 MSE 与旧任务保留误差图。前者低表示适应新函数；后者低表示接近原函数。横轴相同仅表示真实样本数相同；回放用了两倍参数更新。
+
+```bash
+python3 implementations/continual/reservoir_replay.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/reservoir_replay/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 末尾当前 MSE：回放 0.0660、在线 SGD 0.0000327。旧任务 MSE：回放 0.4428、在线 SGD 0.8069。回放确实更接近旧函数，却明显拖慢了新函数适应。两个指标共同显示折中，不能只取旧误差讲“全面改善”。
+
+**结论边界。** 这是冲突目标的监督预测，不是循环任务控制。实验没有再次返回旧任务，不能测量回访时重新学习的成本。若旧答案永久失效，保留本身未必是合适目标。
+
+**继续实验。** 将序列改为 A→B→A，明确是否提供上下文，再与同容量 FIFO、等更新次数的当前样本重复训练比较。分别报告保留收益、恢复速度和额外计算。
+
+[源码](../implementations/continual/reservoir_replay.py) · [逐种子记录](https://yingwen.io/crl-code/results/reservoir_replay/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/reservoir_replay/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/reservoir_replay/curves.json)
+
 <a id="lesson-clear"></a>
 
 ## 3 · CLEAR：新经验学习、旧经验校正、旧输出克隆
@@ -194,6 +226,38 @@ Fisher 来自指定概率模型的 score 外积期望：$F_i=\mathbb E[(\partial
 完整流程是：在约定的 consolidation 时刻保存 θA；在相应数据分布上估计并冻结 F；后续每步把二次惩罚加入当前损失。若没有任务边界，要定义 consolidation 的触发或连续累计规则。每个任务另存一个 F 与参数快照会随任务数增长；online EWC 将历史重要性折叠成固定规模统计，但其遗忘系数与近似误差需要评估。
 
 EWC 保留的是参数附近的旧损失近似，不是完整旧数据，也不保证旧动作概率不变。网络可用不同参数实现同一功能；对角近似忽略参数之间的相关方向。因此功能空间的蒸馏与参数空间的正则可以产生明显不同的行为。
+
+<a id="experiment-ewc"></a>
+
+### 实验：实验 · 二次参数约束为何留下非零适应误差？
+
+新目标已经可表示且 SGD 能拟合时，EWC 仍有误差是否意味着网络失去可塑性？
+
+**环境与可用信息。** 与回放实验相同的二特征权重反转任务：600 个旧任务样本，随后 600 个新任务样本。标签噪声标准差 0.03，参数从零开始。
+
+**设置。** 五种子，步长 0.03，二次约束强度 0.5。第 601 步之前保存旧参数锚点，以前 600 个样本的特征平方均值作为对角 Fisher。该 Fisher 来自单位方差线性 Gaussian 工作模型，并非直接使用真实噪声标准差 0.03 的模型。
+
+**检验的机制。** 新任务梯度把参数推向反向权重；旧锚点的二次罚项把它拉回。两者平衡后可以留下非零误差。这是被修改后的目标的折中，不需要用“学不动了”解释。
+
+**测量。** 比较同一时刻的当前 MSE 与旧 MSE，检查约束强度改变后的两条曲线。EWC 被明确告知 consolidation 边界，在线 SGD 没有这项信息；本实验不是等信息比较。
+
+```bash
+python3 implementations/continual/ewc.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/ewc/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 末尾当前 MSE 为 0.0978，在线 SGD 为 0.0000327；旧 MSE 为 0.3497，对照为 0.8069。约束保存了更多旧函数，却使新函数误差更大。这里没有证据说明基础线性学习器本身丧失了学习能力。
+
+**结论边界。** 二特征对角近似只展示目标折中，不能代表大网络 Fisher 的质量。锚点和旧任务边界已知；未知边界下何时巩固仍未解决。
+
+**继续实验。** 先令约束强度为零确认退化为 SGD，再逐步增大强度并画新旧误差的二维图。改变 Fisher 的工作方差时同时调整或报告正则系数，避免把量纲变化误当成新机制。
+
+[源码](../implementations/continual/ewc.py) · [逐种子记录](https://yingwen.io/crl-code/results/ewc/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/ewc/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/ewc/curves.json)
 
 <a id="lesson-model-memory"></a>
 
@@ -349,7 +413,7 @@ python examples/lifelong_algorithms_lab.py test
 
 <a id="research-upgd-utility"></a>
 
-## 研究专题 A · UPGD：保留与可塑性耦合在同一更新中
+## UPGD：保留与可塑性耦合在同一更新中
 
 固定重要参数可以保护旧功能，却可能阻碍必要适应；无选择地扰动又可能破坏仍有用的功能。UPGD 根据近期效用，让一些方向少变化，另一些方向更容易改变。效用的干预方式与数据范围是定义的一部分，不能直接叫作永久知识重要性。
 

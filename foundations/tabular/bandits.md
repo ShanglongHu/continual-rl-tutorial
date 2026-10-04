@@ -127,6 +127,38 @@ $$
 
 样本平均的收敛讨论针对固定奖励分布和不断增加的访问次数。常数步长通常不消除随机波动，而是在误差与跟踪速度之间折中。若只在总时间上减小步长，一个很晚才开始被尝试的动作可能第一份数据就几乎不起作用；因此必须区分全局时钟与该动作自己的计数。
 
+<a id="experiment-bandit_constant_step"></a>
+
+### 实验：实验 · 固定步长与样本平均，怎样利用同一条奖励流？
+
+更重视新样本的估计器，是否在平稳问题中也一定获得更多奖励？
+
+**环境与可用信息。** 三个独立 Bernoulli 臂，成功概率为 0.2、0.5、0.8。每步只看到所选臂的 0 或 1 奖励。均值始终不变，没有状态转移，也没有延迟回报。
+
+**设置。** 种子 0–4，各交互 1200 步。估值和访问计数从零开始，两者都用 ε=0.1 的 ε-greedy，最大值并列时均匀选取。实验固定步长为 0.1；对照对该臂使用访问次数的倒数。每次选择后只更新所选臂。
+
+**检验的机制。** 固定步长给旧奖励指数衰减的权重，因此始终能追踪变化，也始终保留采样波动。样本平均让单个新奖励的作用随访问次数减小。当前任务没有漂移，因此它并未提供固定步长的主要用武之地。
+
+**测量。** 纵轴是从第一步到当前为止的实际累计平均奖励，不是当前贪心动作的价值，也不是估值 MSE。动作序列会因学习方法不同而分岔；相同 seed 不表示两者看到了相同的动作奖励对。
+
+```bash
+python3 implementations/classic/bandit_constant_step.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/bandit_constant_step/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 步，固定步长的五种子平均累计奖励为 0.7392，样本平均为 0.7628。两者都明显偏向高收益臂，但这五次运行没有显示固定步长优势。累计指标仍包含早期探索的成本。
+
+**结论边界。** 这里只比较一个 ε 和一个固定步长。五种子并非算法排序的充分证据。平稳三臂任务不能支持非平稳追踪结论；日志也未记录每个臂的选择频率。
+
+**继续实验。** 先补记臂选择频率和各臂估值，再在预定时刻交换最优臂。保留原来的平稳实验。分别报告全程奖励与变化后的窗口奖励，检查累计平均是否掩盖了适应延迟。
+
+[源码](../../implementations/classic/bandit_constant_step.py) · [逐种子记录](https://yingwen.io/crl-code/results/bandit_constant_step/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/bandit_constant_step/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/bandit_constant_step/curves.json)
+
 <a id="bandit-exploration"></a>
 
 ## 3 · ε-greedy 与 UCB

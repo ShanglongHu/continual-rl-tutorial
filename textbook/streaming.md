@@ -174,6 +174,38 @@ $$
 | Momentum SGD | 过去 loss gradient 的衰减和 | 每步历史误差已乘在各自梯度上；不同于当前 δ 乘全部痕迹 |
 | True online TD(λ) | Dutch trace 和预测差修正 | 对指定线性在线 λ-return 有精确等价；不能直接宣称任意深网同样成立 |
 
+<a id="experiment-neural_td_trace"></a>
+
+### 实验：实验 · 终点奖励怎样沿历史梯度传回去？
+
+逐条转移更新且不保存经验时，非线性资格迹如何加快早期传播，又为何不保证始终优于 TD(0)？
+
+**环境与可用信息。** 固定策略依次经过六个状态。前五次转移奖励为零，最后一次奖励服从 Bernoulli(0.7)，随后真实终止。折扣为 0.9。状态编码为位置的线性坐标及其平方，价值网络为 2–6–1 tanh。
+
+**设置。** 种子 0–4，各运行 1200 个转移，即 200 个完整回合。所有参数独立均匀初始化于 [−0.4,0.4]。每步半梯度更新，步长 0.03；实验 λ=0.8，对照 λ=0。网络、初值与奖励随机流匹配，不用回放或目标网络。
+
+**检验的机制。** 先构造当前迹，再用到达的 TD 误差更新参数；终点奖励分配后才清迹。非线性网络的历史梯度是在历史参数上计算的，并不会因当前参数变化而被重新计算。长迹既传播早期信用，也传播奖励噪声。
+
+**测量。** 主图是六状态真实价值的 RMSE。原始日志还保存 trace_norm、gradient_drift、完成回合数与保留转移数。gradient_drift 只测同一上一输入的梯度变化，不是整条历史迹的误差。
+
+```bash
+python3 implementations/streaming_composition/neural_td_trace.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/neural_td_trace/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 60 步，λ=0.8 的平均 RMSE 为 0.142，对照为 0.286，早期传播更快；第 600 步则为 0.0937 对 0.0607。末尾为 0.0478 对 0.0509，差异相对种子波动很小。不能只挑某一个时刻宣布迹总是更好。
+
+**结论边界。** 这是平稳、同策略、Markov 输入的预测实验。普通非线性累积迹没有获得 true-online 线性等价保证。两者都使用固定步长，末端随机奖励会持续带来波动。
+
+**继续实验。** 保留同一奖励流，把 λ 改为 0、0.4、0.8、1；分别观察前 60 步与后 600 步误差。再故意在终点更新之前清迹，定位哪些早期状态不再获得这次奖励的信用。
+
+[源码](../implementations/streaming_composition/neural_td_trace.py) · [逐种子记录](https://yingwen.io/crl-code/results/neural_td_trace/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/neural_td_trace/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/neural_td_trace/curves.json)
+
 <a id="lesson-scale"></a>
 
 ## 3 · 数值尺度与更新过冲
@@ -209,6 +241,38 @@ $$
 $$
 
 n=1 时必须定义方差初始化和 ε，避免第一步除零。归一化统计的改变也在改变价值函数输入坐标，因此不是与学习完全无关的预处理。
+
+<a id="experiment-extended-obgd2024"></a>
+
+### 实验：实验 · 限制更新幅度，何时只是把学习变慢？
+
+如果固定步长已经稳定，ObGD 的保守缩放是否仍应提高学习速度？
+
+**环境与可用信息。** 两个状态确定性交替、永不终止。到达状态 1 获得奖励幅度，另一转移奖励为零；第 601 步幅度从 1 降为 0.5。输入为二状态 one-hot，网络为 2–16–1 tanh，折扣 0.8。
+
+**设置。** 五种子各运行 1200 个真实转移。网络使用相同 seed 的 PyTorch Linear 默认初始化。两者都用累积梯度迹，λ=0.8，基础步长 0.03；ObGD 额外采用 κ=2 的全迹 L1 缩放。没有回放、目标副本、LayerNorm 或稀疏初始化。
+
+**检验的机制。** 对照直接使用 0.03；ObGD 依据当前误差和迹范数缩小有效步长。它没有修改当前预测问题，也没有修正离策略分布。这个温和任务隔离了“缩小增量”本身的效果。
+
+**测量。** 纵轴是两个状态相对于解析真值的冻结 MSE，越低越好。第 600 步仍属于旧奖励阶段；第 601 步才开始新阶段。日志中的 step_size 与 trace_l1 可解释误差下降的速度。
+
+```bash
+python3 implementations/extended_adaptation/obgd2024.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-obgd2024/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 60 步，ObGD 的平均 MSE 为 0.0653，固定步长为 0.00269。改变奖励后第 660 步，分别为 0.0157 与 0.000750。最后两者都近于零。这个设置没有显示 ObGD 优势，而是显示限制增量的适应速度代价。
+
+**结论边界。** 这是 2024 优化器加非线性 TD 的组件，不是完整 Stream-X，也不是 2026 StreamingOptimizer。未扫描尺度、基础步长或任务难度，不能由此判定作者系统无效。
+
+**继续实验。** 在不改变任务奖励目标的前提下，系统改变输入尺度和基础步长，预先记录稳定区域与恢复时间。保留所有发散配置，不通过事后裁剪参数把失败曲线变成成功。
+
+[源码](../implementations/extended_adaptation/obgd2024.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-obgd2024/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-obgd2024/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-obgd2024/curves.json)
 
 <a id="lesson-streamx"></a>
 
@@ -397,6 +461,38 @@ def intentional_td0(w, x, reward, next_x, gamma, eta):
 偏差校正中的 $t$ 从优化器第一次更新开始计数，初始二阶矩、误差统计和梯度范数统计均为零。episode 结束时，在完成本次更新之后清空 $z$；其余幅度统计与更新计数保留。actor 与 critic 分别维护这些状态，不能共用一个尺度估计。
 
 比较这些方法时，应保持网络、资格迹、奖励处理和交互预算相同：固定步长提供基线；Metatrace 增加对学习过程的敏感度与元信用分配；Intentional updates 改变每步输出尺度；Stream-X 则是一套为 streaming 深度控制设计的组件组合。任何一条的正结果都不足以单独判定其他组件无关。
+
+<a id="experiment-extended-intentional"></a>
+
+### 实验：实验 · 局部输出尺度控制，不是全程策略稳定性的证书
+
+critic 与 actor 都控制更新尺度之后，已经学到的贪心行为是否一定保持？
+
+**环境与可用信息。** 五位置链从最左端开始，每步可左移或右移。到达最右端奖励 1，其余奖励 −0.02；到达终点或用完 12 步都是真实终止。输入包含位置 one-hot 与剩余步数。critic 线性、策略为线性 logits 的 softmax，初始参数全零。
+
+**设置。** 五种子各 1200 个转移。Intentional 使用 γ=1、λ=0.8，value η=0.2、policy η=0.03，保留 RMS、误差裁剪、策略误差归一化和熵系数 0.01。对照为 α=0.03 的固定步长 AC(λ)，critic 与 actor 组合梯度中策略项权重为 0.5。
+
+**检验的机制。** 两个 Intentional 优化器读取同一个旧 TD 误差，再分别根据梯度尺度和迹选择增量。它是多项更新规则的组合；与固定 AC 的区别不只有单一标量步长。因此这里比较整组组件，不能把结果只归因于其中一个归一化。
+
+**测量。** 主图冻结当前 logits，执行确定性 argmax 策略并累加原始奖励。四步到达终点得 0.94；一直未到终点得 −0.24。它不是训练中的随机策略期望回报。应同时读原始日志中的 entropy、value_step 和 policy_step；单独的步长系数也不等于实际参数增量。
+
+```bash
+python3 implementations/extended_adaptation/intentional.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-intentional/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 60 步两组五个种子的贪心回报都是 0.94。第 1200 步，Intentional 有 3 条仍为 0.94、2 条退为 −0.24，均值 0.468；固定 AC 五条均为 0.94。该配置展示了“先成功、后退化”，不能用早期成功替代全程评价。
+
+**结论边界。** 这是线性离散控制组件，不是原论文连续控制或 Atari 实验。贪心指标很离散，没有计算随机策略精确价值；也未完成熵、归一化和超参数的因果消融。
+
+**继续实验。** 首先增加冻结随机策略的精确评价，区分 argmax 跳变与随机行为真正恶化。再逐项消融熵项、策略误差归一化和 η，记录实际输出变化，不能仅比较 policy_step 的大小。
+
+[源码](../implementations/extended_adaptation/intentional.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-intentional/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-intentional/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-intentional/curves.json)
 
 <a id="lesson-example"></a>
 

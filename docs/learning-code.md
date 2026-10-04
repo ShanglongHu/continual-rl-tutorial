@@ -9,10 +9,65 @@ implementations/
   classic/        表格方法与线性预测：每个算法一个文件
   deep/           神经控制与离线学习：每个算法一个文件
   continual/      持续预测、元步长、保留、状态、平均奖励与规划
+  extended_classic/  重要性采样、多步信用、平均奖励与约束
+  extended_adaptation/  状态推断、时间梯度、元学习与可塑性
+  extended_knowledge/   探索、目标、选项模型与奖励学习
+  multiagent/     反事实信用与单调价值分解
+  average_systems/  多状态平均奖励预测、控制与规划
+  nonlinear_diagnostics/  自举、共享特征与目标依赖的反例
+  streaming_composition/  神经GVF、资格迹和技能时长
+  integrated_agents/  子任务、技能、预测模型与持续闭环
+  learner_control/  同一学习快照下的在线适应与冻结参数对照
   runtime.py      参数、日志、失败记录、CSV 与 SVG；不包含算法更新
 ```
 
-各组 `_common.py` 只共享环境、网络构造、采样和指标。对同一方法的关键变体，要看名称及源码中的假设。例如固定温度 SAC 不等于自动调温版本；单工作器同步 A2C 不等于分布式 A3C；已知奖励权重下的 GPI 不等于自动发现任务。
+多数基础组的 `_common.py` 共享环境、网络构造、采样和指标。`learner_control/_common.py` 还明确共享两组对照的交互与记忆更新循环；差分 Q 更新在 `online_differential_q.py` 中，冻结入口只改变参数更新权限。阅读时应追踪实际调用，而不能仅凭文件名判断算法边界。例如固定温度 SAC 不等于自动调温版本；单工作器同步 A2C 不等于分布式 A3C；已知奖励权重下的 GPI 不等于自动发现任务。
+
+集成智能体另在 `integrated_agents/_system.py` 明确展示共享闭环。五个命名入口是同一系统的不同模块配置，不是五种新的研究算法。网页在每个入口下直接展开该核心源码。
+
+独立子机制实验也能完整运行，但只回答限定问题。透明消融入口会显式调用主方法并关闭一个机制，不计作新的完整算法。覆盖层次见[实现清单](implementation-coverage.md)。
+
+## 从问题找到公式与实现
+
+- [估计、信用分配与平均奖励](extended-classic.md)：IS/DR 为什么使用不同权重；多步误差怎样传播；无终点奖励率怎样进入更新。
+- [状态、梯度与持续适应](extended-adaptation.md)：过滤、时间梯度、元梯度、参数回收分别改变什么；哪些实验是预测，哪些是控制。
+- [探索、目标、选项与奖励](extended-knowledge.md)：怎样构造预测误差奖励、合法重标目标、选项模型与可学习奖励。
+- [多智能体信用与价值分解](extended-multiagent.md)：反事实基线消去了什么；单调混合为什么允许分散贪心。
+- [平均奖励预测、控制与规划](average-systems.md)：奖励率与 bias 分开；用真实多状态流和解析真值检查。
+- [非线性学习困难](nonlinear-learning-depth.md)：自举反馈、double sampling、共享梯度与目标网络。
+- [流式 GVF、资格迹与技能](streaming-composition.md)：问题规格、历史梯度、两种时钟与真实终止。
+- [集成智能体](integrated-agents.md)：让学到的技能和后果预测真正进入控制与规划。
+- [比较持续学习器](learner-control.md)：从同一历史和参数快照继续行动，区分冻结参数、保留记忆与外部重置。
+
+每组给出任务、公式、更新顺序、基线和未覆盖部分。代码包包含对应测试：
+
+```bash
+python3 -m unittest discover -s tests -p 'test_extended_*.py' -v
+python3 -m unittest discover -s tests -p 'test_average_systems.py' -v
+python3 -m unittest discover -s tests -p 'test_nonlinear_diagnostics.py' -v
+python3 -m unittest discover -s tests -p 'test_streaming_composition.py' -v
+python3 -m unittest discover -s tests -p 'test_integrated_agents.py' -v
+python3 -m unittest discover -s tests -p 'test_reading_derivations.py' -v
+python3 -m unittest discover -s tests -p 'test_learner_control.py' -v
+```
+
+## 只会基本深度 RL 时，先做这四组实验
+
+不必逐个运行全部目录。按下面顺序，每次先解释预期差异，再运行。
+
+1. `differential_td_offpolicy`：价值误差不大，是否就说明预测正确？检查奖励率与共同偏移。
+2. `double_sample_residual`：优化一个看似合理的 TD 平方误差，为何会得到错误固定点？先手算 1 和 2 两个解。
+3. `gvf_shared_trace`：多个预测共享神经表示后，辅助目标改变怎样影响其他预测？固定骨干与问题规格读对照。
+4. `integrated_recent_model`：技能学习、模型学习和规划如何共同作用？同时看近期收益、全程收益与模型更新成本。
+
+```bash
+python3 implementations/average_systems/differential_td_offpolicy.py --steps 1200 --seeds 0 1 2 3 4 --out results/first-average
+python3 implementations/nonlinear_diagnostics/double_sample_residual.py --steps 1200 --seeds 0 1 2 3 4 --out results/first-target
+python3 implementations/streaming_composition/gvf_shared_trace.py --steps 1200 --seeds 0 1 2 3 4 --out results/first-gvf
+python3 implementations/integrated_agents/integrated_recent_model.py --steps 1200 --seeds 0 1 2 3 4 --out results/first-agent
+```
+
+这四组都只依赖标准库。最后一组不是完整 OaK。它的状态、目标和终止规则由设计者给定；技能内部策略、后果模型和控制价值从交互中学习。
 
 ## 阅读顺序
 

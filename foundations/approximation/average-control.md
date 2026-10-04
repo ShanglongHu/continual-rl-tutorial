@@ -221,6 +221,38 @@ python3 examples/approximation_textbook_lab.py average-control
 python3 examples/approximation_textbook_lab.py test
 ```
 
+<a id="experiment-differential_dyna"></a>
+
+### 实验：实验 · 学得模型的五次规划值得多少真实经验
+
+相同真实交互下，经验模型备份能否更早形成好的策略？
+
+**环境与可用信息。** 三状态、双动作、完全可观测的持续 MDP。状态 0/1/2 的两动作奖励依次为 (0.1,−0.05)、(0.5,0.05)、(0.2,1.2)。优先后继依次为 (1,2)、(0,2)、(0,1)：转移以 0.8 概率取该后继，以 0.2 概率在三状态中均匀选择。无终止、无外部重置。控制器只能看到实际转移；模型由各状态动作的奖励均值和后继频数学习，不能访问真实转移矩阵。
+
+**设置。** 1200 个真实步；状态 0、Q=0、率=0 起步。ε=0.25，Q 步长 0.08，率步长 0.008。每个真实步后做 5 次已访问状态动作的模型期望备份；模型自由对照没有这些备份。规划 RNG 与环境 RNG 分开。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** 先做真实差分 Q 更新，再写入经验模型，再用 planning_update 更新 Q 和率。模型不能从未访问状态动作生成知识；模拟奖励不计入真实生命期奖励。
+
+**测量。** 主图是冻结当前贪心策略后，用真实模型精确解得的 gain。另看真实经历奖励率和总备份数：最终策略能力、学习过程所得收益和计算开销是三个量。
+
+```bash
+python3 implementations/average_systems/differential_dyna.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/differential_dyna/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 300 步，Dyna 的冻结策略 gain 均值约 0.58763，对照约 0.42844；第 1200 步两者均为最优 0.59704。真实全程奖励率分别约 0.50207、0.45040，但总备份数分别为 7200 和 1200。相同交互不等于相同计算。
+
+**结论边界。** 这是有限经验模型的组件实验，不是非平稳或神经 Dyna 的收敛证明。两者最后达到同一策略，不能仅凭终点图说明规划无用；也不能忽略六倍备份成本。
+
+**继续实验。** 比较真实步预算相同和总备份预算相同两种口径。另冻结模型学习但保留规划，说明旧模型何时无法提供新世界的证据。
+
+[源码](../../implementations/average_systems/differential_dyna.py) · [逐种子记录](https://yingwen.io/crl-code/results/differential_dyna/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/differential_dyna/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/differential_dyna/curves.json)
+
 <a id="lesson-branches"></a>
 
 ## 7 · 非平稳性、时间尺度与实验指标

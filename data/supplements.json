@@ -1,0 +1,2481 @@
+{
+  "chapters": [
+    {
+      "slug": "signals",
+      "title": "预测误差与学习信号：从条件作用到突触可塑性",
+      "question": "一次意外发生后，学习系统怎样判断该学什么，以及哪些过去的活动应当发生改变？",
+      "introduction": "强化学习与动物学习共享一个问题：经验必须改变未来行为，但经验本身不会标出应当修改的知识。本章从条件作用实验出发，逐步区分预测误差、神经调制信号和局部可塑性。它们之间存在重要联系，却不是同一个概念。",
+      "mainline": [
+        {
+          "label": "预测知识",
+          "path": "/zh/continual-rl/construction/predictive-knowledge/",
+          "why": "区分奖励预测与关于其他未来事件的预测。"
+        },
+        {
+          "label": "在线信用分配",
+          "path": "/zh/continual-rl/algorithms/credit-assignment/",
+          "why": "理解延迟反馈与局部活动痕迹的不同作用。"
+        },
+        {
+          "label": "智能体状态",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "预测误差依赖于智能体对当前情境和时间的表示。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "contingency",
+          "title": "1 · 相邻发生，不等于提供了预测信息",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "设想声音响起后常有食物出现。动物逐渐在声音期间靠近食槽。这个现象属于经典条件作用：实验者安排线索与结果的关系，结果通常不以动物执行某个指定动作为条件。它首先提出预测问题，而不是“哪个动作获得了奖励”的控制问题。"
+            },
+            {
+              "kind": "p",
+              "text": "关键对照是：没有声音时，结果是否也同样常见？Rescorla 在恐惧条件作用中改变声音出现与缺席时的电击概率。声音只有增加了电击的可预测性，才产生明显的条件性反应抑制。测量的是行为抑制，不是直接读取“恐惧值”。因此，仅统计配对次数不足以解释学习；背景经验也是证据。[Rescorla，1968](https://www.appstate.edu/~steelekm/classes/psy5300/Documents/Rescorla1968.pdf)"
+            }
+          ]
+        },
+        {
+          "id": "prediction-error",
+          "title": "2 · 已知的线索，为什么会阻断新学习？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "阻断实验分两步。先让线索 A 可靠地预告食物；再让 A 与新线索 B 一起出现，仍给同样食物。最后单独呈现 B。与没有 A 预训练的对照相比，B 引出的反应较弱。B 明明与食物一起出现过，却没有获得同等的行为控制。"
+            },
+            {
+              "kind": "p",
+              "text": "预测误差提供一种解释：第二阶段的食物已被 A 预测，B 没有带来新的预测改进。注意理论则追问，动物是否减少了对冗余 B 的加工。两者可以在某些条件下产生相似结果。阻断不是某条更新规则的唯一指纹；还要改变意外发生的时刻、结果身份和测试情境。后面的多巴胺干预实验正是沿着这一思路增加约束。[Steinberg 等，2013](https://www.nature.com/articles/nn.3413)"
+            }
+          ]
+        },
+        {
+          "id": "dopamine-evidence",
+          "title": "3 · 从神经记录到因果作用",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "经典多巴胺研究中，意外奖励常引起短暂活动增强；学习后，反应可以出现在预测奖励的线索处；预期奖励缺席时，活动可能下降。Schultz、Dayan 与 Montague 将这些现象与时间差分预测联系起来。其关键是“相对预期的变化”，不是“奖励有多快乐”。这篇论文构建了理论联系，不能替代因果干预证据。[Schultz 等，1997](https://web.math.princeton.edu/~sswang/fundamental-readings-for-Wang-lab-members/schultz_montague97_science.pdf)"
+            },
+            {
+              "kind": "p",
+              "text": "Steinberg 等在大鼠的阻断程序中，在奖励到达时短暂激活多巴胺神经元。新线索获得了原本较弱的学习。时间精确的干预支持这些神经元活动能够参与塑造后续行为。但人工激活的充分性，不意味着自然活动的每个成分都只编码奖励误差，也不意味着它完全不影响动机或注意。[原始实验](https://www.nature.com/articles/nn.3413)"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "证据层次",
+                "能约束的问题",
+                "不能单独推出的结论"
+              ],
+              "rows": [
+                [
+                  "行为对照",
+                  "哪些经验条件改变后续反应？",
+                  "脑内一定运行了某个算法。"
+                ],
+                [
+                  "神经记录",
+                  "活动何时与预期、运动或结果共同变化？",
+                  "所记录的变量就是活动的唯一功能。"
+                ],
+                [
+                  "因果干预",
+                  "改变特定细胞与时刻，是否改变学习？",
+                  "干预效果等同于完整自然计算机制。"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "local-traces",
+          "title": "4 · 全局信号怎样找到过去活跃的突触？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "奖励晚于动作发生。即使有一个准确的误差信号，它也没有说明该修改哪个突触。资格迹的思想是：局部活动先留下暂时可被修改的痕迹；较晚的调制信号再影响这些位置。这把“哪里可能有关”与“现在应如何改变”分开。三因子规则中的三个因素，通常指突触前活动、突触后活动和调制因素；它不是三种行为奖励。"
+            },
+            {
+              "kind": "p",
+              "text": "Yagishita 等在小鼠伏隔核急性脑片中，分开控制谷氨酸输入和多巴胺输入。谷氨酸输入与突触后放电按特定时序配对。相对于配对刺激序列的起点，多巴胺在约 0.3—2 秒内到达时，能够促进树突棘增大。这提供了局部可塑性具有时间窗口的证据。它没有直接测得算法中的资格迹变量，也没有解决整段行为、数分钟延迟或循环网络中的全部信用分配问题。[Yagishita 等，2014](https://pubmed.ncbi.nlm.nih.gov/25258080/)"
+            }
+          ]
+        },
+        {
+          "id": "beyond-one-scalar",
+          "title": "5 · 为什么不能把多巴胺写成一个统一标量？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "Sharpe 等先让大鼠接触中性线索之间的顺序关系，当时不提供奖励；随后才把后一个线索与食物联系起来。对多巴胺神经元的时间精确干预，影响了前一阶段的刺激—刺激学习。未来行为可以利用并未直接与食物配对的线索。这个结果要求考虑关于事件关系的学习，而不只考虑缓存下来的食物价值；它仍不能证明动物使用了某种指定的搜索规划器。[Sharpe 等，2017](https://sharpelab.psych.ucla.edu/wp-content/uploads/sites/185/2018/09/Sharpe-et-al.-2017.-Nature-Neuroscience.pdf)"
+            },
+            {
+              "kind": "p",
+              "text": "Engelhard 等在小鼠虚拟导航任务中进行单细胞钙成像，发现腹侧被盖区多巴胺神经元对感觉、运动和认知变量具有不同的反应模式。群体平均曲线可能掩盖这种差异。这里应保留两点：奖励预测误差解释了一组重要现象；多巴胺系统并不因此被穷尽。相关变量的统计编码，也不自动等于独立的因果功能。[Engelhard 等，2019](https://www.nature.com/articles/s41586-019-1261-9)"
+            }
+          ]
+        },
+        {
+          "id": "crl-questions",
+          "title": "6 · 对持续学习的启发：先问预测对象，再问更新信号",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "把这些思想带回持续强化学习，首先要问预测对象是什么。奖励、接触、危险和某个事件的到达时间，不必共享一个预测头。其次要问状态是否足够：同一线索在不同背景或等待时长下，可能有不同含义。最后才问误差如何改变局部记忆。一个统一损失下降，不能证明每个知识系统都得到适当更新。"
+            },
+            {
+              "kind": "p",
+              "text": "检验机制时，不只比较最终行为。可以保持奖励总量不变而改变背景概率，保持结果价值不变而改变结果身份，或只移动反馈时刻。如果两个系统在这些干预下分离，才更接近解释其内部组织。这里的桥梁是可区分的研究问题，不是把神经元直接翻译成网络层。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Rescorla（1968）· Probability of shock in the presence and absence of CS in fear conditioning",
+          "url": "https://www.appstate.edu/~steelekm/classes/psy5300/Documents/Rescorla1968.pdf",
+          "note": "读实验 1 的随机组与条件组，再读实验 2 的概率对照。支持背景事件率影响条件作用；行为抑制不是对内部预测的直接测量。"
+        },
+        {
+          "title": "Schultz、Dayan 与 Montague（1997）· A Neural Substrate of Prediction and Reward",
+          "url": "https://web.math.princeton.edu/~sswang/fundamental-readings-for-Wang-lab-members/schultz_montague97_science.pdf",
+          "note": "读奖励出现、预告与遗漏的响应图，以及时间差分解释。它是经典理论综合，不能当作神经信号与 TD 完全同一的证明。"
+        },
+        {
+          "title": "Steinberg 等（2013）· A causal link between prediction errors, dopamine neurons and learning",
+          "url": "https://www.nature.com/articles/nn.3413",
+          "note": "重点读图 1—2 的阻断程序和光遗传干预。支持特定时间的多巴胺活动能促进线索学习；不证明所有多巴胺活动都只是误差。"
+        },
+        {
+          "title": "Yagishita 等（2014）· A critical time window for dopamine actions on the structural plasticity of dendritic spines",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/25258080/",
+          "note": "从脑片中的输入时序与树突棘测量入手。时间窗口为资格迹思想提供细胞机制线索，不能直接推广为完整行为尺度的信用分配规则。"
+        },
+        {
+          "title": "Sharpe 等（2017）· Dopamine transients are sufficient and necessary for acquisition of model-based associations",
+          "url": "https://sharpelab.psych.ucla.edu/wp-content/uploads/sites/185/2018/09/Sharpe-et-al.-2017.-Nature-Neuroscience.pdf",
+          "note": "读感觉预条件作用的三个阶段及时间控制。支持非奖励事件关系的学习作用；标题中的 model-based 不指定完整的规划算法。"
+        },
+        {
+          "title": "Engelhard 等（2019）· Specialized coding of sensory, motor and cognitive variables in VTA dopamine neurons",
+          "url": "https://www.nature.com/articles/s41586-019-1261-9",
+          "note": "比较单细胞响应与群体汇总。支持多变量和细胞间异质性；编码分析本身不确立各变量的因果作用。"
+        }
+      ],
+      "questions": [
+        "若两个模型都产生阻断效应，怎样通过改变奖励身份或线索显著性区分预测误差与注意解释？",
+        "行为没有表达某段经验，如何区分没有学到、没有提取，以及当前动机不足？",
+        "同一全局调制信号到达两个突触，为什么它们可能产生不同更新？还需要知道哪些局部状态？",
+        "若一个 CRL 系统只预测奖励，它可能遗漏哪些将来才变得有用的事件关系？"
+      ],
+      "takeaway": "生物学习最有价值的启发，不是给算法找到一个脑区名称，而是用不同层次的证据约束“预测什么、修改哪里、何时修改”这三个问题。"
+    },
+    {
+      "slug": "motivation",
+      "title": "目标、习惯与身体需要：结果为什么值得追求？",
+      "question": "行为改变了，究竟是结果不再有价值、动作不再有效，还是已有知识没有被用于当前选择？",
+      "introduction": "一个动物不再按压杠杆，可能因为已经吃饱，可能因为杠杆失效，也可能因为正在执行别的行为。把这些现象统称为“价值下降”会丢失机制。本章用结果贬值、关系退化和动作活力实验，区分关于世界的知识、当前需要与行为的表达。",
+      "mainline": [
+        {
+          "label": "奖励假设与设计",
+          "path": "/zh/continual-rl/foundations/reward-design/",
+          "why": "区分外部结果、内部需要和用于学习的奖励信号。"
+        },
+        {
+          "label": "持续控制",
+          "path": "/zh/continual-rl/algorithms/control/",
+          "why": "行为选择还取决于当前目标、知识提取和未来机会。"
+        },
+        {
+          "label": "平均奖励",
+          "path": "/zh/continual-rl/algorithms/average-reward/",
+          "why": "理解时间机会成本，并区分计算量与神经编码假说。"
+        },
+        {
+          "label": "智能体状态",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "把饥饿、疲劳等内部变量纳入决策情境。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "prediction-action",
+          "title": "1 · 预告结果与产生结果，是两种关系",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "在 Pavlovian 条件作用中，声音预告食物，动物是否按杠杆通常不决定食物出现。在工具性学习中，动作会影响结果出现的条件。两种关系不能用“是否有动作”区分：靠近食槽也是动作，却可能主要由预测线索诱发。"
+            },
+            {
+              "kind": "p",
+              "text": "它们还能相互作用。先分别学习声音—食物与杠杆—食物，再在按压测试中播放声音，线索可以改变工具性反应。这称为 Pavlovian-to-instrumental transfer。Corbit 与 Balleine 用不同结果及杏仁核损伤，区分了结果特异性影响和一般动机影响。因此，按得更多并不唯一表示“更准确地估计了该动作价值”。[Corbit 与 Balleine，2005](https://pubmed.ncbi.nlm.nih.gov/15673677/)"
+            }
+          ]
+        },
+        {
+          "id": "devaluation",
+          "title": "2 · 没有重新练习，为什么仍会改变选择？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "结果贬值实验先训练饥饿大鼠按杠杆获得一种食物。随后，在没有杠杆的情境中，让这种食物与不适形成联系。最后恢复杠杆，但暂时不给食物。Adams 与 Dickinson 发现，对按压所得食物形成厌恶的动物，比对另一种食物形成厌恶的对照组按得少。两组都经历了厌恶学习，差别在于被贬值的结果是否由该动作产生。[Adams 与 Dickinson，1981](https://journals.sagepub.com/doi/10.1080/14640748108400816)"
+            },
+            {
+              "kind": "p",
+              "text": "测试不再提供食物，排除了必须在测试中重新体验动作后果才能减少按压的解释。结果支持动物利用了关于结果身份及其当前价值的信息。但它不独自说明这种信息由在线树搜索、关联提取还是其他机制组合使用。还要检验食物厌恶是否确实形成，以及运动能力和整体活动是否受损。"
+            }
+          ]
+        },
+        {
+          "id": "contingency-habit",
+          "title": "3 · 结果仍然好，动作却不再必要",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "关系退化改变的不是结果价值，而是动作对结果的贡献。Hammond 按秒安排按压与不按压时获得水的概率。当不按压也同样容易得到水时，按压减少。这里仍保持按压后获得水的条件概率，因此不能只用“动作后不再给水”来解释。[Hammond，1980](https://onlinelibrary.wiley.com/doi/10.1901/jeab.1980.34-297)"
+            },
+            {
+              "kind": "p",
+              "text": "习惯通常依据对结果贬值或动作—结果关系变化不敏感来识别。训练安排也会影响这种敏感性：Dickinson 等比较了比率与间隔训练，而不是简单把练习次数当作唯一原因。习惯是行为层面的判据；model-free 是计算层面的分类，二者不能一一对应。测试中未能提取结果知识、情境改变或多种控制过程竞争，都应与“根本没有结果知识”区分。[Dickinson 等，1983](https://doi.org/10.1080/14640748308400912)"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "改变的条件",
+                "主要追问",
+                "须排除的混淆"
+              ],
+              "rows": [
+                [
+                  "结果贬值",
+                  "动物是否使用结果的当前价值？",
+                  "不适或饱足只造成整体活动下降。"
+                ],
+                [
+                  "关系退化",
+                  "动物是否使用动作对结果的贡献？",
+                  "总结果量、饱足或背景学习改变。"
+                ],
+                [
+                  "改变线索或情境",
+                  "相关经验能否在测试时被提取？",
+                  "把表达失败直接认作经验被删除。"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vigor",
+          "title": "4 · 做什么之外，还要决定做多快",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "慢慢完成动作可以节省体力，但也可能耽误下一次机会。Niv 等提出平均奖励框架：在机会持续到来的环境中，时间具有成本。动作活力因而不仅依赖这次能得到多少，还依赖环境通常每单位时间能提供多少收益。他们进一步假说，持续性的多巴胺水平可能参与表达这个量。[Niv 等，2007](https://nivlab.princeton.edu/wp-content/uploads/sites/938/2025/10/s00213-006-0502-4.pdf)"
+            },
+            {
+              "kind": "math",
+              "tex": "C_{\\mathrm{time}}\\approx \\bar r\\,\\Delta t",
+              "explain": "在背景机会近似稳定、等待确实排挤其他收益机会时，额外耗时 Δt 的机会成本可用背景平均收益率与时间的乘积近似。它不是任何任务都成立的固定收费，也不是多巴胺浓度的定义。"
+            },
+            {
+              "kind": "p",
+              "text": "一个有区分力的检验是把“更用力能省时间”和“更用力只增加奖励”分开。Zénon 等的人体双盲药理实验发现，左旋多巴增加用力的效应出现在后者，而非前者。这限制了把多巴胺效应完全归因于时间机会成本的解释；它不否定时间成本作为决策因素，也不直接测定所有慢时间尺度的多巴胺信号。[Zénon 等，2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC6601940/)"
+            }
+          ]
+        },
+        {
+          "id": "homeostasis",
+          "title": "5 · 同一杯水，对不同身体状态不是同一结果",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "口渴时值得绕路取水，刚喝足时却未必如此。外部世界可以没有改变，最优行为仍然改变。若状态表示只记录房间位置，这种变化看似奖励规律漂移；若还记录体内水分与需要，部分变化就成为可解释的状态依赖。内部状态不可直接观测时，智能体还需要从身体信号推断它。"
+            },
+            {
+              "kind": "p",
+              "text": "Keramati 与 Gutkin 将奖励定义为内部状态朝生理调节点改善的量，并研究它如何支持预测性调节。该模型把“获取结果”和“维持生理状态”联系起来，而不是把需要视为动作价值之外的附注。其结论依赖特定驱力函数、结果模型和时间目标。它不是所有奖励都等于缺乏减少的实验证明，也没有免除设计者选择调节点与调节尺度的责任。[Keramati 与 Gutkin，2014](https://elifesciences.org/articles/04811)"
+            }
+          ]
+        },
+        {
+          "id": "continual-bridge",
+          "title": "6 · 持续智能体需要区分三种变化",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "第一种变化是世界关系变了：原有动作不再到达预期结果。第二种是需要变了：结果仍能得到，却不再值得追求。第三种是使用知识的条件变了：经验仍然保留，但当前没有被提取或执行。三者都可能使回报下降，解决办法却不应相同。"
+            },
+            {
+              "kind": "p",
+              "text": "这提示一种研究方式：先固定两类因素，只改变第三类，再观察适应是否发生。奖励重估能否利用旧模型？状态识别错误会不会被误当作遗忘？恢复某个线索后，旧行为能否立即出现？对持续学习而言，保存经验、更新其意义和在恰当时刻使用经验，是三个相关但不同的问题。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Corbit 与 Balleine（2005）· General and outcome-specific Pavlovian-instrumental transfer",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15673677/",
+          "note": "读两种结果与两类损伤的比较。支持一般动机和结果特异性影响可以分离；不能把一个脑区等同于一个完整控制算法。"
+        },
+        {
+          "title": "Adams 与 Dickinson（1981）· Instrumental Responding following Reinforcer Devaluation",
+          "url": "https://journals.sagepub.com/doi/10.1080/14640748108400816",
+          "note": "抓住非条件性食物对照和无奖励测试。支持行为可使用重新评价的结果信息；并不指定这些信息的具体存储与计算方式。"
+        },
+        {
+          "title": "Hammond（1980）· The effect of contingency upon the appetitive conditioning of free-operant behavior",
+          "url": "https://onlinelibrary.wiley.com/doi/10.1901/jeab.1980.34-297",
+          "note": "注意原实验用水强化，并分别安排响应与无响应时的概率。支持关系退化不同于简单停止强化；仍需考虑总强化率等因素。"
+        },
+        {
+          "title": "Dickinson、Nicholas 与 Adams（1983）· The Effect of the Instrumental Training Contingency on Susceptibility to Reinforcer Devaluation",
+          "url": "https://doi.org/10.1080/14640748308400912",
+          "note": "比较比率、间隔训练和不同测试安排。学习史影响贬值敏感性；不能由不敏感直接判定唯一的 model-free 机制。"
+        },
+        {
+          "title": "Niv、Daw、Joel 与 Dayan（2007）· Tonic dopamine: opportunity costs and the control of response vigor",
+          "url": "https://nivlab.princeton.edu/wp-content/uploads/sites/938/2025/10/s00213-006-0502-4.pdf",
+          "note": "先读快慢动作的成本平衡，再读对多巴胺的解释。这是计算模型及神经编码假说，不是奖励率等于多巴胺浓度的测量定律。"
+        },
+        {
+          "title": "Zénon、Devesse 与 Olivier（2016）· Dopamine Manipulation Affects Response Vigor Independently of Opportunity Cost",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6601940/",
+          "note": "读省时间与增加奖励两种任务的分离。结果限制了所检验的机会成本解释；药理操作并不能隔离全部多巴胺信号成分。"
+        },
+        {
+          "title": "Keramati 与 Gutkin（2014）· Homeostatic reinforcement learning for integrating reward collection and physiological stability",
+          "url": "https://elifesciences.org/articles/04811",
+          "note": "读内部状态、驱力与奖励的定义及预测性调节情境。等价关系有模型条件；不能将其推广为所有动机或人类价值的统一实证结论。"
+        }
+      ],
+      "questions": [
+        "若贬值后仍按杠杆，至少列出三个不同机制，并为每个机制设计一个能排除它的对照。",
+        "同一外部观察下行为随饥饿改变，应建模为非平稳奖励，还是遗漏的内部状态？两种建模各需什么证据？",
+        "如果等待期间仍能从事另一项有价值活动，背景奖励率乘以等待时间还适合作为机会成本吗？",
+        "一个智能体保留了转移模型，却无法在目标改变后使用它。这是遗忘、检索失败，还是规划资源不足？怎样区分？"
+      ],
+      "takeaway": "理解动机需要把结果关系、当前价值和知识的使用分开；相同的行为变化，并不意味着相同的学习机制。"
+    },
+    {
+      "slug": "memory",
+      "title": "记忆系统：保持、调用与更新",
+      "question": "旧经验没有出现在当前行为中，是没有保存、无法调用，还是暂时不该使用？",
+      "introduction": "持续学习不仅要改变参数，还要让过去的经验在适当的时候影响行动。心理学与神经科学提醒我们：学习、保持、提取和行为表达是不同的问题。区分它们，才能判断智能体究竟忘记了什么。",
+      "mainline": [
+        {
+          "label": "智能体状态",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "区分当前可用的信息与长期保存的知识。"
+        },
+        {
+          "label": "保持与干扰",
+          "path": "/zh/continual-rl/algorithms/retention/",
+          "why": "把旧任务退化拆成存储、调用和决策问题。"
+        },
+        {
+          "label": "可塑性",
+          "path": "/zh/continual-rl/algorithms/plasticity/",
+          "why": "比较保持旧知识与继续形成新知识的能力。"
+        },
+        {
+          "label": "元学习",
+          "path": "/zh/continual-rl/algorithms/meta/",
+          "why": "思考何时更新、更新哪里，以及如何调节更新速度。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "memory-systems",
+          "title": "1. 一次经历，三种不同的记忆问题",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "你昨天从北门进入办公室，发现门锁损坏。今天准备出门时，既可能回想昨天的事件，也可能使用“北门不能通行”这条知识，还需要暂时记住正在选择的路线。这些功能不能只按保存时间长短分类。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "概念",
+                "这里保存或维持什么",
+                "不能直接等同于"
+              ],
+              "rows": [
+                [
+                  "情景记忆（episodic memory）",
+                  "发生过的事件及其时空背景",
+                  "任意一条经验缓存"
+                ],
+                [
+                  "语义记忆（semantic memory）",
+                  "不必重现学习场景的事实与关系",
+                  "某一种神经网络权重"
+                ],
+                [
+                  "工作记忆（working memory）",
+                  "为当前任务维持和操作的信息",
+                  "所有短期痕迹或资格迹"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "[Tulving（1985）](https://www.esalq.usp.br/lepse/imgs/conteudo_thumb/Memory-and-Consciousness.pdf)讨论情景与语义记忆的区别。[Baddeley 与 Hitch（1974）](https://doi.org/10.1016/S0079-7421%2808%2960452-1)通过记忆负荷与推理等任务研究工作记忆。这里借用的是功能区分，不是把人工模块认定为具有人的回忆体验。"
+            },
+            {
+              "kind": "p",
+              "text": "这三者并非互斥的存储盒。情景与语义记忆区分长期知识及其提取方式；工作记忆强调当前加工功能，可以调用两类长期知识。"
+            }
+          ]
+        },
+        {
+          "id": "memory-complementary-learning",
+          "title": "2. 快速记住例外，缓慢提炼规律",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "新经验可能是一条重要例外。若立即用它大幅改写共享表示，许多旧预测也会改变；若更新过慢，又可能错过一次性的危险。这是互补学习系统理论（CLS）要解释的矛盾。"
+            },
+            {
+              "kind": "p",
+              "text": "[McClelland、McNaughton 与 O’Reilly（1995）](https://www.cnbc.cmu.edu/~plaut/IntroPDP/papers/McClellandMcNaughtonOReilly95PR.comp-learn-sys.pdf)提出：海马系统支持快速、较分离的经验编码；新皮层通过较慢、交错的学习形成重叠表示。新旧经验共同参与学习，能够减轻新经验对已有结构的破坏。"
+            },
+            {
+              "kind": "p",
+              "text": "这不等于“海马负责短期、皮层负责长期”。关键是学习速度、表示重叠与经验组织方式。人工智能可以检验快慢通路是否有益，但必须与相同存储量、计算量的单通路比较。增加模块本身不能证明这一理论。"
+            }
+          ]
+        },
+        {
+          "id": "memory-replay-consolidation",
+          "title": "3. 重放是一种活动，巩固是一类变化",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "再激活是先前活动模式再次出现。重放更强调经验中的时序关系被重新表达。巩固则指记忆随时间趋于稳定或重新组织。观察到重放，不等于已经证明发生了某种特定的巩固。"
+            },
+            {
+              "kind": "p",
+              "text": "[Girardeau 等（2009）](https://www.nature.com/articles/nn.2384)在大鼠空间学习后的巩固时段选择性抑制海马尖波涟漪，观察到记忆表现受损。这支持此类事件参与记忆过程；它不直接说明哪段内容被删除，也不证明所有重放都有相同作用。"
+            },
+            {
+              "kind": "p",
+              "text": "经验回放缓存只是人工实现的一种。生物重放可以压缩、选择或重组经验。CRL 中还必须计入保存与重新计算的成本。比较重放方法时，应分别改变内容、顺序和更新次数，否则无法知道收益来自经验组织还是更多计算。"
+            }
+          ]
+        },
+        {
+          "id": "memory-retrieval-storage",
+          "title": "4. 读不出来，不等于已经丢失",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Ryan 等（2015）](https://tonegawalab.mit.edu/wp-content/uploads/2015/06/305_Ryan_Science_2015.pdf)在小鼠情境恐惧学习后抑制蛋白质合成。自然情境线索难以引出原有反应，但光遗传激活学习时标记的细胞能够恢复冻结反应。这个结果约束了“记忆已完全消失”的解释。"
+            },
+            {
+              "kind": "p",
+              "text": "它没有证明全部记忆细节都完整保存，更不能推出所有遗忘只是提取失败。恢复一种行为反应，也不等于恢复完整的主观经历。证据的对象是该操作、该任务与该行为指标。"
+            },
+            {
+              "kind": "p",
+              "text": "人工智能同样可能保存着有用信息，却因检索线索变化、读取模块失配或策略不再使用它而表现下降。因而应分别测试原线索、新线索和受控读取；还应区分不更新参数的恢复与重新训练后的恢复。后者可能只是重新学会。"
+            }
+          ]
+        },
+        {
+          "id": "memory-active-forgetting",
+          "title": "5. 遗忘也可能受到调节",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "在“想／不想”实验中，人先学会词对，再面对线索反复回忆或抑制相应词。[Anderson 与 Green（2001）](https://www.nature.com/articles/35066572)发现，抑制项目的后续回忆低于未练习项目。原线索测试可能混入联想阻塞；独立线索测试用于进一步约束这种竞争解释，但行为下降仍不是存储被物理抹除的直接测量。"
+            },
+            {
+              "kind": "p",
+              "text": "[Shuai 等（2010）](https://www.sciencedirect.com/science/article/pii/S0092867409016304)发现，调节果蝇 Rac 活性可以改变早期记忆的衰减及干扰诱发的遗忘，并影响反转学习。获得记忆与遗忘过程的对照，使“记忆只会被动消退”不再是充分解释。"
+            },
+            {
+              "kind": "p",
+              "text": "人的提取抑制与果蝇的分子调节不是同一个机制。它们共同提出一个问题：保留一切是否总是有益？旧规则可能干扰新环境，但过度遗忘也会损害再次适应。可塑性是形成新知识的能力，不是参数变化大，也不是忘得快。"
+            }
+          ]
+        },
+        {
+          "id": "memory-crl-experiment",
+          "title": "6. 一个区分保持与调用的思想实验",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "让机器人依次经历规则相反的房间 A、B，再返回 A。首先冻结可学习参数，但允许内部状态更新与检索，测试旧规则能否立即恢复。然后仅更换房间线索，保持物理规则不变。最后允许参数更新，记录恢复所需交互。立即恢复、线索依赖和快速重学是不同的证据。"
+            },
+            {
+              "kind": "p",
+              "text": "若检索失败，旧知识未必消失；若允许更新后恢复，也不能据此宣称旧知识完整保留。比较方案还要固定记忆容量和计算预算。这使“遗忘多少”变成三个可检验的问题：保存了什么、何时能调用、调用后能否帮助当前控制。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Tulving — Memory and Consciousness（1985）",
+          "url": "https://www.esalq.usp.br/lepse/imgs/conteudo_thumb/Memory-and-Consciousness.pdf",
+          "note": "读情景与语义记忆的概念区分。用于分清知识内容与回忆方式，不据此赋予人工缓存人的意识性质。"
+        },
+        {
+          "title": "Baddeley & Hitch — Working Memory（1974）",
+          "url": "https://doi.org/10.1016/S0079-7421%2808%2960452-1",
+          "note": "读记忆负荷与推理任务的关系。关注维持信息和执行任务的竞争，不把容量效应直接定位到单一脑区。"
+        },
+        {
+          "title": "McClelland et al. — Complementary Learning Systems（1995）",
+          "url": "https://www.cnbc.cmu.edu/~plaut/IntroPDP/papers/McClellandMcNaughtonOReilly95PR.comp-learn-sys.pdf",
+          "note": "先读灾难性干扰与交错学习的模拟，再读海马—皮层解释。计算模型说明一种可能机制，不是唯一生物实现。"
+        },
+        {
+          "title": "Girardeau et al. — Selective suppression of hippocampal ripples impairs spatial memory（2009）",
+          "url": "https://www.nature.com/articles/nn.2384",
+          "note": "读抑制的时机与行为对照。区分涟漪事件的因果贡献与某段记忆内容是否被破坏。"
+        },
+        {
+          "title": "Ryan et al. — Engram Cells Retain Memory Under Retrograde Amnesia（2015）",
+          "url": "https://tonegawalab.mit.edu/wp-content/uploads/2015/06/305_Ryan_Science_2015.pdf",
+          "note": "对照自然线索与直接激活后的冻结反应。结论限于该任务与操作，不外推为所有遗忘的统一解释。"
+        },
+        {
+          "title": "Anderson & Green — Suppressing unwanted memories by executive control（2001）",
+          "url": "https://www.nature.com/articles/35066572",
+          "note": "重点比较图 1–2 的原线索、独立线索及竞争解释。词对实验不能直接等同临床情境中的记忆变化。"
+        },
+        {
+          "title": "Shuai et al. — Forgetting Is Regulated through Rac Activity in Drosophila（2010）",
+          "url": "https://www.sciencedirect.com/science/article/pii/S0092867409016304",
+          "note": "读获得、衰减、干扰与反转学习的对照。遗忘受到调节，不意味着每次遗忘都有适应价值。"
+        }
+      ],
+      "questions": [
+        "旧任务回报下降时，怎样分别检查表示改变、检索失败和控制策略改变？",
+        "如果重放增加了计算量，什么对照才能识别“交错新旧经验”本身的作用？",
+        "系统保留旧数据，却读不出旧答案，应该在哪一种操作性定义下称为遗忘？",
+        "在房间 A→B→A 的实验中，怎样区分快速重新学习与不经学习的旧记忆恢复？"
+      ],
+      "takeaway": "记忆不是一个按容量评分的仓库。持续学习需要同时研究经验如何写入、保持、调用与更新，并以可区分的行为证据检验每个环节。"
+    },
+    {
+      "slug": "context",
+      "title": "情境与结构：经验如何成为可迁移的状态",
+      "question": "眼前景象相同，正确行动为何不同？新任务改变了对象，却保留了关系时，哪些知识可以复用？",
+      "introduction": "智能体不能总从当前观测直接确定下一步行动。它还需要判断正在经历哪种情境、已经完成哪些步骤，以及过去学到的关系是否仍然有效。认知地图、情境推断与结构化记忆分别揭示了这一问题的不同部分。",
+      "mainline": [
+        {
+          "label": "智能体状态",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "把当前观测、历史摘要与潜在情境区分开。"
+        },
+        {
+          "label": "预测知识",
+          "path": "/zh/continual-rl/construction/predictive-knowledge/",
+          "why": "比较未来占用预测与完整环境模型。"
+        },
+        {
+          "label": "时间抽象与选项",
+          "path": "/zh/continual-rl/construction/options/",
+          "why": "把任务阶段、行为片段与阶段转换联系起来。"
+        },
+        {
+          "label": "模型学习",
+          "path": "/zh/continual-rl/construction/models/",
+          "why": "明确跨任务可复用的是对象、关系还是动力学。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "context-cognitive-map",
+          "title": "1. 学到了，不一定已经表现出来",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Tolman（1948）](https://home.csulb.edu/~cwallis/382/readings/482/tolman.%20cognitive_maps_in_rats_and_men.1948.html)讨论的潜伏学习范式让大鼠先在没有食物奖励的迷宫中探索，再引入食物。表现随后迅速改善，提示无奖励探索期间也可能形成了可供以后使用的知识。"
+            },
+            {
+              "kind": "p",
+              "text": "这区分了学习与当前行为表现。它挑战的是“只有被即时强化的反应链才会留下有用知识”这一狭窄解释，并不单独证明动物获得了完整的欧氏地图。线索间的联结也可能解释部分表现；捷径、绕路和改变出发点等测试可以进一步区分解释。"
+            }
+          ]
+        },
+        {
+          "id": "context-state-representation",
+          "title": "2. 位置、情境和任务阶段不是同一种状态",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "设想机器人来到同一扇门前。地面是否湿滑影响制动；钥匙是否已经领取影响开门；送件任务是否结束影响目的地。相同图像可以对应不同的预测与行动。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "需要区分的量",
+                "所回答的问题"
+              ],
+              "rows": [
+                [
+                  "当前观测",
+                  "传感器现在提供了什么？"
+                ],
+                [
+                  "潜在情境",
+                  "当前生效的是哪套动力学或规则？"
+                ],
+                [
+                  "任务阶段",
+                  "在有关的行为序列中已经完成了什么？"
+                ],
+                [
+                  "智能体状态",
+                  "智能体现在保留哪些信息供预测与控制使用？"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "表示是信息的编码方式；智能体状态是某一时刻实际用于计算的内部变量。两者相关，但不是同义词。状态可以包含情境的不确定性，而不是唯一标签。把历史压缩进一个向量，也不自动证明该向量满足马尔可夫性：还要检验它是否保留了所需的预测信息。"
+            }
+          ]
+        },
+        {
+          "id": "context-inference",
+          "title": "3. 行为改变，可以来自换用旧知识",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Gershman、Blei 与 Niv（2010）](https://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf)用潜在原因解释情境依赖的消退与恢复：在情境 B 中不再发生结果，可能促使主体建立另一种解释，而非抹除在 A 中形成的联结。返回 A 后的恢复支持这种可能性，但不足以唯一确定模型。"
+            },
+            {
+              "kind": "p",
+              "text": "[COIN（Heald 等，2021）](https://www.nature.com/articles/s41586-021-04129-3)研究力场扰动下的伸手适应。先长期学习一种扰动，再短暂学习反向扰动；随后在约束运动、减少运动误差的通道试次中测量补偿力，可以观察先前适应的恢复。"
+            },
+            {
+              "kind": "p",
+              "text": "模型在运动前按情境概率混合已有记忆；反馈到来后，再更新情境判断及对应记忆。改变记忆内容与改变已有记忆的表达比例，是两条不同途径。快慢双过程也能解释部分恢复，因此论文还检验线索诱发的恢复等新预测。对 CRL 的启发不是无限保存任务模块，而是不要把所有行为适应都归因于参数更新。"
+            }
+          ]
+        },
+        {
+          "id": "context-relational-structure",
+          "title": "4. 换一批对象，关系是否还能使用？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "你熟悉一座建筑的走廊布局。房间名称全部更换后，“从入口左转，再过两个门”的关系仍可能有效。若走廊连接被改变，原关系则会误导行动。迁移需要说明保持不变的究竟是什么。"
+            },
+            {
+              "kind": "p",
+              "text": "[Tolman–Eichenbaum Machine（Whittington 等，2020）](https://pmc.ncbi.nlm.nih.gov/articles/PMC7707106/)将可泛化的关系结构与具体感觉内容的绑定分开建模，并用海马—内嗅系统的空间及非空间现象约束模型。结构复用与新对象绑定由此可以发生在不同环节。"
+            },
+            {
+              "kind": "p",
+              "text": "模型对细胞活动与重映射的解释提供了可检验联系，但相似的神经表征不证明大脑逐步执行这一模型。关系结构也不是免费给出的：哪些关系稳定、哪些需要重学，仍由经验与任务检验。"
+            }
+          ]
+        },
+        {
+          "id": "context-task-structured-memory",
+          "title": "5. 记住的不仅是地点，还有行为结构",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[El-Gaby 等（2024）](https://www.nature.com/articles/s41586-024-08145-x)让小鼠学习多组任务：依次到达四个奖励位置，再循环。位置改变，但序列结构保持。研究记录的是内侧额叶皮层，不是海马。许多细胞的活动跟随到达下一目标的进度，并随路程伸缩。"
+            },
+            {
+              "kind": "p",
+              "text": "另一部分活动相对于某个具体行为步骤保持固定的任务进度间隔。作者据此提出结构化记忆缓冲模型：用受任务结构约束的活动动态组织行为序列，而非必须先建立稳定的 A、B、C、D 抽象标签，再逐一绑定新位置。"
+            },
+            {
+              "kind": "p",
+              "text": "新任务中的行为推断和跨任务预测约束了模型。神经记录与模型匹配仍不等于已证明这些细胞对全部迁移能力的因果必要性。这里的重要问题是：状态能否表达“相对于某个步骤进展到哪里”，而不只是“当前看到了哪个地点”？"
+            }
+          ]
+        },
+        {
+          "id": "context-transfer-boundaries",
+          "title": "6. 用变化的类型检验抽象",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Stachenfeld 等（2017）](https://www.nature.com/articles/nn.4650)提出把海马理解为预测地图。后继表示编码某策略下折扣累积的未来占用，而不是完整转移模型。因此，改变奖励时可能复用部分知识；改变策略或通道连接时，未来占用本身也可能改变。"
+            },
+            {
+              "kind": "p",
+              "text": "延续门前机器人的例子：分别只改变门的颜色、走廊连接、地面摩擦、领取钥匙的顺序。若只在换颜色时成功，证据支持外观泛化，不足以支持关系迁移。若评测直接提供真实情境编号，就绕过了情境推断难点。应在相同交互与记忆预算下比较，并记录错误发生在哪一类变化中。"
+            },
+            {
+              "kind": "p",
+              "text": "[Mathis 的跨领域观点文章](https://www.nature.com/articles/s41593-025-02169-w)把快速适应、记忆与在线学习联系起来，适合作为后续导览。它提出的是研究方向，不是某一种模块化或统一架构已经胜出的实验证明。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Tolman — Cognitive maps in rats and men（1948）",
+          "url": "https://home.csulb.edu/~cwallis/382/readings/482/tolman.%20cognitive_maps_in_rats_and_men.1948.html",
+          "note": "先读潜伏学习与空间定向的例子。区分“学习不必立即表现”与“已经证明一种地图格式”。"
+        },
+        {
+          "title": "Gershman, Blei & Niv — Context, Learning, and Extinction（2010）",
+          "url": "https://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf",
+          "note": "读开头的消退、恢复与潜在原因解释。推断出的情境是模型变量，不保证对应世界中的真实分类。"
+        },
+        {
+          "title": "Heald, Lengyel & Wolpert — Contextual inference underlies the learning of sensorimotor repertoires（2021）",
+          "url": "https://www.nature.com/articles/s41586-021-04129-3",
+          "note": "先读图 1 的创建、更新与表达，再看恢复实验。COIN 解释感知运动适应，不是完整持续强化学习架构。"
+        },
+        {
+          "title": "Whittington et al. — The Tolman-Eichenbaum Machine（2020）",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7707106/",
+          "note": "读结构与感觉内容的分离，再读重映射预测。模型的神经一致性与人工迁移收益需要分别检验。"
+        },
+        {
+          "title": "El-Gaby et al. — A cellular basis for mapping behavioural structure（2024）",
+          "url": "https://www.nature.com/articles/s41586-024-08145-x",
+          "note": "按图 1 的跨任务行为、图 4 的缓冲模型及后续预测阅读。任务进度不是钟表时间；记录证据不等同因果必要性。"
+        },
+        {
+          "title": "Stachenfeld, Botvinick & Gershman — The hippocampus as a predictive map（2017）",
+          "url": "https://www.nature.com/articles/nn.4650",
+          "note": "读预测地图的定义与策略依赖。未来占用表示不能不经更新就回答所有新策略的后果。"
+        },
+        {
+          "title": "Mackenzie Weygandt Mathis — Leveraging insights from neuroscience to build adaptive artificial intelligence（2026）",
+          "url": "https://www.nature.com/articles/s41593-025-02169-w",
+          "note": "可从公开摘要及图 1–4 的导览入手；全文可能需机构权限。这是观点文章，不是单一架构的实验验证。"
+        }
+      ],
+      "questions": [
+        "同一观测下行动不同，怎样区分目标改变、潜在动力学改变与任务阶段改变？",
+        "回到旧情境后立即恢复表现，哪些控制实验能排除重新学习和简单线索反应？",
+        "如果模型只在对象重命名时迁移成功，你能够对关系抽象作出多强的结论？",
+        "神经活动可以预测任务进度，还需要什么证据才能主张它是迁移所必需的机制？"
+      ],
+      "takeaway": "可迁移状态不只是压缩当前观测。它还可能表达潜在情境、关系结构与任务进度。每一种抽象都应说明保留什么、忽略什么，以及在哪类环境变化下失效。"
+    },
+    {
+      "slug": "organization",
+      "title": "学习机制与功能组织：经验如何改变未来的适应",
+      "question": "智能体不仅学会一个动作，还可能学会怎样更快地学习。快速活动变化、缓慢可塑性与功能分工之间有什么关系？",
+      "introduction": "同样表现为“适应得更快”，背后可以是记忆状态更新、参数学习、学习规则变化或已有技能的重新组合。本篇借助计算模型与神经实验区分这些解释，不把脑区名称直接替换成智能体模块。",
+      "mainline": [
+        {
+          "label": "元学习",
+          "path": "/zh/continual-rl/algorithms/meta/",
+          "why": "明确适应变量、外层目标与迁移范围，避免只凭速度宣称学会了学习。"
+        },
+        {
+          "label": "状态构造",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "递归活动可以积累经验；固定参数与固定行为是不同约束。"
+        },
+        {
+          "label": "可塑性",
+          "path": "/zh/continual-rl/algorithms/plasticity/",
+          "why": "考察新经验还能否改变能力，并将保持旧知识与形成新组织分开。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "organization-timescales",
+          "title": "1 · 先说清楚什么在改变",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "设两台售货机的出货概率不时互换。熟悉这种结构的人不必从头学习所有按钮；最近几次结果就能改变选择。一个循环网络也可以将动作和奖励写入活动状态，再利用它调整行为。即使参数固定，活动也可能实现一个经验依赖的更新过程。"
+            },
+            {
+              "kind": "math",
+              "tex": "h_{t+1}=f_\\theta(h_t,o_{t+1},a_t,r_{t+1}),\\qquad a_{t+1}\\sim\\pi_\\theta(\\cdot\\mid h_{t+1}).",
+              "explain": "θ 可以在一次适应过程中保持不变，h 仍会积累经验。跨问题训练改变 θ，可能改变网络以后如何更新 h。这里区分存储位置和时间尺度，不按是否调用反向传播定义全部学习。"
+            },
+            {
+              "kind": "p",
+              "text": "但任何状态变化也不能自动叫学会了学习。应检验经验是否改善后续表现、能保持多久，以及能否迁移到未训练的变化方式。如果任务切换时总把记忆清零，还应明确这是实验协议，不是持续交互的必然边界。"
+            },
+            {
+              "kind": "p",
+              "text": "例如，记住上一台机器的结果，是信息保持；逐渐学会几次失败后应该换机器，是一种更新规律；发现某些场所更容易反转，则可能改变采用哪种更新规律。这些层次可以由不同变量实现，也可能共用一个网络。名称不足以决定机制，必须追踪经验改变了哪一个映射。"
+            }
+          ]
+        },
+        {
+          "id": "organization-meta-brain",
+          "title": "2 · 从计算解释到有限范围的因果证据",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Wang 等（2018）](https://www.nature.com/articles/s41593-018-0147-8)在多个相关任务上训练循环网络。慢速参数学习使网络活动能够在新任务中实现快速 RL，并用这一计算框架解释部分前额叶现象。它支持一种机制假说：过去的学习塑造未来的学习动力学；它本身不是证明前额叶只使用这一机制的生物实验。"
+            },
+            {
+              "kind": "p",
+              "text": "[Hattori 等（2023）](https://www.nature.com/articles/s41593-023-01485-3)在小鼠任务中分别研究 OFC 的活动和可塑性。干预 CaMKII 相关可塑性影响跨会话的学习，而专家动物会话内的逐试次表现未显示同样依赖；活动干预则影响快速表现。这支持两种机制、多个时间尺度的分工，但不能从一种分子通路的干预推出“快速适应完全不涉及任何突触变化”。"
+            },
+            {
+              "kind": "p",
+              "text": "回到售货机例子，快速变化可能是判断当前哪台更好；慢速变化可能是学会“结果会反转”这一结构。设计人工智能体时，应分别冻结参数、清除活动记忆和更换任务结构。三种干预回答不同问题，不能互相替代。"
+            }
+          ]
+        },
+        {
+          "id": "organization-emergent-structure",
+          "title": "3 · 功能分工可以由训练形成，也依赖设计条件",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Yang 等（2019）](https://www.nature.com/articles/s41593-018-0310-2)让一个循环网络完成 20 种认知任务。训练后出现与不同过程相关的功能群组和可组合任务表示。重要的是，任务关系可以塑造共享网络内部的分工，而不必事先给每项任务分配一个独立子网。"
+            },
+            {
+              "kind": "p",
+              "text": "然而网络结构、激活函数、任务输入和训练目标都已经给定；论文还显示激活函数会影响群组形成。这不是“没有先验，经验自动产生任意模块”的结论。空间上分群、功能上可分、因果上必要和能迁移到新任务，是四种不同证据。"
+            },
+            {
+              "kind": "p",
+              "text": "对 CRL 的问题应更具体：长期经验何时产生可复用的预测或技能？哪些分工由资源约束推动，哪些由人为任务标签造成？只展示表示聚类图不足以回答；至少还要检验组合迁移，以及移除某种经验或功能后的变化。"
+            },
+            {
+              "kind": "p",
+              "text": "同时，模块不必是互不重叠的盒子。同一神经元或特征可以参与多个问题，任务也可能共享一个低维计算方向。要求分工完全隔离，可能减少干扰，却也损失迁移。研究组织时应把共享的收益与相互干扰的代价同时计入，而不是预先认定分得越细越好。"
+            }
+          ]
+        },
+        {
+          "id": "organization-parallel-maps",
+          "title": "4 · 相互作用不一定是单向传递",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Zong 等（2025）](https://www.nature.com/articles/s41593-025-01928-z)研究大鼠气味序列任务中的结构迁移。抑制海马的一个主要输出区域——腹侧下托——在已学任务中没有破坏 OFC 的既有 schema 相关表征；在新问题迁移中，反而使这类表征更快出现。该结果支持本任务中两个区域并行提取不同结构的解释。"
+            },
+            {
+              "kind": "p",
+              "text": "这不是前节的 OFC meta-RL 实验，也不说明海马一般会妨碍学习。它反驳的是过于简单的必经流水线：先由一个区域建图，再由另一区域读取。对人工系统的启发是一个待检验假说：两个学习模块可能提供互补信息，也可能相互干扰；更多连接不必总有益。应在不同经验和迁移条件下区分这两种作用。"
+            }
+          ]
+        },
+        {
+          "id": "organization-plasticity-hypotheses",
+          "title": "5 · 从多时间尺度机制走向可检验的组织假说",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Benna 与 Fusi（2016）](https://www.nature.com/articles/nn.4401)用相互耦合的快慢突触变量研究记忆如何抵抗覆盖。慢变量不是简单把权重永久冻结，快慢过程之间还有双向作用。这是有明确容量指标的理论模型，不是已经找齐所有生物分子机制。它提醒我们：保持旧知识与接受新经验未必只能靠一个全局步长折中。"
+            },
+            {
+              "kind": "p",
+              "text": "[Mackenzie Weygandt Mathis 的 Perspective（2026）](https://doi.org/10.1038/s41593-025-02169-w)把自然行为、在线适应、内部模型与人工系统联系起来，并提出借鉴生物适应过程的研究方向。应把其中已引用的行为证据、计算类比和未来系统建议分开；文章不提供一个经验证的通用持续学习架构。"
+            },
+            {
+              "kind": "p",
+              "text": "要将这些思想变成研究问题，还需计入形成组织的成本。预训练过大量相关问题的网络，不能与从零开始的学习器只比较最后十次交互。外层训练、保留记忆、改变连接和检测失效都占用资源。公平的结论应说明能力来自哪些先验和经验，又在哪些变化下失效。"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "作为假说：同一经验在多个时间尺度留下不同痕迹，可能同时支持快速恢复与长期保持。需要与单时间尺度、等资源系统比较。",
+                "作为假说：经验可以形成分工，但设计者仍给定输入、可塑性机制与资源边界。需要检查分工能否脱离训练标签继续发挥作用。",
+                "作为研究准则：用迁移、干预与长期行为检验组织的作用；不要仅因图形像脑区，便认定机制相同。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Wang et al. · Prefrontal Cortex as a Meta-Reinforcement Learning System（2018）",
+          "url": "https://www.nature.com/articles/s41593-018-0147-8",
+          "note": "先追踪训练时哪些参数改变，再看任务内哪些活动改变。将计算模型对神经现象的解释与直接生物验证分开。"
+        },
+        {
+          "title": "Hattori et al. · Meta-Reinforcement Learning via Orbitofrontal Cortex（2023）",
+          "url": "https://www.nature.com/articles/s41593-023-01485-3",
+          "note": "重点比较跨会话可塑性干预与专家阶段活动干预。结论限定于所用任务、脑区和机制；不是所有快速学习不需可塑性的证明。"
+        },
+        {
+          "title": "Yang et al. · Task Representations in Neural Networks Trained to Perform Many Cognitive Tasks（2019）",
+          "url": "https://www.nature.com/articles/s41593-018-0310-2",
+          "note": "读任务关系、功能群组、组合性与激活函数条件。出现结构不等于结构没有设计来源。"
+        },
+        {
+          "title": "Zong et al. · Hippocampal Output Suppresses Orbitofrontal Cortex Schema Cell Formation（2025）",
+          "url": "https://www.nature.com/articles/s41593-025-01928-z",
+          "note": "比较已学任务与迁移阶段的不同效果。这是并行任务表征的证据，不应与 Hattori 的 meta-RL 干预混为一篇。"
+        },
+        {
+          "title": "Benna & Fusi · Computational Principles of Synaptic Memory Consolidation（2016）",
+          "url": "https://www.nature.com/articles/nn.4401",
+          "note": "关注快慢变量双向耦合如何改变存储与遗忘。容量分析依赖模型假设，不能直接换成 RL 性能保证。"
+        },
+        {
+          "title": "Mathis · Leveraging Insights from Neuroscience to Build Adaptive Artificial Intelligence（2026）",
+          "url": "https://doi.org/10.1038/s41593-025-02169-w",
+          "note": "Perspective；2025 年在线发表，2026 年卷期。用来组织跨领域问题与研究假说，不把建议架构当成已完成的系统验证。"
+        }
+      ],
+      "questions": [
+        "循环网络参数冻结后仍会根据新奖励改变行为。清除隐藏状态与禁止参数更新，分别破坏了哪一种适应？",
+        "怎样区分“记住训练任务的切换规则”与能迁移到新结构的 learning to learn？什么反例能推翻你的解释？",
+        "功能群组出现以后，哪些干预才能说明它们对组合迁移有因果作用，而不只是可视化上的聚类？",
+        "两个模块之间的连接何时传递有用结构，何时传播干扰？Zong 的结果支持何种有限结论，又不支持哪些一般化判断？"
+      ],
+      "takeaway": "经验可以改变活动状态、可塑性规则及功能分工，但这些变化不是同一层次的学习。跨学科研究的价值在于提出可区分的机制和干预，而不是为预设架构贴上脑区标签。"
+    },
+    {
+      "slug": "control",
+      "title": "控制论：反馈、辨识与边行动边学习",
+      "question": "一个系统能够纠正偏差，是否已经在学习？为了长期有效地控制世界，智能体究竟需要知道什么？",
+      "introduction": "控制论首先研究闭环如何工作。持续强化学习进一步追问：目标、动力学和信息都不充分时，闭环中的能力如何由经验形成。两者共享问题，但不能把稳定、适应、辨识和学习当作同一件事。",
+      "mainline": [
+        {
+          "label": "状态构造",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "先区分世界状态、传感器读数与由历史构造的控制信息。"
+        },
+        {
+          "label": "持续探索",
+          "path": "/zh/continual-rl/algorithms/exploration/",
+          "why": "行动既取得收益，也决定之后能辨认哪些变化。"
+        },
+        {
+          "label": "模型与规划",
+          "path": "/zh/continual-rl/construction/models/",
+          "why": "比较在线重算动作、学习后果模型与更新长期价值的分工。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "control-feedback-learning",
+          "title": "1 · 反馈能纠错，但不必改变控制规则",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "设恒温器在温度低于阈值时加热。开窗使温度下降，恒温器增加供热。行为改变了，控制规则却可以完全不变。这是反馈，不足以证明发生了学习。若加热器老化后，系统根据过去的升温速度重新估计功率并改变控制规则，才额外引入了适应或辨识。[Åström 与 Murray 的教材](https://www.cds.caltech.edu/~murray/FBS/Second_Edition.html)从这一闭环关系出发。"
+            },
+            {
+              "kind": "p",
+              "text": "反馈也不是“有误差就会稳定”。测量延迟、动作饱和和过大的增益都可能引起振荡。学习器加入闭环后，其参数更新本身也是动力学的一部分。预测误差下降，不能替代对温度越界、恢复时间和能耗的检查。"
+            }
+          ]
+        },
+        {
+          "id": "control-regulation-limits",
+          "title": "2 · 必要多样性与“好调节器”的条件",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Ashby 的必要多样性原理](https://www.ashby.info/Ashby-Introduction-to-Cybernetics.pdf)关注调节能力的限制，而不是网络越大越好的口号。考虑有限的扰动 D、调节反应 R 和结果 E。若给定每个反应，不同扰动仍产生可区分的结果，即 E=f(D,R) 对 D 单射，则有下面的熵界。"
+            },
+            {
+              "kind": "math",
+              "tex": "H(E)\\geq H(E\\mid R)=H(D\\mid R)=H(D)-I(D;R)\\geq H(D)-H(R).",
+              "explain": "H 是离散熵，I 是互信息；此处 R 是调节反应，不是奖励。关键是反应携带了多少关于扰动的信息。单射假设不能省略；若被控对象本身将多种扰动压成同一结果，这个简化推导就不适用。"
+            },
+            {
+              "kind": "p",
+              "text": "例如加热器无论多聪明，都不能凭正功率把过热房间主动制冷。传感器分不清两个需要相反补偿的情况，也会限制调节。增加记忆、改善观测、改变身体和降低任务要求，是不同的解决途径。"
+            },
+            {
+              "kind": "p",
+              "text": "[Conant 与 Ashby 的好调节器定理](https://pespmc1.vub.ac.be/books/Conant_Ashby.pdf)使用给定的结果映射、固定系统事件分布和可选择的条件反应分布，以结果熵最小定义最优；原证明另作最优结果分布唯一的简化。在这一设定中，可去掉不影响结果的随机性，选出由系统事件到调节反应的确定映射。这里的“模型”是特定映射关系，不等于可模拟未来的神经世界模型，更未规定模型必须从经验学习。低熵的坏结果也可能很稳定，因此不能脱离目标解释“成功”。"
+            }
+          ]
+        },
+        {
+          "id": "control-observation-identification",
+          "title": "3 · 看清状态、识别动力学、控制系统是三个问题",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "温度读数相同，不代表墙体蓄热相同。可观测性问：在模型已知、输入已知时，能否从一段输出区分内部状态？系统辨识问：模型参数未知时，哪些经验能区分候选动力学？控制问：凭现有信息应采取什么动作？三者可相互帮助，却不能相互替代。线性系统的可观测性判据也不能直接搬给任意学习到的 agent state。[状态估计与输出反馈](https://www.cds.caltech.edu/~murray/books/AM05/pdf/am08-outputfbk_10Sep12.pdf)提供了明确的起点。"
+            },
+            {
+              "kind": "p",
+              "text": "例如两个房间在恒定功率下维持同样温度，升温速度却不同。只收集稳态读数，可能无法区分它们；改变输入后，瞬态响应才提供新证据。反过来，若某个内部差异既不影响观测，也不影响任务后果，控制器未必需要辨认它。完整辨识和任务充分的信息状态，是不同要求。"
+            },
+            {
+              "kind": "p",
+              "text": "[Feldbaum 的 dual control](https://www.mathnet.ru/php/archive.phtml?jrnid=at&option_lang=eng&paperid=12624&wshow=paper)强调行动的双重后果：它改变世界，也改变之后的信息。短暂增加供热，可能同时提高舒适度并暴露热损耗系数。只用当前最佳模型选择动作，会忽略这种信息价值；反过来，只求辨识精度也可能浪费能源或越过安全边界。"
+            },
+            {
+              "kind": "p",
+              "text": "对应 CRL 的难点是：当前控制越熟练，经验有时越缺少区分新故障的信息。恢复探索不是简单加入随机噪声，而要问探测什么、能否恢复、信息将改变哪一次后续决策。"
+            }
+          ]
+        },
+        {
+          "id": "control-strategy-boundaries",
+          "title": "4 · 鲁棒、适应与滚动规划解决不同的不确定性",
+          "blocks": [
+            {
+              "kind": "table",
+              "headers": [
+                "思路",
+                "主要承诺",
+                "不能省略的条件"
+              ],
+              "rows": [
+                [
+                  "鲁棒控制",
+                  "在声明的不确定性集合内维持性能或稳定性",
+                  "集合应覆盖实际变化；过宽的集合可能使行为保守"
+                ],
+                [
+                  "自适应控制",
+                  "在线调整模型或控制参数",
+                  "稳定跟踪不必等于参数辨识正确；充分激励与稳定性条件要另查"
+                ],
+                [
+                  "模型预测控制（MPC）",
+                  "反复求有限时域计划，只执行第一步，再观测重算",
+                  "模型、约束、终端设计与求解质量决定保证"
+                ],
+                [
+                  "持续强化学习",
+                  "从长期交互改善预测、表示和控制能力",
+                  "必须同时说明收益、资源、探索风险与更新过程"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "[Mayne 等的 MPC 分析](https://doi.org/10.1016/S0005-1098%2899%2900214-9)说明，滚动求解本身不是稳定性定理。适当的终端代价、终端集合等条件可以建立保证，但不能因此宣称任意学习模型加短期搜索都安全。MPC 可以完全不学习；自适应控制也不必使用奖励最大化。"
+            },
+            {
+              "kind": "p",
+              "text": "这些思路可以组合，而不是互相替代。例如先以保守约束限制加热功率，再用经验更新热模型，并让规划器决定下一步动作。真正需要检验的是接口：新模型是否仍落在安全分析覆盖的范围？优化器来不及求解时怎么办？模型置信度提高，是否足以放宽约束？"
+            }
+          ]
+        },
+        {
+          "id": "control-task-relevance",
+          "title": "5 · 需要准确控制的是任务相关差异",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "端着水杯走路时，手臂轨迹可以每次不同，只要水不洒且杯子到达目标。[Todorov 与 Jordan 的最优反馈控制理论](https://www.nature.com/articles/nn963)解释了为何应优先纠正妨碍任务的偏差，容许冗余方向的变化。这是关于运动协调的计算理论，不是大脑精确执行某个优化器的证明。"
+            },
+            {
+              "kind": "p",
+              "text": "对 CRL 的启发不是复制一套控制器，而是重新选择学习问题：哪些状态差异会改变有效动作？哪些预测误差必须消除？哪些变化可由反馈吸收，哪些要求重学？长期智能体还必须判断自身知识何时不够用。控制保证和经验学习应在这些接口处衔接，而不是用一个术语取代另一个。"
+            },
+            {
+              "kind": "p",
+              "text": "还要分开评价已经学好的控制器与正在学习的整个过程。一个最终非常精确的模型，可能以漫长且危险的探测为代价。持续任务不能只展示训练结束后的稳定轨迹，还要保留形成这条轨迹之前付出的时间、能量和失败成本。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Åström & Murray · Feedback Systems",
+          "url": "https://www.cds.caltech.edu/~murray/FBS/Second_Edition.html",
+          "note": "先读反馈、状态估计和鲁棒性。关注闭环性质所依赖的条件；作者网站提供教材与讲义。"
+        },
+        {
+          "title": "Ashby · An Introduction to Cybernetics（1956）",
+          "url": "https://www.ashby.info/Ashby-Introduction-to-Cybernetics.pdf",
+          "note": "重点读调节与必要多样性。将 disturbance、regulator、essential variables 对应到一个具体系统，避免只记口号。"
+        },
+        {
+          "title": "Conant & Ashby · Every Good Regulator…（1970）",
+          "url": "https://pespmc1.vub.ac.be/books/Conant_Ashby.pdf",
+          "note": "直接读模型定义与定理证明。检查最优、简单、固定分布和映射的含义，不把定理扩张为现代世界模型的必要性证明。"
+        },
+        {
+          "title": "Feldbaum · Dual Control Theory I（1960）",
+          "url": "https://www.mathnet.ru/php/archive.phtml?jrnid=at&option_lang=eng&paperid=12624&wshow=paper",
+          "note": "原始俄文论文及系列入口。先把握控制动作同时具有试探作用，再读后续问题求解；不是一种现成的深度 RL 算法。"
+        },
+        {
+          "title": "Mayne et al. · Constrained Model Predictive Control（2000）",
+          "url": "https://doi.org/10.1016/S0005-1098%2899%2900214-9",
+          "note": "比较有限时域求解、递归可行性与闭环稳定性。把充分条件与工程启发式分开。"
+        },
+        {
+          "title": "Todorov & Jordan · Optimal Feedback Control as a Theory of Motor Coordination（2002）",
+          "url": "https://www.nature.com/articles/nn963",
+          "note": "读任务相关与任务无关变异的区别。用它重新思考预测与表示需要保留哪些信息，而非机械对应脑区。"
+        }
+      ],
+      "questions": [
+        "恒温器在开窗后提高功率，哪些观测能区分固定反馈、参数辨识和真正改变学习规则？",
+        "如果加热器没有制冷能力，提高模型精度能否解决过热？这个例子限制了哪一种“必要多样性”的解释？",
+        "何时一个短期降低奖励的动作值得用于辨识？若辨识结果不会改变未来动作，信息还值多少？",
+        "模型越完整是否控制越好？请给出任务相关模型优于像素级精确重建的情境，并指出它可能遗漏的风险。"
+      ],
+      "takeaway": "反馈改变当前动作，学习改变后续处理经验与行动的方式。控制论提供可观测性、稳定性、信息与能力边界；CRL 要进一步说明这些能力怎样形成并被持续维护。"
+    },
+    {
+      "slug": "agency",
+      "title": "主动感知与能动性：行动如何塑造经验",
+      "question": "如果智能体不仅选择怎样行动，还选择看什么、试什么和练什么，那么感知、探索与技能发展应如何放进同一个问题？",
+      "introduction": "本篇的能动性指智能体通过行动改变世界及自己获得的信息，不预设意识或自由意志。研究对象仍是可观察的感知—行动闭环。关键变化在于：经验并非外部固定的数据集，它部分由智能体自己创造。",
+      "mainline": [
+        {
+          "label": "状态构造",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "观测取决于感知动作；历史必须保留尚未解决的歧义。"
+        },
+        {
+          "label": "持续探索",
+          "path": "/zh/continual-rl/algorithms/exploration/",
+          "why": "分别理解新奇、预测误差、信息增益与学习进展。"
+        },
+        {
+          "label": "目标与子任务",
+          "path": "/zh/continual-rl/construction/goals/",
+          "why": "将可尝试的效果变成学习目标，同时检查它对后续任务的用途。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "agency-active-sensing",
+          "title": "1 · 感知本身也需要决策",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "机器人要拿起被盒子遮住的杯子。它可以直接伸手，也可以移动相机，或先轻推盒子。后两种动作可能暂时没有递送收益，却改变杯柄位置是否可见。感知问题因此不是只给定图像再分类，而是选择哪条信息值得用时间、能量和风险去取得。这就是主动感知首先要解释的问题。"
+            },
+            {
+              "kind": "p",
+              "text": "注意还包括对已得到的信息分配计算。移动眼睛、选择触觉探测与网络里的注意权重并非同一机制。[Land 与 Hayhoe 的日常活动眼动研究](https://doi.org/10.1016/S0042-6989%2801%2900102-X)指出，食物准备时的注视常先于手部操作，并承担定位、引导或检查作用。这是特定行为中的证据，不是所有注视都最大化信息量的证明。"
+            },
+            {
+              "kind": "p",
+              "text": "这个例子可分成三次决策：先看杯柄以选择抓取方向；接触时读取触觉以调整力；抬起后再检查是否滑落。每次需要的信息不同，因此“先完整识别场景，再开始行动”并非唯一组织方式。不过分阶段感知也会遗漏危险，需要保留对异常事件的检测。"
+            }
+          ]
+        },
+        {
+          "id": "agency-affordances",
+          "title": "2 · 可供性不是物体固有的动作标签",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Gibson 的生态心理学](https://www.routledge.com/The-Ecological-Approach-to-Visual-Perception/Gibson/p/book/9781848725782)强调环境相对于行动者提供的可能性，即 affordance。台阶是否可跨越，取决于高度，也取决于腿长、力量与当前负重。杯柄可抓取，也取决于手的尺度和姿态。“具身”在这里不是外接一个机械身体，而是身体改变了什么可观测、可实现及代价多大。"
+            },
+            {
+              "kind": "p",
+              "text": "身体能力也可能变化。同一个台阶在损伤前可跨越，损伤后不再可行。只记住物体类别不够；行动者还需重新掌握动作后果。可供性因此提出了一个关于知觉内容的问题：我们看到的只是几何属性，还是与自身能力有关的行动可能？不能把 Gibson 对直接知觉的理论立场等同于隐藏状态推断或神经世界模型。它们可能对内部表征的必要性持不同观点。"
+            },
+            {
+              "kind": "p",
+              "text": "身体还是信息来源。轻触杯子可能辨认重量和摩擦，而一次远距离观察无法提供同样证据。这里不是给视觉模型补一个标签，而是让控制动作产生新的感知条件。能否学会这种探测方式，本身就是一个技能问题。"
+            }
+          ]
+        },
+        {
+          "id": "agency-cognitive-boundaries",
+          "title": "3 · 4E 认知提出四种不同的边界问题",
+          "blocks": [
+            {
+              "kind": "table",
+              "headers": [
+                "观点",
+                "主要追问"
+              ],
+              "rows": [
+                [
+                  "具身 embodied",
+                  "身体形态与感觉运动能力怎样参与认知？"
+                ],
+                [
+                  "嵌入 embedded",
+                  "认知怎样依赖环境提供的结构与支撑？"
+                ],
+                [
+                  "生成 enactive",
+                  "意义与知觉怎样在行动者和环境的持续耦合中形成？"
+                ],
+                [
+                  "延展 extended",
+                  "某些外部资源是否不只帮助认知，而是认知过程的组成部分？"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "[Varela、Thompson 与 Rosch 的《具身心智》](https://mitpress.mit.edu/9780262220422/the-embodied-mind/)提出 enaction 路线，反对将认知仅理解为内部对预先给定世界的重建。它涉及生活经验、身体与意义生成，不是一项关于“是否使用隐藏层”的工程主张。4E 是相互关联的讨论群，不是一套统一且已获证实的机制。"
+            },
+            {
+              "kind": "p",
+              "text": "[Clark 与 Chalmers 的 Otto 笔记本思想实验](https://www.consc.net/papers/extended.html)进一步问：若一个人稳定依赖笔记本查找地址，它是否像生物记忆一样构成其信念系统？论证强调可靠可及、惯常调用与整合，不能推出一切用过的工具都是心智。争论的关键是：对认知有因果帮助，是否足以成为认知的一部分？这也不是关于笔记本具有意识的主张。"
+            }
+          ]
+        },
+        {
+          "id": "agency-curiosity-information",
+          "title": "4 · 惊讶、信息增益和有用性不是同一个量",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "杯子位置未知，换一个视角可能很有价值。电视屏幕不断产生独立随机像素，持续看它却未必让世界更可理解。若好奇心被简单实现为预测平方误差，随机屏幕可以永久吸引行为。[Burda 等的计算研究](https://arxiv.org/abs/1808.04355)展示了这种随机性陷阱。这个反例挑战的是一种操作化定义，不是证明人类好奇心只由预测误差决定。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\operatorname{IG}(a\\mid H)=\\mathbb E_{O\\mid H,a}\\!\\left[D_{\\rm KL}\\bigl(p(\\Theta\\mid H,a,O)\\,\\|\\,p(\\Theta\\mid H)\\bigr)\\right].",
+              "explain": "H 为已有历史，Θ 为待辨认的模型变量。这个量衡量观测后信念的预期改变，而不是原始像素误差。它依赖模型与先验；模型失配会使估计失真。"
+            },
+            {
+              "kind": "p",
+              "text": "若电视噪声的分布已经知道，而且与待辨认的变量无关，继续看它的预期信息增益为零，但像素预测误差仍大。反过来，准确辨认无关墙纸可能有信息增益，却对抓杯没有帮助。因此还要问：哪一个后续决策会因这条信息而改变？信息的获取成本与使用价值不能被新奇分数省略。"
+            },
+            {
+              "kind": "p",
+              "text": "还有两种不确定性需要分开：杯子此刻在哪里，以及接触它会怎样移动。前者可以通过一次观察消除；后者可能需要多次作用于物体才能辨认。笼统奖励“不确定性下降”，容易掩盖智能体到底在学习哪一种知识。"
+            }
+          ]
+        },
+        {
+          "id": "agency-development",
+          "title": "5 · 发展过程改变下一步值得练习什么",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "抓杯之前，也许要先学稳定注视、接近物体与控制抓力。新技能不仅提高当前成功率，还改变之后可取得的经验。[Oudeyer、Kaplan 与 Hafner](https://www.pyoudeyer.com/ims.pdf)用预测能力的改善组织自主探索：已经完全掌握的区域缺少进展，无法理解的纯噪声也未必持续有进展。这提供了自动课程的一种计算思路。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "练习对象",
+                "可能观察到的变化",
+                "仍需追问"
+              ],
+              "rows": [
+                [
+                  "稳定注视",
+                  "定位更准确",
+                  "是否能迁移到不同光照？"
+                ],
+                [
+                  "调整抓力",
+                  "成功范围扩大",
+                  "是否只是记住固定杯子？"
+                ],
+                [
+                  "尝试新材质",
+                  "预测误差先升后降",
+                  "后续任务是否真正需要？"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "学习进展仍是代理准则。缓慢但关键的能力可能被短期进展偏好排除；失败也可能来自错误状态表示而非任务太难。发展研究带来的启发，是考察技能与经验如何相互改变，而不是断言一条内在奖励就能自动产生完整成长顺序。"
+            }
+          ]
+        },
+        {
+          "id": "agency-active-inference",
+          "title": "6 · 主动推断与奖励 RL：相遇之处和分歧",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Friston 等的主动推断框架](https://doi.org/10.1080/17588928.2015.1020053)以生成模型、偏好和预期自由能组织策略选择。在相应分解条件下，它同时考虑偏好结果和关于隐因的信息。抓杯例中，侧看既可能减少姿态歧义，也可能支持之后成功抓取；但这些作用须通过明确的观测模型与偏好表达。"
+            },
+            {
+              "kind": "math",
+              "tex": "p^*(o)=\\frac{\\exp(r(o)/\\tau)}{\\sum_{\\widetilde o}\\exp(r(\\widetilde o)/\\tau)},\\qquad \\tau>0.",
+              "explain": "有限结果空间中，可用这个约定将标量奖励编码为偏好分布。它只是两种表述的一座桥：还没有证明完整策略目标或学习算法相同。"
+            },
+            {
+              "kind": "p",
+              "text": "奖励 RL 可以在部分可观测问题中通过未来任务收益体现信息价值，也可显式加入探索目标；主动推断的预期自由能通常还有认识价值及推断近似。比较时必须对齐信息、时域、偏好、成本和近似条件。它们都不能因使用“惊讶”一词就被视为同一算法，也没有仅凭这些形式建立关于意识的结论。"
+            },
+            {
+              "kind": "p",
+              "text": "偏好分布也没有消除目标设计。为何偏好杯子不摔碎，而不是让相机持续看到某个画面？如果用错误的观测代理表达目标，主动获取信息仍可能服务于错误目的。这一问题与 RL 中的奖励设计相通，但各自的形式化细节仍须独立说明。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Land & Hayhoe · Eye Movements in Everyday Activities（2001）",
+          "url": "https://doi.org/10.1016/S0042-6989%2801%2900102-X",
+          "note": "从食物准备任务理解注视的定位、引导和检查作用。保留任务与观察范围，不推出所有眼动的统一最优目标。"
+        },
+        {
+          "title": "Gibson · The Ecological Approach to Visual Perception（1979）",
+          "url": "https://www.routledge.com/The-Ecological-Approach-to-Visual-Perception/Gibson/p/book/9781848725782",
+          "note": "重点读 affordance 与环境—行动者关系。它提供另一种感知观，不是深度 RL 表示学习的同义词。"
+        },
+        {
+          "title": "Varela, Thompson & Rosch · The Embodied Mind（1991）",
+          "url": "https://mitpress.mit.edu/9780262220422/the-embodied-mind/",
+          "note": "从经验与认知科学之间的关系理解 enaction。不要把这条哲学路线缩成“传感器加动作”，也不要把所有 4E 观点混为一体。"
+        },
+        {
+          "title": "Clark & Chalmers · The Extended Mind（1998）",
+          "url": "https://www.consc.net/papers/extended.html",
+          "note": "作者全文。先读外部旋转与 Otto 笔记本，再检查可靠耦合的条件；区分认知的组成边界与意识的归属。"
+        },
+        {
+          "title": "Burda et al. · Large-Scale Study of Curiosity-Driven Learning（2019）",
+          "url": "https://arxiv.org/abs/1808.04355",
+          "note": "结合随机电视反例阅读。分别问行为是否探索得更多、内在分数是否可靠，以及外部任务是否获益。"
+        },
+        {
+          "title": "Oudeyer, Kaplan & Hafner · Intrinsic Motivation Systems for Autonomous Mental Development（2007）",
+          "url": "https://www.pyoudeyer.com/ims.pdf",
+          "note": "阅读学习进展如何组织发展顺序。将机器人中的计算模型与关于儿童发展的一般解释分开。"
+        },
+        {
+          "title": "Friston et al. · Active Inference and Epistemic Value（2015）",
+          "url": "https://doi.org/10.1080/17588928.2015.1020053",
+          "note": "先辨认偏好、隐因和信息增益，再读预期自由能分解。比较 RL 时应对齐目标及近似，而非只比较术语。"
+        }
+      ],
+      "questions": [
+        "在抓杯任务中，移动相机何时只是增加数据，何时真正改变了最优动作？如何把感知成本计入判断？",
+        "同一台阶对两个行动者有何不同可供性？再比较随手查一次网页与长期依赖 Otto 式笔记本：因果帮助和组成关系应如何区分？",
+        "请构造一个预测误差很大而信息增益很小的例子，再构造一个信息增益很大但任务价值很小的例子。",
+        "学习进展偏好会遗漏哪些重要技能？主动推断中的偏好又由谁给定，它是否消除了目标设计问题？"
+      ],
+      "takeaway": "知觉不是只接收输入。身体、动作与外部支撑共同改变信息如何取得和使用；但环境影响认知、参与认知和构成认知，是不同强度的主张。"
+    },
+    {
+      "slug": "economics",
+      "title": "有限理性与信息成本：学习、思考和行动如何共同取舍",
+      "question": "当观察、记忆和计算本身都消耗资源时，什么才算一个好的决策过程？",
+      "introduction": "经济学不只讨论金钱。它也研究稀缺条件下的选择。对持续智能体而言，稀缺的不只是外部资源，还有时间、注意和可执行的计算。本章讨论这些限制如何改变问题本身，并区分描述人类行为的理论与为人工智能选择目标的规范判断。",
+      "mainline": [
+        {
+          "label": "目标与评价标准",
+          "path": "/zh/continual-rl/foundations/objectives/",
+          "why": "明确优化的是何种结果，而非把观测奖励自动当作效用。"
+        },
+        {
+          "label": "状态构建",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "有限信息处理要求选择保留什么，而不是复制整个世界。"
+        },
+        {
+          "label": "模型与规划",
+          "path": "/zh/continual-rl/construction/models/",
+          "why": "一次额外计算的收益，应与其时间和资源成本比较。"
+        },
+        {
+          "label": "持续探索",
+          "path": "/zh/continual-rl/algorithms/exploration/",
+          "why": "信息的价值来自未来可采取的行动，也受不可逆后果限制。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "outcome-utility",
+          "title": "1 · 奖励记录，不等于完整的价值判断",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "设想一个人选择工作：甲收入高，但通勤长；乙收入低，却能照顾家人。只记录工资，并不能推断他在优化工资。外部结果是发生了什么；效用描述建模者如何比较这些结果；RL 奖励则是问题设定给学习系统的评价信号。三者可以被明确联系起来，却不会天然相同。"
+            },
+            {
+              "kind": "p",
+              "text": "Simon 在讨论理性选择时，分别列出可用选项、主体实际考虑的选项、可能结果及其评价。这个区分很重要：没选某个选项，可能是不喜欢，也可能是不知道它存在、算不清后果或来不及比较。仅凭选择数据反推奖励，会把知识限制和计算限制误写成偏好。[Simon，1955](https://doi.org/10.2307/1884852)"
+            }
+          ]
+        },
+        {
+          "id": "bounded-rationality",
+          "title": "2 · 好决策不能假定一个无限能力的决策者",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "租房者不可能检查全城所有住房。可以先确定可接受的租金、距离和面积，再按顺序搜索，遇到达到要求的房子就停止。这种满意化选择不等于随意选择。它把“怎样找到足够好的选项”放进决策问题，而不是只在已经列出的选项中取最大值。Simon 还讨论了可接受标准随经验调整的可能性。[原文的简化与动态部分](https://cooperative-individualism.org/simon-herbert_a-behavioral-model-of-rational-choice-1955-feb.pdf)"
+            },
+            {
+              "kind": "p",
+              "text": "资源理性进一步问：在给定计算能力与环境结构下，哪种程序值得采用？Lieder 与 Griffiths 将这种分析用于连接问题目标与认知过程。这不是给任何错误寻找“其实最优”的理由。候选程序、成本和环境分布必须被独立约束；否则事后改变成本，就能解释几乎任何行为。[Lieder 与 Griffiths，2020](https://is.mpg.de/en/publications/liedergriffiths2019)"
+            }
+          ]
+        },
+        {
+          "id": "reference-dependence",
+          "title": "3 · 描述偏好，不等于规定智能体应有的目标",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "面对风险，人们对“获得一笔钱”和“避免损失同样的钱”可能表现不同。Kahneman 与 Tversky 用成对选择问题说明，确定性、参考点及问题的呈现方式会影响选择。他们提出前景理论，按相对参考点的得失评价结果，并用决策权重描述概率对选择的作用。[Kahneman 与 Tversky，1979](https://www.jstor.org/stable/1914185)"
+            },
+            {
+              "kind": "p",
+              "text": "这首先是关于行为如何发生的描述理论，不是要求人工智能复制这些偏差。决策权重也不必等于主体明确相信的概率。对 CRL 的启发是：如果参考点随经历改变，固定外部支付未必对应固定行为评价。但要把这种变化写入人工系统的目标，仍需单独论证其目的与后果，不能仅以“人也如此”作为理由。"
+            }
+          ]
+        },
+        {
+          "id": "rational-inattention",
+          "title": "4 · 注意力可以成为选择变量",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "驾驶时，不是所有可见细节都值得同等精度地处理。接近路口时，应优先分辨行人，而不是店招。Sims 的理性忽视框架把有限 Shannon 信息处理能力放进决策问题：行动只能利用经有限通道处理后的信息。忽视不一定意味着没有信息可用，也可能意味着有限能力被分配到了别处。[Sims，2003](https://doi.org/10.1016/S0304-3932%2803%2900029-1)"
+            },
+            {
+              "kind": "p",
+              "text": "这改变了观察噪声的地位。在一种模型中，噪声由世界给定；在另一种模型中，处理精度由主体在约束下选择。但信息量不是时间、能耗或神经活动的天然替身。必须解释为何所选的信息成本适用于当前任务。映射到 CRL，问题是何种压缩对未来决策足够，而不是仅问重建当前观察有多精确。"
+            }
+          ]
+        },
+        {
+          "id": "metareasoning",
+          "title": "5 · 再想一会儿，本身也是有后果的选择",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "查路线可能避免绕路，也可能让人错过正在进站的车。元推理研究的对象正是这种选择：做哪种计算、投入多少，以及何时停止。额外计算的价值取决于它是否可能改变行动，以及改变行动能带来多少收益。减少预测误差不必然具有同等决策价值。"
+            },
+            {
+              "kind": "p",
+              "text": "Lieder 等提出 Learned Value of Control 模型，讨论如何从经验中学习认知控制的收益与成本，并与视觉注意、Stroop 和 Flanker 任务的行为数据比较。模型将认知操作看成可学习选择，包含耗时的机会成本。它提供了一种解释，不证明大脑显式穷举所有计算，也不意味着元层控制器拥有无限资源。[Lieder 等，2018](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1006043)"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "限制",
+                "需要说明的选择",
+                "对持续智能体的追问"
+              ],
+              "rows": [
+                [
+                  "信息处理有限",
+                  "注意什么、分辨多精细",
+                  "当前压缩会不会丢掉后来有用的区别？"
+                ],
+                [
+                  "计算时间有限",
+                  "模拟什么、何时停止",
+                  "世界是否会在规划期间继续变化？"
+                ],
+                [
+                  "经验与机会有限",
+                  "尝试什么、承担多大风险",
+                  "获得知识之后，是否还有机会利用它？"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "exploration",
+          "title": "6 · 探索的价值，取决于还能怎样生活",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "在两个未知收益的选项间选择时，偏向较不确定的选项，与随不确定性增加而更随机地选择，可能看起来都是“探索”。Gershman 通过两臂任务中不确定性对选择曲线位置和斜率的不同影响，寻找区分二者的证据。结果支持所比较模型中的混合解释，而不是仅凭偏离当前最高估值就认定探索机制。[Gershman，2018](https://gershmanlab.com/pubs/Gershman18.pdf)"
+            },
+            {
+              "kind": "p",
+              "text": "Bandit 把问题简化得很清楚：选择主要改变收益观察和知识，不改变复杂世界中的可达状态。持续交互却可能因为一次尝试失去行动能力、消耗不可补充资源，或打开新的学习机会。因此，信息不是无条件有价值。它的价值取决于未来使用机会，以及为获得它付出的实际后果。"
+            },
+            {
+              "kind": "p",
+              "text": "由此应同时评价行动结果与产生行动的过程。一个需要无限搜索才得到的最优动作，不是有限智能体可执行的答案；一个始终节省计算却错过长期机会的程序，也不能仅凭速度称为理性。问题是如何在具体环境中，逐步学习观察、思考与行动之间的取舍。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Simon（1955）· A Behavioral Model of Rational Choice",
+          "url": "https://doi.org/10.2307/1884852",
+          "note": "读原始问题定义、可感知选项与简化选择程序。它提出有限能力下的行为模型；没有保证任意满意化程序都是最优。"
+        },
+        {
+          "title": "Kahneman 与 Tversky（1979）· Prospect Theory: An Analysis of Decision under Risk",
+          "url": "https://www.jstor.org/stable/1914185",
+          "note": "从成对选择问题理解确定性、得失与参考点。前景理论是描述性方案，不能直接充当人工智能的规范奖励目标。"
+        },
+        {
+          "title": "Sims（2003）· Implications of rational inattention",
+          "url": "https://doi.org/10.1016/S0304-3932%2803%2900029-1",
+          "note": "关注有限通信能力如何改变动态选择。它提供信息约束下的经济模型，不证明 Shannon 信息量就是心理努力或生理能耗。"
+        },
+        {
+          "title": "Lieder 与 Griffiths（2020）· Resource-rational analysis",
+          "url": "https://is.mpg.de/en/publications/liedergriffiths2019",
+          "note": "读问题、计算约束、候选机制与行为预测的分析步骤。这是理论框架；资源成本需要独立约束，不能用于事后合理化一切行为。"
+        },
+        {
+          "title": "Lieder 等（2018）· Rational metareasoning and the plasticity of cognitive control",
+          "url": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1006043",
+          "note": "读控制选择的解释及其与注意、干扰控制任务的比较。支持学习认知资源分配的可检验模型，不证明人脑使用唯一的元控制算法。"
+        },
+        {
+          "title": "Gershman（2018）· Deconstructing the human algorithms for exploration",
+          "url": "https://gershmanlab.com/pubs/Gershman18.pdf",
+          "note": "重点读选择偏移与斜率如何区分有向和随机探索。两个受控 bandit 实验有助于识别机制，但不涵盖不可逆行动的持续世界。"
+        }
+      ],
+      "questions": [
+        "一个人反复选择低收入工作，哪些证据能区分偏好、信息不足和计算受限，而不直接给他拟合一个低收入奖励？",
+        "若“信息成本”可以任意拟合，理性忽视还能够被什么观察否定？应独立测量哪些约束？",
+        "一个预测完全准确，却永远不改变可执行的行动。它在当前决策中有什么价值？将来任务变化后呢？",
+        "同样一次探索，放在可重置实验与不能回到过去的生命期里，其代价与比较标准有什么不同？"
+      ],
+      "takeaway": "有限理性要求把信息、计算和时间放回决策问题，但任何“最优”解释都必须公开它所依赖的目标、资源约束与可选机制。"
+    },
+    {
+      "slug": "consciousness",
+      "title": "意识研究：现象、竞争理论与实验判据",
+      "question": "一个刺激被大脑处理、被用于行动、被报告为看见，与主体真正有所体验，是否是同一件事？",
+      "introduction": "意识研究首先面对测量问题：研究者可以记录行为与神经活动，却不能直接读取另一个主体的体验。不同理论不仅提出不同机制，也可能选择不同的解释对象。本章先区分现象，再比较全局工作空间、递归加工、整合信息与高阶表征等路线，最后讨论实验能裁决到哪一步。",
+      "mainline": [
+        {
+          "label": "记忆系统",
+          "path": "/zh/continual-rl/supplements/memory/",
+          "why": "可选关联：工作记忆、提取与报告会影响意识实验，但不等同于意识本身。"
+        },
+        {
+          "label": "智能体状态",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "可选关联：内部信息可用性的工程问题，与主观体验的归属问题需要分开。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "consciousness-explananda",
+          "title": "1. 先问清楚：研究哪一种“意识”？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "闭眼做梦的人可能有丰富体验，却没有正常回应外界；清醒的人也可能漏看眼前的刺激。因此，觉醒程度不能单独代表所有意识现象。一个人能否作出语言报告，还受记忆、语言与运动能力影响。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "区分",
+                "所问的问题",
+                "不能直接替代它的指标"
+              ],
+              "rows": [
+                [
+                  "觉醒水平",
+                  "主体处在怎样的整体生理状态？",
+                  "睁眼或动作次数"
+                ],
+                [
+                  "意识内容",
+                  "此刻体验到的是面孔、声音还是疼痛？",
+                  "刺激是否客观存在"
+                ],
+                [
+                  "访问意识",
+                  "信息是否可用于推理、灵活行动及报告？",
+                  "某个局部神经元是否编码了它"
+                ],
+                [
+                  "现象意识／主观体验",
+                  "对主体而言，处在这个状态是什么样？",
+                  "分类准确率或一句自我描述"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "[Block（1995）](https://doi.org/10.1017/S0140525X00038188)强调访问与体验的概念区别。概念上可以区分，不代表已经实验证明它们可以任意分离；这正是理论争议之一。访问也不要求每次实际说出口，而是涉及信息能否被适当使用。"
+            },
+            {
+              "kind": "p",
+              "text": "“未报告看见”至少有几种解释：没有体验、体验未进入可用记忆、无法选择回答，或采用了严格的报告标准。实验需要排除相关替代解释，而不能把一个回答直接当成不可错的内部读数。"
+            }
+          ]
+        },
+        {
+          "id": "consciousness-workspace",
+          "title": "2. 全局工作空间：局部信息如何成为全局可用的信息？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Baars 的全局工作空间理论（GWT）](https://ccrg.cs.memphis.edu/assets/papers/1988/Baars-A%20Cognitive%20Theory%20of%20Consciousness.pdf)从认知功能出发：许多专门过程并行工作，少量内容竞争进入容量有限的工作空间，再广播给多个接收过程。听到自己的名字后，记忆、注意和行动准备可以围绕同一内容协调。"
+            },
+            {
+              "kind": "p",
+              "text": "“广播”不是所有脑区获得完全相同的副本，也不需要一个坐在脑中的观察者。它表示内容能够影响原本相对独立的处理过程。这一路线解释的是选择、共享与灵活使用；竞争也解释了为什么大量局部加工可以发生，却只有少量内容进入当前访问。"
+            },
+            {
+              "kind": "p",
+              "text": "[Dehaene 与 Changeux（2011）](https://www.unicog.org/publications/DehaeneChangeux_ReviewConsciousness_Neuron2011.pdf)的全局神经元工作空间（GNW）增加了神经机制承诺：长程相互连接、递归放大，以及非线性的“点燃”。较弱的刺激活动可能衰减，达到条件的活动则扩展并维持，使信息跨系统可用。"
+            },
+            {
+              "kind": "p",
+              "text": "掩蔽实验可以保持目标刺激接近相同，却改变其可见性，用来比较局部反应与较晚的广泛活动。但较晚活动也可能包含做决定、维持记忆和准备报告。只有控制这些过程后，才能判断它是否属于意识访问的机制。一个软件消息总线只实现了功能类比，并没有因此验证 GNW 的神经主张。"
+            }
+          ]
+        },
+        {
+          "id": "consciousness-recurrence-report",
+          "title": "3. 递归加工：感觉区域的反馈是否已经足够？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Lamme（2006）](https://www.sciencedirect.com/science/article/pii/S1364661306002373)区分最初的前馈传播与后续递归交互。前馈加工可以支持快速分类；感觉层级之间的反馈则能将局部特征与上下文整合。递归加工理论提出，合适的感觉递归可能已足以支持视觉体验，而全局访问与报告还需要其他过程。"
+            },
+            {
+              "kind": "p",
+              "text": "这与 GNW 的分歧不在于“大脑有没有反馈”，双方都使用反馈；分歧在于哪一种范围、时序与功能的反馈构成意识所需条件。难点是：若体验无法被报告，怎样独立确认它存在，而不是先用理论定义体验，再用同一神经信号证明理论？"
+            },
+            {
+              "kind": "p",
+              "text": "[Frässle 等（2014）](https://pmc.ncbi.nlm.nih.gov/articles/PMC6827584/)让双眼观看冲突图像，并用视动性眼震或瞳孔变化估计主导知觉。被动观看时，部分与知觉转换有关的额叶差异活动明显减弱。这说明主动报告带来的活动不能全部归给知觉本身。"
+            },
+            {
+              "kind": "p",
+              "text": "无报告范式仍有推断环节：代理指标需要校准，取消报告也可能改变注意与任务投入。该结果不是“额叶永远与意识无关”的证明。比较后部与前部皮层时，必须说明考察的是内容编码、访问、反思，还是产生报告的准备过程。"
+            }
+          ]
+        },
+        {
+          "id": "consciousness-integrated-information",
+          "title": "4. 整合信息：解释行为，还是解释系统的内在因果结构？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[整合信息理论 IIT 4.0（Albantakis 等，2023）](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011465)从体验的性质出发：体验具有特定内容、统一性、边界与内部关系。理论据此提出物理基底应满足的因果条件，再把体验与不可约的因果结构联系起来。这个从现象到物理条件的桥接本身是一项理论主张。"
+            },
+            {
+              "kind": "p",
+              "text": "其“整合”不是数据压缩率，也不是两块脑区信号相关。问题是：将系统作适当分割后，各部分独立的因果作用是否足以替代整体？它考察系统对自身可产生的差异，而非仅考察观察者从输出中读出了多少信息。"
+            },
+            {
+              "kind": "p",
+              "text": "由此，输入输出相同的系统仍可能因内部因果组织不同而被 IIT 区别对待。这使它与主要强调功能可用性的路线产生实质分歧。争议也随之出现：怎样选择系统边界与时间尺度？怎样把庞大系统的理论量对应到实际神经测量？近似指标的成功能支持多少原理论？"
+            },
+            {
+              "kind": "p",
+              "text": "因此，“连接很多”“复杂度高”或“信息熵大”都不是 IIT 的充分条件。理论内的同一性主张、可计算的数学对象与实验代理指标，应分成三层讨论，不能把其中一层的结果直接当成另外两层的结论。"
+            }
+          ]
+        },
+        {
+          "id": "consciousness-higher-order",
+          "title": "5. 高阶理论与注意图式：知道什么，与知道自己处于什么状态",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Lau 与 Rosenthal（2011）](https://www.sciencedirect.com/science/article/pii/S1364661311001057)讨论高阶理论：主体拥有关于自身一阶心理状态的适当表征，才构成相应的有意识状态。例如，辨别某物为红色，与将自己表征为正在看见红色，不是同一个加工层次。高阶表征不必是一句内在语言，也不必自身再次被有意识地表征，因而不必造成无限倒退。"
+            },
+            {
+              "kind": "p",
+              "text": "这类理论关注辨别表现相近而主观可见性不同的情况。竞争解释包括报告标准和决策噪声变化；自信程度也不是体验的简单刻度。不同高阶理论对错误表征、无对象体验以及具体脑区的承诺并不相同。"
+            },
+            {
+              "kind": "p",
+              "text": "[Webb 与 Graziano（2015）](https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2015.00500/full)的注意图式理论提出：大脑用简化的内部模型跟踪和调节注意。这个模型省略物理细节，因此可能使系统将自身描述为具有一种特殊的“觉知”。注意选择与对注意的模型是两个不同对象。"
+            },
+            {
+              "kind": "p",
+              "text": "注意图式重在解释自我归属和注意控制，高阶理论重在一阶状态如何成为有意识状态；两者不能仅因都涉及“自我模型”就合并。批评者还会追问：解释了为什么人坚持自己有体验，是否已经解释体验本身？这既是理论问题，也是下一章的哲学问题。"
+            }
+          ]
+        },
+        {
+          "id": "consciousness-adversarial-evidence",
+          "title": "6. 对抗性合作：让相同数据约束不同理论",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[COGITATE 联盟的 Nature 研究（2025）](https://www.nature.com/articles/s41586-025-08888-1)由理论支持者与中立研究者预先约定预测。共 256 名参与者观看不同时长的清晰可见刺激，研究综合功能磁共振、脑磁图和颅内脑电，考察内容位置、持续时间及区域间同步，并操纵任务相关性。它不是把所有刺激都设为无报告，也不是直接比较有意识与无意识状态。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "受到检验的预测",
+                "关键观察与边界"
+              ],
+              "rows": [
+                [
+                  "IIT：后部网络对持续内容的支持",
+                  "部分持续活动与内容预测吻合，但没有发现所预期的后部持续同步。"
+                ],
+                [
+                  "GNW：意识更新的点燃与前额叶内容",
+                  "部分内容和跨区交互预测获支持，但刺激消失时普遍缺少预期点燃，某些内容维度的前额叶表征也有限。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "双方都有部分符合与关键受挑战的预测。这不能改写为某一理论已经获胜，也不能说双方整套理论已被一次实验彻底否定。神经覆盖、操作定义、可见性条件及理论到预测的转换，都决定了结论范围。清晰可见刺激的内容维持实验，尤其不能独自回答意识如何从无到有。"
+            },
+            {
+              "kind": "p",
+              "text": "方法上的进步在于事先明确什么结果算挑战。若事后调整解释，需要说明修改了哪条承诺，以及新承诺还会被什么观察否定。否则任何结果都能被吸收，理论之间便失去了可比较性。"
+            }
+          ]
+        },
+        {
+          "id": "consciousness-reading-evidence",
+          "title": "7. 如何阅读下一项意识研究",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "先写出被解释的现象。再区分意识的前提、与内容共同出现的机制，以及报告带来的后果。神经解码说明某处含有可读信息；损伤或刺激可以约束因果解释，但也可能改变注意、觉醒和行为通道。两种证据不能互相替代。"
+            },
+            {
+              "kind": "p",
+              "text": "一个有用的比较是：同一视觉任务中，分别操纵刺激可见性、注意分配与报告要求。若候选信号只随按键变化，它更可能涉及报告；若随可见性变化，仍需进一步排除相关混淆。实验不是寻找一颗“意识神经元”，而是检验有边界的机制主张。"
+            },
+            {
+              "kind": "p",
+              "text": "人工系统也需要这样的克制。全局共享、递归网络、自我监测或整合指标可以作为理论指导下的研究对象，但这些架构特征都不能单独裁定有无主观体验。应分别报告实现了什么功能、满足了哪种理论条件，以及意识归属仍依赖哪些未决前提。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Block — On a confusion about a function of consciousness（1995）",
+          "url": "https://doi.org/10.1017/S0140525X00038188",
+          "note": "读访问意识与现象意识的定义及盲视论证。概念区分不等于已经证明两者在任何系统中都能独立变化。"
+        },
+        {
+          "title": "Baars — A Cognitive Theory of Consciousness（1988）",
+          "url": "https://ccrg.cs.memphis.edu/assets/papers/1988/Baars-A%20Cognitive%20Theory%20of%20Consciousness.pdf",
+          "note": "读工作空间、竞争、情境与广播的功能关系。它不是在脑中增设一个观察所有信息的小人。"
+        },
+        {
+          "title": "Dehaene & Changeux — Experimental and Theoretical Approaches to Conscious Processing（2011）",
+          "url": "https://www.unicog.org/publications/DehaeneChangeux_ReviewConsciousness_Neuron2011.pdf",
+          "note": "先读有意识／无意识加工对比，再读 GNW 的点燃机制。留意神经主张比一般信息共享更具体。"
+        },
+        {
+          "title": "Lamme — Towards a true neural stance on consciousness（2006）",
+          "url": "https://www.sciencedirect.com/science/article/pii/S1364661306002373",
+          "note": "读前馈与递归加工的区别，以及作者为何反对只以报告为标准。充分性判断仍需要独立证据。"
+        },
+        {
+          "title": "Frässle et al. — Binocular Rivalry: Frontal Activity Relates to Introspection and Action But Not to Perception（2014）",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6827584/",
+          "note": "读眼震／瞳孔指标的校准与主动报告对照。标题不应被扩展为所有额叶活动都与体验无关。"
+        },
+        {
+          "title": "Albantakis et al. — Integrated information theory 4.0（2023）",
+          "url": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011465",
+          "note": "先读公理、物理假设与解释同一性，再读例子。本文提出理论形式化，不包含新的生物实验数据。"
+        },
+        {
+          "title": "Lau & Rosenthal — Empirical support for higher-order theories of conscious awareness（2011）",
+          "url": "https://www.sciencedirect.com/science/article/pii/S1364661311001057",
+          "note": "读表现匹配与主观觉知差异的讨论。这是理论支持者的论证，应连同文中竞争解释阅读。"
+        },
+        {
+          "title": "Webb & Graziano — The attention schema theory（2015）",
+          "url": "https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2015.00500/full",
+          "note": "读注意与注意模型的区别。解释自我归属如何形成，与是否解释了主观体验，仍存在分歧。"
+        },
+        {
+          "title": "COGITATE Consortium — Adversarial testing of GNWT and IIT（2025）",
+          "url": "https://www.nature.com/articles/s41586-025-08888-1",
+          "note": "按图 1 的预测、实验条件和结果讨论阅读。区分预先约定的经验预测与整个理论的哲学基础。"
+        }
+      ],
+      "questions": [
+        "“没有报告看见”可能由哪些不同环节造成？怎样设计对照而不预先采纳某一种意识理论？",
+        "GWT、GNW 与递归加工理论都涉及信息交互，它们真正不同的机制承诺是什么？",
+        "一种复杂度指标能区分清醒与麻醉，是否足以证明 IIT 的体验—因果结构同一性？为什么？",
+        "若某系统能准确描述自己的注意状态，哪些问题已经得到回答，哪些关于主观体验的问题仍然开放？"
+      ],
+      "takeaway": "意识理论需要同时说明解释对象、机制承诺与可反驳的预测。功能、神经信号和主观体验之间存在联系，但不能省略论证就把它们当成同一个层次。"
+    },
+    {
+      "slug": "mind-philosophy",
+      "title": "心灵哲学：实现、意义与主观经验",
+      "question": "什么使一个物理过程成为思想？正确处理符号是否就是理解？完整解释行为后，还有什么需要解释？",
+      "introduction": "心灵哲学不只是为智能系统寻找一个更宏大的名称。它检验我们使用“理解”“表征”“体验”和“主体”等词时作出了什么承诺。本章沿着实现、意义与经验三条线索展开。思想实验用于暴露前提及概念关系，不是对大脑或人工系统已经完成的实验发现。",
+      "mainline": [
+        {
+          "label": "意识研究",
+          "path": "/zh/continual-rl/supplements/consciousness/",
+          "why": "可选关联：比较哲学论证与意识科学的经验检验分别能够回答什么。"
+        },
+        {
+          "label": "情境与结构",
+          "path": "/zh/continual-rl/supplements/context/",
+          "why": "可选关联：表示怎样参与实际认知，与表示是否具有意义，是相连但不同的问题。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "mind-philosophy-problem",
+          "title": "1. 身心问题不是一个单独的问题",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "针刺后，人会缩手、形成危险判断，并感到疼痛。这三个描述并不互相替代。机制问题问神经过程怎样导致反应；构成问题问疼痛与这些过程是什么关系；认识问题问我们凭什么知道别人感到疼痛。发现稳定相关，还没有自动回答后两个问题。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "立场或问题",
+                "核心承诺",
+                "尚需解释的困难"
+              ],
+              "rows": [
+                [
+                  "物理主义",
+                  "心灵事实最终不独立于完整的物理事实",
+                  "如何理解主观经验与心理因果作用"
+                ],
+                [
+                  "实体二元论",
+                  "心灵与身体属于不同种类的实体",
+                  "不同实体如何相互作用"
+                ],
+                [
+                  "属性二元论",
+                  "即使只有物理实体，经验也可能具有不可还原的属性",
+                  "这些属性如何与物理因果解释相容"
+                ],
+                [
+                  "功能分析",
+                  "通过状态在系统中的因果角色刻画它",
+                  "角色描述是否足以解释全部心理性质"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "这不是一张互斥阵营表。功能主义首先是一种刻画心理状态的方式，可以与某些物理主义观点结合。反对将疼痛等同于某一种神经组织，也不等于主张疼痛脱离物理世界。[Putnam 的经典论证](https://www.andrew.cmu.edu/user/kk3n/80-300/armstrong1970.pdf)正从这一区别切入。"
+            },
+            {
+              "kind": "p",
+              "text": "阅读时应把“目前解释不了”“原则上无法解释”和“不是同一种东西”分开。第一句报告知识状态，第二句提出解释范围的限制，第三句是本体论主张。它们之间需要论证，不能逐句自然滑过去。"
+            }
+          ]
+        },
+        {
+          "id": "mind-philosophy-functionalism",
+          "title": "2. 功能主义：同一种心灵状态能否有不同实现？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Putnam（1967）](https://www.andrew.cmu.edu/user/kk3n/80-300/armstrong1970.pdf)提出用功能组织而非特定物质成分刻画心理状态。疼痛可以由损伤引发，与回避、信念和动机相联系；这些关系不必只由人类这一种神经组织实现。这就是多重实现论证的出发点。"
+            },
+            {
+              "kind": "p",
+              "text": "它不是“只要输出相同就有相同心灵”。内部状态之间的转换、对新输入的反应，以及没有实际发生但可能发生的因果关系，同样重要。一张记录已有问答的表与一个能够在新情境中调整判断的系统，未必具有相同功能组织。"
+            },
+            {
+              "kind": "p",
+              "text": "设想用不同材料逐步替换一个系统的部件，同时保持相关因果组织。功能主义倾向认为材料变化本身不足以改变心理类型；反对者会问，体验是否仍可能改变。这个设想揭示了“哪些性质才相关”的争论，却没有证明现实中一定可以保持所有相关功能完成替换。"
+            },
+            {
+              "kind": "p",
+              "text": "计算主义进一步尝试以计算过程解释认知。它与功能主义关系密切，却不是同一个命题。说认知可以被计算描述，还需要说明物理系统如何实现该计算，而不能在观察到结果后任意给每个物理状态贴上符号标签。"
+            }
+          ]
+        },
+        {
+          "id": "mind-philosophy-grounding",
+          "title": "3. 意向性与语义：内部状态为什么是“关于某物”的？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "哲学中的意向性（intentionality）指思想或表征的指向性，不只是“打算做某事”。相信门已锁、希望下雨、误认一只猫，都有内容；其中的对象甚至可能不存在。因而，状态与某物经常共同出现，还不足以说明它以何种方式表征那件事。"
+            },
+            {
+              "kind": "p",
+              "text": "[Harnad（1990）](https://eprints.soton.ac.uk/250382/)提出符号接地问题：若一个陌生词只由其他陌生词解释，为什么整个符号系统会因此获得意义？他提出用非符号的感觉表征与类别辨别能力支撑基本符号，再组合出更复杂的描述。这是一种候选路线，不是已完成的普遍语义理论。"
+            },
+            {
+              "kind": "p",
+              "text": "可以用“猫”作思想实验：系统只会复述字典，还是能在变化视角下识别猫、发现先前判断错误，并据此修正行动？后一种能力增加了与对象的实际联系。但“有传感器”也不能自动解决误表征问题：为什么一次异常输入算看错猫，而不算正确识别另一种类别？"
+            },
+            {
+              "kind": "p",
+              "text": "这里还存在不同解释方向：意义可以依赖系统内部推理角色、与世界的因果关系、学习历史或社会使用规范。它们关注的约束不完全相同。语义如何成立，与是否伴随主观体验，也应分开；不能把解决其中一个问题称为解决了全部心灵问题。"
+            }
+          ]
+        },
+        {
+          "id": "mind-philosophy-chinese-room",
+          "title": "4. 中文房间：最强的论证与最强的回应",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Searle（1980）](https://home.csulb.edu/~cwallis/382/readings/482/searle.minds.brains.programs.bbs.1980.pdf)设想一个不懂中文的人依照形式规则处理字符，产生外部看来正确的回答。他据此主张，仅仅执行程序不足以构成理解：规则规定的是符号形式，不能只凭执行规则就得到语义。论证针对的是充分性，不是“机器永远不能有心灵”。"
+            },
+            {
+              "kind": "p",
+              "text": "系统回应指出：人只是执行部件，理解可能属于规则、记忆与处理过程组成的整体。单个神经元不懂语言，也不说明整个人不懂。Searle 回应，可以让人记住整个规则系统；批评者则认为，内化规则依旧没有证明整体只能拥有这个人的显性理解。"
+            },
+            {
+              "kind": "p",
+              "text": "原刊的评论还提出机器人回应：把系统放进感知与行动的循环，让符号与世界产生实际联系。Searle 认为操作者仍只接触形式；反方认为这再次把部件的视角当成系统能力的全部。双方真正争论的是理解应归属于哪个层次，以及什么因果关系足以产生意义。"
+            },
+            {
+              "kind": "p",
+              "text": "因此，不能用一句“只是统计”支持 Searle，也不能用“整体涌现”结束反驳。两边都需要说明理解的判据，解释为何所选层次合适，并承担反事实情境的后果。这个思想实验迫使我们明确标准，但它本身不是关于某个现有模型的经验测评。"
+            }
+          ]
+        },
+        {
+          "id": "mind-philosophy-perspective-knowledge",
+          "title": "5. 蝙蝠与 Mary：知道全部事实，是否等于知道体验？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Nagel（1974）](https://rintintin.colorado.edu/~vancecd/phil201/Nagel.pdf)问“成为一只蝙蝠是什么样”。重点不是人能否模仿飞行，而是回声定位对于蝙蝠自身呈现为什么样。知道其神经机制与行为，不明显等于取得其第一人称视角。这个认识困难并不直接证明非物理实体存在，也不等于科学不能研究蝙蝠的知觉。"
+            },
+            {
+              "kind": "p",
+              "text": "[Jackson（1982）](https://www.sfu.ca/~jillmc/JacksonfromJStore.pdf)设想 Mary 在黑白环境中掌握关于颜色视觉的全部物理信息。她首次看到红色时是否学到新东西？知识论证的关键步骤是：如果学到了此前未知的事实，那么全部物理信息似乎没有穷尽一切事实。“全部”是理想化前提，不是普通专家的知识水平。"
+            },
+            {
+              "kind": "p",
+              "text": "[Lewis（1988）](https://www.repository.cam.ac.uk/items/17b3b8cc-6d55-4b81-a238-8e396538b1d1)给出能力回应：Mary 获得的可能是识别、想象和记起某种体验的能力，而非新的非物理事实。论证因此不能只依赖“她有变化”这个直觉；需要判断变化属于知识内容、能力，还是获得同一事实的新呈现方式。"
+            },
+            {
+              "kind": "p",
+              "text": "能力回应也有负担：它需要解释为什么主体似乎能够作出新的真判断，而不只是更熟练地行动。双方讨论的是知识与事实之间的关系，不能用真实实验中某人学会颜色分类，直接宣布哪一方获胜。"
+            }
+          ]
+        },
+        {
+          "id": "mind-philosophy-explanatory-gap",
+          "title": "6. 难问题：解释完功能，是否仍有剩余？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Chalmers（1995）](https://consc.net/papers/facing.html)区分辨别、注意、报告等功能问题，与为什么这些过程伴随体验的“难问题”。“容易”并不表示技术上简单，而是说原则上可以通过机制如何完成某种功能来组织解释。难问题追问这种解释是否已经到达主观经验。"
+            },
+            {
+              "kind": "p",
+              "text": "相关的哲学僵尸设想要求一个系统在物理或功能描述上与人相同，却没有体验。这里的争论包括：我们是否真正一致地设想了这种情形，以及可设想性是否足以推出形而上可能性。描述一个设想，不等于证明这样的系统存在或可以制造。"
+            },
+            {
+              "kind": "p",
+              "text": "[Dennett（1996）](https://dl.tufts.edu/concern/pdfs/6q182z18f)反对先把体验从一切可解释功能中剥离，再宣布剩余部分不可解释。他用生命的解释作类比：当具体过程得到解释后，要求额外的“生命本身”可能是概念误导。他认为对记忆、感受判断与自我描述的细致解释可能改变我们对问题的理解。"
+            },
+            {
+              "kind": "p",
+              "text": "Chalmers 的回应方向是：体验并非为解释功能而假设的额外东西，而是本来就需要解释的现象。双方并不是一方承认人疼痛、另一方否认人疼痛；他们对什么算充分解释有不同判断。尚未建立机制解释，不能证明物理主义为假；已有丰富机制解释，也不能未经论证就宣布争议消失。"
+            }
+          ]
+        },
+        {
+          "id": "mind-philosophy-embodiment",
+          "title": "7. 具身与生成认知：心灵的边界在哪里？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Varela、Thompson 与 Rosch 的《具身心智》](https://mitpress.mit.edu/9780262529365/the-embodied-mind/)提出生成认知（enaction）路线：认知不能只被看作对预先给定世界的内部符号运算；身体能力、行动历史与环境交互参与塑造什么会成为有意义的对象。这不是把身体简单追加为一个输入设备。"
+            },
+            {
+              "kind": "p",
+              "text": "例如，“可跨过的沟”取决于沟的宽度，也取决于身体尺度、技能与行动条件。一个纯内部描述可以把这些因素编码进去；生成认知的更强主张则追问，实际耦合是否构成认知过程的一部分，而不只是它的外部原因。两种说法不能混用。"
+            },
+            {
+              "kind": "p",
+              "text": "具身取向之间也有分歧：有些保留表征与计算解释，有些反对把它们视为普遍基础。有身体不保证理解，没有人形身体也不因此被先验排除。需要说明具体能力依赖哪种耦合，以及拆开该耦合后什么解释会失败。"
+            },
+            {
+              "kind": "p",
+              "text": "读完这些争论，不必立即选定一种总体立场。更重要的是形成论证习惯：列出前提、区分必要与充分条件、认真重述最强反方，再判断需要概念澄清、机制模型还是经验干预。哲学的作用不是替实验宣布答案，而是使问题、证据和结论之间的关系更清楚。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Putnam — The Nature of Mental States（1967，原题 Psychological Predicates）",
+          "url": "https://www.andrew.cmu.edu/user/kk3n/80-300/armstrong1970.pdf",
+          "note": "从合订扫描件中的 Putnam 标题开始读。重点是疼痛的功能组织与多重实现，不是把任意输入输出相同都算同一心灵。"
+        },
+        {
+          "title": "Harnad — The Symbol Grounding Problem（1990）",
+          "url": "https://eprints.soton.ac.uk/250382/",
+          "note": "读字典循环、感觉类别与符号组合的关系。页面提供原文；接地方案仍需面对误表征与抽象意义问题。"
+        },
+        {
+          "title": "Searle — Minds, brains, and programs，含开放评论与回应（1980）",
+          "url": "https://home.csulb.edu/~cwallis/382/readings/482/searle.minds.brains.programs.bbs.1980.pdf",
+          "note": "先读系统回应与机器人回应，再读反方评论及作者答复。不要把任一方的直觉改写成已完成的经验发现。"
+        },
+        {
+          "title": "Nagel — What Is It Like to Be a Bat?（1974）",
+          "url": "https://rintintin.colorado.edu/~vancecd/phil201/Nagel.pdf",
+          "note": "读第一人称视角与客观解释之间的张力。文章不是关于蝙蝠行为能力的实验报告。"
+        },
+        {
+          "title": "Jackson — Epiphenomenal Qualia（1982）",
+          "url": "https://www.sfu.ca/~jillmc/JacksonfromJStore.pdf",
+          "note": "先读知识论证，再区分“有新认识”与“有新的非物理事实”。这是该文所辩护的立场，不代表争论已经结束。"
+        },
+        {
+          "title": "Lewis — What Experience Teaches（1988）",
+          "url": "https://www.repository.cam.ac.uk/items/17b3b8cc-6d55-4b81-a238-8e396538b1d1",
+          "note": "与 Mary 配对阅读能力假说。作者档案提供论文及早期报告录音；获得能力是否穷尽体验知识，仍须论证。"
+        },
+        {
+          "title": "Chalmers — Facing Up to the Problem of Consciousness（1995）",
+          "url": "https://consc.net/papers/facing.html",
+          "note": "读功能问题、难问题和非还原解释的连接。区分作者论证与已经确立的科学定律。"
+        },
+        {
+          "title": "Dennett — Facing Backwards on the Problem of Consciousness（1996）",
+          "url": "https://dl.tufts.edu/concern/pdfs/6q182z18f",
+          "note": "紧接 Chalmers 阅读生命类比与功能分解的反驳。它挑战问题的划分方式，不是简单否认人的感受。"
+        },
+        {
+          "title": "Varela, Thompson & Rosch — The Embodied Mind（1991；修订版 2017）",
+          "url": "https://mitpress.mit.edu/9780262529365/the-embodied-mind/",
+          "note": "书目入口。重点读生成认知与具身行动的讨论，并区分身体影响认知与身体耦合构成认知两种强度不同的主张。"
+        }
+      ],
+      "questions": [
+        "多重实现如果成立，它反对的是特定神经类型同一论，还是全部物理主义？还需要什么前提才能推出后者？",
+        "中文房间的系统回应为何不能只说“整体大于部分”？它必须提出什么可辩护的理解判据？",
+        "Mary 获得新能力、新呈现方式与新事实之间有何区别？你接受知识论证的哪一步，又反对哪一步？",
+        "身体会影响认知，与身体—环境耦合就是认知过程的一部分，分别要求什么证据和论证？"
+      ],
+      "takeaway": "实现、意义与体验是不同的问题。好的心灵哲学既不把行为成功直接等同于理解，也不把想象中的差异直接当成物理事实；它要求每一次跨层推论都给出明确理由。"
+    },
+    {
+      "slug": "prediction",
+      "title": "预测、压缩与行动：统一原理能解释多少？",
+      "question": "我们是在接收世界，还是在推断世界？预测能在多大程度上统一知觉、学习、语言与行动？",
+      "introduction": "预测处理把知觉看成对感觉原因的推断；信息论把预测与压缩相联系；序列模型又展示了预测训练能够形成复杂能力。这些主张相互启发，但并不相同。本章先讨论各自解释的问题，再用学习与行动检验统一解释所需的条件。",
+      "mainline": [
+        {
+          "label": "智能体状态",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "状态必须保存未来决策所需的信息，而不只是当前预测头需要的信息。"
+        },
+        {
+          "label": "预测知识与 GVF",
+          "path": "/zh/continual-rl/construction/predictive-knowledge/",
+          "why": "把预测的信号、延续规则和目标策略逐一说明，才能知道一个预测究竟回答了什么。"
+        },
+        {
+          "label": "模型学习与规划",
+          "path": "/zh/continual-rl/construction/models/",
+          "why": "行动条件下的预测还需要评价目标与规划过程，才能产生行动选择。"
+        },
+        {
+          "label": "元学习",
+          "path": "/zh/continual-rl/algorithms/meta/",
+          "why": "学习可以发生在状态更新中。是否更新网络权重不是唯一判据。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "prediction-errors",
+          "title": "1. 都叫预测误差，却不一定在预测同一件事",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "看到一个杯子，听到一个奖励提示音，以及预测句子的下一个词，都涉及根据已有信息猜测未出现的信息。但它们的监督信号不同。不能因为几个理论都有“误差”一词，就认定它们使用同一个学习目标。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "解释框架",
+                "被预测的量",
+                "误差服务于什么问题"
+              ],
+              "rows": [
+                [
+                  "感觉预测编码",
+                  "较低层感觉活动或输入",
+                  "用层级生成模型解释感觉输入。"
+                ],
+                [
+                  "时间差分学习",
+                  "未来累计信号的条件期望",
+                  "用一步经验和后续预测修正当前预测。信号不必只有外部奖励。"
+                ],
+                [
+                  "自回归序列建模",
+                  "给定前缀后的下一个符号分布",
+                  "为序列分配概率。符号也可以编码观察、动作或奖励。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "[Rao 与 Ballard（1999）](https://doi.org/10.1038/4580)构建了一个层级视觉模型。高层预测低层活动，残差驱动推断。模型解释了部分感受野现象。这支持一种具体的计算解释，不证明全部皮层活动都服从同一个目标。TD 误差中的后继价值也不是视觉模型中的像素残差。"
+            }
+          ]
+        },
+        {
+          "id": "prediction-perception",
+          "title": "2. 知觉为什么需要已有经验？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "夜里看见路边一团模糊轮廓，可能先以为是人，走近才发现是树。感觉信号本身容许多个解释。已有经验帮助选择解释，也可能使判断出现系统性偏差。预测处理将这种关系表述为生成模型与感觉证据之间的相互约束，而不是把知觉看作先接收完数据、再另外作决定。"
+            },
+            {
+              "kind": "p",
+              "text": "[Clark（2013）](https://www.cambridge.org/core/journals/behavioral-and-brain-sciences/article/whatever-nextpredictive-brains-situated-agents-and-the-future-of-cognitivescience/33542C736E17E3D1D44E8D03BE5F4CD9)讨论了层级预测、行动与注意的联系。误差的大小不是唯一因素；系统还要评价不同信息来源的可靠性。精度加权是其中一个重要思想。它要求区分真正可靠的证据与噪声，不是“越惊讶就越应该相信”。这是一套研究框架，不是对所有知觉现象已经成立的唯一解释。"
+            },
+            {
+              "kind": "p",
+              "text": "[Friston（2010）](https://doi.org/10.1038/nrn2787)进一步讨论自由能原理与多种脑理论的联系。这里的变分自由能是概率推断中的量，不应直接等同于日常所说的耗能。统一表述有助于寻找共性，但只有明确生成模型、变量和过程，才会得到可区分的经验预测。相同的抽象原则可能容许不同实现。"
+            },
+            {
+              "kind": "p",
+              "text": "这也产生真实的理论分歧：具身与生态取向更强调有机体在环境中的直接活动与关系，不一定接受丰富内部生成模型是解释的必要起点。两方都可以重视行动；分歧在于用什么概念解释行动中的知觉。可结合[主动知觉与认知边界](/zh/continual-rl/supplements/agency/)比较，而不先宣布一种说法取代另一种。"
+            }
+          ]
+        },
+        {
+          "id": "prediction-compression",
+          "title": "3. 预测下一步，不等于只理解一步",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "“只预测下一个词，所以不能学会长程结构”不是成立的推论。一个事件的下一步结果，可能依赖很久以前的线索。降低下一步预测损失，可能要求系统提取长程结构。问题在于数据与目标是否确实迫使它保存这种结构，而不是结构能否原则上出现在模型中。"
+            },
+            {
+              "kind": "math",
+              "tex": "-\\log p(x_{1:T})=\\sum_{t=1}^{T}-\\log p(x_t\\mid x_{<t})",
+              "explain": "这是概率链式分解。序列的负对数概率分解为各步条件预测损失。它不是关于“模型必然理解世界”的定理。"
+            },
+            {
+              "kind": "p",
+              "text": "在合适的编码方案下，较高的序列概率对应较短的编码长度。[Language Modeling Is Compression](https://proceedings.iclr.cc/paper_files/paper/2024/hash/3cbf627fa24fb6cb576e04e689b9428b-Abstract-Conference.html)讨论并检验了这一联系。有效压缩可以利用抽象规律，不能简单等同于记住训练样本。但压缩观察数据所需的信息，未必等于选择新行动所需的信息。"
+            }
+          ]
+        },
+        {
+          "id": "prediction-state",
+          "title": "4. 预测能够定义状态，但要说清楚预测集合",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "设一个人在迷宫入口看到了左灯。若这个灯决定十分钟后哪个出口安全，只预测眼前走廊可能不需要记住它；预测出口结果则需要。于是“学到了预测”没有说明学到了足够的状态。需要问：哪些未来，在什么行动条件下，被训练目标覆盖？"
+            },
+            {
+              "kind": "p",
+              "text": "[预测状态表示（PSR）](https://proceedings.neurips.cc/paper_files/paper/2001/hash/1e4d36177d71bbb3558e43af9577d70e-Abstract.html)用一组行动条件下未来观测测试的预测来表征状态。核心不是把历史无损保存，而是保存预测其他相关未来所需的信息。其表示结果不自动解决有限数据下该选哪些测试、如何稳定学习的问题。GVF 也把知识写成一组明确的问题，但任意选取的 GVF 集合并不自动满足充分状态条件。"
+            },
+            {
+              "kind": "p",
+              "text": "比较循环网络和 Transformer 时，还应统一“状态”的范围。完整缓存与当前隐藏向量不是同一个对象。[Belief State Transformer（ICLR 2025）](https://proceedings.iclr.cc/paper_files/paper/2025/hash/01b3dea1871f7cea1e0e6be1f2f085bc-Abstract-Conference.html)利用前缀、后缀和双向预测目标，在小规模问题中研究紧凑信念状态。这不是普通因果序列模型自动获得在线充分状态的证据。它提醒我们检验表示保留了哪些未来所需信息，并说明训练时额外利用了什么。"
+            }
+          ]
+        },
+        {
+          "id": "prediction-learning",
+          "title": "5. 参数固定，仍可能在经验中改变策略",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "一个贝叶斯决策器可以用固定的更新规则不断修正后验。其代码没有变化，但知识与选择都变了。同样，网络参数固定不代表整个智能体不再学习。隐藏状态、上下文和外部记忆都可能保存新经验。"
+            },
+            {
+              "kind": "p",
+              "text": "[Algorithm Distillation](https://arxiv.org/abs/2210.14215)用已有 RL 算法的学习历史训练因果序列模型。训练材料包含行为随经验改善的过程，而不只是专家最终轨迹。论文展示了无需测试时修改网络权重的上下文内策略改善。这是“预测训练可以产生学习行为”的具体例子。它不证明任何普通文本预训练模型都会获得同样的能力，也不证明有限上下文能够无限期保留经验。"
+            },
+            {
+              "kind": "p",
+              "text": "因此应同时说明两个时间尺度：训练怎样形成更新规则；部署时经验怎样改变内部状态和行动。对持续学习的检验还要包括容量限制、干扰、分布变化和长时间运行。把其中一个尺度隐藏起来，会使“终身学习”与“离线训练好的适应程序”难以比较。"
+            }
+          ]
+        },
+        {
+          "id": "prediction-action-gap",
+          "title": "6. 从预测到控制，还缺哪些条件？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "考虑一个教学例子。动作 A 在两个世界中都给 1 分。动作 B 在世界一中给 3 分，在世界二中给 −2 分。已有记录全部选择 A。两个世界对这些记录给出完全相同的解释，却要求不同的最优行动。仅靠更准确地拟合已有记录，不能区分它们。这个信息缺口对序列模型、价值网络和学习到的动力学模型都存在。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "从预测走向控制需要的条件",
+                "为什么不能省略"
+              ],
+              "rows": [
+                [
+                  "明确评价目标",
+                  "预测准确不直接说明哪个结果值得追求。"
+                ],
+                [
+                  "行动条件与数据覆盖",
+                  "观察到的相关性不自动给出未尝试行动的后果。还可能存在未观测混杂。"
+                ],
+                [
+                  "选择或搜索过程",
+                  "即使所有后果都能预测，有限计算下怎样选择行动仍是问题。"
+                ],
+                [
+                  "持续可更新的知识",
+                  "新经验必须能进入状态或参数，并在干扰和容量限制下继续有用。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "这个例子不是对预测方法的否定。主动获取 B 的经验、加入可靠的结构假设，或获得适当干预数据，都可能消除歧义。它指出的是应检验的条件。对统一理论的恰当问题不是“预测还是控制”，而是“哪些预测、哪些经验和哪些计算过程，足以在指定资源下支持控制”。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Rao & Ballard · Predictive coding in the visual cortex（1999）",
+          "url": "https://doi.org/10.1038/4580",
+          "note": "先读模型的信息流和感受野结果。区分感觉推断中的残差与 TD 学习中的回报预测误差。"
+        },
+        {
+          "title": "Clark · Whatever next? Predictive brains, situated agents, and the future of cognitive science（2013）",
+          "url": "https://www.cambridge.org/core/journals/behavioral-and-brain-sciences/article/whatever-nextpredictive-brains-situated-agents-and-the-future-of-cognitivescience/33542C736E17E3D1D44E8D03BE5F4CD9",
+          "note": "从知觉、行动与注意之间的联系读起。并读评论与回应，区分共享一个框架和共享某种具体神经实现。"
+        },
+        {
+          "title": "Friston · The free-energy principle: a unified brain theory?（2010）",
+          "url": "https://doi.org/10.1038/nrn2787",
+          "note": "了解统一表述的动机。区分变分量、生理能耗与具体算法，不把理论总括当作每个机制均已被实验确认。"
+        },
+        {
+          "title": "Delétang et al. · Language Modeling Is Compression（ICLR 2024）",
+          "url": "https://proceedings.iclr.cc/paper_files/paper/2024/hash/3cbf627fa24fb6cb576e04e689b9428b-Abstract-Conference.html",
+          "note": "理解概率预测与编码长度的联系。编码效率本身不建立未观察行动的因果知识。"
+        },
+        {
+          "title": "Predictive Representations of State（NIPS 2001）",
+          "url": "https://proceedings.neurips.cc/paper_files/paper/2001/hash/1e4d36177d71bbb3558e43af9577d70e-Abstract.html",
+          "note": "读“测试”与状态表示的定义。留意行动条件和充分性条件，不把表示定理当作通用学习算法。"
+        },
+        {
+          "title": "Hu et al. · Belief State Transformer（ICLR 2025）",
+          "url": "https://proceedings.iclr.cc/paper_files/paper/2025/hash/01b3dea1871f7cea1e0e6be1f2f085bc-Abstract-Conference.html",
+          "note": "读紧凑信念状态的动机与预测目标。将表示要求与特定实验支持的范围分开。"
+        },
+        {
+          "title": "Laskin et al. · In-context Reinforcement Learning with Algorithm Distillation（ICLR 2023）",
+          "url": "https://arxiv.org/abs/2210.14215",
+          "note": "比较学习历史与专家轨迹两种训练材料。重点看测试时什么在变化，以及哪些经验来自预训练。"
+        }
+      ],
+      "questions": [
+        "一个模型能准确预测行为策略的数据。给它换一个策略后，预测可能在哪些地方失效？请构造一个两动作例子。",
+        "在走廊例子中，哪一个额外预测问题会迫使状态保留入口的灯？是否还需要解释这种预测怎样影响行动？",
+        "如果把网络权重固定、但允许外部记忆不断增长，应怎样限定资源，才能与在线更新权重的智能体公平比较？",
+        "分别列出“模型可以表达某种算法”“训练后学到了它”“在新世界有效运行它”各需要什么证据。"
+      ],
+      "takeaway": "预测能够统一多种学习问题，但目标、信息与计算条件不会因此消失。研究统一机制时，应把可表示性、可学习性和实际控制效果分开检验。"
+    },
+    {
+      "slug": "explanation",
+      "title": "从行为拟合到机制解释",
+      "question": "一个模型表现得像人、拟合了神经信号，或受到了生物启发，分别能够说明什么？",
+      "introduction": "跨学科研究最有价值的部分，往往不是找到一个相似名称，而是让原本说不清的问题变成可以比较的解释。本章提供一套阅读实验与构建假说的方法。它既避免把拟合当作证明，也避免因为解释不唯一就放弃建模。",
+      "mainline": [
+        {
+          "label": "实验设计与算法测试",
+          "path": "/zh/continual-rl/experiments/handbook/",
+          "why": "把算法效果、资源差异、实现错误和机制证据分别检验。"
+        },
+        {
+          "label": "智能体状态",
+          "path": "/zh/continual-rl/construction/state/",
+          "why": "行为改善可能来自隐藏状态推断，不一定来自价值参数更新。"
+        },
+        {
+          "label": "持续学习架构",
+          "path": "/zh/continual-rl/construction/architectures/",
+          "why": "模块名称只是设计语言。必须解释模块之间的信息与学习关系。"
+        }
+      ],
+      "sections": [
+        {
+          "id": "explanation-phenomenon",
+          "title": "1. 从一个现象开始，不从一个脑区名称开始",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "一个人在规则变化后很快恢复了正确选择。至少有四种解释：重新学会了动作价值；识别出一个旧情境并取回旧策略；记住最近几次反馈并直接调整选择；原有知识没有变，只是动作执行变得熟练。总回报提高这一观察不能单独区分它们。"
+            },
+            {
+              "kind": "p",
+              "text": "研究的第一步是明确待解释的现象。例如，关心的是首次变化后的速度，还是第二次回到旧规则时的节省？关心平均正确率，还是错误集中在哪些线索？这些细节决定什么证据有区分力。“模型也变好了”通常不是充分的解释。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "候选解释",
+                "可以考察的新条件",
+                "为什么有区分力"
+              ],
+              "rows": [
+                [
+                  "重新估计动作价值",
+                  "只提供情境线索，不给新奖励反馈",
+                  "若立即恢复旧行为，仅依赖当前奖励误差的解释需要补充机制。"
+                ],
+                [
+                  "取回旧情境策略",
+                  "改变外观线索，但保持规则",
+                  "检验恢复依赖表面提示还是可迁移的关系。"
+                ],
+                [
+                  "短时记忆最近反馈",
+                  "延长间隔或加入干扰",
+                  "检验改善是否依赖有限的近期信息。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "这些预测仍依赖具体模型。干扰也可能改变注意或动机。表格是设计比较的起点，不是把一次实验变成唯一判决。"
+            }
+          ]
+        },
+        {
+          "id": "explanation-levels",
+          "title": "2. 解释目的、更新过程与物理实现",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Marr 的《Vision》](https://academic.oup.com/mit-press-scholarship-online/book/13528)区分计算问题、算法与表示、物理实现三个分析层次。用于本教材时，可以分别问：系统要解决什么问题；它保存哪些变量并怎样更新；这些过程由什么组织实现。三者相互约束，但不能互相替代。"
+            },
+            {
+              "kind": "p",
+              "text": "例如，“最大化长期奖励”没有指定用模型规划还是直接学习策略。“具有资格迹的 TD 更新”没有指定一种唯一神经回路。“某脑区活动随误差变化”也没有直接证明其中每个变量都遵循该更新规则。反过来，物理约束可能排除某些看似合理的算法，例如无法获得其假定的全局信号。"
+            },
+            {
+              "kind": "p",
+              "text": "相似术语尤其容易造成层次混淆。把网络子模块叫作“海马”并不会增加机制证据。更明确的说法是：该模块快速保存少量事件，并允许后续检索。之后才能比较它与生物记忆研究在哪些性质上相符。"
+            }
+          ]
+        },
+        {
+          "id": "explanation-fitting",
+          "title": "3. 拟合得好是有价值的结果，但不是解释的终点",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "[Wilson 与 Collins（2019）](https://pmc.ncbi.nlm.nih.gov/articles/PMC6879303/)说明了行为建模中的基本检查。参数恢复问：知道生成参数时，拟合能否找回它？模型恢复问：由不同模型生成的数据，能否被正确区分？若实验本身不能区分两个解释，更复杂的优化器不会自动补上缺失的信息。"
+            },
+            {
+              "kind": "p",
+              "text": "例如，较少选择高价值动作，既可能来自价值没有学准，也可能来自更强的选择随机性。若仅用很短的行为序列，两者可能难以辨识。此时不应把拟合出的“学习率低”直接写成学习能力下降。可以增加有区分力的条件，也可以如实保留不确定性。"
+            },
+            {
+              "kind": "p",
+              "text": "[Centaur（2025）](https://arxiv.org/abs/2410.20268)展示了在大量人类行为数据上训练序列模型后，跨任务预测行为的能力。这使大规模行为预测成为重要比较基准。准确预测可以排除较差的模型，也可帮助寻找新的规律；但它并不唯一确定人脑采用了同一套内部实现。对神经数据的拟合与因果机制检验仍需分别进行。"
+            },
+            {
+              "kind": "p",
+              "text": "“泛化”也要说清楚划分单位。预测同一任务中的新被试、新的故事表述、未见过的任务结构、乃至长期变化后的行为，是不同强度的检验。随机留出一些试次，不能替代后面几种问题。"
+            }
+          ]
+        },
+        {
+          "id": "explanation-causality",
+          "title": "4. 相关、必要与充分，不是同一种证据",
+          "blocks": [
+            {
+              "kind": "table",
+              "headers": [
+                "证据形式",
+                "能够支持的认识",
+                "仍需排除的问题"
+              ],
+              "rows": [
+                [
+                  "记录与解码",
+                  "某信号含有与变量相关的信息",
+                  "信息可能是共同输入的结果，也可能没有被下游使用。"
+                ],
+                [
+                  "损伤或抑制后表现变差",
+                  "在该干预条件下，受影响过程对表现重要",
+                  "感觉、动机、动作能力及网络代偿也可能改变。"
+                ],
+                [
+                  "刺激后出现预测行为",
+                  "特定干预能够推动系统产生该行为",
+                  "自然行为是否通常经过同一路径，仍需其他证据。"
+                ],
+                [
+                  "竞争模型在新条件下给出不同预测",
+                  "实验可能区分具体的机制解释",
+                  "候选集合可能遗漏了同样有效的解释。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "[Jonas 与 Kording（2017）](https://doi.org/10.1371/journal.pcbi.1005268)把若干分析方法用于机制已知的微处理器。部分分析能得到描述性规律，却没有充分恢复其功能组织。这个例子提醒研究者校验分析的解释能力；它并不是“所有神经科学方法无效”的结论。已知机制的人工系统可以成为有用的方法学对照。"
+            }
+          ]
+        },
+        {
+          "id": "explanation-transfer",
+          "title": "5. 对 CRL 有用与解释生物，两项主张分别验证",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "一个受记忆巩固启发的算法，可能在持续学习任务上提高收益。这首先是人工系统的结果。若它依赖生物系统无法获得的梯度，仍可能是优秀算法，却不因此成为真实记忆机制的解释。反过来，一个忠实解释特定动物实验的模型，未必是当前计算资源下最好的工程选择。"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "先写出待解释的现象与条件。不要用宽泛的“更像人”代替它。",
+                "至少提出一个不需要新增机制的竞争解释。例如，隐藏状态推断能否解释所谓快速重学习？",
+                "找出会使两种解释产生不同预测的变化。区分外观变化、转移变化与目标变化。",
+                "分别比较人工任务的表现、资源成本与机制预测。不要把其中一项改善替代另外两项。"
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "这里的目标不是要求每篇 CRL 论文都做动物实验。目标是让跨学科借鉴更精确：提出可实现的计算机制，写清预期作用与失效条件，并知道哪些结论已经得到支持，哪些仍是值得研究的假说。"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Marr · Vision（1982；MIT Press 再版 2010）",
+          "url": "https://academic.oup.com/mit-press-scholarship-online/book/13528",
+          "note": "先读三个分析层次的动机。用它检查“目标、算法、实现”是否被混为一谈，不要求通读全部视觉理论。"
+        },
+        {
+          "title": "Wilson & Collins · Ten simple rules for the computational modeling of behavioral data（2019）",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6879303/",
+          "note": "重点读模拟、参数恢复、模型恢复与模型比较。文章使用 RL 相关例子，适合已有基础的读者。"
+        },
+        {
+          "title": "Wilson 与 Collins 的作者示例",
+          "url": "https://github.com/AnneCollins/TenSimpleRulesModeling",
+          "note": "可选材料。观察参数恢复失败时拟合图是什么样，不必为阅读本章运行整个工程。"
+        },
+        {
+          "title": "Binz et al. · Centaur / A foundation model to predict and capture human cognition（2025）",
+          "url": "https://arxiv.org/abs/2410.20268",
+          "note": "先看训练材料与泛化划分。行为预测能力是重要结果，但不把模型的内部结构自动当作生物机制。"
+        },
+        {
+          "title": "Jonas & Kording · Could a Neuroscientist Understand a Microprocessor?（2017）",
+          "url": "https://doi.org/10.1371/journal.pcbi.1005268",
+          "note": "读已知机制系统为何能帮助检验分析方法。保留论文实验对象与所用方法的范围，不外推为对整个领域的否定。"
+        }
+      ],
+      "questions": [
+        "一个智能体在旧任务回来时恢复得更快。怎样区分保留了旧参数、检索旧记忆和重新推断情境？",
+        "若模型 A 与 B 在现有任务上预测相同，应该继续调参，还是改变实验条件？请给出一个具体条件。",
+        "某神经变量能解码出奖励预测误差。还需要什么证据，才能支持它参与了学习更新？",
+        "你最感兴趣的一个生物启发机制，有什么人工系统中的用途？什么观察会使你放弃它的生物解释，但仍保留工程用途？"
+      ],
+      "takeaway": "好的跨学科解释连接现象、计算过程与证据。拟合、干预和人工算法结果各有价值，但它们回答的不是同一个问题。"
+    }
+  ]
+}

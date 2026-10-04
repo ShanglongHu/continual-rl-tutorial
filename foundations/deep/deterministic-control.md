@@ -160,6 +160,38 @@ $$
 
 第一，双 critic 取最小值抑制部分过估计，也可能引入低估；两个网络相关时，它不是统计置信下界。第二，actor 延迟更新，让 critic 在两次策略变化之间多做学习。第三，目标动作附近的平滑减少对狭窄价值尖峰的依赖。这三处分别作用于目标值、更新时间和目标动作，不是一个统一的学习率技巧。
 
+<a id="experiment-deep-td3"></a>
+
+### 实验：双 critic 与延迟更新，在小型控制中也可能更差
+
+TD3 改变了目标噪声、critic 数量和 actor 时钟。这三个修改是否必然改善一次短训练？
+
+**环境与可用信息。** 有界一维 LQ：位置从 [−1,1] 均匀初始化；动作截断到 [−1,1]，下一位置为 0.92 倍当前位置加 0.3 倍动作，再截断到 [−3,3]。奖励为负的位置平方减 0.05 倍动作平方；40 步真实终止。位置与剩余时间均可观测。
+
+**设置。** 本图实际运行 1200 个预算单位，训练种子为 0–4。预算为真实转移。actor 和 critic 使用 32 个 tanh 隐单元。actor Adam 步长 0.001，critic 为 0.002；前 64 步均匀动作，此后探索噪声标准差 0.15。回放容量 4000，batch 32；TD3 每两次 critic 更新才更新 actor 和目标副本，Polyak 系数 0.02。
+
+**检验的机制。** 目标动作噪声标准差 0.2，截断到 ±0.5，再把动作截断到合法范围；以两目标 critic 的较小值构造目标。actor 通过 Q1 对动作的导数更新，而不同时改写 Q1 参数。
+
+**测量。** 每个记录点冻结确定性 actor，在独立固定评价环境中跑 12 回合；纵轴是未折扣回报。它不包含训练探索成本，也不计额外评价交互。
+
+```bash
+python3 implementations/deep/td3.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/deep-td3/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 600 步时 TD3 均值约 −30.95，DDPG 约 −4.47；1200 步时分别约 −4.27 与 −2.35。TD3 的末点样本标准差约 6.81，当前配置没有显示优势，早期还出现明显退化。
+
+**结论边界。** 两方法的 critic 数量和更新时间不同，不是等计算比较。这是短预算的一维教学任务，不能据此否定 TD3 在原论文任务上的证据，也不能用原论文结论替这张图宣布胜出。
+
+**继续实验。** 固定同一骨干，依次关闭目标噪声、双 critic、延迟 actor；分别报告真实步与优化器调用。先预测哪个诊断量会变化，再运行独立 seed。
+
+[源码](../../implementations/deep/td3.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-td3/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-td3/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-td3/curves.json)
+
 <a id="lesson-algorithm"></a>
 
 ## 5 · 先更新 critic，再按计数器更新 actor

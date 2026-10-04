@@ -8,6 +8,8 @@
 
 [在线阅读](https://yingwen.io/zh/continual-rl/) · [基础目录](foundations/README.md) · [CRL 教材](textbook/README.md) · [实验与代码](docs/experiments.md) · [研究问题](docs/research-atlas.md)
 
+[跨学科补充篇：学习、心智与意识](docs/supplements.md)提供 12 章独立阅读。内容包括学习与记忆、控制论、有限理性、具身与延展认知、意识理论和心灵哲学。每章有概念讲解、具体例子、注释书目与思考问题。它们不是算法的先修要求，也不要求每种思想都对应一个智能体模块。[完整 Markdown](docs/supplements-full.md)
+
 Tutorials are currently in Chinese. Original code is MIT; original tutorial text is CC BY 4.0. Third-party works keep their own licenses.
 
 ## 从哪里开始

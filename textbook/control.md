@@ -380,6 +380,72 @@ def fixed_stream_fit(alpha, actions=(0, 1, 0, 1)):
     return {"final_q": learner.q, "next_action": learner.action()}
 ```
 
+<a id="experiment-learner_control_online"></a>
+
+### 实验：实验 · 同一检查点后继续学习，还是仅保留活动记忆
+
+已有一套能行动的参数后，环境改变时继续更新参数有什么作用？
+
+**环境与可用信息。** 单次生命的走廊世界。大厅可花 1 步、付出 0.05 奖励成本探测当前正确路线，或选择左/右路线。进入路线花 1 步、奖励 −0.02；再走 2 步，中间奖励 −0.02。正确到达得 1 并回大厅；错误到达得 −0.4，随后必须经历 4 个各得 −0.05 的恢复步。观测含阶段、剩余行进/恢复时间与已选路线；只有探测会返回路况线索。600 步起正确路线由左改右，不提供变化通知。
+
+**设置。** 1200 个原始步，Q 与率全零，线索记忆初始为空，ε=0.15，差分 Q 步长 0.1，率步长 0.005。前 400 步两分支完全相同；随后对照保留该检查点的 Q/率并禁写，在线分支继续更新。两者都不重置世界、记忆和 RNG；新探测线索仍更新记忆。冻结与变化时刻由实验预先固定，与总预算无关。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** online_differential_q.py 每个真实步用奖励减率加后继最大 Q 的差分误差同时更新 Q 和率。frozen_parameters.py 在 400 步后仅禁用这两项写入。动作依赖观测阶段与记忆线索；冻结参数不等于冻结活动状态，更不等于清空记忆。
+
+**测量。** 主图是从第 1 步起累加的真实奖励除以原始步数。探测、行进、失败和恢复都计入。另看最近 100 步收益、恢复步数、参数更新次数与记忆写入次数；没有免费评估回合。
+
+```bash
+python3 implementations/learner_control/online_differential_q.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/learner_control_online/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 400 步时两者全程奖励率均为 0.23686，参数和历史逐项一致；600 步时都为 0.24734。变化后在线分支在 800 步降到 0.20124，1200 步回到 0.22632；冻结分支最终为 0.12787。末尾 100 步奖励率分别为 0.27234、0.02152。冻结分支仍平均写入记忆 60 次，失败不是因为记忆被清空。
+
+**结论边界。** 这是共同检查点之后的有限持续控制比较，不是一般偏离遗憾估计。环境只有可恢复代价，没有不可逆陷阱；不提供外部重置。观察记忆可能过时，非平稳条件下差分 Q 没有在此得到收敛证明；一个冻结检查点也不代表最优固定控制器。
+
+**继续实验。** 检查同 seed 在 400 步前的 Q、率、记忆与 RNG 完全一致。把未来变化从 600 改到 900，400 步前必须不变。再单独冻结记忆写入，明确那是新增消融，不能与冻结参数混为一谈。
+
+[源码](../implementations/learner_control/online_differential_q.py) · [逐种子记录](https://yingwen.io/crl-code/results/learner_control_online/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learner_control_online/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learner_control_online/curves.json)
+
+
+
+<a id="experiment-bandit_constant_step"></a>
+
+### 实验：实验 · 相同初始行动分布，不同学习规则
+
+从同样的初始策略出发，仅改变更新规则，会改变整个学习过程的所得奖励吗？
+
+**环境与可用信息。** 无状态三臂 Bernoulli 赌博机，三动作奖励 1 的概率固定为 0.2、0.5、0.8，其他情况奖励 0。无回合终止、无变化信号；每次拉臂计一个真实交互。
+
+**设置。** 1200 次拉臂，初始动作估计和计数为 0。两者都用 ε=0.1 的 ε-greedy；固定步长为 0.1，样本均值对被选动作使用其访问次数的倒数。已运行种子为 0、1、2、3、4；图中离散程度是种子间样本标准差，不是置信区间。
+
+**检验的机制。** 两个控制器开始时都是均匀行动分布，但一个用常数步长保留近期敏感性，另一个逐渐降低步长。估计改变下一次行动，因此评价对象是行动与更新组成的完整过程。
+
+**测量。** 纵轴为从第一步到当前步的实际奖励总和除以拉臂次数。它包含早期探索成本，不是最后冻结策略的最优动作概率。
+
+```bash
+python3 implementations/classic/bandit_constant_step.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/bandit_constant_step/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 1200 次交互后的累计平均奖励为 0.73917；样本均值对照为 0.76283。本平稳任务未显示常数步长优势。保持适应能力有潜在价值，不等于任何静止任务上都应获得更高收益。
+
+**结论边界。** 这是持续控制的最小特例，不包含状态转移、信息动作、不可逆后果或变化后再适应。它只能说明完整学习规则会影响收益，不能作为一般 CRL 或偏离遗憾实验。
+
+**继续实验。** 将两个控制器在同一历史处复制，分别冻结估计和保留更新。冻结不得同时重置已有估计或 RNG。报告从该历史之后的实际收益，而不是重新开始一个更有利的世界。
+
+[源码](../implementations/classic/bandit_constant_step.py) · [逐种子记录](https://yingwen.io/crl-code/results/bandit_constant_step/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/bandit_constant_step/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/bandit_constant_step/curves.json)
+
 <a id="control-history"></a>
 
 ## 8 · 观测价值为什么不一定够用
@@ -683,7 +749,7 @@ python3 examples/continual_control_lab.py test
 
 <a id="research-reset-control-protocol"></a>
 
-## 研究专题 A · 重置是转移、动作还是外部资源？
+## 重置是转移、动作还是外部资源？
 
 Wan、Korenkevych 与 Zhu 的 continuing-task 研究区分无重置、预设重置和智能体控制重置。continuing 指“结束”后的收益仍有意义；持续学习还需判断环境、知识或能力是否不断要求适应。两个维度可以组合，不能凭 wrapper 名称相互替代。
 

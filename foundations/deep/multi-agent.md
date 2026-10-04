@@ -205,6 +205,38 @@ $$
 
 这条性质解决的是该函数类中的 greedy 执行，不保证任意团队价值都能被表示。若 agent 一偏好哪个动作取决于 agent 二的动作，单一局部排序就可能不足。价值分解的可扩展性来自结构约束，同时也承担结构偏差。
 
+<a id="experiment-qmix_cooperative"></a>
+
+### 实验：集中训练的价值，能否支持分散选动作
+
+QMIX 的单调混合保证怎样的 argmax 关系？在简单合作任务中是否需要它的额外容量？
+
+**环境与可用信息。** 两个 agent，每回合各收到一个随机比特且保持三步。每人只看自己的比特、时间与身份，动作为 0／1。每个动作匹配自己的比特得团队奖励 0.2，两者都匹配另加 0.6。三步真实终止；集中训练 mixer 可以看两个比特。
+
+**设置。** 本图实际运行 1200 个预算单位，训练种子为 0–4。一个联合转移计一步。局部网络 7→16 ReLU→2，mixer 隐层 8；绝对值超网络权重保证非负。ε=0.2，折扣 0.9，回放 2048，batch 32，Adam 0.003，每 50 次训练更新复制目标参数。
+
+**检验的机制。** 局部最大值经过单调 mixer 构成联合目标；TD 平方误差训练本地网络及 mixer。执行和评价只读取本地 Q，不能把集中状态泄漏进动作。VDN 对照直接求和。
+
+**测量。** 评价枚举四种比特组合及三步局部贪心决策，精确算折扣回报；最优值是 1+0.9+0.81=2.71。评价不用训练 RNG。
+
+```bash
+python3 implementations/multiagent/qmix.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/qmix_cooperative/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 600 与 1200 步两者都为 2.71，五个训练 seed 的末点完全一致。这个易合作问题没有展示 QMIX 相比 VDN 的性能优势。
+
+**结论边界。** 额外 mixer 有额外参数和计算。本例没有循环网络、长程隐状态或变化队友；不是 SMAC 复现，也不证明任意非单调联合价值都可表示。
+
+**继续实验。** 构造违反单调性的两动作联合收益表，区分“优化没找到”与“函数类无法表示”。保持执行时观察权限，切勿用集中状态选动作修补结果。
+
+[源码](../../implementations/multiagent/qmix.py) · [逐种子记录](https://yingwen.io/crl-code/results/qmix_cooperative/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/qmix_cooperative/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/qmix_cooperative/curves.json)
+
 <a id="lesson-algorithm"></a>
 
 ## 7 · 声明信息边界后组织训练

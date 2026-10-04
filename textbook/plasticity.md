@@ -170,6 +170,38 @@ $$
 
 下一个样本上，若新激活 $h_{\rm new}\ne0$ 且误差非零，即使输出权重为零，输出权重仍有梯度。输出连接建立后，输入权重才重新获得下游梯度。新生单元需要学习时间，频繁再次替换会打断这一过程。
 
+<a id="experiment-extended-redo"></a>
+
+### 实验：实验 · 回收低活动单元，不保证这个任务学得更好
+
+按照相对活动度替换单元以后，网络是否确实更快拟合变化的函数？
+
+**环境与可用信息。** 四维输入各自均匀分布于 [−1,1]。前半段目标是前三维的线性组合（系数 1、0.5、−0.3），加上第四维平方的 0.2 倍。后半段仅将线性部分反号。模型为 4–16–1 ReLU 网络，种子控制 PyTorch 默认初始化。
+
+**设置。** 种子 0–4，各训练 1200 个样本，SGD 步长 0.03、无动量。每 50 步，用最近 32 个输入计算相对平均活动度，替换不超过 0.1 的单元。新入边取 U(−0.5,0.5)，偏置与出边清零。对照不替换，其余训练流相同。
+
+**检验的机制。** 替换删除旧单元的输出贡献，并提供新的随机特征。出边为零只阻止新特征立即注入任意输出，不保证删掉旧贡献后函数完全不变。新单元还需要后续样本建立输出连接。
+
+**测量。** 主图在同一组 64 个独立输入上冻结测当前函数 MSE。原始日志记录累计替换数；旧函数图仅描述旧答案的变化。由于两阶段答案冲突，旧误差大不能单独说明可塑性丧失。
+
+```bash
+python3 implementations/extended_adaptation/redo.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-redo/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 training_samples。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 五次运行共分别替换 4、6、6、3、6 个单元。第 600 步平均 MSE 为 0.00664，对照 0.00740；末尾则为 0.00838，对照 0.00704。初期微小优势没有转化为末端优势，不能从“发生了回收”推断有效学习容量一定提高。
+
+**结论边界。** 只有一次函数切换，没有长期 aged/fresh 对照，因此不是长期可塑性丧失的验证。单隐层、无动量优化器，也未检验深层网络或 Adam 状态重置。
+
+**继续实验。** 增加等数量随机替换对照，并记录每次替换前后的预测变化。随后固定新任务难度，比较长期训练网络与 fresh 网络的同预算学习速度，才检验“恢复可塑性”的因果说法。
+
+[源码](../implementations/extended_adaptation/redo.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-redo/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-redo/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-redo/curves.json)
+
 <a id="lesson-cbp"></a>
 
 ## 4 · CBP：特征的持续生成与检验
@@ -203,6 +235,38 @@ adaptable-contribution 风格还考虑非恒定贡献及输入权重尺度。本
 步骤 4–5 是累计预算变体，也可用概率方式实现小于一个单元的期望替换率。成熟期保护新单元的学习机会。替换率为零时，算法退化成不替换的原学习器。
 
 Adam 的一阶矩、二阶矩以及时间计数都与参数年龄有关。某些作者实现使用可逐坐标清零的 AdamGnT；普通框架只给整个张量一个 step 时，局部重置无法等同于所有坐标的全新 Adam。复现时应保留原优化器语义，或把替代策略作为一个新的实验条件。
+
+<a id="experiment-extended-continual_backprop"></a>
+
+### 实验：实验 · 生成得更多，不等于检验得更有效
+
+成熟期、贡献效用与累计替换预算如何控制新特征的生命周期？这种机制在单次切换上有无收益？
+
+**环境与可用信息。** 与 ReDo 配对使用同一四维切换回归、4–16–1 ReLU 网络和 64 个冻结评价输入。第 601 步目标线性部分反号，二次部分不变。
+
+**设置。** 五种子各 1200 个样本，每步一次无动量 SGD，步长 0.03。贡献效用采用衰减 0.99 的 EMA，并按单元年龄校正；年龄严格大于 20 才可替换。每步按合格单元数乘 0.005 积累替换名额，选择最低效用者，重置规则同 ReDo。
+
+**检验的机制。** 活动度乘下游权重用于估计贡献；成熟期保护新单元；分数名额累积后才执行整数次替换。它避免“每步不足一个就永远不换”，但也引入持续扰动。这里没有实现 centered/adaptable 效用或均值偏置补偿。
+
+**测量。** 将 replaced_units 与当前函数 MSE 一起读。单元替换数不是奖励，也不是可塑性本身；需要检查替换后的实际学习。相同 SGD 次数不表示效用统计和选择过程没有额外计算。
+
+```bash
+python3 implementations/extended_adaptation/continual_backprop.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-continual_backprop/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 training_samples。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 每个种子都累计替换了 85 个单元位置。末尾平均 MSE 为 0.00773，不替换基线为 0.00704。曲线接近，未显示该短实验中的稳定收益；不能因为替换比 ReDo 多，就认为维护了更多有用知识。
+
+**结论边界。** 这是明确的 contribution 变体组件，不是 CBP 全论文复现。一次切换、16 单元与 1200 样本不足以支持长期可塑性结论。
+
+**继续实验。** 固定总替换次数，再比较最低效用、随机选择与去掉成熟期。将目标改为多次同难度变化，同时加入 fresh 探针；把“选择规则有效”和“随机重生即可”分开检验。
+
+[源码](../implementations/extended_adaptation/continual_backprop.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-continual_backprop/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-continual_backprop/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-continual_backprop/curves.json)
 
 <a id="lesson-normalization"></a>
 
@@ -384,7 +448,7 @@ $$
 
 <a id="research-parseval-geometry"></a>
 
-## 研究专题 A · Parseval：持续维护尺度与方向几何
+## Parseval：持续维护尺度与方向几何
 
 ReDo/CBP 改动单元，Parseval regularization 则让仍在使用的矩阵保持较好的几何条件。它不等待某个单元完全休眠才干预，而是持续约束不同输出方向的相关性与尺度。其机制应与 NaP 的有效学习率和 C-CHAIN 的函数变化分别检验。
 

@@ -174,6 +174,38 @@ $v_{\rm old}$ 保存上一时刻在当前状态上作出的旧预测。后两项
 
 本页公式使用常数步长。逐时间改变步长时，原论文给出另外的缩放 trace 形式，不应在未核对的情况下随意替换。线性精确等价也是有限轨迹的算法等价，不等于在所有任务上都保证更高回报。
 
+<a id="experiment-true_online_td"></a>
+
+### 实验：实验 · True-online 的“精确”，不表示误差始终最小
+
+Dutch trace 与预测变化修正为什么是等价性要求，却不是性能保证？
+
+**环境与可用信息。** 五个非终止状态的等概率随机游走，左终点奖励 0、右终点奖励 1，γ=1。每回合从中间状态开始，价值从零开始。代码用五维 one-hot 线性表示，表格只是该线性情形的特例。
+
+**设置。** 种子 0–4，各 1200 个真实转移，α=0.1。True-online TD 使用 λ=0.8，初始 Dutch 迹与旧预测均为零；对照为相同表格、相同轨迹的 TD(0)。终点奖励先更新所有有资格的参数，再清迹和旧预测。
+
+**检验的机制。** Dutch 迹校正有限步长下重复访问的影响；另一个参数修正处理相邻时刻预测已经变化的事实。两项共同对应在线前向视图。它没有取消 λ 带来的偏差、方差和传播速度折中。
+
+**测量。** 纵轴是五状态相对于解析真值的 RMSE。该误差曲线检验学习过程，不检验前后向等价本身；等价必须通过逐前缀参数对照或严格推导验证。
+
+```bash
+python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/true_online_td/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 300 步，True-online TD 的平均 RMSE 为 0.0791，TD(0) 为 0.2368，长程传播在早期有利；第 1200 步却为 0.0772 对 0.0465。早期较快不意味着固定 λ=0.8 在整个预算上都更准确。
+
+**结论边界。** 这里只用 one-hot 特征，尚未通过此实验展示重叠线性特征的优势，也没有与普通累积 TD(λ) 作同 λ 对照。更不能把线性 true-online 等价性直接移植到非线性网络。
+
+**继续实验。** 先令 λ=0，逐条核对它退化为 TD(0)。再选择含重复状态的短轨迹，以在线前向视图逐前缀核对 Dutch 更新；最后在相同 λ 下对照普通累积迹，避免把 λ 的效果误认为修正项的效果。
+
+[源码](../../implementations/classic/true_online_td.py) · [逐种子记录](https://yingwen.io/crl-code/results/true_online_td/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/true_online_td/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/true_online_td/curves.json)
+
 <a id="lesson-example"></a>
 
 ## 5 · 重复状态的两步手算

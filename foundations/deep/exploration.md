@@ -177,6 +177,38 @@ RND 的固定随机目标与学习预测器产生新奇信号。它不直接估�
 
 RND 对确定随机映射做预测，避免将随机下一状态预测误差直接当作新奇的某些问题，但无关高维变化、表征泛化和遗忘仍能影响 bonus。熵正则则直接偏好较随机的动作分布；它不会自动区分有信息的状态与无信息的随机循环。
 
+<a id="experiment-count_bonus"></a>
+
+### 实验：实验 · 新奇奖励可以暂时偏离原任务
+
+简单链已能用 ε-greedy 探索时，额外访问奖励是否仍会更快找到原任务的最优行为？
+
+**环境与可用信息。** 六格链从状态 0 出发，左右移动，到第 5 格终止并奖励 1，其余转移奖励 −0.01。环境平稳，折扣 0.95。五个非终止状态各有两个 Q 值，初值全零。
+
+**设置。** 五种子各 1200 个真实转移。Q-learning 步长 0.2，ε=0.1。每次访问先将状态动作计数加 1，再给训练目标加入 0.2/sqrt(N)；无 bonus 对照其余规则相同。终点之后重置到 0。
+
+**检验的机制。** 少访问的状态动作会得到较大正奖励，策略可能因此停留或绕行。随着计数增加，人工奖励衰减。它改变训练目标，但评价始终使用原环境奖励。
+
+**测量。** 纵轴是冻结贪心策略从 0 出发的原奖励折扣回报。代码对确定性策略中的循环求精确无限和；没有把卡住的轨迹按某个有利截止删掉。最短路径的值约为 0.7774。
+
+```bash
+python3 implementations/continual/count_bonus.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/count_bonus/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 615 步，有 bonus 的平均原任务回报为 0.1910，无 bonus 对照五条都已达到 0.7774。第 1200 步两者都达到 0.7774。此处额外新奇奖励延迟了原任务行为形成，末尾没有差异。
+
+**结论边界。** 短小平稳链没有困难的稀疏探索瓶颈。这不是密度模型 pseudo-count 的验证，也不是对所有探索奖励的否定。计数新奇不等于信息增益或外部效用。
+
+**继续实验。** 先分别记录访问覆盖与原任务回报，观察二者能否反向变化。再增加链长度、改变 bonus 系数，明确在哪个任务难度区间 bonus 的探索收益超过目标偏移的代价。
+
+[源码](../../implementations/continual/count_bonus.py) · [逐种子记录](https://yingwen.io/crl-code/results/count_bonus/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/count_bonus/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/count_bonus/curves.json)
+
 <a id="lesson-algorithm"></a>
 
 ## 5 · 三类方法的更新对象

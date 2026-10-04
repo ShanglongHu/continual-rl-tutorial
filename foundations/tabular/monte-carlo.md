@@ -172,6 +172,38 @@ $$
 
 将新的分子与分母展开即可得到增量式。C 是累积权重而非访问数。权重为零不改变结果；分母尚为零须单独处理。
 
+<a id="experiment-weighted_is"></a>
+
+### 实验：实验 · 自归一化降低波动时，也改变了有限样本性质
+
+同样的完整回合、同样的精确概率比，只改分母，为什么会产生不同的估计误差？
+
+**环境与可用信息。** 每回合恰好三步。行为策略两个动作各选 0.5，目标策略选 0.2 和 0.8。两个动作的 Bernoulli 奖励均值为 0.1 和 0.9，γ=0.9。目标策略每步期望奖励为 0.74，起点真值为 2.0054。
+
+**设置。** 种子 0–4，各采集 1200 个完整回合，即 3600 个真实转移。两种估计器使用相同回合。整轨迹权重是三个精确动作概率比的乘积；ordinary IS 用加权回报之和除以回合数，weighted IS 则除以权重之和。累积量从零开始。
+
+**检验的机制。** Ordinary IS 在支持条件成立时对目标回报无偏，但随机总权重会带来波动。Weighted IS 将权重归一为一，代价是有限样本通常有偏。只有一个正权重样本时，它甚至完全约掉权重，直接返回那条行为轨迹的回报。
+
+**测量。** 纵轴是每次运行的回报估计与 2.0054 的绝对差，再对五种子取平均。它不是带符号统计偏差，也不是均方误差。原始日志中的 estimate 可以用于查看误差方向。
+
+```bash
+python3 implementations/extended_classic/weighted_is.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/weighted_is/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 episodes。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 回合，weighted IS 的平均绝对误差为 0.0190，ordinary IS 为 0.0554。自归一化在这组短回合上更接近真值，但不能由五条绝对误差曲线证明它无偏或在所有长度上更好。
+
+**结论边界。** 行为概率已知，且每个目标动作都有正行为概率。三步回合不能展示长轨迹比率乘积的全部困难；本实验也不包含控制策略学习。
+
+**继续实验。** 先计算单个回合时两种估计器的期望，区分偏差与方差。然后增加回合长度，记录权重总和、最大权重和有效样本量，并始终与解析目标真值比较。
+
+[源码](../../implementations/extended_classic/weighted_is.py) · [逐种子记录](https://yingwen.io/crl-code/results/weighted_is/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/weighted_is/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/weighted_is/curves.json)
+
 <a id="mc-algorithm"></a>
 
 ## 6 · 完整算法步骤

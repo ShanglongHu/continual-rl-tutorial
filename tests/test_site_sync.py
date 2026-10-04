@@ -21,6 +21,74 @@ class PublicExport(unittest.TestCase):
         text='[original](https://example.org/paper#equation)'
         self.assertEqual(sync.rewrite_markdown(text,'a.md','docs/a.md',{},set()),text)
 
+    def test_published_source_assets_resolve_to_existing_repository_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in ('implementations/group/update.py','tests/test_example.py','tests/test space.py'):
+                file=root/name
+                file.parent.mkdir(parents=True,exist_ok=True)
+                file.write_text('# source\n')
+            cases={
+                '/crl-code/implementations/group/update.py':'../implementations/group/update.py',
+                'https://yingwen.io/crl-code/tests/test_example.py#L4':'../tests/test_example.py#L4',
+                '/crl-code/tests/test%20space.py':'../tests/test%20space.py',
+            }
+            with patch.object(sync,'ROOT',root):
+                for href,expected in cases.items():
+                    with self.subTest(href=href):
+                        output=sync.rewrite_markdown('[source]('+href+')','a.md','docs/a.md',{},set())
+                        self.assertEqual(output,'[source]('+expected+')')
+
+    def test_published_downloads_queries_and_missing_sources_stay_online(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            (root/'tests').mkdir()
+            (root/'tests/example.py').write_text('# source\n')
+            (root/'tests/not-code.txt').write_text('not a Python asset\n')
+            with patch.object(sync,'ROOT',root):
+                for href in ('/crl-code/learning-code.zip',
+                             '/crl-code/results/example/curves.svg#plot',
+                             '/crl-code/tests/missing.py',
+                             '/crl-code/tests/',
+                             '/crl-code/tests/not-code.txt',
+                             '/crl-code/tests/example.py?raw=1#L2'):
+                    with self.subTest(href=href):
+                        output=sync.rewrite_markdown('[asset]('+href+')','a.md','docs/a.md',{},set())
+                        self.assertEqual(output,'[asset](https://yingwen.io'+href+')')
+
+    def test_published_source_paths_do_not_rewrite_external_hosts(self):
+        for href in ('https://example.org/crl-code/tests/test_example.py',
+                     'https://yingwen.io.example.org/crl-code/tests/test_example.py',
+                     '//example.org/crl-code/implementations/update.py'):
+            text='[external]('+href+')'
+            with self.subTest(href=href):
+                self.assertEqual(sync.rewrite_markdown(text,'a.md','docs/a.md',{},set()),text)
+
+    def test_published_source_paths_reject_traversal_and_symlink_escape(self):
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as outside:
+            root=Path(directory)
+            (root/'tests').mkdir()
+            (root/'tests/example.py').write_text('# source\n')
+            (root/'private.py').write_text('# not a published source root\n')
+            (Path(outside)/'outside.py').write_text('# outside repository\n')
+            (root/'tests/escape.py').symlink_to(Path(outside)/'outside.py')
+            (root/'tests/external').symlink_to(outside,target_is_directory=True)
+            paths=('/crl-code/tests/%2e%2e/private.py',
+                   '/crl-code/tests/../tests/example.py',
+                   '/crl-code/tests/%2e%2e%2fprivate.py',
+                   '/crl-code/%2ftests/example.py',
+                   '/crl-code/tests/%5c..%5cprivate.py',
+                   '/crl-code/tests/%00.py',
+                   '/crl-code/tests/%ff.py',
+                   '/crl-code/tests/escape.py',
+                   '/crl-code/tests/external/outside.py')
+            with patch.object(sync,'ROOT',root):
+                for href in paths:
+                    with self.subTest(href=href):
+                        output=sync.rewrite_markdown('[unsafe]('+href+')','a.md','docs/a.md',{},set())
+                        self.assertTrue(output.startswith('[unsafe](https://yingwen.io/crl-code/'),output)
+                        self.assertNotIn(outside,output)
+
     def test_unsafe_paths_are_rejected(self):
         for target in ('../../README.md','/tmp/x','examples/../../x','.','unknown/x'):
             with self.assertRaises(ValueError):

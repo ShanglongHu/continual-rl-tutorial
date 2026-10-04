@@ -223,6 +223,38 @@ def belief_step(prior, transition, likelihood):
     return [v / evidence for v in unnormalized]
 ```
 
+<a id="experiment-extended-bayes_filter"></a>
+
+### 实验：实验 · 一次错误观测，应当推翻过去的全部证据吗？
+
+当隐藏状态通常保持不变、观测偶尔出错时，递归信念能否比只看当前观测更准确？
+
+**环境与可用信息。** 两个隐藏状态以 0.9 的概率保持、0.1 的概率切换。观测以 0.8 的概率报告正确状态。学习器知道这两个概率，只看到观测；真实状态仅供评价使用。初始信念为 [0.5,0.5]。
+
+**设置。** 种子 0–4，各处理 1200 条观测。Bayes filter 先传播旧信念，再用似然校正。无记忆对照每步都从均匀先验开始。两者接收相同种子的同一隐藏状态与观测流。没有梯度训练，也没有控制动作。
+
+**检验的机制。** 变化只在于是否保留上一时刻的概率分布。连续一致的观测会积累证据；孤立的相反观测不必立即翻转判断。状态真的切换时，旧信念又会使反应产生滞后。
+
+**测量。** 纵轴是观测后给真实隐藏状态分配的负对数概率，采用 0.95×旧值 + 0.05×新损失的滑动平均。越低越好。它评价概率质量，不是仅评价最可能状态是否猜对，也不是 RL 回报。
+
+```bash
+python3 implementations/extended_adaptation/bayes_filter.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-bayes_filter/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 observations。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 第 1200 条观测后，五种子的平均损失为 0.353 nats，无记忆对照为 0.478 nats。记忆在该持久状态模型中有帮助，但曲线仍随错误观测与真实切换波动；滤波不是把不确定性消除为零。
+
+**结论边界。** 这是已知正确模型的状态估计，不包含未知模型学习或策略改善。图中的末值是近期损失，不是全程平均。若实际切换率与假定模型不符，旧信念也可能有害。
+
+**继续实验。** 先手算连续三次相同观测后的信念，再接入一次相反观测。然后分别只改变真实切换率与滤波器假定切换率，比较“需要更强记忆”和“模型失配”两种解释。
+
+[源码](../implementations/extended_adaptation/bayes_filter.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-bayes_filter/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-bayes_filter/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-bayes_filter/curves.json)
+
 <a id="lesson-recurrence"></a>
 
 ## 3. 学习递归状态：RNN、GRU 与 LSTM
@@ -368,6 +400,38 @@ def bptt_final(theta, inputs, target, window=None, initial=0.0):
         adjoint = a * dz
     return grad
 ```
+
+<a id="experiment-extended-bptt"></a>
+
+### 实验：实验 · 截断梯度，不等于删除记忆
+
+最后时刻才给监督信号时，只反传最后三步是否一定学不会八步之前的线索？
+
+**环境与可用信息。** 每条序列有 8 个输入。首位为等概率的 +1 或 −1，后七位独立取自 [−0.2,0.2]。末端目标是首位。模型是两个 tanh 隐藏单元的 RNN，初始隐藏状态为零；没有外部动作或奖励。
+
+**设置。** 五种子各训练 1200 条序列，即 9600 个输入。每序列只做一次 SGD，步长 0.03。两种方法共用固定初始参数 [0.7,0.1,−0.1,0.7,0.3,−0.2,0.4,−0.2,0]。完整 BPTT 保留八步图；TBPTT 在最后三步之前 detach 隐藏状态，但保留其数值。
+
+**检验的机制。** 前向递归在两者中都贯穿八步。TBPTT 删除的是早期参数影响末端损失的直接梯度路径，而不是已经写入隐藏状态的数值。共享递归参数仍能通过后三步获得更新，因此不能仅凭窗口短于延迟就断言学习必然失败。
+
+**测量。** 每个检查点冻结参数，在同一组独立的 32 条序列上测 MSE。横轴是一整条序列，不是一个输入。比较最终预测误差，也要比较反传长度和保存的活动数。
+
+```bash
+python3 implementations/extended_adaptation/bptt.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/extended-bptt/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 sequences。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 起始 MSE 为 0.9843。第 1200 条后，完整 BPTT 为 0.000244，三步 TBPTT 为 0.000319。两者都学会这个温和任务；完整梯度略好。这组结果不能作为“截断导致记忆完全失效”的例证。
+
+**结论边界。** 每段内参数固定、段间隐藏状态重置。这不是无限流上逐步变参的实验。任务短、干扰弱，且仅有 32 条固定评价序列；没有证明两种方法在长时信用上等价。
+
+**继续实验。** 把 detach 与把隐藏状态置零做成两个独立对照。逐步增加延迟和干扰幅度，记录哪一个先失败。先用有限差分核对完整梯度，再解释截断偏差，避免把计算错误当作长时记忆困难。
+
+[源码](../implementations/extended_adaptation/bptt.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-bptt/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-bptt/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-bptt/curves.json)
 
 <a id="lesson-predictive"></a>
 
@@ -582,7 +646,7 @@ GVFN 作者仓库中的问题定义、递归单元与学习方法应分别阅读
 
 <a id="research-memory-training-interface"></a>
 
-## 研究专题 A · Memoroids：记忆能保存多久，梯度能学习多久？
+## Memoroids：记忆能保存多久，梯度能学习多久？
 
 “隐状态能保留很久”和“参数能从早期事件学到什么”是两个问题。前者取决于递归动力学，后者还取决于训练中的梯度路径。即使活动保留了线索，在短块之间停止梯度，也可能无法教会网络哪些输入值得记住。Memoroids（NeurIPS 2024）提供一个重要对照：保持线性递归模型，改变长序列运算和训练批处理方式。
 
@@ -620,7 +684,7 @@ CRL 的进一步问题是参数变化时的状态一致性：实际活动由历�
 
 <a id="research-state-query-sufficiency"></a>
 
-## 研究专题 B · 状态充分性要相对于未来问题检验
+## 状态充分性要相对于未来问题检验
 
 把一张画面编码成漂亮的潜在向量，与从历史形成足够预测和行动的 agent state，是两个问题。DINO-WM 使用冻结视觉 patch 特征加观测历史做动作后果预测，V-JEPA 2-AC 也利用视频表示与动作条件预测器。它们提醒我们先检查表示接口中有哪些历史与运动信息，再讨论“模型理解了世界”。单帧自监督特征本身不保证隐藏速度、门锁状态或先前指令可被恢复。
 

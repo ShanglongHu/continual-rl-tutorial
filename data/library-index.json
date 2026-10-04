@@ -21,6 +21,7 @@
       "architectures",
       "state",
       "streaming",
+      "plasticity",
       "gvf",
       "goals",
       "options",
@@ -106,14 +107,15 @@
       }
     ],
     "chapterIds": [
+      "streaming",
+      "plasticity",
       "architectures",
       "state",
       "gvf",
       "goals",
       "options",
       "models",
-      "planning",
-      "streaming"
+      "planning"
     ]
   },
   {
@@ -532,9 +534,11 @@
       "deep-value",
       "credit",
       "dyna",
+      "average",
       "gvf",
       "streaming",
       "planning",
+      "plasticity",
       "state",
       "policy"
     ]
@@ -791,8 +795,8 @@
       }
     ],
     "chapterIds": [
-      "streaming",
       "credit",
+      "streaming",
       "policy",
       "soft-control"
     ]
@@ -919,6 +923,7 @@
     ],
     "chapterIds": [
       "plasticity",
+      "streaming",
       "retention",
       "deep-value",
       "architectures"
@@ -966,6 +971,7 @@
     "chapterIds": [
       "plasticity",
       "deep-value",
+      "streaming",
       "retention"
     ]
   },
@@ -2574,12 +2580,14 @@
       }
     ],
     "chapterIds": [
+      "average",
       "value",
       "gvf",
       "control",
       "streaming",
       "dyna",
       "planning",
+      "plasticity",
       "credit",
       "state",
       "policy"
@@ -3845,7 +3853,7 @@
       }
     ],
     "chapterIds": [
-      "retention",
+      "streaming",
       "plasticity"
     ]
   },
@@ -4045,6 +4053,7 @@
       }
     ],
     "chapterIds": [
+      "credit",
       "objectives",
       "average",
       "architectures",
@@ -5605,7 +5614,8 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/objectives/#lesson-sources",
     "chapterIds": [
-      "objectives"
+      "objectives",
+      "gvf"
     ]
   },
   {
@@ -6002,7 +6012,97 @@
     ]
   },
   {
+    "id": "CH-average-1",
+    "title": "Sutton, McAllester, Singh & Mansour · Policy Gradient Methods with Function Approximation · 1999",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "平均奖励策略梯度及相容函数逼近的经典原文；本章从稳态与 Poisson 方程逐步重推，不将相容条件省略为任意神经 critic。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/1999/file/464d828b85b0bed98e80ade0a5c43b0f-Paper.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
     "id": "CH-average-2",
+    "title": "Grand-Clément & Petrik · Blackwell Discount Factor · NeurIPS 2023",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "定理 4.2、4.4 分别讨论有限 MDP 的阈值存在性及问题依赖的上界；不是任意固定大折扣或未知深网模型的保证。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://papers.nips.cc/paper_files/paper/2023/hash/a4e720ce31ccd8ba747d8863e1580fa8-Abstract-Conference.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-4",
+    "title": "Tsitsiklis & Van Roy · Average Cost Temporal-Difference Learning",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "平均代价同策略线性 TD 的经典分析；固定特征与链结构是条件，不是任意神经网络的结论。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://web.stanford.edu/~bvr/pubs/average-td.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-5",
+    "title": "Zhang, Wan, Sutton & Whiteson · Average-Reward Off-Policy Policy Evaluation with Function Approximation",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "奖励率与差分价值的异策略逼近；线性收敛分析与非线性实验必须分别理解。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v139/zhang21u.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-6",
+    "title": "Zhang, Zhang & Maguluri · Finite Sample Analysis of Average-Reward TD Learning and Q-Learning",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "有限样本、线性 TD(λ) 与表格 Q 学习的分析；不同于只判断渐近存在性的结论。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2021/hash/096ffc299200f51751b08da6d865ae95-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-8",
     "title": "Wan, Naik & Sutton · Average-Reward Learning and Planning with Options",
     "kind": "论文",
     "topic": "objectives",
@@ -6020,7 +6120,7 @@
     ]
   },
   {
-    "id": "CH-average-3",
+    "id": "CH-average-9",
     "title": "Wan & Sutton · Weakly Communicating MDPs",
     "kind": "论文",
     "topic": "objectives",
@@ -6038,7 +6138,7 @@
     ]
   },
   {
-    "id": "CH-average-6",
+    "id": "CH-average-12",
     "title": "RLJ 论文记录",
     "kind": "论文",
     "topic": "objectives",
@@ -6066,7 +6166,7 @@
     ]
   },
   {
-    "id": "CH-average-7",
+    "id": "CH-average-13",
     "title": "作者论文",
     "kind": "论文",
     "topic": "objectives",
@@ -6091,7 +6191,7 @@
     ]
   },
   {
-    "id": "CH-average-9",
+    "id": "CH-average-15",
     "title": "RLC 2024 原文",
     "kind": "论文",
     "topic": "objectives",
@@ -6111,7 +6211,7 @@
     ]
   },
   {
-    "id": "CH-average-10",
+    "id": "CH-average-16",
     "title": "RLC 2024 原文",
     "kind": "论文",
     "topic": "objectives",
@@ -6139,7 +6239,7 @@
     ]
   },
   {
-    "id": "CH-average-11",
+    "id": "CH-average-17",
     "title": "RLJ 论文记录",
     "kind": "论文",
     "topic": "objectives",
@@ -6156,6 +6256,294 @@
       "average",
       "control",
       "exploration"
+    ]
+  },
+  {
+    "id": "CH-average-18",
+    "title": "ARO-DDPG · ICML 2023 原文",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "平均奖励确定性 actor–critic；需分别阅读策略梯度、理论条件和深网实验。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v202/saxena23a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-19",
+    "title": "ARO-DDPG · 作者工程固定版本",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "重点 cheetah_run/ddpg_model.py、train.py 与 config.py；记录 replay、done 掩码与训练段落。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/namansaxena9/ARO-DDPG/tree/5803e81b3bc0d1ee0e45236bae688002d6f1685a",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-20",
+    "title": "Average-Reward Soft Actor-Critic · RLC 2025",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "平均奖励、KL 正则与 soft 策略改善；不要比较任意常数规范下的原始 Q 大小。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://rlj.cs.umass.edu/2025/papers/Paper34.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-21",
+    "title": "ASAC · 原论文 v2 的推导与实现细节",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "§4、附录 §8–9；按 KL 投影定义核对逆温度、差分 critic、参考价值、重置与完整实验协议。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2501.09080v2",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-22",
+    "title": "ASAC.py · 作者探索性代码入口",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "可检查 target、reward-rate 与温度更新；尚不能确认与正式论文全部实验的逐项对应。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/JacobHA/BARL/blob/200ccd2c48702bc683861f49843f86446075ab16/ASAC.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-23",
+    "title": "Bellman Error Centering · 原始预印本",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "CTD 与 CTDC 的折扣、线性预测机制；不是平均奖励深网收敛证明。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2502.03104",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-24",
+    "title": "Bellman Error Centering · Neural Networks 2026",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "期刊版本入口；复现时需固定论文版本及代码配置。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://doi.org/10.1016/j.neunet.2026.108896",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-25",
+    "title": "BEC · 作者诊断实验代码",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "VM_evaluation 下的二状态、Baird 反例；核对主参数、辅助向量和中心化标量。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/GameAI-NJUPT/BEC/tree/4d55a79afa733095e527924c21edf2689ea5c45d",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-26",
+    "title": "Differential GQ · 作者离策略评价工程",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "deep_rl/agent/LinearOPEAgent.py、NeuralOPEAgent.py 与 template_jobs.py；固定策略评价，不是完整控制智能体。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/ShangtongZhang/DeepRL/tree/05e38af518972fa80f36cef69ac78428553f4671",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-27",
+    "title": "Regularized Centered Emphatic Temporal Difference Learning · 2026",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "折扣线性离策略预测；中心化与 emphatic 更新联合稳定性的两状态反例。尚未确认作者代码。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2605.04100",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-28",
+    "title": "NS-NAC / BORL · 2025 原始预印本",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "检查动态遗憾比较器、块重启及 Algorithm 1 的均匀状态采样权限。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2504.16415v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-29",
+    "title": "NS-NAC / BORL · TMLR 论文入口",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "最终版本入口；本文涉及具体状态采样步骤的说明明确对应预印本。尚未确认作者工程。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://openreview.net/forum?id=hBJYNAYtoo",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-30",
+    "title": "Average-reward RL in SMDPs via relative value iteration · 2025",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "固定有限 SMDP 的参照函数、平均时长估计、RVI 更新与收敛条件。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2512.06218",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-31",
+    "title": "异步随机逼近的稳定性与应用 · SIAM 2026",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "RVI 理论的配套数学条件；参照函数非线性不等于深度函数逼近收敛。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://doi.org/10.1137/25M1769806",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-32",
+    "title": "Sample Complexity of Average-Reward Q-Learning · 2026",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "单智能体与联邦、生成模型采样、折扣调度和奖励缩放；尚未确认作者代码。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2601.13642",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
+    ]
+  },
+  {
+    "id": "CH-average-33",
+    "title": "A Harmonic Mean Formulation of Average Reward RL in SMDPs · 2026",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "作为目标一致性审查材料；本节给出与总奖励/总时间不等价的确定性反例，不作为默认算法。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2605.04880",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/average-reward/#lesson-sources",
+    "chapterIds": [
+      "average"
     ]
   },
   {
@@ -6750,6 +7138,67 @@
   },
   {
     "id": "CH-gvf-0",
+    "title": "Sutton & Tanner · Temporal-Difference Networks（NIPS 2004）",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "区分预测的经验含义与预测之间的递推关系；研究多个相互关联的预测如何构成表示。链接为作者后上传的原论文，不是 2015 年提出的新方法。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1504.05539",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf"
+    ]
+  },
+  {
+    "id": "CH-gvf-1",
+    "title": "Sutton, Bowling & Pilarski · The Alberta Plan for AI Research",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "状态、预测、时间抽象与规划的研究纲领，不是完成全闭环的报告。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2208.11173",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf",
+      "architectures",
+      "state",
+      "goals",
+      "options",
+      "models",
+      "planning",
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-gvf-3",
+    "title": "Sutton et al. · Horde 原论文作者存档",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "以共享经验学习多个问题的答案；区分预测问题的规格、并行学习过程及未来控制用途。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://sites.ualberta.ca/~pilarski/docs/papers/Sutton_2011_Horde_AAMAS.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf"
+    ]
+  },
+  {
+    "id": "CH-gvf-4",
     "title": "Veeriah et al. · Discovery of Useful Questions as Auxiliary Tasks（NeurIPS 2019）",
     "kind": "论文",
     "topic": "prediction",
@@ -6767,7 +7216,7 @@
     ]
   },
   {
-    "id": "CH-gvf-1",
+    "id": "CH-gvf-5",
     "title": "McLeod et al. · Continual Auxiliary Task Learning（NeurIPS 2021）",
     "kind": "论文",
     "topic": "prediction",
@@ -6785,7 +7234,7 @@
     ]
   },
   {
-    "id": "CH-gvf-2",
+    "id": "CH-gvf-6",
     "title": "Modayil & Abbas · Towards model-free RL algorithms that scale well with unstructured data（2023）",
     "kind": "论文",
     "topic": "prediction",
@@ -6803,7 +7252,7 @@
     ]
   },
   {
-    "id": "CH-gvf-3",
+    "id": "CH-gvf-7",
     "title": "Voelcker et al. · When does Self-Prediction Help?（RLC 2024）",
     "kind": "论文",
     "topic": "prediction",
@@ -6821,7 +7270,7 @@
     ]
   },
   {
-    "id": "CH-gvf-4",
+    "id": "CH-gvf-8",
     "title": "Understanding Auxiliary Tasks · 作者项目说明",
     "kind": "代码",
     "topic": "prediction",
@@ -6842,7 +7291,7 @@
     ]
   },
   {
-    "id": "CH-gvf-5",
+    "id": "CH-gvf-9",
     "title": "Sutton et al. · Horde (2011)",
     "kind": "论文",
     "topic": "prediction",
@@ -6863,7 +7312,7 @@
     ]
   },
   {
-    "id": "CH-gvf-6",
+    "id": "CH-gvf-10",
     "title": "Sutton et al. · Fast gradient-descent methods for TD learning (2009)",
     "kind": "论文",
     "topic": "prediction",
@@ -6881,7 +7330,7 @@
     ]
   },
   {
-    "id": "CH-gvf-7",
+    "id": "CH-gvf-11",
     "title": "Sutton, Mahmood & White · An Emphatic Approach (2016)",
     "kind": "论文",
     "topic": "prediction",
@@ -6899,7 +7348,7 @@
     ]
   },
   {
-    "id": "CH-gvf-9",
+    "id": "CH-gvf-13",
     "title": "RLPark · GTDLambda.java 固定版本",
     "kind": "代码",
     "topic": "prediction",
@@ -6917,7 +7366,7 @@
     ]
   },
   {
-    "id": "CH-gvf-10",
+    "id": "CH-gvf-14",
     "title": "RLPark · Horde.java",
     "kind": "代码",
     "topic": "prediction",
@@ -6936,6 +7385,42 @@
   },
   {
     "id": "CH-gvf-17",
+    "title": "Janjua et al. · GVFs in the Real World · Machine Learning",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "观测记忆、TD与n-step、离线初始化及按时间顺序的模拟部署；不是真实闭环工厂控制验证。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://link.springer.com/article/10.1007/s10994-023-06413-x",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf"
+    ]
+  },
+  {
+    "id": "CH-gvf-18",
+    "title": "Yan et al. · GVFs for Remaining Useful Life and Failure-Mode Prediction",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "2026预印本；区分吸收事件概率和折扣值。4.2.2读出、6.2选模、7节限制及代码待录用后发布需一并阅读。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2607.22268v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "chapterIds": [
+      "gvf"
+    ]
+  },
+  {
+    "id": "CH-gvf-23",
     "title": "NeurIPS 2020 原文",
     "kind": "论文",
     "topic": "prediction",
@@ -6963,7 +7448,7 @@
     ]
   },
   {
-    "id": "CH-gvf-18",
+    "id": "CH-gvf-24",
     "title": "Proper Value Equivalence · NeurIPS 2021",
     "kind": "论文",
     "topic": "prediction",
@@ -6983,7 +7468,7 @@
     ]
   },
   {
-    "id": "CH-gvf-20",
+    "id": "CH-gvf-26",
     "title": "Touati & Ollivier · Learning One Representation to Optimize All Rewards",
     "kind": "论文",
     "topic": "prediction",
@@ -6999,31 +7484,6 @@
     "chapterIds": [
       "gvf",
       "architectures"
-    ]
-  },
-  {
-    "id": "CH-gvf-21",
-    "title": "Sutton, Bowling & Pilarski · The Alberta Plan for AI Research",
-    "kind": "论文",
-    "topic": "prediction",
-    "description": "状态、预测、时间抽象与规划的研究纲领，不是完成全闭环的报告。",
-    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
-    "links": [
-      {
-        "url": "https://arxiv.org/abs/2208.11173",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
-    "chapterIds": [
-      "gvf",
-      "architectures",
-      "state",
-      "goals",
-      "options",
-      "models",
-      "planning",
-      "streaming"
     ]
   },
   {
@@ -7754,10 +8214,10 @@
   },
   {
     "id": "CH-credit-18",
-    "title": "Elelimy等 · Deep Reinforcement Learning with Gradient Eligibility Traces · RLC 2025",
+    "title": "Elelimy et al. · Deep RL with Gradient Eligibility Traces",
     "kind": "论文",
     "topic": "credit",
-    "description": "广义投影目标、GTD2／TDC／TDRC三条迹；Theorem 6.1冻结双网络参数，Table 2与QRC公式中的标量H迹相对应。",
+    "description": "GPBE多步目标、冻结参数等价，以及前向PPO与后向QRC的不同协议。",
     "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
     "links": [
       {
@@ -7772,10 +8232,10 @@
   },
   {
     "id": "CH-credit-19",
-    "title": "GTD资格迹作者QRC代码 · 固定版本",
+    "title": "Gradient Eligibility Traces · 作者QRC固定实现",
     "kind": "代码",
     "topic": "credit",
-    "description": "update_step先共同计算主／辅助方向，再更新参数；检查完整∇δ、三条迹、正则与更新后的清迹。",
+    "description": "三个迹与完整误差梯度；所有方向先从旧参数计算。",
     "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
     "links": [
       {
@@ -7864,6 +8324,84 @@
       "state",
       "credit",
       "streaming"
+    ]
+  },
+  {
+    "id": "CH-credit-25",
+    "title": "SwiftTD · 固定版本核心更新",
+    "kind": "代码",
+    "topic": "credit",
+    "description": "Step中的旧预测、元敏感度、tau边界、荷兰迹与超界衰减。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://github.com/kjaved0/swifttd/blob/36ec2deb3a3adfea1dd7ee76a170ab53f4b4b466/src/cpp/SwiftTD.cpp",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-26",
+    "title": "SwiftTD · 作者交互演示",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "观察像素步长和有效学习率；演示是固定特征预测，不是完整Atari控制。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://khurramjaved.com/swifttd.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-27",
+    "title": "Javed & Sutton · Swift-Sarsa",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "2025扩展摘要；Algorithm 1、operant-conditioning设置、噪声特征与生命期奖励评价。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2507.19539v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "credit"
+    ]
+  },
+  {
+    "id": "CH-credit-29",
+    "title": "Stream-X · 作者固定版本",
+    "kind": "代码",
+    "topic": "credit",
+    "description": "2026版，先读optimizer.py、稀疏初始化及agent更新时序；代码许可证与教程原创代码不同。",
+    "question": "多步目标、资格迹与递归状态导数各传播什么信息？延迟、截断与每步参数变化怎样影响信用分配？",
+    "links": [
+      {
+        "url": "https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-stream-x",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "credit",
+      "plasticity"
     ]
   },
   {
@@ -7975,30 +8513,6 @@
       {
         "url": "https://arxiv.org/abs/2410.14606v3",
         "label": "原文入口"
-      },
-      {
-        "url": "/zh/continual-rl/research/#recent-stream-x",
-        "label": "研究问题与方法导读"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
-    "chapterIds": [
-      "streaming",
-      "credit",
-      "plasticity"
-    ]
-  },
-  {
-    "id": "CH-streaming-10",
-    "title": "Stream-X · 2026 作者实现",
-    "kind": "代码",
-    "topic": "streaming",
-    "description": "依次阅读 obs_reward_transforms.py、sparse_init.py、optimizer.py 和相应 agent；代码采用 CC BY-NC 4.0 许可证。",
-    "question": "数据能否重复访问？每步存储和计算是否有界？归一化与输出尺度控制怎样影响一次更新？",
-    "links": [
-      {
-        "url": "https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b",
-        "label": "实现入口"
       },
       {
         "url": "/zh/continual-rl/research/#recent-stream-x",
@@ -8988,7 +9502,43 @@
     ]
   },
   {
-    "id": "CH-options-24",
+    "id": "CH-options-21",
+    "title": "Kotamreddy & Machado · A Study of Value-Aware Eigenoptions",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "RLC2025 workshop；第4节在线发现反馈，第5.2节非线性停止困难，附录VACE/DVAEO伪代码。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2507.09127v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
+    "chapterIds": [
+      "options"
+    ]
+  },
+  {
+    "id": "CH-options-22",
+    "title": "Value-Aware Eigenoptions · workshop接收记录",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "正式记录其workshop身份，不将其写成RLC主会论文。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://sites.google.com/view/ibrl-workshop/accepted-papers",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
+    "chapterIds": [
+      "options"
+    ]
+  },
+  {
+    "id": "CH-options-26",
     "title": "NeurIPS 2025 原文与补充材料入口",
     "kind": "论文",
     "topic": "skills",
@@ -9017,7 +9567,7 @@
     ]
   },
   {
-    "id": "CH-options-25",
+    "id": "CH-options-27",
     "title": "Option Keyboard 的经典桥梁",
     "kind": "论文",
     "topic": "skills",
@@ -10043,6 +10593,65 @@
     ]
   },
   {
+    "id": "CH-architectures-10",
+    "title": "Sutton et al. · Reward-Respecting Subtasks · Artificial Intelligence 2023",
+    "kind": "论文",
+    "topic": "architectures",
+    "description": "子任务、技能、模型和规划的接口；最初预印本2022，AAAI2024条目为摘要重印。",
+    "question": "状态、预测、目标、技能与模型哪些由人提供，哪些从经验学习？组件改进如何传递到长期行为？",
+    "links": [
+      {
+        "url": "https://doi.org/10.1016/j.artint.2023.104001",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
+    "chapterIds": [
+      "architectures",
+      "reward-design",
+      "goals",
+      "options",
+      "models",
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-architectures-11",
+    "title": "An Analysis of Streaming Deep RL for Adaptive Continual Learning in Robotics",
+    "kind": "论文",
+    "topic": "architectures",
+    "description": "2026预印本；预训练后突变适应、优化器和tanh-CBP变体；episodic及前向迁移范围。",
+    "question": "状态、预测、目标、技能与模型哪些由人提供，哪些从经验学习？组件改进如何传递到长期行为？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2609.28807v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
+    "chapterIds": [
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-architectures-12",
+    "title": "Streaming robotics · 作者工程",
+    "kind": "代码",
+    "topic": "architectures",
+    "description": "论文直接链接；预训练、任务变化、流式更新和评价配置需联合复现。",
+    "question": "状态、预测、目标、技能与模型哪些由人提供，哪些从经验学习？组件改进如何传递到长期行为？",
+    "links": [
+      {
+        "url": "https://github.com/tjvitchutripop/stream-rl-robotics/",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
+    "chapterIds": [
+      "architectures"
+    ]
+  },
+  {
     "id": "CH-experiments-0",
     "title": "Patterson et al. · Empirical Design in Reinforcement Learning",
     "kind": "论文",
@@ -10152,6 +10761,348 @@
     "detailUrl": "/zh/continual-rl/experiments/#lesson-sources",
     "chapterIds": [
       "experiments"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-1",
+    "title": "Baird · Residual Algorithms (ICML 1995)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "残差梯度与函数逼近反例的原始论文。本站采用明确写出的单位范数星形特征和期望更新；不宣称复刻原论文实验设置。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://leemon.com/papers/1995b.pdf",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-2",
+    "title": "Maei et al. · Convergent TD Learning with Arbitrary Smooth Function Approximation (NeurIPS 2009)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "切空间投影目标、Hessian-vector 修正、双时间尺度与投影条件。固定预测的保证不能直接用于任意变化中的深度控制器。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2009/file/3a15c7d0bbe60300a39f76f8a5ba6896-Paper.pdf",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-3",
+    "title": "van Hasselt et al. · Deep RL and the Deadly Triad (2018)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "研究深度 Q 学习中函数逼近、自举和离策略的相互作用。三项同时出现不是每次必发散的判据。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1812.02648",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-4",
+    "title": "DeepMind · DQN 原始 NeuralQLearner.lua",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "原始代码分别实现目标副本、回放采样、终止掩码和 TD 残差裁剪。诊断代码不是 Atari DQN 复现。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/dqn/blob/9d9b1d13a2b491d6ebd4d046740c511c662bbe0f/dqn/NeuralQLearner.lua",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-5",
+    "title": "Yu et al. · Gradient Surgery for Multi-Task Learning (NeurIPS 2020)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "梯度冲突及多任务优化的一条研究路线。本章只实现干扰诊断与隔离对照，没有冒充 PCGrad 算法。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2001.06782",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-7",
+    "title": "Continual Backpropagation · 作者 Generate-and-Test 实现",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "单元效用、成熟期、替换预算和参数重置。检查替换后的优化器状态与信用状态时，应同时阅读训练器。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://github.com/shibhansh/loss-of-plasticity/blob/a6b79580d85f3025bdb601566d3627c5f489f13b/lop/algos/gnt.py",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-9",
+    "title": "Gallici et al. — Simplifying Deep Temporal Difference Learning (ICLR 2025)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "PQN：固定点稳定性的条件、LayerNorm/正则化分析及并行短轨迹控制实验。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2407.04811",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-10",
+    "title": "PQN — author implementation, pinned Gymnax variant",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "注意 λ-return 扫描初始化的时间索引。正文给出与标准递推对齐的独立两步算例。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://github.com/mttga/purejaxql/blob/47af6d7b35c89ddfe633aaf7341bdb8964cb7cce/purejaxql/pqn_gymnax.py",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-11",
+    "title": "Bhatt et al. — CrossQ (ICLR 2024)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "共同批统计、无需目标 critic 的离策略连续控制；仍使用 replay。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2024/file/f381114cf5aba4e45552869863deaaa7-Paper-Conference.pdf",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-12",
+    "title": "CrossQ — author critic implementation",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "联合前向、当前/后继拆分与停止目标梯度。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://github.com/adityab/CrossQ/blob/a318a266679bec3f9d93c44e029860a6da077c89/sbx/sac/sac.py",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-13",
+    "title": "Farebrother et al. — Stop Regressing (ICML 2024)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "价值回归的分类参数化；区分 HL-Gauss 和分布 Bellman 学习。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v235/farebrother24a.html",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-14",
+    "title": "HL-Gauss — original reference implementations in Appendix A",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "JAX/PyTorch 损失变换；有限支撑归一化。不是全部任务的完整训练工程。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2403.03950v1#A1",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-15",
+    "title": "Lewandowski, Schuurmans & Machado — Plastic Learning with Deep Fourier Features (ICLR 2025)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "最终会议版本强调 Fourier 激活结合正则化；主要证据为持续监督学习。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2025/hash/4d42358702dff82e1436550a05ade260-Abstract-Conference.html",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-16",
+    "title": "Lee et al. — Slow and Steady Wins the Race (ICML 2024)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "Hare–Tortoise 快慢网络、训练能力与泛化。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v235/lee24d.html",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-17",
+    "title": "Hare–Tortoise — author training loop",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "EMA 与周期性快网络赋值；公开 README 的复现说明主要覆盖监督实验。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://github.com/dojeon-ai/Hare-Tortoise/blob/4ec5ebbe809793aeca25809ea4cb8c45058deadf/src/trainers/base.py",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-18",
+    "title": "Ramesh, Lewandowski & Schmidhuber — Learning to Forget (2026 preprint)",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "FADE 逐参数在线衰减元学习；线性推导、头部应用及全层扩展的负面证据。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2604.27063",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-19",
+    "title": "FADE — original linear algorithms",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "FADE、IDBD、固定衰减与耦合/解耦组合的作者实现。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://github.com/Aditya-Ramesh-10/Fade/blob/dd4e2965f4820fcab1e872846af5abacfb03ae5c/algs.py",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
+    ]
+  },
+  {
+    "id": "BRIDGE-NONLINEAR-23",
+    "title": "Plasticine — source-pinned rank metrics",
+    "kind": "代码",
+    "topic": "plasticity",
+    "description": "compute_stable_rank 采用 99% 奇异值质量阈值秩；需与通常的 stable rank 区分。",
+    "question": "会运行 DQN 或 PPO 之后，怎样判断失败来自问题定义、信息不足、估计偏差、更新不稳定，还是学习能力本身发生变化？",
+    "links": [
+      {
+        "url": "https://github.com/RLE-Foundation/Plasticine/blob/aa00b4bb18f7fe298a47e1ce36c32ba55ce064e8/plasticine_metrics/rank.py",
+        "label": "原始入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/learning-dynamics/#lesson-sources",
+    "chapterIds": [
+      "streaming",
+      "plasticity"
     ]
   },
   {

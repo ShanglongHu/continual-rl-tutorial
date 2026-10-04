@@ -166,6 +166,38 @@ $$
 
 广义策略迭代 generalized policy iteration（GPI）概括评价与改善相互作用。部分评价后改善、逐状态交错都属于这一思想。它不是任何近似更新都会收敛的定理，也不同于迁移学习中同缩写的 generalized policy improvement。
 
+<a id="experiment-value_iteration"></a>
+
+### 实验：实验 · 每轮改善，还是先把旧策略评价到很精确？
+
+为什么策略评价的误差正在下降，相对于最优价值的误差却可能先上升？
+
+**环境与可用信息。** 已知六格链模型，进入终点奖励 1，其余 −0.01，γ=0.95。价值初始全零。最优策略持续向右；策略迭代的初始策略却始终向左，因此会无限承受每步的小额负奖励。
+
+**设置。** 各运行 1200 个同步模型扫描。价值迭代每轮对五个状态枚举动作并取最大值。对照每轮只评价当前策略，直到最大相邻迭代差小于 0.0000000001 才贪心改善。五个 seed 的运行完全确定。
+
+**检验的机制。** 精确评价错误策略也会得到正确的负价值。它越接近该策略的真值，反而可能离最优价值更远。价值迭代不等待旧策略被精确求解，就将动作选择与价值更新交替进行。
+
+**测量。** 纵轴始终为相对于解析最优价值的最大绝对误差。每轮都算五次状态备份，但价值迭代枚举两个动作，策略评价只读当前动作；策略改善还需额外动作计算。相同扫描数不是相同运行时间。
+
+```bash
+python3 implementations/classic/value_iteration.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/value_iteration/curves.svg)
+
+训练种子 0、1、2、3、4；每种方法 1200 model_sweeps。阴影为 ±1 个样本标准差，不是置信区间。
+
+**结果分析。** 价值迭代在第一个保存点（第 15 轮）已达到浮点精度。对照第 15 轮误差为 1.1073，第 300 轮接近 1.2，之后在第 600 轮前也降到浮点精度。早期上升来自正在评价初始向左策略，不能据此声称 Bellman 评价发散。
+
+**结论边界。** 日志每 15 轮保存一次，不能从这张图读出价值迭代准确用了几轮。对照的极严格评价容差明显增加等待；它不代表所有策略迭代实现，更不是价值迭代普遍更快的证明。
+
+**继续实验。** 在同一模型上，将每次改善之前的评价轮数设为 1、5 和直到容差满足，比较 modified policy iteration。记录总动作模型调用、策略变化次数与残差，分别解释目标误差和求解器误差。
+
+[源码](../../implementations/classic/value_iteration.py) · [逐种子记录](https://yingwen.io/crl-code/results/value_iteration/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/value_iteration/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/value_iteration/curves.json)
+
 <a id="lesson-example"></a>
 
 ## 5 · 完整手算
