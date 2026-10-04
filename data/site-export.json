@@ -823,13 +823,13 @@
     {
       "file": "worlds.json",
       "target": "data/worlds.json",
-      "sha256": "92ec0f5a05fb3db63a5dac623a8a5aed4806b47822371047e4828e9fb4d49f53",
+      "sha256": "393a91766ac4adeac00d77e9d9446d8f0c31b439606c9d24168ffaaa95581aeb",
       "page": null
     },
     {
       "file": "worlds.md",
       "target": "docs/worlds.md",
-      "sha256": "441ca56212bff610e09c248d77a3319f359e3ba6af2bdcc759d7a434c5fe27c4",
+      "sha256": "5f7746daeb4ed52631331231938468e45ed73ad2faec2b441e696574b105f873",
       "page": "worlds/"
     }
   ],
