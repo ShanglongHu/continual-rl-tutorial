@@ -1,0 +1,4472 @@
+{
+  "schema_version": 1,
+  "verified_date": "2026-10-04",
+  "status_enum": {
+    "independent_implementation": "独立教学实现（预测/规划/控制或baseline，非论文复现）",
+    "formula_core": "仅综合lab公式/机制核；个别有综合小任务循环，未拆独立方法",
+    "author_project": "作者工程固定源码/入口接入，未完整训练",
+    "unintegrated": "正文涉及，但尚未接入"
+  },
+  "counts": {
+    "independent_implementation": 59,
+    "formula_core": 54,
+    "author_project": 3,
+    "unintegrated": 27
+  },
+  "count_note": "独立文件数包含教学baseline和退化子机制；正文算法不是互斥分类，禁止据此计算百分比覆盖或称所有算法已复现。",
+  "entries": [
+    {
+      "id": "implementation-bandit_constant_step",
+      "name": "固定步长 ε-greedy",
+      "algorithm": "固定步长 ε-greedy",
+      "status": "independent_implementation",
+      "implementation_id": "bandit_constant_step",
+      "file": "implementations/classic/bandit_constant_step.py",
+      "chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "stationary_bernoulli_bandit",
+      "metric": "累计平均奖励",
+      "unit": "reward",
+      "budget": "environment_steps",
+      "baseline": "bandit_sample_average",
+      "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "bandit_constant_step",
+        "name": "固定步长 ε-greedy",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/exploration/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "stationary_bernoulli_bandit",
+        "baseline": "bandit_sample_average",
+        "metric": "累计平均奖励",
+        "unit": "reward",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "所有估值或偏好=0；三臂均值0.2/0.5/0.8；在线选择并更新。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-bandit_gradient",
+      "name": "梯度赌博机",
+      "algorithm": "梯度赌博机",
+      "status": "independent_implementation",
+      "implementation_id": "bandit_gradient",
+      "file": "implementations/classic/bandit_gradient.py",
+      "chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "stationary_bernoulli_bandit",
+      "metric": "累计平均奖励",
+      "unit": "reward",
+      "budget": "environment_steps",
+      "baseline": "bandit_sample_average",
+      "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "bandit_gradient",
+        "name": "梯度赌博机",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/exploration/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "stationary_bernoulli_bandit",
+        "baseline": "bandit_sample_average",
+        "metric": "累计平均奖励",
+        "unit": "reward",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "所有估值或偏好=0；三臂均值0.2/0.5/0.8；在线选择并更新。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-bandit_sample_average",
+      "name": "样本均值 ε-greedy",
+      "algorithm": "样本均值 ε-greedy",
+      "status": "independent_implementation",
+      "implementation_id": "bandit_sample_average",
+      "file": "implementations/classic/bandit_sample_average.py",
+      "chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "stationary_bernoulli_bandit",
+      "metric": "累计平均奖励",
+      "unit": "reward",
+      "budget": "environment_steps",
+      "baseline": "bandit_constant_step",
+      "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "bandit_sample_average",
+        "name": "样本均值 ε-greedy",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/exploration/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "stationary_bernoulli_bandit",
+        "baseline": "bandit_constant_step",
+        "metric": "累计平均奖励",
+        "unit": "reward",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "所有估值或偏好=0；三臂均值0.2/0.5/0.8；在线选择并更新。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-bandit_ucb",
+      "name": "置信上界 UCB",
+      "algorithm": "置信上界 UCB",
+      "status": "independent_implementation",
+      "implementation_id": "bandit_ucb",
+      "file": "implementations/classic/bandit_ucb.py",
+      "chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "stationary_bernoulli_bandit",
+      "metric": "累计平均奖励",
+      "unit": "reward",
+      "budget": "environment_steps",
+      "baseline": "bandit_sample_average",
+      "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/exploration/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "bandit_ucb",
+        "name": "置信上界 UCB",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/exploration/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "三臂平稳 Bernoulli 赌博机，均值为 0.2、0.5、0.8；记录实际采样奖励。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "stationary_bernoulli_bandit",
+        "baseline": "bandit_sample_average",
+        "metric": "累计平均奖励",
+        "unit": "reward",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "所有估值或偏好=0；三臂均值0.2/0.5/0.8；在线选择并更新。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-double_q",
+      "name": "Double Q-learning",
+      "algorithm": "Double Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "double_q",
+      "file": "implementations/classic/double_q.py",
+      "chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "q_learning",
+      "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "double_q",
+        "name": "Double Q-learning",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/control/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "q_learning",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-dyna_q",
+      "name": "Dyna-Q",
+      "algorithm": "Dyna-Q",
+      "status": "independent_implementation",
+      "implementation_id": "dyna_q",
+      "file": "implementations/classic/dyna_q.py",
+      "chapter_paths": [
+        "algorithms/dyna/",
+        "construction/planning/",
+        "construction/models/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "q_learning",
+      "description": "六格链在线控制：起点0，终点奖励1，其余-0.01，γ=0.95。环境预算与Q-learning一致，额外模型备份单独记录；不能据此声称相同计算成本。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/dyna/",
+        "construction/planning/",
+        "construction/models/"
+      ],
+      "metadata": {
+        "id": "dyna_q",
+        "name": "Dyna-Q",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/dyna/",
+          "construction/planning/",
+          "construction/models/"
+        ],
+        "description": "六格链在线控制：起点0，终点奖励1，其余-0.01，γ=0.95。环境预算与Q-learning一致，额外模型备份单独记录；不能据此声称相同计算成本。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "q_learning",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-emphatic_td",
+      "name": "Emphatic TD(0)",
+      "algorithm": "Emphatic TD(0)",
+      "status": "independent_implementation",
+      "implementation_id": "emphatic_td",
+      "file": "implementations/classic/emphatic_td.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_linear_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "linear_td",
+      "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "emphatic_td",
+        "name": "Emphatic TD(0)",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "algorithms/streaming/",
+          "foundations/objectives/"
+        ],
+        "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_linear_prediction",
+        "baseline": "linear_td",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-expected_sarsa",
+      "name": "Expected SARSA",
+      "algorithm": "Expected SARSA",
+      "status": "independent_implementation",
+      "implementation_id": "expected_sarsa",
+      "file": "implementations/classic/expected_sarsa.py",
+      "chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "q_learning",
+      "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "expected_sarsa",
+        "name": "Expected SARSA",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/control/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "q_learning",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-gtd2",
+      "name": "GTD2",
+      "algorithm": "GTD2",
+      "status": "independent_implementation",
+      "implementation_id": "gtd2",
+      "file": "implementations/classic/gtd2.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_linear_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "linear_td",
+      "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "gtd2",
+        "name": "GTD2",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "algorithms/streaming/",
+          "foundations/objectives/"
+        ],
+        "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_linear_prediction",
+        "baseline": "linear_td",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-linear_td",
+      "name": "线性半梯度 TD",
+      "algorithm": "线性半梯度 TD",
+      "status": "independent_implementation",
+      "implementation_id": "linear_td",
+      "file": "implementations/classic/linear_td.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_linear_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "gtd2",
+      "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "linear_td",
+        "name": "线性半梯度 TD",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "algorithms/streaming/",
+          "foundations/objectives/"
+        ],
+        "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_linear_prediction",
+        "baseline": "gtd2",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-mc_prediction",
+      "name": "首次访问蒙特卡洛预测",
+      "algorithm": "首次访问蒙特卡洛预测",
+      "status": "independent_implementation",
+      "implementation_id": "mc_prediction",
+      "file": "implementations/classic/mc_prediction.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "algorithms/credit-assignment/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "td0",
+      "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "algorithms/credit-assignment/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "mc_prediction",
+        "name": "首次访问蒙特卡洛预测",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "algorithms/credit-assignment/",
+          "foundations/objectives/"
+        ],
+        "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_prediction",
+        "baseline": "td0",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-nstep_sarsa",
+      "name": "三步 SARSA",
+      "algorithm": "三步 SARSA",
+      "status": "independent_implementation",
+      "implementation_id": "nstep_sarsa",
+      "file": "implementations/classic/nstep_sarsa.py",
+      "chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "q_learning",
+      "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "nstep_sarsa",
+        "name": "三步 SARSA",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/control/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "q_learning",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-nstep_td",
+      "name": "三步 TD 预测",
+      "algorithm": "三步 TD 预测",
+      "status": "independent_implementation",
+      "implementation_id": "nstep_td",
+      "file": "implementations/classic/nstep_td.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "algorithms/credit-assignment/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "td0",
+      "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "algorithms/credit-assignment/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "nstep_td",
+        "name": "三步 TD 预测",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "algorithms/credit-assignment/",
+          "foundations/objectives/"
+        ],
+        "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_prediction",
+        "baseline": "td0",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-policy_iteration",
+      "name": "策略迭代",
+      "algorithm": "策略迭代",
+      "status": "independent_implementation",
+      "implementation_id": "policy_iteration",
+      "file": "implementations/classic/policy_iteration.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "construction/planning/",
+        "foundations/objectives/"
+      ],
+      "scope": "exact-planning",
+      "role": "teaching_method",
+      "task": "chain_exact_planning",
+      "metric": "最优价值最大绝对误差",
+      "unit": "value",
+      "budget": "model_sweeps",
+      "baseline": "value_iteration",
+      "description": "已知六格链模型，γ=0.95；横轴是同步扫描次数，绝非环境交互。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "construction/planning/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "policy_iteration",
+        "name": "策略迭代",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "construction/planning/",
+          "foundations/objectives/"
+        ],
+        "description": "已知六格链模型，γ=0.95；横轴是同步扫描次数，绝非环境交互。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_exact_planning",
+        "baseline": "value_iteration",
+        "metric": "最优价值最大绝对误差",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "exact-planning",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "model_sweeps",
+        "budget_note": "每次同步扫描含5个状态备份；曲线横轴为扫描次数。",
+        "initialization": "V=0，策略迭代初始策略总向左；已知确定模型。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-prioritized_sweeping",
+      "name": "优先扫描",
+      "algorithm": "优先扫描",
+      "status": "independent_implementation",
+      "implementation_id": "prioritized_sweeping",
+      "file": "implementations/classic/prioritized_sweeping.py",
+      "chapter_paths": [
+        "algorithms/dyna/",
+        "construction/planning/",
+        "construction/models/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "q_learning",
+      "description": "六格链在线控制：起点0，终点奖励1，其余-0.01，γ=0.95。环境预算与Q-learning一致，额外模型备份单独记录；不能据此声称相同计算成本。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/dyna/",
+        "construction/planning/",
+        "construction/models/"
+      ],
+      "metadata": {
+        "id": "prioritized_sweeping",
+        "name": "优先扫描",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/dyna/",
+          "construction/planning/",
+          "construction/models/"
+        ],
+        "description": "六格链在线控制：起点0，终点奖励1，其余-0.01，γ=0.95。环境预算与Q-learning一致，额外模型备份单独记录；不能据此声称相同计算成本。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "q_learning",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-q_learning",
+      "name": "Q-learning",
+      "algorithm": "Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "q_learning",
+      "file": "implementations/classic/q_learning.py",
+      "chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "sarsa",
+      "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "q_learning",
+        "name": "Q-learning",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/control/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "sarsa",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-sarsa",
+      "name": "SARSA",
+      "algorithm": "SARSA",
+      "status": "independent_implementation",
+      "implementation_id": "sarsa",
+      "file": "implementations/classic/sarsa.py",
+      "chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "q_learning",
+      "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "sarsa",
+        "name": "SARSA",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/control/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "q_learning",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-sarsa_lambda",
+      "name": "SARSA(λ)",
+      "algorithm": "SARSA(λ)",
+      "status": "independent_implementation",
+      "implementation_id": "sarsa_lambda",
+      "file": "implementations/classic/sarsa_lambda.py",
+      "chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "chain_control",
+      "metric": "确定性贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "q_learning",
+      "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/control/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "sarsa_lambda",
+        "name": "SARSA(λ)",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/control/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链在线控制：从0开始，右端终止奖励1，其余奖励-0.01，γ=0.95，ε=0.1。训练与测量分开，测量是冻结当前Q的贪心策略回报。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_control",
+        "baseline": "q_learning",
+        "metric": "确定性贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "Q=0，回合从状态0开始；在线训练，冻结当前贪心策略评价。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-td0",
+      "name": "TD(0)",
+      "algorithm": "TD(0)",
+      "status": "independent_implementation",
+      "implementation_id": "td0",
+      "file": "implementations/classic/td0.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "algorithms/credit-assignment/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "mc_prediction",
+      "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "algorithms/credit-assignment/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "td0",
+        "name": "TD(0)",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "algorithms/credit-assignment/",
+          "foundations/objectives/"
+        ],
+        "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_prediction",
+        "baseline": "mc_prediction",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-td_lambda",
+      "name": "累积迹 TD(λ)",
+      "algorithm": "累积迹 TD(λ)",
+      "status": "independent_implementation",
+      "implementation_id": "td_lambda",
+      "file": "implementations/classic/td_lambda.py",
+      "chapter_paths": [
+        "algorithms/credit-assignment/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "td0",
+      "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/credit-assignment/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "td_lambda",
+        "name": "累积迹 TD(λ)",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/credit-assignment/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_prediction",
+        "baseline": "td0",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-tdc",
+      "name": "TDC",
+      "algorithm": "TDC",
+      "status": "independent_implementation",
+      "implementation_id": "tdc",
+      "file": "implementations/classic/tdc.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_linear_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "linear_td",
+      "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "algorithms/streaming/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "tdc",
+        "name": "TDC",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "algorithms/streaming/",
+          "foundations/objectives/"
+        ],
+        "description": "在线随机游走预测，从状态3开始；γ=1，特征[1,s/6]，冻结测量五状态RMSE。全部使用同策略数据ρ=1，因此此实验不检验离策略稳定性。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_linear_prediction",
+        "baseline": "linear_td",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-true_online_td",
+      "name": "True-online TD(λ)",
+      "algorithm": "True-online TD(λ)",
+      "status": "independent_implementation",
+      "implementation_id": "true_online_td",
+      "file": "implementations/classic/true_online_td.py",
+      "chapter_paths": [
+        "algorithms/credit-assignment/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "random_walk_prediction",
+      "metric": "五状态价值 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "td0",
+      "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/credit-assignment/",
+        "algorithms/value/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "true_online_td",
+        "name": "True-online TD(λ)",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/credit-assignment/",
+          "algorithms/value/",
+          "foundations/objectives/"
+        ],
+        "description": "五个非终止状态的无偏随机游走；左端奖励 0、右端奖励 1，γ=1。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "random_walk_prediction",
+        "baseline": "td0",
+        "metric": "五状态价值 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "真实转移次数；未完成回合不当作终止；模型规划计算额外单列。",
+        "initialization": "价值或权重=0；每回合从状态3开始，无偏左右随机游走，在线预测。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-value_iteration",
+      "name": "价值迭代",
+      "algorithm": "价值迭代",
+      "status": "independent_implementation",
+      "implementation_id": "value_iteration",
+      "file": "implementations/classic/value_iteration.py",
+      "chapter_paths": [
+        "algorithms/value/",
+        "construction/planning/",
+        "foundations/objectives/"
+      ],
+      "scope": "exact-planning",
+      "role": "teaching_method",
+      "task": "chain_exact_planning",
+      "metric": "最优价值最大绝对误差",
+      "unit": "value",
+      "budget": "model_sweeps",
+      "baseline": "policy_iteration",
+      "description": "已知六格链模型，γ=0.95；横轴是同步扫描次数，绝非环境交互。",
+      "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/value/",
+        "construction/planning/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "value_iteration",
+        "name": "价值迭代",
+        "family": "classic",
+        "chapter_paths": [
+          "algorithms/value/",
+          "construction/planning/",
+          "foundations/objectives/"
+        ],
+        "description": "已知六格链模型，γ=0.95；横轴是同步扫描次数，绝非环境交互。",
+        "question": "在同一教学任务和预算下，实际更新怎样改变预测或策略？",
+        "task": "chain_exact_planning",
+        "baseline": "policy_iteration",
+        "metric": "最优价值最大绝对误差",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "exact-planning",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "model_sweeps",
+        "budget_note": "每次同步扫描含5个状态备份；曲线横轴为扫描次数。",
+        "initialization": "V=0，策略迭代初始策略总向左；已知确定模型。",
+        "limitations": "小型教学任务；曲线不构成一般性能或持续学习优势的证据。"
+      }
+    },
+    {
+      "id": "implementation-chain_q",
+      "name": "链任务 Q-learning",
+      "algorithm": "链任务 Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "chain_q",
+      "file": "implementations/continual/chain_q.py",
+      "chapter_paths": [
+        "foundations/reward-design/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_baseline",
+      "task": "potential_chain_control",
+      "metric": "原始奖励贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "potential_shaping",
+      "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。势函数固定、在线更新后冻结贪心策略，以原始环境奖励评价。任务全程平稳，无中点切换；塑形只改变训练奖励。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/reward-design/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "chain_q",
+        "name": "链任务 Q-learning",
+        "family": "continual",
+        "chapter_paths": [
+          "foundations/reward-design/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。势函数固定、在线更新后冻结贪心策略，以原始环境奖励评价。任务全程平稳，无中点切换；塑形只改变训练奖励。",
+        "question": "固定势函数怎样改变平稳链的原奖励学习回报？",
+        "task": "potential_chain_control",
+        "baseline": "potential_shaping",
+        "metric": "原始奖励贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个原始转移；任务平稳，无中点变化；冻结策略精确测量终点或无限循环折扣回报。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-constant_step_lms",
+      "name": "固定步长 LMS",
+      "algorithm": "固定步长 LMS",
+      "status": "independent_implementation",
+      "implementation_id": "constant_step_lms",
+      "file": "implementations/continual/constant_step_lms.py",
+      "chapter_paths": [
+        "algorithms/meta/",
+        "algorithms/value/",
+        "algorithms/streaming/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_baseline",
+      "task": "adaptive_regression",
+      "metric": "当前任务无噪声预测 MSE",
+      "unit": "squared_error",
+      "budget": "environment_steps",
+      "baseline": "idbd",
+      "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/meta/",
+        "algorithms/value/",
+        "algorithms/streaming/"
+      ],
+      "metadata": {
+        "id": "constant_step_lms",
+        "name": "固定步长 LMS",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/meta/",
+          "algorithms/value/",
+          "algorithms/streaming/"
+        ],
+        "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。",
+        "question": "逐特征步长怎样响应线性预测权重反转？",
+        "task": "adaptive_regression",
+        "baseline": "idbd",
+        "metric": "当前任务无噪声预测 MSE",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实样本；中点权重反转，无任务标签；TIDBD采用γ=0退化协议。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-count_bonus",
+      "name": "计数探索奖励",
+      "algorithm": "计数探索奖励",
+      "status": "independent_implementation",
+      "implementation_id": "count_bonus",
+      "file": "implementations/continual/count_bonus.py",
+      "chapter_paths": [
+        "algorithms/exploration/",
+        "foundations/reward-design/",
+        "algorithms/control/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "count_exploration_chain",
+      "metric": "原始奖励贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "plain_q_exploration",
+      "description": "平稳六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。状态动作计数从0开始，每次访问先加1，再计算0.2/√N探索奖励；对照系数0。冻结测量原始奖励贪心回报；计数新奇不等于信息增益。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/exploration/",
+        "foundations/reward-design/",
+        "algorithms/control/"
+      ],
+      "metadata": {
+        "id": "count_bonus",
+        "name": "计数探索奖励",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/exploration/",
+          "foundations/reward-design/",
+          "algorithms/control/"
+        ],
+        "description": "平稳六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。状态动作计数从0开始，每次访问先加1，再计算0.2/√N探索奖励；对照系数0。冻结测量原始奖励贪心回报；计数新奇不等于信息增益。",
+        "question": "访问计数探索奖励怎样影响平稳链的原奖励回报？",
+        "task": "count_exploration_chain",
+        "baseline": "plain_q_exploration",
+        "metric": "原始奖励贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个原始转移；任务平稳，无中点变化；训练加bonus，评价原奖励。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-differential_q",
+      "name": "差分 Q-learning",
+      "algorithm": "差分 Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "differential_q",
+      "file": "implementations/continual/differential_q.py",
+      "chapter_paths": [
+        "algorithms/average-reward/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "continuing_bandit_control",
+      "metric": "贪心动作真实平均奖励",
+      "unit": "reward",
+      "budget": "environment_steps",
+      "baseline": "differential_sarsa",
+      "description": "单状态无终点两动作继续任务，中点均值[0.2,0.8]交换；Bernoulli奖励。Q=0、奖励率=0，ε=0.1。冻结测量当前贪心动作真实平均奖励，训练不使用真均值。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/average-reward/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "differential_q",
+        "name": "差分 Q-learning",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/average-reward/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "单状态无终点两动作继续任务，中点均值[0.2,0.8]交换；Bernoulli奖励。Q=0、奖励率=0，ε=0.1。冻结测量当前贪心动作真实平均奖励，训练不使用真均值。",
+        "question": "差分价值和奖励率怎样响应动作均值交换？",
+        "task": "continuing_bandit_control",
+        "baseline": "differential_sarsa",
+        "metric": "贪心动作真实平均奖励",
+        "unit": "reward",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个继续转移；中点动作Bernoulli均值交换，无终点。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-differential_sarsa",
+      "name": "差分 SARSA",
+      "algorithm": "差分 SARSA",
+      "status": "independent_implementation",
+      "implementation_id": "differential_sarsa",
+      "file": "implementations/continual/differential_sarsa.py",
+      "chapter_paths": [
+        "algorithms/average-reward/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "continuing_bandit_control",
+      "metric": "贪心动作真实平均奖励",
+      "unit": "reward",
+      "budget": "environment_steps",
+      "baseline": "differential_q",
+      "description": "单状态无终点两动作继续任务，中点均值[0.2,0.8]交换；Bernoulli奖励。Q=0、奖励率=0，ε=0.1。冻结测量当前贪心动作真实平均奖励，训练不使用真均值。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/average-reward/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "differential_sarsa",
+        "name": "差分 SARSA",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/average-reward/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "单状态无终点两动作继续任务，中点均值[0.2,0.8]交换；Bernoulli奖励。Q=0、奖励率=0，ε=0.1。冻结测量当前贪心动作真实平均奖励，训练不使用真均值。",
+        "question": "差分价值和奖励率怎样响应动作均值交换？",
+        "task": "continuing_bandit_control",
+        "baseline": "differential_q",
+        "metric": "贪心动作真实平均奖励",
+        "unit": "reward",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个继续转移；中点动作Bernoulli均值交换，无终点。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-ewc",
+      "name": "对角 EWC",
+      "algorithm": "对角 EWC",
+      "status": "independent_implementation",
+      "implementation_id": "ewc",
+      "file": "implementations/continual/ewc.py",
+      "chapter_paths": [
+        "algorithms/retention/",
+        "algorithms/plasticity/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "retention_regression",
+      "metric": "当前任务无噪声预测 MSE",
+      "unit": "squared_error",
+      "budget": "environment_steps",
+      "baseline": "online_sgd",
+      "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。同时记录第一任务误差，保留与适应可能冲突。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/retention/",
+        "algorithms/plasticity/"
+      ],
+      "metadata": {
+        "id": "ewc",
+        "name": "对角 EWC",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/retention/",
+          "algorithms/plasticity/"
+        ],
+        "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。同时记录第一任务误差，保留与适应可能冲突。",
+        "question": "旧任务保留与新任务适应怎样相互影响？",
+        "task": "retention_regression",
+        "baseline": "online_sgd",
+        "metric": "当前任务无噪声预测 MSE",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实样本；中点权重反转。EWC获知边界，回放额外一次梯度；非等计算、非等信息对照。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-gvf_gtd_lambda",
+      "name": "向量 GVF GTD(λ)",
+      "algorithm": "向量 GVF GTD(λ)",
+      "status": "independent_implementation",
+      "implementation_id": "gvf_gtd_lambda",
+      "file": "implementations/continual/gvf_gtd_lambda.py",
+      "chapter_paths": [
+        "construction/predictive-knowledge/",
+        "algorithms/value/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "vector_gvf_prediction",
+      "metric": "两个 GVF 四状态分量 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "gvf_td",
+      "description": "继续两状态确定性交替流，从0开始，无终点。两个cumulant分别为到达1和到达0；折扣0.8/0.5，中点cumulant幅度从1变0.5。one-hot权重全0，在线更新后冻结测量解析GVF RMSE；ρ=1，不检验离策略稳定性。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://sites.ualberta.ca/~pilarski/docs/papers/Sutton_2011_Horde_AAMAS.pdf"
+      ],
+      "implementation_chapter_paths": [
+        "construction/predictive-knowledge/",
+        "algorithms/value/"
+      ],
+      "metadata": {
+        "id": "gvf_gtd_lambda",
+        "name": "向量 GVF GTD(λ)",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/predictive-knowledge/",
+          "algorithms/value/"
+        ],
+        "description": "继续两状态确定性交替流，从0开始，无终点。两个cumulant分别为到达1和到达0；折扣0.8/0.5，中点cumulant幅度从1变0.5。one-hot权重全0，在线更新后冻结测量解析GVF RMSE；ρ=1，不检验离策略稳定性。",
+        "question": "不同折扣GVF怎样响应cumulant减半？",
+        "task": "vector_gvf_prediction",
+        "baseline": "gvf_td",
+        "metric": "两个 GVF 四状态分量 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://sites.ualberta.ca/~pilarski/docs/papers/Sutton_2011_Horde_AAMAS.pdf"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个继续转移；中点cumulant幅度减半，ρ=1，仅on-policy教学。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-gvf_td",
+      "name": "向量 GVF TD",
+      "algorithm": "向量 GVF TD",
+      "status": "independent_implementation",
+      "implementation_id": "gvf_td",
+      "file": "implementations/continual/gvf_td.py",
+      "chapter_paths": [
+        "construction/predictive-knowledge/",
+        "algorithms/value/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "vector_gvf_prediction",
+      "metric": "两个 GVF 四状态分量 RMSE",
+      "unit": "value",
+      "budget": "environment_steps",
+      "baseline": "gvf_gtd_lambda",
+      "description": "继续两状态确定性交替流，从0开始，无终点。两个cumulant分别为到达1和到达0；折扣0.8/0.5，中点cumulant幅度从1变0.5。one-hot权重全0，在线更新后冻结测量解析GVF RMSE；ρ=1，不检验离策略稳定性。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://sites.ualberta.ca/~pilarski/docs/papers/Sutton_2011_Horde_AAMAS.pdf"
+      ],
+      "implementation_chapter_paths": [
+        "construction/predictive-knowledge/",
+        "algorithms/value/"
+      ],
+      "metadata": {
+        "id": "gvf_td",
+        "name": "向量 GVF TD",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/predictive-knowledge/",
+          "algorithms/value/"
+        ],
+        "description": "继续两状态确定性交替流，从0开始，无终点。两个cumulant分别为到达1和到达0；折扣0.8/0.5，中点cumulant幅度从1变0.5。one-hot权重全0，在线更新后冻结测量解析GVF RMSE；ρ=1，不检验离策略稳定性。",
+        "question": "不同折扣GVF怎样响应cumulant减半？",
+        "task": "vector_gvf_prediction",
+        "baseline": "gvf_gtd_lambda",
+        "metric": "两个 GVF 四状态分量 RMSE",
+        "unit": "value",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://sites.ualberta.ca/~pilarski/docs/papers/Sutton_2011_Horde_AAMAS.pdf"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个继续转移；中点cumulant幅度减半，ρ=1，仅on-policy教学。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-idbd",
+      "name": "IDBD",
+      "algorithm": "IDBD",
+      "status": "independent_implementation",
+      "implementation_id": "idbd",
+      "file": "implementations/continual/idbd.py",
+      "chapter_paths": [
+        "algorithms/meta/",
+        "algorithms/value/",
+        "algorithms/streaming/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "adaptive_regression",
+      "metric": "当前任务无噪声预测 MSE",
+      "unit": "squared_error",
+      "budget": "environment_steps",
+      "baseline": "constant_step_lms",
+      "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://cdn.aaai.org/AAAI/1992/AAAI92-027.pdf"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/meta/",
+        "algorithms/value/",
+        "algorithms/streaming/"
+      ],
+      "metadata": {
+        "id": "idbd",
+        "name": "IDBD",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/meta/",
+          "algorithms/value/",
+          "algorithms/streaming/"
+        ],
+        "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。",
+        "question": "逐特征步长怎样响应线性预测权重反转？",
+        "task": "adaptive_regression",
+        "baseline": "constant_step_lms",
+        "metric": "当前任务无噪声预测 MSE",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://cdn.aaai.org/AAAI/1992/AAAI92-027.pdf"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实样本；中点权重反转，无任务标签；TIDBD采用γ=0退化协议。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-learned_model_mpc",
+      "name": "学习模型滚动规划",
+      "algorithm": "学习模型滚动规划",
+      "status": "independent_implementation",
+      "implementation_id": "learned_model_mpc",
+      "file": "implementations/continual/learned_model_mpc.py",
+      "chapter_paths": [
+        "construction/models/",
+        "construction/planning/",
+        "algorithms/dyna/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "learned_chain_model_control",
+      "metric": "原始平均奖励冻结策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "one_step_model",
+      "description": "未知六格链从0开始：非终点期望奖励-0.01，终点奖励中点从1变0.5，观测Gaussian噪声σ=0.02。经验均值奖励与频率转移模型初始空，未访问乐观奖励0.05；γ=0.95，ε=0.1。滚动有限时域5步对照1步，两者每转移只执行首动作然后重新规划，额外模型计算不同。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "construction/models/",
+        "construction/planning/",
+        "algorithms/dyna/"
+      ],
+      "metadata": {
+        "id": "learned_model_mpc",
+        "name": "学习模型滚动规划",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/models/",
+          "construction/planning/",
+          "algorithms/dyna/"
+        ],
+        "description": "未知六格链从0开始：非终点期望奖励-0.01，终点奖励中点从1变0.5，观测Gaussian噪声σ=0.02。经验均值奖励与频率转移模型初始空，未访问乐观奖励0.05；γ=0.95，ε=0.1。滚动有限时域5步对照1步，两者每转移只执行首动作然后重新规划，额外模型计算不同。",
+        "question": "五步与一步模型规划怎样响应终点奖励下降？",
+        "task": "learned_chain_model_control",
+        "baseline": "one_step_model",
+        "metric": "原始平均奖励冻结策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实转移；中点终点奖励均值1变0.5；模型是全历史经验均值；规划计算成本不同。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-one_step_model",
+      "name": "学习模型一步贪心",
+      "algorithm": "学习模型一步贪心",
+      "status": "independent_implementation",
+      "implementation_id": "one_step_model",
+      "file": "implementations/continual/one_step_model.py",
+      "chapter_paths": [
+        "construction/models/",
+        "construction/planning/",
+        "algorithms/dyna/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_baseline",
+      "task": "learned_chain_model_control",
+      "metric": "原始平均奖励冻结策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "learned_model_mpc",
+      "description": "未知六格链从0开始：非终点期望奖励-0.01，终点奖励中点从1变0.5，观测Gaussian噪声σ=0.02。经验均值奖励与频率转移模型初始空，未访问乐观奖励0.05；γ=0.95，ε=0.1。滚动有限时域5步对照1步，两者每转移只执行首动作然后重新规划，额外模型计算不同。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "construction/models/",
+        "construction/planning/",
+        "algorithms/dyna/"
+      ],
+      "metadata": {
+        "id": "one_step_model",
+        "name": "学习模型一步贪心",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/models/",
+          "construction/planning/",
+          "algorithms/dyna/"
+        ],
+        "description": "未知六格链从0开始：非终点期望奖励-0.01，终点奖励中点从1变0.5，观测Gaussian噪声σ=0.02。经验均值奖励与频率转移模型初始空，未访问乐观奖励0.05；γ=0.95，ε=0.1。滚动有限时域5步对照1步，两者每转移只执行首动作然后重新规划，额外模型计算不同。",
+        "question": "五步与一步模型规划怎样响应终点奖励下降？",
+        "task": "learned_chain_model_control",
+        "baseline": "learned_model_mpc",
+        "metric": "原始平均奖励冻结策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实转移；中点终点奖励均值1变0.5；模型是全历史经验均值；规划计算成本不同。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-online_sgd",
+      "name": "在线 SGD",
+      "algorithm": "在线 SGD",
+      "status": "independent_implementation",
+      "implementation_id": "online_sgd",
+      "file": "implementations/continual/online_sgd.py",
+      "chapter_paths": [
+        "algorithms/retention/",
+        "algorithms/plasticity/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_baseline",
+      "task": "retention_regression",
+      "metric": "当前任务无噪声预测 MSE",
+      "unit": "squared_error",
+      "budget": "environment_steps",
+      "baseline": "ewc",
+      "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。同时记录第一任务误差，保留与适应可能冲突。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/retention/",
+        "algorithms/plasticity/"
+      ],
+      "metadata": {
+        "id": "online_sgd",
+        "name": "在线 SGD",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/retention/",
+          "algorithms/plasticity/"
+        ],
+        "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。同时记录第一任务误差，保留与适应可能冲突。",
+        "question": "旧任务保留与新任务适应怎样相互影响？",
+        "task": "retention_regression",
+        "baseline": "ewc",
+        "metric": "当前任务无噪声预测 MSE",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实样本；中点权重反转。EWC获知边界，回放额外一次梯度；非等计算、非等信息对照。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-option_smdp_q",
+      "name": "SMDP 选项 Q-learning",
+      "algorithm": "SMDP 选项 Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "option_smdp_q",
+      "file": "implementations/continual/option_smdp_q.py",
+      "chapter_paths": [
+        "construction/options/",
+        "algorithms/control/",
+        "algorithms/credit-assignment/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "option_chain_control",
+      "metric": "原始奖励贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "primitive_q",
+      "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。选项0向左一步，选项1向右最多两步；原始动作对照仅一步。横轴严格累计真实原始转移，任务平稳。未完成且被预算截断的选项不更新，真终点可提前结束选项。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://www.sciencedirect.com/science/article/pii/S0004370299000521"
+      ],
+      "implementation_chapter_paths": [
+        "construction/options/",
+        "algorithms/control/",
+        "algorithms/credit-assignment/"
+      ],
+      "metadata": {
+        "id": "option_smdp_q",
+        "name": "SMDP 选项 Q-learning",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/options/",
+          "algorithms/control/",
+          "algorithms/credit-assignment/"
+        ],
+        "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。选项0向左一步，选项1向右最多两步；原始动作对照仅一步。横轴严格累计真实原始转移，任务平稳。未完成且被预算截断的选项不更新，真终点可提前结束选项。",
+        "question": "两步承诺选项怎样改变相同原始预算下的学习？",
+        "task": "option_chain_control",
+        "baseline": "primitive_q",
+        "metric": "原始奖励贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://www.sciencedirect.com/science/article/pii/S0004370299000521"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "累计真实原始转移；任务平稳，无中点变化；选项完成才更新，预算截断不冒充终点；评价遵循call-and-return。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-plain_q_exploration",
+      "name": "无探索奖励 Q-learning",
+      "algorithm": "无探索奖励 Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "plain_q_exploration",
+      "file": "implementations/continual/plain_q_exploration.py",
+      "chapter_paths": [
+        "algorithms/exploration/",
+        "foundations/reward-design/",
+        "algorithms/control/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_baseline",
+      "task": "count_exploration_chain",
+      "metric": "原始奖励贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "count_bonus",
+      "description": "平稳六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。状态动作计数从0开始，每次访问先加1，再计算0.2/√N探索奖励；对照系数0。冻结测量原始奖励贪心回报；计数新奇不等于信息增益。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/exploration/",
+        "foundations/reward-design/",
+        "algorithms/control/"
+      ],
+      "metadata": {
+        "id": "plain_q_exploration",
+        "name": "无探索奖励 Q-learning",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/exploration/",
+          "foundations/reward-design/",
+          "algorithms/control/"
+        ],
+        "description": "平稳六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。状态动作计数从0开始，每次访问先加1，再计算0.2/√N探索奖励；对照系数0。冻结测量原始奖励贪心回报；计数新奇不等于信息增益。",
+        "question": "访问计数探索奖励怎样影响平稳链的原奖励回报？",
+        "task": "count_exploration_chain",
+        "baseline": "count_bonus",
+        "metric": "原始奖励贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个原始转移；任务平稳，无中点变化；训练加bonus，评价原奖励。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-potential_shaping",
+      "name": "势函数奖励塑形",
+      "algorithm": "势函数奖励塑形",
+      "status": "independent_implementation",
+      "implementation_id": "potential_shaping",
+      "file": "implementations/continual/potential_shaping.py",
+      "chapter_paths": [
+        "foundations/reward-design/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "potential_chain_control",
+      "metric": "原始奖励贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "chain_q",
+      "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。势函数固定、在线更新后冻结贪心策略，以原始环境奖励评价。任务全程平稳，无中点切换；塑形只改变训练奖励。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/reward-design/",
+        "algorithms/control/",
+        "foundations/objectives/"
+      ],
+      "metadata": {
+        "id": "potential_shaping",
+        "name": "势函数奖励塑形",
+        "family": "continual",
+        "chapter_paths": [
+          "foundations/reward-design/",
+          "algorithms/control/",
+          "foundations/objectives/"
+        ],
+        "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。势函数固定、在线更新后冻结贪心策略，以原始环境奖励评价。任务全程平稳，无中点切换；塑形只改变训练奖励。",
+        "question": "固定势函数怎样改变平稳链的原奖励学习回报？",
+        "task": "potential_chain_control",
+        "baseline": "chain_q",
+        "metric": "原始奖励贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个原始转移；任务平稳，无中点变化；冻结策略精确测量终点或无限循环折扣回报。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-primitive_q",
+      "name": "原始动作 Q-learning",
+      "algorithm": "原始动作 Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "primitive_q",
+      "file": "implementations/continual/primitive_q.py",
+      "chapter_paths": [
+        "construction/options/",
+        "algorithms/control/",
+        "algorithms/credit-assignment/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_baseline",
+      "task": "option_chain_control",
+      "metric": "原始奖励贪心策略折扣回报",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "option_smdp_q",
+      "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。选项0向左一步，选项1向右最多两步；原始动作对照仅一步。横轴严格累计真实原始转移，任务平稳。未完成且被预算截断的选项不更新，真终点可提前结束选项。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "construction/options/",
+        "algorithms/control/",
+        "algorithms/credit-assignment/"
+      ],
+      "metadata": {
+        "id": "primitive_q",
+        "name": "原始动作 Q-learning",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/options/",
+          "algorithms/control/",
+          "algorithms/credit-assignment/"
+        ],
+        "description": "六格链从0开始，终点奖励1、其余-0.01，γ=0.95，ε=0.1，Q=0。选项0向左一步，选项1向右最多两步；原始动作对照仅一步。横轴严格累计真实原始转移，任务平稳。未完成且被预算截断的选项不更新，真终点可提前结束选项。",
+        "question": "两步承诺选项怎样改变相同原始预算下的学习？",
+        "task": "option_chain_control",
+        "baseline": "option_smdp_q",
+        "metric": "原始奖励贪心策略折扣回报",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "累计真实原始转移；任务平稳，无中点变化；选项完成才更新，预算截断不冒充终点；评价遵循call-and-return。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-reservoir_replay",
+      "name": "蓄水池经验回放",
+      "algorithm": "蓄水池经验回放",
+      "status": "independent_implementation",
+      "implementation_id": "reservoir_replay",
+      "file": "implementations/continual/reservoir_replay.py",
+      "chapter_paths": [
+        "algorithms/retention/",
+        "algorithms/plasticity/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "retention_regression",
+      "metric": "当前任务无噪声预测 MSE",
+      "unit": "squared_error",
+      "budget": "environment_steps",
+      "baseline": "online_sgd",
+      "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。同时记录第一任务误差，保留与适应可能冲突。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/retention/",
+        "algorithms/plasticity/"
+      ],
+      "metadata": {
+        "id": "reservoir_replay",
+        "name": "蓄水池经验回放",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/retention/",
+          "algorithms/plasticity/"
+        ],
+        "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。同时记录第一任务误差，保留与适应可能冲突。",
+        "question": "旧任务保留与新任务适应怎样相互影响？",
+        "task": "retention_regression",
+        "baseline": "online_sgd",
+        "metric": "当前任务无噪声预测 MSE",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实样本；中点权重反转。EWC获知边界，回放额外一次梯度；非等计算、非等信息对照。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-rtrl",
+      "name": "RTRL",
+      "algorithm": "RTRL",
+      "status": "independent_implementation",
+      "implementation_id": "rtrl",
+      "file": "implementations/continual/rtrl.py",
+      "chapter_paths": [
+        "construction/state/",
+        "algorithms/credit-assignment/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "recurrent_sequence_prediction",
+      "metric": "更新前序列预测平方误差 EMA",
+      "unit": "squared_error",
+      "budget": "sequences",
+      "baseline": "tbptt",
+      "description": "每步8个U(-1,1)输入组成独立序列；tanh老师a=0.8，b中点从0.4变-0.4。学生初始[0.3,0.1,0]，段内参数冻结、段间SGD；曲线为更新前误差平方EMA(0.95)，每段隐藏状态清零。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://doi.org/10.1162/neco.1989.1.2.270"
+      ],
+      "implementation_chapter_paths": [
+        "construction/state/",
+        "algorithms/credit-assignment/"
+      ],
+      "metadata": {
+        "id": "rtrl",
+        "name": "RTRL",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/state/",
+          "algorithms/credit-assignment/"
+        ],
+        "description": "每步8个U(-1,1)输入组成独立序列；tanh老师a=0.8，b中点从0.4变-0.4。学生初始[0.3,0.1,0]，段内参数冻结、段间SGD；曲线为更新前误差平方EMA(0.95)，每段隐藏状态清零。",
+        "question": "精确Jacobian与三步截断怎样影响递归预测适应？",
+        "task": "recurrent_sequence_prediction",
+        "baseline": "tbptt",
+        "metric": "更新前序列预测平方误差 EMA",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://doi.org/10.1162/neco.1989.1.2.270"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "sequences",
+        "budget_note": "每步一段长度8序列；中点老师输入权重反转；段内参数冻结、段间更新；元素预算=8*steps。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-successor_features_gpi",
+      "name": "后继特征 GPI",
+      "algorithm": "后继特征 GPI",
+      "status": "independent_implementation",
+      "implementation_id": "successor_features_gpi",
+      "file": "implementations/continual/successor_features_gpi.py",
+      "chapter_paths": [
+        "construction/models/",
+        "construction/goals/",
+        "construction/predictive-knowledge/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "successor_feature_transfer",
+      "metric": "冻结选择策略的解析折扣价值",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "successor_features_policy",
+      "description": "单状态两动作继续任务，γ=0.8，行为动作均匀采样；特征为动作one-hot，SF全0。基础策略库总动作0/总动作1。中点奖励权重[0.2,1]变[1,0.2]并直接告知算法；此实验展示已知线性奖励的迁移，不包含奖励权重学习。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://arxiv.org/abs/1606.05312"
+      ],
+      "implementation_chapter_paths": [
+        "construction/models/",
+        "construction/goals/",
+        "construction/predictive-knowledge/"
+      ],
+      "metadata": {
+        "id": "successor_features_gpi",
+        "name": "后继特征 GPI",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/models/",
+          "construction/goals/",
+          "construction/predictive-knowledge/"
+        ],
+        "description": "单状态两动作继续任务，γ=0.8，行为动作均匀采样；特征为动作one-hot，SF全0。基础策略库总动作0/总动作1。中点奖励权重[0.2,1]变[1,0.2]并直接告知算法；此实验展示已知线性奖励的迁移，不包含奖励权重学习。",
+        "question": "已知奖励权重切换时，GPI怎样组合后继特征？",
+        "task": "successor_feature_transfer",
+        "baseline": "successor_features_policy",
+        "metric": "冻结选择策略的解析折扣价值",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://arxiv.org/abs/1606.05312"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实转移；中点切换并告知奖励权重；不包含奖励权重学习。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-successor_features_policy",
+      "name": "后继特征固定基础策略",
+      "algorithm": "后继特征固定基础策略",
+      "status": "independent_implementation",
+      "implementation_id": "successor_features_policy",
+      "file": "implementations/continual/successor_features_policy.py",
+      "chapter_paths": [
+        "construction/models/",
+        "construction/goals/",
+        "construction/predictive-knowledge/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_baseline",
+      "task": "successor_feature_transfer",
+      "metric": "冻结选择策略的解析折扣价值",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "successor_features_gpi",
+      "description": "单状态两动作继续任务，γ=0.8，行为动作均匀采样；特征为动作one-hot，SF全0。基础策略库总动作0/总动作1。中点奖励权重[0.2,1]变[1,0.2]并直接告知算法；此实验展示已知线性奖励的迁移，不包含奖励权重学习。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://arxiv.org/abs/1606.05312"
+      ],
+      "implementation_chapter_paths": [
+        "construction/models/",
+        "construction/goals/",
+        "construction/predictive-knowledge/"
+      ],
+      "metadata": {
+        "id": "successor_features_policy",
+        "name": "后继特征固定基础策略",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/models/",
+          "construction/goals/",
+          "construction/predictive-knowledge/"
+        ],
+        "description": "单状态两动作继续任务，γ=0.8，行为动作均匀采样；特征为动作one-hot，SF全0。基础策略库总动作0/总动作1。中点奖励权重[0.2,1]变[1,0.2]并直接告知算法；此实验展示已知线性奖励的迁移，不包含奖励权重学习。",
+        "question": "已知奖励权重切换时，GPI怎样组合后继特征？",
+        "task": "successor_feature_transfer",
+        "baseline": "successor_features_gpi",
+        "metric": "冻结选择策略的解析折扣价值",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://arxiv.org/abs/1606.05312"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实转移；中点切换并告知奖励权重；不包含奖励权重学习。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-tbptt",
+      "name": "截断 BPTT",
+      "algorithm": "截断 BPTT",
+      "status": "independent_implementation",
+      "implementation_id": "tbptt",
+      "file": "implementations/continual/tbptt.py",
+      "chapter_paths": [
+        "construction/state/",
+        "algorithms/credit-assignment/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "recurrent_sequence_prediction",
+      "metric": "更新前序列预测平方误差 EMA",
+      "unit": "squared_error",
+      "budget": "sequences",
+      "baseline": "rtrl",
+      "description": "每步8个U(-1,1)输入组成独立序列；tanh老师a=0.8，b中点从0.4变-0.4。学生初始[0.3,0.1,0]，段内参数冻结、段间SGD；曲线为更新前误差平方EMA(0.95)，每段隐藏状态清零。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://doi.org/10.1162/neco.1989.1.2.270"
+      ],
+      "implementation_chapter_paths": [
+        "construction/state/",
+        "algorithms/credit-assignment/"
+      ],
+      "metadata": {
+        "id": "tbptt",
+        "name": "截断 BPTT",
+        "family": "continual",
+        "chapter_paths": [
+          "construction/state/",
+          "algorithms/credit-assignment/"
+        ],
+        "description": "每步8个U(-1,1)输入组成独立序列；tanh老师a=0.8，b中点从0.4变-0.4。学生初始[0.3,0.1,0]，段内参数冻结、段间SGD；曲线为更新前误差平方EMA(0.95)，每段隐藏状态清零。",
+        "question": "精确Jacobian与三步截断怎样影响递归预测适应？",
+        "task": "recurrent_sequence_prediction",
+        "baseline": "rtrl",
+        "metric": "更新前序列预测平方误差 EMA",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://doi.org/10.1162/neco.1989.1.2.270"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "sequences",
+        "budget_note": "每步一段长度8序列；中点老师输入权重反转；段内参数冻结、段间更新；元素预算=8*steps。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-tidbd",
+      "name": "TIDBD(λ)",
+      "algorithm": "TIDBD(λ)",
+      "status": "independent_implementation",
+      "implementation_id": "tidbd",
+      "file": "implementations/continual/tidbd.py",
+      "chapter_paths": [
+        "algorithms/meta/",
+        "algorithms/value/",
+        "algorithms/streaming/"
+      ],
+      "scope": "teaching-prediction",
+      "role": "teaching_method",
+      "task": "adaptive_regression",
+      "metric": "当前任务无噪声预测 MSE",
+      "unit": "squared_error",
+      "budget": "environment_steps",
+      "baseline": "constant_step_lms",
+      "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。此γ=0退化教学仅验证即时预测步长自适应，不检验带bootstrap的TIDBD。",
+      "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "http://incompleteideas.net/book/the-book-2nd.html",
+        "https://arxiv.org/abs/1804.03334"
+      ],
+      "implementation_chapter_paths": [
+        "algorithms/meta/",
+        "algorithms/value/",
+        "algorithms/streaming/"
+      ],
+      "metadata": {
+        "id": "tidbd",
+        "name": "TIDBD(λ)",
+        "family": "continual",
+        "chapter_paths": [
+          "algorithms/meta/",
+          "algorithms/value/",
+          "algorithms/streaming/"
+        ],
+        "description": "流式两维线性预测：x=[1,U(-1,1)]，中点真权重从[0.2,0.7]变为[-0.2,-0.7]，观测噪声σ=0.03，初始w=0。每次更新后冻结测量当前真任务解析MSE。此γ=0退化教学仅验证即时预测步长自适应，不检验带bootstrap的TIDBD。",
+        "question": "逐特征步长怎样响应线性预测权重反转？",
+        "task": "adaptive_regression",
+        "baseline": "constant_step_lms",
+        "metric": "当前任务无噪声预测 MSE",
+        "unit": "squared_error",
+        "higher_better": false,
+        "scope": "teaching-prediction",
+        "sources": [
+          "http://incompleteideas.net/book/the-book-2nd.html",
+          "https://arxiv.org/abs/1804.03334"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "budget_note": "每步一个真实样本；中点权重反转，无任务标签；TIDBD采用γ=0退化协议。",
+        "limitations": "小型教学任务，非论文基准复现；不声称持续学习算法的一般有效性。"
+      }
+    },
+    {
+      "id": "implementation-deep-a2c",
+      "name": "A2C",
+      "algorithm": "A2C",
+      "status": "independent_implementation",
+      "implementation_id": "deep-a2c",
+      "file": "implementations/deep/a2c.py",
+      "chapter_paths": [
+        "foundations/deep/policy-gradient/",
+        "algorithms/policy/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-vpg",
+      "description": "A2C：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://arxiv.org/abs/1602.01783"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/policy-gradient/",
+        "algorithms/policy/"
+      ],
+      "metadata": {
+        "id": "deep-a2c",
+        "name": "A2C",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/policy-gradient/",
+          "algorithms/policy/"
+        ],
+        "description": "A2C：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-vpg",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://arxiv.org/abs/1602.01783"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-c51",
+      "name": "C51",
+      "algorithm": "C51",
+      "status": "independent_implementation",
+      "implementation_id": "deep-c51",
+      "file": "implementations/deep/c51.py",
+      "chapter_paths": [
+        "foundations/deep/distributional/",
+        "algorithms/value/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-dqn",
+      "description": "C51：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://arxiv.org/abs/1707.06887"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/distributional/",
+        "algorithms/value/"
+      ],
+      "metadata": {
+        "id": "deep-c51",
+        "name": "C51",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/distributional/",
+          "algorithms/value/"
+        ],
+        "description": "C51：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-dqn",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://arxiv.org/abs/1707.06887"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-cql",
+      "name": "CQL",
+      "algorithm": "CQL",
+      "status": "independent_implementation",
+      "implementation_id": "deep-cql",
+      "file": "implementations/deep/cql.py",
+      "chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "offline-deadline-chain-fixed512",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "training_batches",
+      "budget_note": "每批重采样32条固定日志转移；每个训练批次执行 Q 一次 optimizer.step，共一次优化器调用。同批次预算不等于同优化器调用数或计算成本；固定数据共512转移，评价交互不计入训练预算。",
+      "baseline": "deep-offline_q_learning",
+      "description": "CQL：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://arxiv.org/abs/2006.04779"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "metadata": {
+        "id": "deep-cql",
+        "name": "CQL",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/offline/"
+        ],
+        "description": "CQL：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-offline_q_learning",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "offline-deadline-chain-fixed512",
+        "sources": [
+          "https://arxiv.org/abs/2006.04779"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "training_batches",
+        "budget_note": "每批重采样32条固定日志转移；每个训练批次执行 Q 一次 optimizer.step，共一次优化器调用。同批次预算不等于同优化器调用数或计算成本；固定数据共512转移，评价交互不计入训练预算。",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-ddpg",
+      "name": "DDPG",
+      "algorithm": "DDPG",
+      "status": "independent_implementation",
+      "implementation_id": "deep-ddpg",
+      "file": "implementations/deep/ddpg.py",
+      "chapter_paths": [
+        "foundations/deep/deterministic-control/",
+        "algorithms/policy/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "bounded-lq",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-td3",
+      "description": "DDPG：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://spinningup.openai.com/en/latest/algorithms/ddpg.html"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/deterministic-control/",
+        "algorithms/policy/"
+      ],
+      "metadata": {
+        "id": "deep-ddpg",
+        "name": "DDPG",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/deterministic-control/",
+          "algorithms/policy/"
+        ],
+        "description": "DDPG：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-td3",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "bounded-lq",
+        "sources": [
+          "https://spinningup.openai.com/en/latest/algorithms/ddpg.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-double_dqn",
+      "name": "Double DQN",
+      "algorithm": "Double DQN",
+      "status": "independent_implementation",
+      "implementation_id": "deep-double_dqn",
+      "file": "implementations/deep/double_dqn.py",
+      "chapter_paths": [
+        "foundations/deep/deep-value/",
+        "algorithms/value/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-dqn",
+      "description": "Double DQN：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://arxiv.org/abs/1509.06461"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/deep-value/",
+        "algorithms/value/"
+      ],
+      "metadata": {
+        "id": "deep-double_dqn",
+        "name": "Double DQN",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/deep-value/",
+          "algorithms/value/"
+        ],
+        "description": "Double DQN：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-dqn",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://arxiv.org/abs/1509.06461"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-dqn",
+      "name": "DQN",
+      "algorithm": "DQN",
+      "status": "independent_implementation",
+      "implementation_id": "deep-dqn",
+      "file": "implementations/deep/dqn.py",
+      "chapter_paths": [
+        "foundations/deep/deep-value/",
+        "algorithms/value/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-double_dqn",
+      "description": "DQN：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://www.nature.com/articles/nature14236"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/deep-value/",
+        "algorithms/value/"
+      ],
+      "metadata": {
+        "id": "deep-dqn",
+        "name": "DQN",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/deep-value/",
+          "algorithms/value/"
+        ],
+        "description": "DQN：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-double_dqn",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://www.nature.com/articles/nature14236"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-iql",
+      "name": "IQL",
+      "algorithm": "IQL",
+      "status": "independent_implementation",
+      "implementation_id": "deep-iql",
+      "file": "implementations/deep/iql.py",
+      "chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "offline-deadline-chain-fixed512",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "training_batches",
+      "budget_note": "每批重采样32条固定日志转移；每个训练批次执行 V、Q、actor 各一次 optimizer.step，共三次优化器调用。同批次预算不等于同优化器调用数或计算成本；固定数据共512转移，评价交互不计入训练预算。",
+      "baseline": "deep-offline_q_learning",
+      "description": "IQL：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://arxiv.org/abs/2110.06169"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "metadata": {
+        "id": "deep-iql",
+        "name": "IQL",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/offline/"
+        ],
+        "description": "IQL：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-offline_q_learning",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "offline-deadline-chain-fixed512",
+        "sources": [
+          "https://arxiv.org/abs/2110.06169"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "training_batches",
+        "budget_note": "每批重采样32条固定日志转移；每个训练批次执行 V、Q、actor 各一次 optimizer.step，共三次优化器调用。同批次预算不等于同优化器调用数或计算成本；固定数据共512转移，评价交互不计入训练预算。",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-offline_q_learning",
+      "name": "Offline Q-learning",
+      "algorithm": "Offline Q-learning",
+      "status": "independent_implementation",
+      "implementation_id": "deep-offline_q_learning",
+      "file": "implementations/deep/offline_q_learning.py",
+      "chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_baseline",
+      "task": "offline-deadline-chain-fixed512",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "training_batches",
+      "budget_note": "每批重采样32条固定日志转移；每个训练批次执行 Q 一次 optimizer.step，共一次优化器调用。同批次预算不等于同优化器调用数或计算成本；固定数据共512转移，评价交互不计入训练预算。",
+      "baseline": "deep-cql",
+      "description": "Offline Q-learning：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://www.nature.com/articles/nature14236"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "metadata": {
+        "id": "deep-offline_q_learning",
+        "name": "Offline Q-learning",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/offline/"
+        ],
+        "description": "Offline Q-learning：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-cql",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "offline-deadline-chain-fixed512",
+        "sources": [
+          "https://www.nature.com/articles/nature14236"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "training_batches",
+        "budget_note": "每批重采样32条固定日志转移；每个训练批次执行 Q 一次 optimizer.step，共一次优化器调用。同批次预算不等于同优化器调用数或计算成本；固定数据共512转移，评价交互不计入训练预算。",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-ppo",
+      "name": "PPO",
+      "algorithm": "PPO",
+      "status": "independent_implementation",
+      "implementation_id": "deep-ppo",
+      "file": "implementations/deep/ppo.py",
+      "chapter_paths": [
+        "foundations/deep/trust-region/",
+        "algorithms/policy/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-vpg",
+      "description": "PPO：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://spinningup.openai.com/en/latest/algorithms/ppo.html"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/trust-region/",
+        "algorithms/policy/"
+      ],
+      "metadata": {
+        "id": "deep-ppo",
+        "name": "PPO",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/trust-region/",
+          "algorithms/policy/"
+        ],
+        "description": "PPO：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-vpg",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://spinningup.openai.com/en/latest/algorithms/ppo.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-qr_dqn",
+      "name": "QR-DQN",
+      "algorithm": "QR-DQN",
+      "status": "independent_implementation",
+      "implementation_id": "deep-qr_dqn",
+      "file": "implementations/deep/qr_dqn.py",
+      "chapter_paths": [
+        "foundations/deep/distributional/",
+        "algorithms/value/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-dqn",
+      "description": "QR-DQN：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://arxiv.org/abs/1710.10044"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/distributional/",
+        "algorithms/value/"
+      ],
+      "metadata": {
+        "id": "deep-qr_dqn",
+        "name": "QR-DQN",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/distributional/",
+          "algorithms/value/"
+        ],
+        "description": "QR-DQN：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-dqn",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://arxiv.org/abs/1710.10044"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-sac",
+      "name": "SAC",
+      "algorithm": "SAC",
+      "status": "independent_implementation",
+      "implementation_id": "deep-sac",
+      "file": "implementations/deep/sac.py",
+      "chapter_paths": [
+        "foundations/deep/entropy-control/",
+        "algorithms/soft-control/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "bounded-lq",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-ddpg",
+      "description": "SAC：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://spinningup.openai.com/en/latest/algorithms/sac.html"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/entropy-control/",
+        "algorithms/soft-control/"
+      ],
+      "metadata": {
+        "id": "deep-sac",
+        "name": "SAC",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/entropy-control/",
+          "algorithms/soft-control/"
+        ],
+        "description": "SAC：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-ddpg",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "bounded-lq",
+        "sources": [
+          "https://spinningup.openai.com/en/latest/algorithms/sac.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-td3",
+      "name": "TD3",
+      "algorithm": "TD3",
+      "status": "independent_implementation",
+      "implementation_id": "deep-td3",
+      "file": "implementations/deep/td3.py",
+      "chapter_paths": [
+        "foundations/deep/deterministic-control/",
+        "algorithms/policy/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "bounded-lq",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-ddpg",
+      "description": "TD3：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://spinningup.openai.com/en/latest/algorithms/td3.html"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/deterministic-control/",
+        "algorithms/policy/"
+      ],
+      "metadata": {
+        "id": "deep-td3",
+        "name": "TD3",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/deterministic-control/",
+          "algorithms/policy/"
+        ],
+        "description": "TD3：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-ddpg",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "bounded-lq",
+        "sources": [
+          "https://spinningup.openai.com/en/latest/algorithms/td3.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-trpo",
+      "name": "TRPO",
+      "algorithm": "TRPO",
+      "status": "independent_implementation",
+      "implementation_id": "deep-trpo",
+      "file": "implementations/deep/trpo.py",
+      "chapter_paths": [
+        "foundations/deep/trust-region/",
+        "algorithms/policy/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-vpg",
+      "description": "共轭梯度与 KL 回溯约束的实际 TRPO 教学训练",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://spinningup.openai.com/en/latest/algorithms/trpo.html",
+        "https://arxiv.org/abs/1502.05477"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/trust-region/",
+        "algorithms/policy/"
+      ],
+      "metadata": {
+        "id": "deep-trpo",
+        "name": "TRPO",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/trust-region/",
+          "algorithms/policy/"
+        ],
+        "description": "共轭梯度与 KL 回溯约束的实际 TRPO 教学训练",
+        "question": "约束策略更新能否在有限预算内提高冻结评价回报？",
+        "baseline": "deep-vpg",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://spinningup.openai.com/en/latest/algorithms/trpo.html",
+          "https://arxiv.org/abs/1502.05477"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "implementation-deep-vpg",
+      "name": "VPG",
+      "algorithm": "VPG",
+      "status": "independent_implementation",
+      "implementation_id": "deep-vpg",
+      "file": "implementations/deep/vpg.py",
+      "chapter_paths": [
+        "foundations/deep/policy-gradient/",
+        "algorithms/policy/"
+      ],
+      "scope": "teaching-control",
+      "role": "teaching_method",
+      "task": "deadline-chain",
+      "metric": "frozen_evaluation_return",
+      "unit": "return",
+      "budget": "environment_steps",
+      "baseline": "deep-a2c",
+      "description": "VPG：显式网络更新的 CPU 教学控制实验",
+      "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。",
+      "run_evidence": "独立源码存在；实际完成状态须核对对应manifest全人口，不由本清单认证。",
+      "reference": [
+        "https://spinningup.openai.com/en/latest/algorithms/vpg.html"
+      ],
+      "implementation_chapter_paths": [
+        "foundations/deep/policy-gradient/",
+        "algorithms/policy/"
+      ],
+      "metadata": {
+        "id": "deep-vpg",
+        "name": "VPG",
+        "family": "deep",
+        "chapter_paths": [
+          "foundations/deep/policy-gradient/",
+          "algorithms/policy/"
+        ],
+        "description": "VPG：显式网络更新的 CPU 教学控制实验",
+        "question": "有限预算内冻结评估策略回报如何变化？",
+        "baseline": "deep-a2c",
+        "metric": "frozen_evaluation_return",
+        "unit": "return",
+        "higher_better": true,
+        "scope": "teaching-control",
+        "task": "deadline-chain",
+        "sources": [
+          "https://spinningup.openai.com/en/latest/algorithms/vpg.html"
+        ],
+        "defaults": {
+          "steps": 1000
+        },
+        "budget": "environment_steps",
+        "limitations": "小型教学控制，不复现论文基准；离散评估使用 argmax 策略，连续评估使用确定性 actor 或 tanh(mean)。该冻结评估回报不等于随机行为策略回报或熵正则训练目标，不证明一般性能优势。"
+      }
+    },
+    {
+      "id": "core-policy-evaluation",
+      "name": "迭代策略评价",
+      "algorithm": "迭代策略评价",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/tabular/dynamic-programming/"
+      ],
+      "file": "examples/tabular_textbook_lab.py",
+      "reference": "evaluate_policy",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-every-visit-mc",
+      "name": "Every-visit MC",
+      "algorithm": "Every-visit MC",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/tabular/monte-carlo/"
+      ],
+      "file": "examples/tabular_textbook_lab.py",
+      "reference": "mc_visits",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-mc-control",
+      "name": "MC control",
+      "algorithm": "MC control",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/tabular/monte-carlo/"
+      ],
+      "file": "examples/tabular_textbook_lab.py",
+      "reference": "mc_control；已有综合lab小任务循环，尚无独立文件",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-ordinary-is",
+      "name": "Ordinary IS",
+      "algorithm": "Ordinary IS",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/tabular/monte-carlo/"
+      ],
+      "file": "examples/tabular_textbook_lab.py",
+      "reference": "is_estimates",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-weighted-is",
+      "name": "Weighted IS",
+      "algorithm": "Weighted IS",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/tabular/monte-carlo/"
+      ],
+      "file": "examples/tabular_textbook_lab.py",
+      "reference": "is_estimates",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-tree-backup",
+      "name": "Tree Backup",
+      "algorithm": "Tree Backup",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/tabular/multistep/"
+      ],
+      "file": "examples/tabular_textbook_lab.py",
+      "reference": "qsigma_target sigma=0；目标核不是完整控制训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-q-sigma",
+      "name": "Q(σ)",
+      "algorithm": "Q(σ)",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/tabular/multistep/"
+      ],
+      "file": "examples/tabular_textbook_lab.py",
+      "reference": "qsigma_target",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-gradient-mc",
+      "name": "Gradient MC",
+      "algorithm": "Gradient MC",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/approximation/prediction/"
+      ],
+      "file": "examples/approximation_textbook_lab.py",
+      "reference": "gradient_mc",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-lstd",
+      "name": "LSTD",
+      "algorithm": "LSTD",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/approximation/prediction/"
+      ],
+      "file": "examples/approximation_textbook_lab.py",
+      "reference": "lstd",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-semi-gradient-sarsa",
+      "name": "半梯度 SARSA",
+      "algorithm": "半梯度 SARSA",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/approximation/features-control/"
+      ],
+      "file": "examples/approximation_textbook_lab.py",
+      "reference": "semi_gradient_sarsa",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-differential-td",
+      "name": "Differential TD",
+      "algorithm": "Differential TD",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/average-reward/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "differential_td",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-rvi",
+      "name": "Relative Value Iteration",
+      "algorithm": "Relative Value Iteration",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/average-reward/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "rvi_sweep",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-smdp-rate",
+      "name": "平均奖励 SMDP option 更新",
+      "algorithm": "平均奖励 SMDP option 更新",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/average-reward/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "option_rate_step",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-watkins-q-lambda",
+      "name": "Watkins Q(λ)",
+      "algorithm": "Watkins Q(λ)",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/credit-assignment/"
+      ],
+      "file": "examples/credit_assignment_lab.py",
+      "reference": "control_trace_step",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-retrace",
+      "name": "Retrace",
+      "algorithm": "Retrace",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/credit-assignment/"
+      ],
+      "file": "examples/credit_assignment_lab.py",
+      "reference": "offpolicy_trace_coefficients",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-v-trace",
+      "name": "V-trace",
+      "algorithm": "V-trace",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/credit-assignment/"
+      ],
+      "file": "examples/credit_assignment_lab.py",
+      "reference": "vtrace_targets",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-adaptive-lambda",
+      "name": "Greedy adaptive λ",
+      "algorithm": "Greedy adaptive λ",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/credit-assignment/"
+      ],
+      "file": "examples/credit_assignment_lab.py",
+      "reference": "greedy_lambda；已知bias/variance下局部最优，不是完整统计量学习",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-expected-traces",
+      "name": "Expected Eligibility Traces",
+      "algorithm": "Expected Eligibility Traces",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/credit-assignment/"
+      ],
+      "file": "examples/credit_assignment_lab.py",
+      "reference": "expected_trace_enumeration；枚举核验，没有学习期望迹网络",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-gradient-traces",
+      "name": "Gradient Eligibility Traces",
+      "algorithm": "Gradient Eligibility Traces",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/credit-assignment/"
+      ],
+      "file": "examples/credit_assignment_lab.py",
+      "reference": "gradient_trace_equivalence；非完整非线性控制训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-reinforce",
+      "name": "REINFORCE",
+      "algorithm": "REINFORCE",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/approximation/policy-gradient/"
+      ],
+      "file": "examples/approximation_textbook_lab.py",
+      "reference": "reinforce_gradient",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-gae",
+      "name": "GAE",
+      "algorithm": "GAE",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/policy-gradient/"
+      ],
+      "file": "examples/deep_textbook_lab.py",
+      "reference": "gae；独立deep训练器也复用GAE，组件不是独立控制算法",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-thompson",
+      "name": "Thompson Sampling",
+      "algorithm": "Thompson Sampling",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/exploration/"
+      ],
+      "file": "examples/extended_foundations_lab.py",
+      "reference": "thompson_action；后验采样核",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-pdis",
+      "name": "Per-decision IS",
+      "algorithm": "Per-decision IS",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "file": "examples/extended_foundations_lab.py",
+      "reference": "per_decision_is",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-sequential-dr",
+      "name": "Sequential Doubly Robust",
+      "algorithm": "Sequential Doubly Robust",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/offline/"
+      ],
+      "file": "examples/extended_foundations_lab.py",
+      "reference": "sequential_dr",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-primal-dual",
+      "name": "CMDP primal-dual",
+      "algorithm": "CMDP primal-dual",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/constraints/"
+      ],
+      "file": "examples/extended_foundations_lab.py",
+      "reference": "primal_dual_step",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-minimax",
+      "name": "2×2 minimax",
+      "algorithm": "2×2 minimax",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/multi-agent/"
+      ],
+      "file": "examples/extended_foundations_lab.py",
+      "reference": "minimax_2x2；解析矩阵核",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-coma",
+      "name": "COMA counterfactual advantage",
+      "algorithm": "COMA counterfactual advantage",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/multi-agent/"
+      ],
+      "file": "examples/extended_foundations_lab.py",
+      "reference": "counterfactual_advantage；不是完整COMA训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-qmix",
+      "name": "QMIX monotone mixing",
+      "algorithm": "QMIX monotone mixing",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/deep/multi-agent/"
+      ],
+      "file": "examples/extended_foundations_lab.py",
+      "reference": "monotone_joint_greedy；不是QMIX神经训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-bayes",
+      "name": "Bayes filter",
+      "algorithm": "Bayes filter",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/state/"
+      ],
+      "file": "examples/state_meta_lab.py",
+      "reference": "belief_step",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-bptt",
+      "name": "完整 BPTT",
+      "algorithm": "完整 BPTT",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/state/"
+      ],
+      "file": "examples/state_meta_lab.py",
+      "reference": "bptt_final；固定参数导数参考，不是通用RNN训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-rtu",
+      "name": "RTU",
+      "algorithm": "RTU",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/state/"
+      ],
+      "file": "examples/state_meta_lab.py",
+      "reference": "rotation_trace；固定旋转单元敏感度，不是完整RTU actor-critic",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-metatrace",
+      "name": "Metatrace",
+      "algorithm": "Metatrace",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/meta/"
+      ],
+      "file": "examples/meta_frontier_lab.py",
+      "reference": "LinearMetatrace；critic-only unnormalized scalar core",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-meta-gradient",
+      "name": "Meta-gradient RL",
+      "algorithm": "Meta-gradient RL",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/meta/"
+      ],
+      "file": "examples/state_meta_lab.py",
+      "reference": "lambda_return_sensitivity；return参数导数核",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-maml",
+      "name": "MAML",
+      "algorithm": "MAML",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/meta/"
+      ],
+      "file": "examples/state_meta_lab.py",
+      "reference": "scalar_maml；标量二次任务，不是MAML-RL完整训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-obgd",
+      "name": "ObGD 2024",
+      "algorithm": "ObGD 2024",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/streaming/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "td_lambda_step；2024缩放核，不是2026版本",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-intentional",
+      "name": "Intentional Updates",
+      "algorithm": "Intentional Updates",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/streaming/"
+      ],
+      "file": "examples/meta_frontier_lab.py",
+      "reference": "IntentionalStep；完整优化器默认时序核，缺actor-critic环境主循环",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-clear",
+      "name": "CLEAR",
+      "algorithm": "CLEAR",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/retention/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "clone_loss/vtrace_target；缺新旧经验采样与完整策略训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-redo",
+      "name": "ReDo",
+      "algorithm": "ReDo",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/plasticity/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "redo_indices/recycle_one_unit；神经替换小诊断",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-cbp",
+      "name": "Continual Backpropagation",
+      "algorithm": "Continual Backpropagation",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/plasticity/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "cbp_candidates/cbp_contribution_utility；神经替换小诊断",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-rnd",
+      "name": "Random Network Distillation",
+      "algorithm": "Random Network Distillation",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/exploration/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "rnd_step；标量预测核，不是随机神经目标训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-progress",
+      "name": "Learning progress curriculum",
+      "algorithm": "Learning progress curriculum",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/exploration/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "progress_score；单步分数核",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-recovery",
+      "name": "Recovery filter",
+      "algorithm": "Recovery filter",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/exploration/"
+      ],
+      "file": "examples/lifelong_algorithms_lab.py",
+      "reference": "recovery_filter；已知恢复概率过滤核",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-uvfa",
+      "name": "UVFA 目标条件价值",
+      "algorithm": "UVFA 目标条件价值",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/goals/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "goal_q_update；表格目标条件核，不是通用神经UVFA",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-her",
+      "name": "Hindsight Experience Replay",
+      "algorithm": "Hindsight Experience Replay",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/goals/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "future_her/relabel_goal；缺完整goal-conditioned replay训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-subtask",
+      "name": "Subtask stopping",
+      "algorithm": "Subtask stopping",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/goals/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "subtask_td/stop_rules",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-intra-option",
+      "name": "Intra-option Q-learning",
+      "algorithm": "Intra-option Q-learning",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "intra_option_update",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-option-critic",
+      "name": "Option-Critic",
+      "algorithm": "Option-Critic",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "option_critic_actor_step；动作/终止梯度核",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-diayn",
+      "name": "DIAYN skill information reward",
+      "algorithm": "DIAYN skill information reward",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "skill_intrinsic_rewards；非完整DIAYN发现训练",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-option-model",
+      "name": "Option reward/endpoint model",
+      "algorithm": "Option reward/endpoint model",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/models/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "model_td_update",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-option-vi",
+      "name": "Option Value Iteration",
+      "algorithm": "Option Value Iteration",
+      "status": "formula_core",
+      "chapter_paths": [
+        "construction/planning/"
+      ],
+      "file": "examples/knowledge_algorithms_lab.py",
+      "reference": "option_value_iteration；综合lab可解小模型规划",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-preference-reward",
+      "name": "Bradley–Terry preference reward",
+      "algorithm": "Bradley–Terry preference reward",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/reward-design/"
+      ],
+      "file": "examples/reward_design_lab.py",
+      "reference": "preference_loss_gradient",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-maxent-irl",
+      "name": "MaxEnt IRL",
+      "algorithm": "MaxEnt IRL",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/reward-design/"
+      ],
+      "file": "examples/reward_design_lab.py",
+      "reference": "maxent_loss_gradient；有限轨迹手算核",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "core-intrinsic-meta",
+      "name": "Intrinsic reward meta-gradient",
+      "algorithm": "Intrinsic reward meta-gradient",
+      "status": "formula_core",
+      "chapter_paths": [
+        "foundations/reward-design/"
+      ],
+      "file": "examples/reward_design_lab.py",
+      "reference": "intrinsic_meta_gradient",
+      "scope": "bundled_teaching_core",
+      "limitations": "仅完成所列函数/机制范围；不宣称独立完整方法或原论文重训。"
+    },
+    {
+      "id": "author-dreamerv3",
+      "name": "DreamerV3",
+      "algorithm": "DreamerV3",
+      "status": "author_project",
+      "author_project_id": "dreamerv3",
+      "chapter_paths": [
+        "construction/planning/"
+      ],
+      "file": "integrations/author_projects.json",
+      "reference": "https://github.com/danijar/dreamerv3/tree/e01491fad6434b2245a3b8ca201dd7faedcc458c",
+      "scope": "pinned_source_entrypoint",
+      "limitations": "作者维护reimplementation；固定源码与入口已核验，未安装训练"
+    },
+    {
+      "id": "author-tdmpc2",
+      "name": "TD-MPC2",
+      "algorithm": "TD-MPC2",
+      "status": "author_project",
+      "author_project_id": "tdmpc2",
+      "chapter_paths": [
+        "construction/planning/"
+      ],
+      "file": "integrations/author_projects.json",
+      "reference": "https://github.com/nicklashansen/tdmpc2/tree/e9f59321933cbc8e11a002b842adc7d4ffae8ff1",
+      "scope": "pinned_source_entrypoint",
+      "limitations": "官方项目固定源码已核验，未训练"
+    },
+    {
+      "id": "author-disco-rl",
+      "name": "DiscoRL",
+      "algorithm": "DiscoRL",
+      "status": "author_project",
+      "author_project_id": "disco_rl",
+      "chapter_paths": [
+        "algorithms/meta/"
+      ],
+      "file": "integrations/author_projects.json",
+      "reference": "https://github.com/google-deepmind/disco_rl/tree/9059a29f7121d60948f25ef165e08e050e9399c8",
+      "scope": "pinned_source_entrypoint",
+      "limitations": "minimal JAX harness meta-eval/meta-train；不包含原始全部搜索系统，未训练"
+    },
+    {
+      "id": "unintegrated-mcts",
+      "name": "UCT / MCTS",
+      "algorithm": "UCT / MCTS",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/planning/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-rvi-q",
+      "name": "RVI Q-learning",
+      "algorithm": "RVI Q-learning",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/average-reward/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-stream-x",
+      "name": "Stream-X / Streaming actor–critic",
+      "algorithm": "Stream-X / Streaming actor–critic",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/streaming/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-streaming-optimizer",
+      "name": "StreamingOptimizer 2026",
+      "algorithm": "StreamingOptimizer 2026",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/streaming/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "core-reward-centering",
+      "name": "Reward Centering",
+      "algorithm": "Reward Centering",
+      "status": "formula_core",
+      "chapter_paths": [
+        "algorithms/average-reward/"
+      ],
+      "reference": "centered_single_state_step/centered_single_state_fixed_point",
+      "scope": "bundled_teaching_core",
+      "limitations": "单状态更新/固定点诊断；没有完整深度平均奖励训练。",
+      "file": "examples/lifelong_algorithms_lab.py"
+    },
+    {
+      "id": "unintegrated-gvfn",
+      "name": "GVFN",
+      "algorithm": "GVFN",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/state/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-rnn-gru-lstm",
+      "name": "GRU / LSTM 通用状态网络",
+      "algorithm": "GRU / LSTM 通用状态网络",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/state/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "已有RTRL/TBPTT标量RNN教学；不等同通用GRU/LSTM控制训练。"
+    },
+    {
+      "id": "unintegrated-uoro",
+      "name": "UORO",
+      "algorithm": "UORO",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/state/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-lru",
+      "name": "LRU",
+      "algorithm": "LRU",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/state/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-rl2",
+      "name": "RL²",
+      "algorithm": "RL²",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/meta/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-pearl",
+      "name": "PEARL",
+      "algorithm": "PEARL",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/meta/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-lpg",
+      "name": "Learned Policy Gradient",
+      "algorithm": "Learned Policy Gradient",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/meta/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-drago",
+      "name": "DRAGO",
+      "algorithm": "DRAGO",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/retention/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-nap",
+      "name": "NaP",
+      "algorithm": "NaP",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/plasticity/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-c-chain",
+      "name": "C-CHAIN",
+      "algorithm": "C-CHAIN",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/plasticity/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-parseval",
+      "name": "Parseval regularization",
+      "algorithm": "Parseval regularization",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/plasticity/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-lsac",
+      "name": "LSAC",
+      "algorithm": "LSAC",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "algorithms/exploration/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-hiql",
+      "name": "HIQL",
+      "algorithm": "HIQL",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/goals/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-maestromotif",
+      "name": "MaestroMotif",
+      "algorithm": "MaestroMotif",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/goals/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-eigenoptions",
+      "name": "Eigenoptions",
+      "algorithm": "Eigenoptions",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-rod",
+      "name": "ROD",
+      "algorithm": "ROD",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-dceo",
+      "name": "DCEO",
+      "algorithm": "DCEO",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-allo",
+      "name": "ALLO",
+      "algorithm": "ALLO",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-metra",
+      "name": "METRA",
+      "algorithm": "METRA",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-laplacian-keyboard",
+      "name": "Laplacian Keyboard",
+      "algorithm": "Laplacian Keyboard",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/options/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-default-representation",
+      "name": "Default Representation",
+      "algorithm": "Default Representation",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/models/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-alps",
+      "name": "ALPS",
+      "algorithm": "ALPS",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "construction/planning/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    },
+    {
+      "id": "unintegrated-cpo",
+      "name": "CPO",
+      "algorithm": "CPO",
+      "status": "unintegrated",
+      "chapter_paths": [
+        "foundations/deep/constraints/"
+      ],
+      "reference": "教材编号正文；尚无独立完整实现或本次固定作者工程接入",
+      "scope": "textbook_discussion",
+      "limitations": "未接入；禁止生成本次实测曲线。"
+    }
+  ]
+}

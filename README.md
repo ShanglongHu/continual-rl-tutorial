@@ -27,6 +27,24 @@ Part II 不是可选的深度学习附录。状态共享参数之后，表格方
 
 [奖励假设与奖励设计](textbook/reward-design.md) 区分表达能力、塑形、偏好学习与安全约束。[持续控制](textbook/control.md) 进一步区分固定策略价值与整个学习生命期的评价。[近期研究](docs/recent-research.md) 按问题连接原论文、条件和作者实现。
 
+## 每个算法一个文件：从源码到学习曲线
+
+独立实现位于 [`implementations/`](implementations/)。每个算法文件保留更新核、真实学习循环和中文步骤注释。环境与记录工具共享；核心更新不隐藏在通用训练器中。
+
+```bash
+python3 implementations/runtime.py --list
+python3 implementations/classic/td_lambda.py --steps 1200 --seeds 0 1 2 3 4 --out results/td-lambda-first
+# 可选神经实现需要 PyTorch
+python3 -m pip install -r examples/deep_requirements.txt
+python3 implementations/deep/ppo.py --steps 1200 --seeds 0 1 2 3 4 --out results/ppo-first
+```
+
+终端显示算法、种子、阶段与预算进度。打开输出目录的 `index.html`，查看当前算法与默认 baseline 的真实学习曲线。`metrics.csv` 和 `events.jsonl` 保留逐种子原始记录；`manifest.json` 保存参数、源码摘要和失败。输出目录不得重复。
+
+[运行与读代码指南](docs/learning-code.md) · [教材算法覆盖清单](docs/implementation-coverage.md) · [大型作者工程](docs/author-projects.md)
+
+曲线来自小型教学任务。阴影是独立训练种子间的样本标准差，不是置信区间。实现了一个教学更新机制，不等于复现原论文完整算法；覆盖清单分别列出独立实现、既有公式核和未接入的方法。
+
 ## 先运行数值与实现检查
 
 需要 Python 3.10+。标准库教学部分无需 GPU、pip 安装或数据集下载。
@@ -72,7 +90,7 @@ python3 examples/deep_textbook_train.py test
 
 [研究与前沿](docs/research-atlas.md) 按问题连接机制、假设、原文、作者代码和可检验实验。[实验与算法测试手册](docs/experiment-handbook.md) 讨论对照、预算、开发与确认、统计单位、失败、恢复和持续交互。
 
-需要固定协议、执行小矩阵、保存全部运行并审计结果时，使用公开的 [RL Research Workbench](https://github.com/ying-wen/rl-research-workbench)。先跟做它的 [完整例子](https://github.com/ying-wen/rl-research-workbench/blob/main/docs/worked-example.md)。教程代码与 Workbench 不自动共享运行接口；新增方法需要经过适配与验证。
+需要固定协议、执行小矩阵、保存全部运行并审计结果时，使用公开的 [RL Research Workbench](https://github.com/ying-wen/rl-research-workbench)。先跟做它的 [完整例子](https://github.com/ying-wen/rl-research-workbench/blob/main/docs/worked-example.md)。新的 `rlworkbench.tutorial_adapter` 直接调用独立算法的 `META` 与 `run`，经协议冻结、执行、导入后复用审计和比较。它不复制算法，也不将不同任务和预算混为一次比较。具体命令见[接入流程](docs/learning-code.md#接入-workbench)。
 
 - [统一学习路线](docs/learning-route.md)
 - [课程、论文与学者的章节对应](docs/chapter-companions.md)
