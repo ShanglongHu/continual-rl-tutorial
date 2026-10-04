@@ -668,6 +668,58 @@ python3 examples/state_meta_lab.py test
 - [Williams & Zipser · A Learning Algorithm for Continually Running Fully Recurrent Neural Networks](https://doi.org/10.1162/neco.1989.1.2.270)：RTRL 的原始前向敏感度方法。
 - [Hausknecht & Stone · Deep Recurrent Q-Learning](https://arxiv.org/abs/1507.06527)：把循环状态用于部分可观测深度 Q-learning。
 
+### 8 · 多智能体：合作的探索与信用，开放式学习的评估与目标
+
+合作如何发现并学会配合？竞争和开放式合作又怎样确定每一轮该学什么，以形成可检验的策略改善？
+
+合作多智能体强化学习的主线是结构化探索和信用分配：前者发现有效的联合行为，后者把共同反馈转成各个策略的学习信号。Q-DPP、COMA、价值分解与联合策略优化分别处理这些环节。
+
+顺序优化与顺序行动是不同操作。HATRPO/HAPPO、A2PO研究更新时如何考虑前序策略的变化；MAT用条件序列生成联合动作。PR2/GR2则研究对手会如何响应，以及怎样建模不同推理层次。每种方法都必须声明训练和执行可见的信息。
+
+竞争与开放式合作的核心是评估并构建每轮学习目标，以实现有条件、可检验的单调改善。这里的开放式学习特指开放式多智能体学习：代表性脉络主要从竞争自对弈、PSRO与竞争多样性发展，温颖及合作者以COLE、HOLA拓展合作伙伴课程。先定义评价对象，再说明构建什么目标能够改善它。
+
+$$
+J_k(\pi)=\mathbb E_{\xi\sim\mu_k}u(\pi,\xi),\qquad \mu_{k+1}=\mathcal M(\mathcal P_{k+1},\widehat U_{k+1})
+$$
+
+μ 是当前对手或伙伴分布；u 是明确规定的交互收益。外层根据策略档案 P 与评价 U 构造下一轮目标，内层学习对当前目标作响应。不同轮的目标可能不同。
+
+#### 动手与核对
+
+[下载 marl_objectives_lab.py](../examples/marl_objectives_lab.py)
+
+在保存该文件的目录运行：
+
+```sh
+python3 examples/marl_objectives_lab.py demo
+python3 examples/marl_objectives_lab.py test
+```
+
+预期检查：精确枚举检查：COMA型基线保留梯度期望；同时最佳响应可以循环；扩张受限种群的full-game gap可由2增至20。
+
+实验范围：这是小型博弈机制和反例，不是PR2、MAT、PSRO或COLE的完整神经系统复现。
+
+自测：种群加入新策略后，为什么不能仅凭“策略更多了”就断言当前均衡更不容易被利用？
+
+解答：当前元均衡本身可能改变，遗漏的对手仍可能更强。集合包含关系只保证在固定评价准则下，保留旧解的最优可行值不变差；不保证任意新元均衡的完整博弈可利用性逐轮下降。
+
+完整推导与问题衔接：
+
+- [合作主线与共同设定：结构化探索和信用分配](../foundations/deep/multi-agent.md)
+- [支撑方法：对手建模与递归推理](../foundations/deep/multi-agent-reasoning.md)
+- [开放式多智能体学习：评估、目标构建与策略改善](../foundations/deep/multi-agent-populations.md)
+- [持续控制与学习智能体比较](../textbook/control.md)
+- [智能体状态与递归学习](../textbook/state.md)
+- [探索与经验选择](../textbook/exploration.md)
+- [时间信用分配与资格迹](../textbook/credit.md)
+- [元学习与学习规则的适应](../textbook/meta.md)
+
+原文、课程与实现：
+
+- [Albrecht、Christianos、Schäfer · MARL Book](https://www.marl-book.com/)：第3–6章的交互模型与解概念，第9–11章的深度算法、实践与环境。
+- [MAT · Multi-Agent Reinforcement Learning is a Sequence Modeling Problem](https://arxiv.org/abs/2205.14953)：固定策略的优势分解与条件动作生成。
+- [Lanctot et al. · A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning](https://arxiv.org/abs/1711.00832)：经验元博弈、元策略求解与近似最佳响应。
+
 下一步：不必先读完所有深度研究分支才研究 CRL。选定问题后，再确定神经表示是否必要、信息与数据权限是什么，以及学习状态怎样长期保留。持续学习评价的是这些模块共同组成的完整学习器，而不只评价训练结束时的一组网络权重。
 
 ## CRL：长期交互中的学习、适应与知识积累

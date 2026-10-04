@@ -7972,32 +7972,36 @@
       "track": "deep",
       "order": 13,
       "path": "foundations/deep/multi-agent/",
-      "title": "多智能体：博弈、局部信息与集中训练",
-      "question": "其他参与者也在学习时，“最优策略”和“环境变化”应怎样定义？",
+      "title": "多智能体合作：结构化探索与信用分配",
+      "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
       "objectives": [
-        "区分共同回报、零和与一般和目标。",
-        "推导对手策略变化产生的有效转移变化。",
-        "解释 centralized critic、反事实 baseline 与单调价值分解。"
+        "区分合作中的结构化探索与信用分配，以及竞争和开放合作中的评价与目标构建。",
+        "从反事实基线与可分散贪心条件推导 COMA、VDN、QMIX 和 QPLEX 的机制。",
+        "解释 MAVEN 与 Q-DPP 如何组织联合探索，以及额外的信息与表示条件。",
+        "区分 HAPPO 的顺序参数更新、A2PO 的评价修正与 MAT 的顺序动作生成。",
+        "核对理论中的精确优势与信赖域条件，不把 PPO 裁剪或网络结构当成回报保证。"
       ],
       "prerequisites": [
         {
-          "term": "条件概率与期望",
-          "explanation": "区分随机变量、一次样本与条件分布；可以使用 Bayes 法则和全期望公式。"
+          "term": "MDP、POMDP 与策略评价",
+          "explanation": "理解转移、回报和观察历史。团队共享目标，不代表每个人能看到相同信息；本章将从这些单智能体概念建立共同设定。"
         },
         {
-          "term": "MDP 与价值",
-          "explanation": "理解状态、动作、转移、奖励、策略和 Bellman 递推；学习数据可以来自不同策略。"
+          "term": "DQN 与策略梯度",
+          "explanation": "理解冻结 TD 目标、经验回放、score-function 梯度和与当前动作无关的 baseline。"
         },
         {
-          "term": "优化与梯度",
-          "explanation": "知道固定目标、参数梯度、约束和期望目标的含义；神经网络只是函数表示的一种选择。"
+          "term": "PPO 与异策略修正",
+          "explanation": "理解新旧动作概率比、GAE、裁剪替代目标。样本上的 ratio 裁剪不是对全部状态的 KL 约束。"
         }
       ],
       "bookSections": [
-        "Multi-Agent Reinforcement Learning：Games、Solution Concepts、Deep MARL",
-        "MADDPG",
-        "COMA",
-        "QMIX"
+        "动手学博弈论：第 19–21、23–28 章",
+        "Multi-Agent Reinforcement Learning：第 3–6、9–11 章",
+        "合作 MARL：Dec-POMDP 与 CTDE",
+        "MAVEN、Q-DPP 与团队信用",
+        "COMA、VDN、QMIX、QPLEX",
+        "HATRPO/HAPPO、A2PO、MAT 与 PMAT"
       ],
       "connectsTo": [
         "state",
@@ -8008,216 +8012,823 @@
         "architectures"
       ],
       "executable": {
-        "file": "extended_foundations_lab.py",
-        "command": "python3 extended_foundations_lab.py test",
-        "scope": "标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。"
+        "file": "marl_objectives_lab.py",
+        "command": "python3 marl_objectives_lab.py test\npython3 marl_objectives_lab.py demo --out results/marl-objectives",
+        "scope": "标准库枚举的协调探索概率、反事实梯度方差与顺序更新机制实验；精确计算不是神经训练曲线，也不是完整论文复现。"
+      },
+      "problem": {
+        "setting": "多个行动者在同一世界中获得共同奖励。每个人只有局部信息。训练者可能得到联合状态与动作，但执行权限必须另行声明。先研究固定成员、固定动力学和折扣目标，再讨论持续适应。",
+        "given": [
+          "状态转移与共同奖励由环境产生，不假定已知其模型。",
+          "每个行动者的观察、动作集合、记忆和允许的通信。",
+          "训练可用的联合轨迹、集中信息、计算预算和重置协议。"
+        ],
+        "sought": "满足执行信息约束、使团队收益较高的联合策略，以及能从有限联合经验中改善该策略的学习过程。",
+        "information": "严格分散执行时，actor i 只能使用自身历史 Hᶦ。共享潜变量、联合观察和前序动作都是额外资源，必须写入执行协议；集中 critic 不能自动授予这些资源。",
+        "objective": {
+          "tex": "J(\\boldsymbol\\pi)=\\mathbb E_{\\mu,P,\\boldsymbol\\pi}\\!\\left[\\sum_{t=0}^{\\infty}\\gamma^t R_{t+1}\\right],\\qquad 0\\le\\gamma<1",
+          "explain": "固定初始分布 μ 下的共同折扣回报。全章的策略改进首先指此目标，不是一般和均衡，也不是无重置生命期收益。"
+        },
+        "assumptions": [
+          "共同奖励、有界收益和声明的观察模型。",
+          "推导使用精确价值时单独说明；神经 critic、有限轨迹和截断均属于近似。",
+          "Markov 策略定理需要充分状态；不能将局部单帧观察直接当作满足该条件。"
+        ],
+        "success": "在相同执行权限、环境交互和调参预算下比较团队收益，并分别诊断表示误差、探索覆盖、critic 误差与策略漂移。",
+        "relations": [
+          {
+            "kind": "specialization",
+            "target": "control",
+            "explanation": "将控制目标扩展到共同回报的多个行动者；本章主体暂不处理零和和一般和均衡。"
+          },
+          {
+            "kind": "protocol",
+            "target": "state",
+            "explanation": "信息不仅不完整，而且分散在不同参与者手中；局部历史是否充分决定可用的策略类。"
+          },
+          {
+            "kind": "composition",
+            "target": "experiments",
+            "explanation": "变化的同伴会改变边缘过程；进一步加入生命期评价、有限记忆和重置成本才形成相应 CRL 问题。"
+          }
+        ],
+        "nonGoals": [
+          "不把 benchmark 胜率解释为未知搭档上的普遍协调能力。",
+          "不把所有合作方法称为无通信 CTDE。",
+          "不把可分散 argmax、优势恒等式与实际训练回报单调改善混为一谈。"
+        ],
+        "solution": {
+          "difficulty": "联合动作空间大；同一奖励混合了多人的影响；独立探索难以形成配合；同伴更新使旧数据与旧优势失配。",
+          "insight": "合作学习先组织能产生配合的联合经验，再将反馈变成各部分可用的更新。baseline 改梯度估计，mixer 改价值类，顺序更新与条件动作生成改联合改善的参照。竞争和开放合作还要在外层评价策略并构建下一轮目标。",
+          "steps": [
+            {
+              "title": "声明目标与信息",
+              "explanation": "先写执行者能看什么，再选择可部署的策略类。",
+              "sectionId": "lesson-setting"
+            },
+            {
+              "title": "采到协作经验",
+              "explanation": "引入共享行为模式或质量—多样性采样，并计入协调权限。",
+              "sectionId": "lesson-exploration"
+            },
+            {
+              "title": "从联合反馈学习",
+              "explanation": "对比反事实 baseline 与价值分解，不把局部 utility 当成个人奖励。",
+              "sectionId": "lesson-credit"
+            },
+            {
+              "title": "改善联合策略",
+              "explanation": "区分旧策略优势、部分更新后的优势和自回归执行。",
+              "sectionId": "lesson-sequential"
+            }
+          ],
+          "guarantees": "保证依赖各自的问题条件。结构性质可以逐点检查；性能保证还需要正确评价、充分信息和受控更新。有限样本深网训练不自动继承理想策略迭代定理。",
+          "alternatives": [
+            {
+              "name": "集中联合 actor",
+              "difference": "更容易表达动作相关性，但改变执行权限与规模成本。"
+            },
+            {
+              "name": "独立学习",
+              "difference": "实现简单，但自身看到的边缘过程随同伴策略变化。"
+            }
+          ]
+        }
       },
       "sections": [
         {
           "id": "lesson-setting",
-          "title": "1 · 多个决策者不意味着相同目标",
+          "title": "1 · 两条研究主线，从不同的困难出发",
           "blocks": [
             {
               "kind": "p",
-              "text": "Stochastic game 在状态、转移与奖励之外加入多个行动者。共同回报问题追求团队收益；零和问题中一方收益等于另一方损失；一般和问题允许利益部分一致、部分冲突。不能把团队回报最大化、利用某个对手和逼近 Nash 均衡都叫同一种“最优”。"
+              "text": "多智能体学习可以沿两条问题主线理解。合作主线首先问：怎样探索到有效的联合行为，怎样把团队反馈转成各个策略的信用信号？竞争及开放合作主线首先问：怎样评价当前策略的不足，怎样构建下一轮对手、伙伴与学习目标，进而在明确条件下获得策略改善？两条主线并非互斥；它们强调学习循环中的不同困难。"
             },
             {
-              "kind": "math",
-              "tex": "\\mathbf A_t=(A_t^1,\\ldots,A_t^n),\\quad S_{t+1}\\sim P(\\cdot\\mid S_t,\\mathbf A_t),\\quad R_{t+1}^i=r_i(S_t,\\mathbf A_t)",
-              "explain": "这里为简洁写确定的期望奖励函数；转移和实际奖励也可以随机。联合动作决定世界后续。"
+              "kind": "table",
+              "headers": [
+                "本组三章",
+                "核心问题",
+                "关系"
+              ],
+              "rows": [
+                [
+                  "本章：合作学习",
+                  "结构化探索、团队信用与联合策略改善",
+                  "从共同目标出发，组织经验并学习配合"
+                ],
+                [
+                  "[对手建模与递归推理](/zh/continual-rl/foundations/deep/multi-agent-reasoning/)",
+                  "预测另一行动者会怎样响应",
+                  "为评价与目标构建提供行为模型，不是独立于两条主线的第三种目标"
+                ],
+                [
+                  "[开放式多智能体学习](/zh/continual-rl/foundations/deep/multi-agent-populations/)",
+                  "评价策略及种群，产生下一轮训练目标",
+                  "贯穿竞争与未见伙伴合作，区分理想改善条件与近似学习"
+                ]
+              ]
             },
             {
               "kind": "p",
-              "text": "设计者规定参与者、奖励、通信与训练信息。运行时每个 actor 能使用的信息可能很少。将多个实体全部交给一个观察完整状态的中央控制器，与多个仅有局部历史的 agent，是不同的信息条件。"
+              "text": "Stochastic game 在状态、转移与奖励之外加入多个行动者。共同回报问题追求团队收益；双人零和问题中一方收益等于另一方损失；一般和问题允许利益部分一致、部分冲突。团队回报最大化、利用一个特定对手和逼近 Nash 均衡，不是同一种“最优”。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathbf A_t=(A_t^1,\\ldots,A_t^n),\\quad S_{t+1}\\sim P(\\cdot\\mid S_t,\\mathbf A_t),\\quad r_i(s,\\mathbf a)=\\mathbb E[R_{t+1}^i\\mid S_t=s,\\mathbf A_t=\\mathbf a]",
+              "explain": "联合动作决定下一状态和各人的奖励分布。设计者规定参与者、奖励、观察和通信。本章主体取共同奖励；AgA 一节再讨论个人与集体目标不一致的边界。"
+            },
+            {
+              "kind": "p",
+              "text": "两辆车共用一条狭窄通道。它们都希望尽快通过，但同时前进可能堵塞。共享奖励只说明成功标准一致；它既不提供对方的观察，也不告诉双方该怎样打破对称。合作学习必须同时回答“追求什么”和“谁知道什么”。"
+            },
+            {
+              "kind": "p",
+              "text": "这里的合作 MARL 指共同回报下的团队学习。它不等同于合作博弈论中的联盟形成与联盟收益分配。Shapley 值等概念可以启发信用分配，却不会自动给出正确的在线策略梯度。"
             }
           ]
         },
         {
           "id": "lesson-notation",
-          "title": "2 · Dec-POMDP 与执行权限",
+          "title": "2 · Dec-POMDP：共同目标不等于共同信息",
           "blocks": [
             {
               "kind": "math",
-              "tex": "\\begin{gathered}H_t^i=(O_0^i,A_0^i,\\ldots,O_t^i)\\\\A_t^i\\sim\\pi_i(\\cdot\\mid H_t^i)\\\\\\pi(\\mathbf a\\mid\\mathbf h)=\\prod_i\\pi_i(a_i\\mid h_i)\\end{gathered}",
-              "explain": "该因子化形式假定没有额外共享随机协调变量；允许通信或共同随机信号时，策略信息结构需要相应扩展。"
+              "tex": "S_{t+1}\\sim P(\\cdot\\mid S_t,\\mathbf A_t),\\quad O_t^i\\sim O_i(\\cdot\\mid S_t),\\quad A_t^i\\sim\\pi_i(\\cdot\\mid H_t^i),\\quad \\boldsymbol\\pi(\\mathbf a\\mid\\mathbf h)=\\prod_i\\pi_i(a_i\\mid h_i)",
+              "explain": "这是没有额外共同随机信号、没有本步通信的分散策略类。环境可在同一步联合执行所有动作。局部历史包含已经收到的观察、奖励和自己的既往动作。"
             },
             {
               "kind": "p",
-              "text": "Dec-POMDP 通常描述共享团队奖励、局部观察与分散行动。每个 agent 的局部 history 不一定足以重建共同 belief，也不知道同伴看到了什么。集中训练允许 critic 使用联合状态或其他 agent 的动作，但执行 actor 仍必须遵守局部信息限制。"
+              "text": "Dec-POMDP 描述共同回报、局部观察和分散行动。每人的历史未必足以重建共同 belief，也未必包含同伴看到了什么。把所有实体交给一个全状态中央控制器，是另一种信息条件。若观察还依赖先前动作或状态转移，应相应扩展观察核；上式采用当前状态生成观察的简化记法。"
             },
             {
               "kind": "p",
-              "text": "这就是 CTDE 的核心：训练信息可以更丰富，部署时动作计算仍可分散。若 actor 的归一化器、输入特征或 recurrent 初始状态暗中依赖全局信息，就会破坏这一约定。"
+              "text": "集中训练、分散执行（CTDE）允许训练器读取更多信息。局部 actor 的部署输入仍受限制。下文用 X 表示能够评价未来的集中上下文，例如环境状态与所需记忆。若定理只用 Markov 状态 s，必须先满足其充分性条件；把有记忆 actor 配上只看单帧的 critic，还会产生状态逼近误差。"
+            },
+            {
+              "kind": "p",
+              "text": "执行信息约束也适用于归一化器、递归初始状态和共享随机信号。仅在测试时删除 critic，并不足以排除全局信息已经从其他路径进入 actor。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "困难",
+                "它改变什么",
+                "对应思路"
+              ],
+              "rows": [
+                [
+                  "协作探索",
+                  "哪些联合轨迹会被采到",
+                  "MAVEN 的模式变量、Q-DPP 的联合采样"
+                ],
+                [
+                  "团队信用",
+                  "给局部策略的梯度信号",
+                  "COMA 的反事实 baseline"
+                ],
+                [
+                  "分散选动作",
+                  "联合价值的表示与 argmax",
+                  "VDN、QMIX、QPLEX"
+                ],
+                [
+                  "同伴更新",
+                  "更新时评价哪个联合策略",
+                  "HATRPO/HAPPO、A2PO"
+                ],
+                [
+                  "相关动作生成",
+                  "执行策略的条件依赖",
+                  "MAT 的自回归策略"
+                ]
+              ]
             }
           ]
         },
         {
           "id": "lesson-derive",
-          "title": "3 · 别人学习，会改变我的有效环境",
+          "title": "3 · 同伴学习，怎样改变我的有效过程",
           "blocks": [
             {
               "kind": "math",
-              "tex": "P_t^i(s'\\mid s,a_i)=\\sum_{\\mathbf a_{-i}}P(s'\\mid s,a_i,\\mathbf a_{-i})\\pi_{-i,t}(\\mathbf a_{-i}\\mid s)",
-              "explain": "此式为全状态可见、给定其他 agent Markov 策略的简化情形。底层世界转移可以固定，但对单个学习者的边缘转移随别人策略改变。"
-            },
-            {
-              "kind": "p",
-              "text": "因此旧 replay 不只可能来自自己的旧策略，也可能来自不同的同伴或对手。集中 critic 把联合动作纳入条件，可缓解一部分归因问题；它不能自动消除对手更新、数据陈旧和未知策略带来的所有非平稳性。"
+              "tex": "P_t^i(s'\\mid s,a_i)=\\sum_{\\mathbf a_{-i}}P(s'\\mid s,a_i,\\mathbf a_{-i})\\boldsymbol\\pi_{-i,t}(\\mathbf a_{-i}\\mid s)",
+              "explain": "这里先假定全状态可见、其他人的策略为 Markov 策略。物理转移 P 可以固定，单个学习者看到的边缘转移仍随同伴策略变化；边缘期望奖励也要用同样的策略求平均。"
             },
             {
               "kind": "math",
-              "tex": "Q_i^\\pi(s,\\mathbf a)=r_i(s,\\mathbf a)+\\gamma\\mathbb E_{s',\\mathbf a'\\sim\\pi}Q_i^\\pi(s',\\mathbf a')",
-              "explain": "此式先取 Markov 联合策略。历史依赖策略还需把相关记忆并入评价条件；固定这些策略后才是固定的价值预测问题。若各策略同时变化，目标也随之变化。"
+              "tex": "Q_i^{\\boldsymbol\\pi}(s,\\mathbf a)=r_i(s,\\mathbf a)+\\gamma\\mathbb E_{s'\\sim P,\\,\\mathbf a'\\sim\\boldsymbol\\pi}[Q_i^{\\boldsymbol\\pi}(s',\\mathbf a')]",
+              "explain": "先固定联合策略，才得到固定的价值预测问题。局部历史策略还需把必要记忆放进条件，不能把变化都归入一个平稳的单帧 MDP。"
+            },
+            {
+              "kind": "p",
+              "text": "旧 replay 可能来自自己的旧策略，也来自不同的同伴或对手。集中 critic 把联合动作纳入条件，可以缓解一部分归因困难，却不会使未来的目标策略固定。需分别记录行为版本、目标版本和可用的联合信息。"
             }
           ]
         },
         {
           "id": "lesson-games",
-          "title": "4 · 零和的 minimax 与一般和均衡",
+          "title": "4 · 策略好不好，先由解概念规定",
           "blocks": [
             {
               "kind": "math",
-              "tex": "v^*=\\max_x\\min_y x^\\top Ay",
-              "explain": "在有限双人零和矩阵博弈中，x 与 y 是概率单纯形中的混合策略。确定最佳动作通常无法防止被对手利用。"
+              "tex": "v^*=\\max_{x\\in\\Delta}\\min_{y\\in\\Delta}x^{\\mathsf T}Ay,\\qquad \\operatorname{Gap}(x,y)=\\max_{x'\\in\\Delta}x'^{\\mathsf T}Ay-\\min_{y'\\in\\Delta}x^{\\mathsf T}Ay'",
+              "explain": "A 是有限双人零和博弈的行玩家收益，x 与 y 是对应概率单纯形中的混合策略。gap 非负，在 saddle point 为零；战胜某个固定弱对手不能推出 gap 小。"
             },
             {
               "kind": "math",
-              "tex": "J_i(\\pi_i^*,\\pi_{-i}^*)\\ge J_i(\\pi_i,\\pi_{-i}^*)\\quad\\text{对每个 }i,\\pi_i",
-              "explain": "Nash 条件要求单方偏离不能提高自己的收益，不保证团队最优或社会福利最大。"
-            },
-            {
-              "kind": "math",
-              "tex": "\\operatorname{Gap}(x,y)=\\max_{x'}x'^\\top Ay-\\min_{y'}x^\\top Ay'",
-              "explain": "零和 saddle-point gap 为非负，平衡时为零。只对一个固定弱对手取得高回报，不足以说明 gap 小。"
+              "tex": "J_i(\\pi_i^*,\\boldsymbol\\pi_{-i}^*)\\ge J_i(\\pi_i,\\boldsymbol\\pi_{-i}^*)\\quad\\text{对每个 }i,\\pi_i",
+              "explain": "Nash 条件禁止有利的单方偏离。它不保证团队最优或社会福利最大；共享回报的团队也可能停在次优协调均衡。"
             },
             {
               "kind": "p",
-              "text": "一般和博弈可以有多个均衡，其收益与稳定性不同。自我博弈训练的高胜率可能反映对某组对手的专门适应；应使用独立对手集合、交叉对战和对应 solution concept，而非只报告自身最近策略间的胜负。"
+              "text": "Matching Pennies 的收益矩阵为 $\\bigl(\\begin{smallmatrix}1&-1\\\\-1&1\\end{smallmatrix}\\bigr)$。若以概率 $p$ 选第一行，两列收益为 $2p-1$ 与 $1-2p$。最大化较小者得到 $p=1/2$，安全价值为零。某一局赢得一分，不等于找到了这种不可利用的策略。"
+            },
+            {
+              "kind": "p",
+              "text": "自对弈是产生训练交互的一种方式，不是解概念，也不要求两个角色对称或共享参数。一般和、多均衡和陌生伙伴场景需要相应的响应与交叉评价。本章先固定共同收益，第三章再展开这些外部评价如何产生学习目标。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-learning-objectives",
+          "title": "5 · 内层更新与外层目标构建必须分开",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\mu_k=\\mathcal M(\\widehat U_k,\\mathcal P_k),\\qquad J_k(\\theta)=\\mathbb E_{\\omega\\sim\\mu_k}[J(\\pi_\\theta;\\omega)]",
+              "explain": "外层用策略池或伙伴集合的回报估计 U，选择本轮交互条件分布 μ。ω 可以是对手、伙伴组合或任务条件。内层 RL 对本轮已经声明的目标做更新。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}J_{k+1}(\\theta_{k+1})-J_k(\\theta_k)={}&[J_k(\\theta_{k+1})-J_k(\\theta_k)]\\\\&+[J_{k+1}(\\theta_{k+1})-J_k(\\theta_{k+1})].\\end{aligned}",
+              "explain": "第一项在固定目标下改善策略；第二项固定新策略后改变评价分布。它们可以异号。更强的对手让训练收益下降，不等于策略能力退化。"
+            },
+            {
+              "kind": "p",
+              "text": "有条件的单调提升必须明确比较什么。内层可在精确评价与受控更新等条件下讨论固定目标的改善；外层若讨论可利用度、安全价值或伙伴泛化，就要使用对应的评价量与证明。扩大策略池、加入多样性或更换训练目标，本身都不保证每轮指标单调变好。合作的探索与信用方法提供内层能力；对手模型和开放式学习补上评价与目标构建。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-counterexample",
+          "title": "6 · 同样的团队奖励，可以暴露不同困难",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "R=\\begin{pmatrix}8&0\\\\0&6\\end{pmatrix}",
+              "explain": "两人各选动作 0 或 1；矩阵是双方共同的一步奖励。下列手算是机制例子，不是论文实验结果。"
+            },
+            {
+              "kind": "p",
+              "text": "两人策略均匀时，团队期望为 $3.5$。若固定列动作 0，行玩家应选 0；固定列动作 1，则应选 1。最佳动作依赖同伴动作。另一方面，联合最优动作 $(0,0)$ 可以由两个固定的局部策略执行。因此，“整个价值表能否精确表示”和“最优动作能否分散执行”不是同一问题。"
+            },
+            {
+              "kind": "p",
+              "text": "再把同伴在训练中的策略从均匀改为大多选 1。没有改变物理世界，自己面对的有效奖励已经改变。旧数据是否还能用，取决于保存了哪些联合条件、评价哪个策略，以及怎样处理采样分布差异。集中 critic 提供条件信息，不会让不断变化的目标价值自动保持不变。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-exploration",
+          "title": "7 · MAVEN：协作探索需要跨 agent、跨时间的相关性",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "假设一次探索必须让 $n$ 人连续 $T$ 步都执行指定的低概率动作，每人每步独立成功的概率是 $p$，那么整段概率为 $p^{nT}$。加大随机动作比例未必能形成一致的探索计划。若允许先共同抽取一个完整行为模式，则模式概率不需要再为每人每步相乘；代价是引入协调信号与模式表示。"
+            },
+            {
+              "kind": "math",
+              "tex": "Z\\sim p_\\phi(\\cdot\\mid s_0),\\qquad q_i=q_i(h_i,a_i,Z),\\qquad I(Z;\\Tau\\mid S_0)\\ge H(Z\\mid S_0)+\\mathbb E\\log q_\\psi(Z\\mid\\Tau,S_0)",
+              "explain": "Z 在一段 episode 内保持不变。这里显式条件于初始状态；若固定 $s_0$，可省略条件。互信息下界用轨迹反推模式，避免不同 Z 都学成同一行为；Tau 表示联合轨迹或其可微表征。"
+            },
+            {
+              "kind": "p",
+              "text": "MAVEN 用回报训练高层模式选择，用 TD 学习条件化 utility，并训练轨迹判别器。该结构改变采样行为与表示，不只是给 epsilon 换个调度。共享模式怎样产生、是否依赖初始全局状态、执行时怎样让各人获得模式，都属于协议。固定模式之后的分散动作不等于从来不需要协调。"
+            },
+            {
+              "kind": "p",
+              "text": "作者的 2-corridors 实验在训练中关闭短通道，展示模式化探索与适应的联系；它仍是有回合和重置的特定实验，不能据此证明无重置持续学习。代码的 noise_q_learner.py 可看到条件 mixer、轨迹判别器及 TD 与互信息辅助损失。[原文](https://arxiv.org/abs/1910.07483) · [作者代码](https://github.com/AnujMahajanOxf/MAVEN)。"
+            },
+            {
+              "kind": "source",
+              "file": "marl_objectives_lab.py",
+              "region": "structured_exploration",
+              "caption": "相同 Bernoulli(1/2) 动作边际下，比较独立采样和共同随机比特；共享信号属于显式协议，不是免费的 CTDE 能力。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-qdpp",
+          "title": "8 · Q-DPP：把联合动作看成兼顾质量与多样性的集合",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "MAVEN 先选一个团队模式。Q-DPP 则在每个 agent 的候选观察—动作对中各选一个，用行列式度量这组选择的质量与互补性。候选集按 agent 分区，约束每个分区恰好选择一项；普通 DPP 允许任意子集，不能直接替代这一约束。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\Pr(Y\\mid\\mathbf o)={\\det L_Y\\over\\sum_{Y'\\in\\mathcal C(\\mathbf o)}\\det L_{Y'}},\\qquad Q(\\mathbf o,\\mathbf a)=\\log\\det L_Y",
+              "explain": "集合 Y 对应一个联合动作，C 是每个分区恰选一项的合法集合族。分母不是无约束 DPP 的 det(I+L)。"
+            },
+            {
+              "kind": "math",
+              "tex": "L_Y=D_YB_Y^{\\mathsf T}B_YD_Y,\\quad D_{jj}=e^{q_j/2},\\qquad \\log\\det L_Y=\\sum_{j\\in Y}q_j+\\log\\det(B_Y^{\\mathsf T}B_Y)",
+              "explain": "本页把 diversity 向量写作 B 的列。第一项表示各候选质量；第二项是张成体积的对数。向量冗余会缩小体积；学习表征不同，不等于物理动作标签必须不同。"
+            },
+            {
+              "kind": "p",
+              "text": "训练时按分区采样，并将剩余向量投影到已选向量的正交补，随后以联合 TD 误差更新核。此采样器是近似方法；原文的概率误差界需要分区奇异值的平衡条件。若所有候选的 diversity 向量均为单位向量，且逐分区选出的最大质量候选彼此正交，Hadamard 不等式给出分散最优的充分条件。不能假定训练任意时刻都已满足它。"
+            },
+            {
+              "kind": "p",
+              "text": "Q-DPP 是连接价值表示与协调探索的重要工作。原文 §3.6 对完整深度版本保留了进一步工作的边界；作者仓库中的神经网络扩展、数值处理和具体任务配置应分别核对。不能由某个正交特例，直接推出所有 QMIX 参数化都被无条件包含。[原文](https://proceedings.mlr.press/v119/yang20i.html) · [作者工程](https://github.com/QDPP-GitHub/QDPP)。"
             }
           ]
         },
         {
           "id": "lesson-credit",
-          "title": "5 · 集中 critic 与团队信用",
+          "title": "9 · COMA：保持同伴动作不变，只改变自己的动作",
           "blocks": [
             {
               "kind": "p",
-              "text": "对于历史依赖 actor，以下精确形式以 $X=(S,\\mathbf H)$ 表示包含状态与所需历史的集中上下文。实际 critic 可以使用更小的输入，但若丢失预测未来所需的记忆，就还存在状态逼近误差。集中信息必须是训练协议允许获得的，而不是部署时凭空新增的观察。"
+              "text": "团队完成任务后，一个没有起作用的动作也收到了奖励。直接用共同回报乘每人的 score 仍可能是正确的梯度估计，但噪声很大。COMA 不把奖励拆成几份，而是在集中 critic 中问：同伴已经这样行动时，自己的实际动作比自己的策略平均动作好多少？"
             },
             {
               "kind": "math",
-              "tex": "\\nabla_{\\theta_i}J_i\\ \\propto\\ \\mathbb E_\\pi[\\nabla_{\\theta_i}\\log\\pi_i(A_i\\mid H_i)\\,Q_i^\\pi(X,\\mathbf A)]",
-              "explain": "在相应策略梯度条件与占据加权下，集中 Q 可以为局部 actor 提供训练信号；执行不需要把 Q 的全部信息传给 actor。"
+              "tex": "b_i(X,\\mathbf a_{-i})=\\sum_{u}\\pi_i(u\\mid h_i)Q^{\\boldsymbol\\pi}(X,(u,\\mathbf a_{-i})),\\qquad A_i^{\\rm cf}=Q^{\\boldsymbol\\pi}(X,\\mathbf a)-b_i(X,\\mathbf a_{-i})",
+              "explain": "求和只替换本人的动作。它不是把同伴也重新采样，更不是对实际世界进行了一次因果干预。"
             },
             {
               "kind": "math",
-              "tex": "A_i(X,\\mathbf A)=Q(X,\\mathbf A)-\\sum_{a_i'}\\pi_i(a_i'\\mid H_i)Q(X,(a_i',\\mathbf A_{-i}))",
-              "explain": "COMA 型 baseline 固定其他动作，仅对本 agent 的动作求策略平均。这是对联合 Q 的反事实比较，不等同于现实世界的无假设因果识别。"
+              "tex": "\\mathbb E_{A_i\\sim\\pi_i}[b_i\\nabla_{\\theta_i}\\log\\pi_i(A_i\\mid h_i)\\mid X,\\mathbf a_{-i}]=b_i\\sum_u\\nabla_{\\theta_i}\\pi_i(u\\mid h_i)=0",
+              "explain": "在声明的条件独立采样下，baseline 不依赖本次采到的 Aᶦ，因此其 score 期望消去。共享随机变量存在时，条件集合也需包含它。"
             },
             {
               "kind": "p",
-              "text": "baseline 在给定其他变量后不依赖实际采样的当前动作，故它乘 score 的条件期望为零。这保留梯度方向的期望，同时尝试降低团队共同回报造成的方差。若 critic 错误或遗漏历史，优势仍可能误导行动。"
+              "text": "在共同收益矩阵 $(8,0;0,6)$ 中，同伴选 0、自己均匀采样时，baseline 为 4。选 0 的反事实优势为 4，选 1 为 −4。均值为零并不表示学习信号为零；优势与动作 score 的乘积仍有非零期望。不同 agent 的反事实优势不必相加为团队优势。"
+            },
+            {
+              "kind": "code",
+              "code": "1. 用旧局部策略采样联合动作，保存动作概率和训练上下文。\n2. 由集中 critic 计算实际 Q 和逐 agent 的反事实 baseline。\n3. 冻结优势的梯度，用 −log πᵢ × Aᵢᶜᶠ 更新局部 actor。\n4. 用多步回报或 TD(λ) 训练 critic；按协议更新目标网络。\n5. 执行时只保留局部 actor，不读取集中 critic。",
+              "caption": "COMA 的核心更新；critic 的多步目标仍要正确处理终止与截断。"
             },
             {
               "kind": "p",
-              "text": "MADDPG 对连续动作使用集中 critic 与局部确定性 actor，让 critic 条件化联合动作；COMA 使用离散随机策略与上述 baseline。两者都使用训练期额外信息，但梯度和适用动作类型并不相同。"
+              "text": "原文的收敛分析有正确或兼容 critic 等条件。baseline 的消去证明本身不保证一个学习中的深度 critic 准确，也不保证每个有限样本更新都降方差。原团队 PyMARL 在 coma_learner.py 中将 baseline 和优势 detach，避免误把 actor 更新变成穿过 critic 的另一种梯度。[原文](https://arxiv.org/abs/1705.08926) · [实现](https://github.com/oxwhirl/pymarl/blob/master/src/learners/coma_learner.py)。"
+            },
+            {
+              "kind": "source",
+              "file": "marl_objectives_lab.py",
+              "region": "credit_variance",
+              "caption": "另一项精确枚举：Q(a,b)=a+10b，比较三种 baseline 的同均值梯度与方差；此特殊加法任务的零方差不推广到一般 COMA。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-bicnet",
+          "title": "10 · BiCNet：先让动作生成器获得协作信息",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "COMA 改变训练信号，不改变局部 actor 的信息。BiCNet 选择另一条路线：在采取动作前，让 actor 和 critic 的隐层沿 agent 序列双向传递信息。这里 RNN 展开的位置是不同 agent，不应直接理解为时间记忆。其共享观察、局部输入与通信通道共同决定了执行权限。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\nabla_\\theta J=\\mathbb E_{d^\\mu}\\!\\left[\\sum_i\\sum_j \\nabla_\\theta\\mu_{\\theta,j}(s)\\,\\nabla_{a_j}Q_i^\\mu(s,\\mathbf a)\\big|_{\\mathbf a=\\boldsymbol\\mu_\\theta(s)}\\right]",
+              "explain": "这是团队目标为各人回报之和时的确定性策略梯度结构，需满足相应可微性与状态占据条件。一个动作 j 会影响多个 Qᵢ；双重求和保留这些交叉影响。"
+            },
+            {
+              "kind": "p",
+              "text": "BiCNet 使用局部奖励设计与固定敌方策略等实验条件，因此不是本章统一奖励设定的逐字实例。它启发我们把“动作相互依赖”放入网络，但不能把共享参数推出任意队伍规模的可靠迁移。与后文 MAT 相比，BiCNet 在隐层交流；MAT 显式条件于已生成动作。[原文 §3 与附录](https://arxiv.org/abs/1703.10069)。"
             }
           ]
         },
         {
           "id": "lesson-factorization",
-          "title": "6 · QMIX 的可分散 argmax 及表示限制",
+          "title": "11 · VDN 与 QMIX：怎样不用枚举联合动作",
           "blocks": [
             {
-              "kind": "math",
-              "tex": "Q_{\\rm tot}=f_s(Q_1(H_1,a_1),\\ldots,Q_n(H_n,a_n)),\\qquad\\frac{\\partial f_s}{\\partial Q_i}\\ge0",
-              "explain": "mixer 对各局部值单调，训练时还可由全局状态调节。非负权重是实现单调性的一种方式。"
+              "kind": "p",
+              "text": "价值方法先问一个执行问题：训练时能评价联合动作，执行时能否让各人独立取自己的最大值？VDN 用可加结构，QMIX 放宽为对局部 utility 单调的状态条件 mixer。这里的局部 utility 是学习到的协调变量，未必等于某个真实个人奖励的价值。"
             },
             {
               "kind": "math",
-              "tex": "(\\arg\\max_{a_1}Q_1,\\ldots,\\arg\\max_{a_n}Q_n)\\in\\arg\\max_{\\mathbf a}Q_{\\rm tot}",
-              "explain": "因为增大任一局部值不会减小联合值，分别选择局部最大值就能达到该表示的联合最大值。平局时可有多个最优动作。"
+              "tex": "Q_{\\rm VDN}(X,\\mathbf a)=\\sum_i q_i(h_i,a_i),\\qquad Q_{\\rm QMIX}(X,\\mathbf a)=f_s(q_1,\\ldots,q_n),\\quad {\\partial f_s\\over\\partial q_i}\\ge0",
+              "explain": "QMIX 的局部网络可包含递归记忆；全局状态调节 mixer，而不必成为局部执行输入。单调激活与非负混合权重是充分的实现方式。"
+            },
+            {
+              "kind": "math",
+              "tex": "q_i(h_i,a_i)\\le q_i(h_i,a_i^*)\\quad\\forall i\\quad\\Longrightarrow\\quad f_s(\\mathbf q(\\mathbf a))\\le f_s(\\mathbf q(\\mathbf a^*))",
+              "explain": "逐坐标替换为局部最大值不会减小联合估计，因此局部 greedy 的组合是该估计的联合 greedy。这个结论不涉及一次训练前后的真实收益。"
             },
             {
               "kind": "p",
-              "text": "这条性质解决的是该函数类中的 greedy 执行，不保证任意团队价值都能被表示。若 agent 一偏好哪个动作取决于 agent 二的动作，单一局部排序就可能不足。价值分解的可扩展性来自结构约束，同时也承担结构偏差。"
+              "text": "可加矩阵必须满足 $Q_{00}+Q_{11}-Q_{01}-Q_{10}=0$，所以 VDN 无法精确表示共同收益矩阵 $(8,0;0,6)$。QMIX 同样不能精确表示其中的条件排序反转。它仍可能学到正确的最优动作；表示误差、数据分布与优化误差共同决定是否做到。"
+            },
+            {
+              "kind": "math",
+              "tex": "y=r+\\gamma(1-d)Q_{\\bar\\theta}(X',\\mathbf a'),\\quad \\delta=y-Q_\\theta(X,\\mathbf a),\\qquad \\nabla_{\\theta_i}(y-Q_\\theta)^2=-2\\delta\\,{\\partial f_s\\over\\partial q_i}\\nabla_{\\theta_i}q_i",
+              "explain": "目标 y 停止梯度。局部 utility 通过团队 TD 误差和 mixer 导数收到更新，这与 COMA 的动作边际化 baseline 是不同的信用机制。"
+            },
+            {
+              "kind": "p",
+              "text": "训练依次执行联合采样、存储转移、重放 batch、构造冻结目标、更新局部网络与 mixer、更新目标网络。必须同时保存每人的终止/存活 mask、合法动作与记忆边界。PyMARL 的 qmix.py 使用绝对值生成非负权重；这不是约束所有网络参数为正。[VDN 原文](https://arxiv.org/abs/1706.05296) · [QMIX 原文](https://proceedings.mlr.press/v80/rashid18a.html) · [mixer](https://github.com/oxwhirl/pymarl/blob/master/src/modules/mixers/qmix.py)。"
             }
           ]
         },
         {
-          "id": "lesson-algorithm",
-          "title": "7 · 声明信息边界后组织训练",
+          "id": "lesson-qplex",
+          "title": "12 · QPLEX：约束最优动作的一致性，而非所有动作的排序",
           "blocks": [
+            {
+              "kind": "p",
+              "text": "QMIX 的充分条件比“最优动作能够分散实现”更强。QPLEX 把局部 utility 写成最大值与非正优势，并用依赖联合动作的正权重组合优势。这样可以改变非最优联合动作的相对值，同时保留最优动作的一致性。"
+            },
+            {
+              "kind": "math",
+              "tex": "v_i(h_i)=\\max_u q_i(h_i,u),\\quad A_i^{\\rm loc}(h_i,u)=q_i(h_i,u)-v_i(h_i)\\le0,\\qquad Q_{\\rm tot}(X,\\mathbf a)=V_{\\rm tot}(X)+\\sum_i w_i(X,\\mathbf a)A_i^{\\rm loc}(h_i,a_i),\\quad w_i>0",
+              "explain": "这是说明 IGM 机制的记法；完整 QPLEX 还包含正比例、加偏置的 transformation 与 duplex dueling 结构，不能删掉这些模块后仍声称具有完整表示定理。"
+            },
+            {
+              "kind": "p",
+              "text": "所有局部 greedy 的优势均为零，联合值达到 V；任何严格次优局部动作引入负项。这解释了贪心一致性。正权重可以随联合动作变化，所以不要求整个价值表都维持同一个局部排序。"
+            },
+            {
+              "kind": "p",
+              "text": "手算：令 $V_{\\rm tot}=8$，两人的非最优动作优势均为 −1。对 $(0,1)$ 与 $(1,0)$，把唯一非零优势的权重设为 8；对 $(1,1)$，两个权重均设为 1。得到的表恰为 $(8,0;0,6)$。此例说明非最优动作的表达能力，不证明一般训练收敛。"
+            },
+            {
+              "kind": "p",
+              "text": "原文 Proposition 2 的“完整 IGM 函数类”以足够的函数逼近能力为前提，不能读成有限网络表达所有 Dec-POMDP 或保证 SGD 找到最优解。作者实现的 advantage 分支还有 detach 和权重补偿，阅读时需连同 learner 检查。[原文](https://arxiv.org/abs/2008.01062) · [作者实现](https://github.com/wjh720/QPLEX/blob/master/pymarl-master/src/modules/mixers/dmaq_general.py)。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-fql",
+          "title": "13 · Factorized Q-Learning：保留成对交互，换取近似动作求解",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "还有一种取舍是不强制 IGM，而直接表示自己与同伴的交互。Zhou、Wen 等人的 Factorized Q-Learning（FQL）用低秩成对项近似高阶联合价值，并在同类 agent 间共享网络。它与 VDN 的“把所有局部 utility 相加”不同。"
+            },
+            {
+              "kind": "math",
+              "tex": "Q_i(s,\\mathbf a)\\approx q(s^i,a^i)+\\eta\\,v(s^i,a^i)^{\\mathsf T}\\left({1\\over n-1}\\sum_{j\\ne i}u(s^j,a^j)\\right)",
+              "explain": "n≥2。q 是独立项；v 和 u 是两个学得的嵌入，内积表示成对交互。η 是交互尺度。高于二阶的交互未被显式保留。"
+            },
+            {
+              "kind": "p",
+              "text": "原方法固定同伴上一时刻的动作，近似求自己动作的最大值，并与 TD 更新交替。因此要声明训练和执行中的同伴状态、旧动作或邻域信息。它不是无通信局部 greedy 的精确联合 argmax；非凸价值与并行更新也不能直接继承凸坐标优化的收敛结论。[原文 §3.1–3.3](https://arxiv.org/abs/1809.03738)。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-mappo",
+          "title": "14 · MAPPO：集中评价仍需面对同伴同时变化",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "若使用策略梯度，就不必通过单调 mixer 求联合 argmax。MAPPO 把 PPO 用于合作学习，以训练期集中价值估计形成优势，执行 actor 仍可只看局部信息。参数共享是一种配置选择；有 agent ID、角色输入或独立参数时，策略类的对称性约束不同。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\rho_{i,t}(\\theta_i)={\\pi_{\\theta_i}(a_t^i\\mid h_t^i)\\over\\pi_{i,\\rm old}(a_t^i\\mid h_t^i)},\\qquad L_i=\\mathbb E_{\\rm old}\\!\\left[\\min\\!\\left(\\rho_{i,t}\\hat A_t,\\operatorname{clip}(\\rho_{i,t},1-\\epsilon,1+\\epsilon)\\hat A_t\\right)\\right]",
+              "explain": "优势通常由集中价值与 GAE 得到。这个式子是实际裁剪替代目标，不是逐点保证真实收益改善的约束问题。"
+            },
+            {
+              "kind": "p",
+              "text": "考虑共同奖励表 $(0,2;2,-1)$，旧动作是 $(0,0)$。单独改变任一人的动作都把收益从 0 提到 2；两人同时改变却得到 −1。它说明“相对旧同伴的单方改善”不能直接相加。小步更新可以降低风险，但仅有 clip 不能排除此类误差。"
+            },
+            {
+              "kind": "p",
+              "text": "集中价值不是永远不变的参照：策略变了，价值目标也会变。MAPPO 的经验效果还依赖 rollout 长度、更新轮数、归一化、存活 mask 与合法动作处理。应先把它作为匹配预算的强基线，而非把任何提升都归因于新网络。[原论文](https://arxiv.org/abs/2103.01955) · [官方 on-policy 工程](https://github.com/marlbenchmark/on-policy)。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-advantage",
+          "title": "15 · 优势分解是望远镜恒等式，不是最优性的捷径",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "先固定共同回报的 Markov 联合策略，并指定 agent 排列 $i_1,\\ldots,i_n$。依次固定前缀动作，对剩余动作按旧策略求平均。每增加一个已固定动作，价值的变化就是一个条件优势。"
+            },
+            {
+              "kind": "math",
+              "tex": "Q_m^\\pi(s,a^{i_{1:m}})=\\mathbb E_{a^{i_{m+1:n}}\\sim\\pi}[Q^\\pi(s,\\mathbf a)],\\quad Q_0^\\pi=V^\\pi,\\quad A_m^\\pi=Q_m^\\pi-Q_{m-1}^\\pi",
+              "explain": "式中的策略先按状态因子化。具有相关随机信号或自回归依赖时，应使用相应的条件分布定义边际值，不能随意换成独立乘积。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\sum_{m=1}^{n}A_m^\\pi(s,a^{i_{1:m}})=\\sum_{m=1}^{n}(Q_m^\\pi-Q_{m-1}^\\pi)=Q^\\pi(s,\\mathbf a)-V^\\pi(s)",
+              "explain": "中间项逐个相消。这个恒等式不要求 QMIX 的单调性，也不要求联合 Q 可加。"
+            },
+            {
+              "kind": "p",
+              "text": "在 $(8,0;0,6)$ 例子中，旧策略均匀，固定第一个动作 0 后价值为 4。第一项优势为 $4-3.5=0.5$；再固定第二个动作 0，第二项为 $8-4=4$；两项之和 $4.5$ 恰为联合优势。COMA 在同一联合动作给两人各 4；它是另一个 baseline 构造，不能与该恒等式互换。"
+            },
+            {
+              "kind": "p",
+              "text": "恒等式并不说明依次最大化条件期望就找到全局联合最大值。例如奖励表 $(60,60;0,100)$，旧策略均匀时，第一行条件平均 60 大于第二行 50。先 greedy 选择第一行，随后最多得到 60，而联合最优是 100。逐步非负优势提供改善方向，不等于全局最优搜索。"
+            },
+            {
+              "kind": "source",
+              "file": "marl_objectives_lab.py",
+              "region": "advantage_decomposition",
+              "caption": "枚举两人的前缀条件价值，核对局部增量之和等于联合优势。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-sequential",
+          "title": "16 · HATRPO 与 HAPPO：让后更新者看见前面的策略变化",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "顺序更新的对象是策略参数，不一定是环境中的动作执行。HATRPO/HAPPO 用同一批旧联合轨迹，依次更新各人的策略；后更新者的目标中计入已更新同伴的新旧概率比。部署时各个局部 actor 仍可同时行动。"
+            },
+            {
+              "kind": "math",
+              "tex": "F_{m-1}(s,\\mathbf a)=\\prod_{j<m}{\\bar\\pi_{i_j}(a^{i_j}\\mid s)\\over\\pi_{i_j}(a^{i_j}\\mid s)},\\qquad M_m=F_{m-1}A^{\\boldsymbol\\pi}(s,\\mathbf a),\\qquad L_m^{\\rm clip}=\\mathbb E_{\\boldsymbol\\pi}[\\min(\\rho_{i_m}M_m,\\operatorname{clip}(\\rho_{i_m},1-\\epsilon,1+\\epsilon)M_m)]",
+              "explain": "F 修正给定状态下前序动作的分布。它不单独修正完整状态占据分布，也没有把旧价值自动变成部分更新后联合策略的价值。"
+            },
             {
               "kind": "code",
-              "code": "定义共同、零和或一般和奖励及目标 solution concept。\n逐步收集每个 agent 的局部历史、联合动作与允许的训练状态。\n固定目标策略版本，用联合样本更新 centralized critic 或 mixer。\n更新局部 actor，或按局部 Q 做分散 greedy 行动。\n记录 replay 中的同伴/对手版本和 reset 权限。\n执行评估时移除训练专属输入。\n按目标报告团队收益、cross-play、best response 或 exploitability。",
-              "caption": "不能用共同回报环境中的一次胜利证明对抗博弈中的稳健性。"
+              "code": "1. 固定联合策略版本，采一批轨迹并估计旧策略优势。\n2. 抽取本轮 agent 更新顺序，初始化每条样本的 factor=1。\n3. 对当前 agent，以 factor × 旧优势建立更新目标。\n4. HATRPO 近似求解受 KL 限制的步长；HAPPO 优化裁剪目标。\n5. 在同一批动作上计算该 agent 更新前后概率比，并乘入 factor。\n6. 冻结已更新策略块，继续下一人；全轮后重新采样。",
+              "caption": "实际工程须保留旧 log-prob，不能随着每个 minibatch 覆盖行为策略版本。"
+            },
+            {
+              "kind": "p",
+              "text": "原文 Algorithm 1 的证明针对精确优势、max-KL 惩罚的理想策略迭代，并声明策略正概率等条件。HATRPO 的有限样本二阶近似、HAPPO 的 clip 都是实现层的近似。理论中一整轮联合策略改善，不等于每次 minibatch 或每个中间策略都必然改善。共享参数若会连带改变已冻结策略块，也需要新的分析。[原文](https://arxiv.org/abs/2109.11251) · [作者 runner](https://github.com/cyanrain7/TRPO-in-MARL/blob/master/runners/separated/base_runner.py)。"
+            },
+            {
+              "kind": "source",
+              "file": "marl_objectives_lab.py",
+              "region": "sequential_updates",
+              "caption": "精确团队矩阵中的同时 / 顺序 best response；它隔离更新参照的差别，不把坐标最优化冒充 HAPPO 或 PPO。"
             }
           ]
         },
         {
-          "id": "lesson-example",
-          "title": "8 · 两个矩阵说明不同问题",
+          "id": "lesson-a2po",
+          "title": "17 · A2PO：顺序更新以后，优势本身也需要重新评价",
           "blocks": [
             {
               "kind": "p",
-              "text": "Matching Pennies 的行玩家收益矩阵为 $\\bigl(\\begin{smallmatrix}1&-1\\\\-1&1\\end{smallmatrix}\\bigr)$。若以概率 $p$ 选第一行，对两列的收益分别为 $2p-1$ 与 $1-2p$。最大化二者的较小值在 $p=0.5$ 达到零。纯策略对纯策略的 saddle gap 可为二，即使某一场获得一。"
+              "text": "HAPPO 的 factor 修改当前动作权重。A2PO 进一步追问：更新第 $m$ 人时，前面的人已经改变，那么未来轨迹价值还应以整轮最初的策略为准吗？记 $\\boldsymbol\\pi^{(m-1)}$ 为前 $m-1$ 人已更新的联合策略。当前更新的自然参照是 A 的这个策略版本，而不是始终使用最初的优势。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\widehat A_t^{(m)}=\\delta_t+\\sum_{k\\ge1}\\gamma^k\\!\\left(\\prod_{j=1}^{k}c_{t+j}^{(m)}\\right)\\delta_{t+k},\\qquad c_u^{(m)}=\\lambda\\min\\!\\left(1,{\\boldsymbol\\pi^{(m-1)}(\\mathbf a_u\\mid s_u)\\over\\boldsymbol\\pi^{(0)}(\\mathbf a_u\\mid s_u)}\\right)",
+              "explain": "PreOPC 将前序策略变化放入后续 TD 误差的迹系数。δ=r+γV(s′)−V(s)。有限轨迹、价值逼近和权重截断仍有误差；不是为一批旧样本补一个权重就得到精确新策略优势。"
+            },
+            {
+              "kind": "math",
+              "tex": "B_m\\le {4\\gamma\\varepsilon_m\\over(1-\\gamma)^2}\\,\\alpha_m\\sum_{j\\le m}\\alpha_j+{\\xi_m\\over1-\\gamma}",
+              "explain": "原文给出的替代目标误差上界形式：α 是逐策略最大总变差，ε 是参照优势绝对值上界，ξ 是优势评价误差上界。这里 m 按当前更新顺序编号。"
             },
             {
               "kind": "p",
-              "text": "团队矩阵为 $\\bigl(\\begin{smallmatrix}3&0\\\\0&2\\end{smallmatrix}\\bigr)$。若同伴以概率 0.2 选第一列，自己两动作价值是 $(0.6,1.6)$；若概率改为 0.8，则是 $(2.4,0.4)$。自己没有改变、底层矩阵没有改变，最佳动作却反转。"
+              "text": "若替代目标改善超过误差界，才足以推出对应真实改善。较小的步幅不能消除任意大的 ξ；较紧的上界也不是“实际样本效率最高”的证明。A2PO 在实际优化中加入前序比率与当前联合比率的两层裁剪，并研究半贪心更新次序。参数共享、有限轮评价与训练噪声都要另行检查。"
             },
             {
               "kind": "p",
-              "text": "同一团队矩阵中，实际动作是两人均选零，本 agent 策略均匀。反事实 baseline 为 1.5，优势为 3−1.5=1.5。对自己两种动作按策略求平均，优势均值恰好为零，验证了 baseline 的条件消去性质。"
+              "text": "对照实现时，先读 `shared_buffer.py` 的轨迹概率比与 weighted returns，再读 `r_mappo.py` 的 `sequential_train`、agent mask 和裁剪；不能只把循环顺序改一下就称为 A2PO。作者仓库说明其重构版本可能与论文表现不一致，因此应固定版本并重跑原协议。[原文 §3–4](https://arxiv.org/html/2302.06205v2) · [作者代码](https://github.com/xihuai18/A2PO-ICLR2023)。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-mat",
+          "title": "18 · MAT：顺序生成动作，不等于顺序更新参数",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "MAT 把本时刻不同 agent 的观测与动作组织为序列，而不是只把时间轨迹换成 Transformer。编码器处理联合观察，解码器依次生成本步动作；已有轨迹中的动作前缀则可用于并行计算训练概率。它与 HAPPO 的顺序参数更新是不同操作。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\boldsymbol\\pi_\\theta(\\mathbf a\\mid\\mathbf o)=\\prod_{m=1}^{n}\\pi_\\theta(a^{i_m}\\mid\\mathbf o,a^{i_1},\\ldots,a^{i_{m-1}})",
+              "explain": "这是概率链式分解，允许相关行动。与 πᵢ(aᵢ|hᵢ) 的独立乘积相比，它需要额外的观察与前序动作信息。"
+            },
+            {
+              "kind": "code",
+              "code": "训练：固定行为版本，收集联合观察、联合动作、奖励与旧条件 log-prob。\n编码联合观察；将已记录动作右移一位，首位放开始符号。\n用因果 mask 一次计算各位置的条件概率，禁止读取当前/未来动作。\n以估计优势优化 PPO 型 clip 目标，另训练价值预测。\n执行：先编码当前联合观察，再采第一个动作。\n把已采动作加入前缀，依次采其余动作，最后交给世界执行。",
+              "caption": "训练可并行计算各位置；从未知前缀采样时仍需自回归。环境联合执行一次，不代表生成联合动作只需一次网络调用。"
+            },
+            {
+              "kind": "p",
+              "text": "必须检查执行资源：默认 MAT 的联合观察编码与前序动作条件，不满足“每人只拿自己的私有历史且完全不通信”的协议。集中控制或允许通信时可以使用；局部 actor 变体则需要重新说明失去或保留了哪些依赖。作者 ma_transformer.py 与 transformer_act.py 明确展示这两种数据路径。"
+            },
+            {
+              "kind": "p",
+              "text": "优势分解说明理想的逐条件改善怎样累积。实际 MAT 使用估计的联合优势、共享网络和裁剪目标，不能只凭恒等式就保证每次 SGD 后真实收益单调增加。论文所说的加法动作搜索量，也不等于 attention 的完整计算复杂度为线性；还需计编码、重复解码、通信和记忆成本。[原文](https://arxiv.org/abs/2205.14953) · [作者工程](https://github.com/PKU-MARL/Multi-Agent-Transformer)。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-pmat",
+          "title": "19 · PMAT：谁先生成动作，也可以成为学习问题",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "MAT 规定怎样按给定顺序生成动作。PMAT 进一步学习顺序：关键角色先表明动作，后续角色再据此配合。这里排序的是同一步的动作生成，不是 A2PO 的参数更新顺序。无约束的精确概率链可以采用任意排列；次序的实际作用来自有限模型、学习过程和条件决策方式。"
+            },
+            {
+              "kind": "math",
+              "tex": "P_\\psi(\\sigma\\mid\\mathbf o)=\\prod_{m=1}^{n-1}{\\exp z_{\\sigma_m}\\over\\sum_{j=m}^{n}\\exp z_{\\sigma_j}},\\qquad \\nabla_\\psi J_{\\rm order}=\\mathbb E_{\\sigma}\\!\\left[\\widehat A(\\sigma)\\nabla_\\psi\\log P_\\psi(\\sigma\\mid\\mathbf o)\\right]",
+              "explain": "AGPS 用 Plackett–Luce 分布逐个无放回选 agent；z 来自观察表示的评分器。排序梯度把当前动作网络和优势估计作为固定反馈，不是对离散 sort 直接求导。"
+            },
+            {
+              "kind": "p",
+              "text": "PMAT 依次执行编码、评分、采样排列、重排表示、自回归采动作，再还原 agent 索引交给环境。评分器用次序相关的联合优势学习；作者工程的 ranking loss 还使用新旧排列概率比的 PPO 式裁剪。近似优势会带来噪声；该机制不保证找遍 n! 种排列或获得全局最优顺序。联合观察和前序动作的权限与 MAT 相同。[原文 §5](https://arxiv.org/html/2502.16496v1) · [作者 PMAT 工程](https://github.com/NUDT-BI-MARL/PMAT)。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-relations",
+          "title": "20 · 将这些方法放回同一张问题图",
+          "blocks": [
+            {
+              "kind": "table",
+              "headers": [
+                "方法",
+                "改变的核心对象",
+                "不能由此直接得到"
+              ],
+              "rows": [
+                [
+                  "COMA",
+                  "动作相关的梯度方差；反事实 baseline",
+                  "奖励的唯一公平分配、任意 critic 下的正确梯度"
+                ],
+                [
+                  "BiCNet",
+                  "隐层通信与跨 agent 动作梯度",
+                  "无通信部署、任意队伍规模的迁移"
+                ],
+                [
+                  "VDN / QMIX / QPLEX",
+                  "联合 Q 的可分散表示与 greedy 一致性",
+                  "训练回报单调提高、无结构限制的最优协作"
+                ],
+                [
+                  "Factorized Q-Learning",
+                  "低秩成对交互与近似动作选择",
+                  "高阶交互的完整表达、精确联合 argmax"
+                ],
+                [
+                  "MAVEN / Q-DPP",
+                  "联合经验的模式与互补性",
+                  "无额外协调权限的任意探索、单生命期最优性"
+                ],
+                [
+                  "MAPPO",
+                  "局部 PPO 更新与集中价值评价",
+                  "同伴同时更新时的自动兼容"
+                ],
+                [
+                  "HATRPO / HAPPO",
+                  "依次更新参数并重加权前序动作",
+                  "任意近似下的逐次真实改善"
+                ],
+                [
+                  "A2PO",
+                  "部分更新后策略的优势评价",
+                  "零评价误差、裁剪等价于严格信赖域"
+                ],
+                [
+                  "MAT",
+                  "自回归联合策略与并行条件概率训练",
+                  "无通信分散执行、线性总计算、自动全局最优"
+                ],
+                [
+                  "PMAT",
+                  "依观察学习动作生成排列",
+                  "最优排列保证、无额外执行信息"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "这些不是简单的替代关系。一个系统可以用 recurrent state、集中 critic 和结构化探索；也可以把协调策略放入层次控制中。但组合前必须统一行为分布、目标策略版本和执行信息。把多个模块的结论并列起来，不等于得到了组合系统的保证。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-aga",
+          "title": "21 · AgA：当个人目标与集体目标并不相同",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "前面的主体都先给定共同目标。若每人追求个人得分，而团队关心整体收益，合作还面临目标冲突。AgA 研究可微混合动机博弈：个人损失为 ℓᵢ，集体损失为 ℓc。直接跟随个人梯度可能损害团队；只优化集体损失也未必保护个人利益。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\xi=(\\nabla_{w_i}\\ell_i)_i,\\quad \\xi_c=\\nabla_w\\ell_c,\\quad H_c=\\nabla_w^2\\ell_c,\\qquad \\widetilde\\xi=\\xi_c+\\lambda(\\xi+H_c^{\\mathsf T}\\xi_c),\\quad w\\leftarrow w-\\alpha\\widetilde\\xi",
+              "explain": "个人梯度、集体梯度与曲率修正是三个不同量。Hessian–vector product 等于集体梯度平方范数的一半的梯度；实现不必显式存储整个 Hessian。λ 按原文的符号对齐条件选择，不是总取正值。"
+            },
+            {
+              "kind": "p",
+              "text": "原文在集体目标固定点邻域、可微性与曲率条件下讨论方向对齐。它不是任意神经 MARL 的全局收敛定理，也不保证每个人每次更新都增益。此处的“对齐”是目标之间的优化关系，不是 COMA 的信用基线或 Q-DPP 的多样性。[原文 §4.2 与附录算法](https://arxiv.org/html/2402.12416v3)。"
             }
           ]
         },
         {
           "id": "lesson-code",
-          "title": "9 · 博弈解与信用的可运行核",
+          "title": "22 · 从可核查机制到作者工程",
           "blocks": [
             {
               "kind": "source",
               "file": "extended_foundations_lab.py",
               "region": "multi_agent",
-              "caption": "二维 minimax 的精确候选求解、零和 gap、反事实 baseline 与非负线性 mixer 的 greedy 一致性。"
+              "caption": "反事实优势、矩阵博弈与单调 greedy 的标准库机制核。先验证定义，再进入神经训练。"
+            },
+            {
+              "kind": "code",
+              "code": "python3 marl_objectives_lab.py test\npython3 marl_objectives_lab.py demo --out results/marl-objectives\npython3 extended_foundations_lab.py test",
+              "caption": "下载本页两个脚本并置于同目录后执行；机制实验导出图表与原始数值，后一个命令检查既有基础核。",
+              "language": "bash"
             },
             {
               "kind": "p",
-              "text": "运行 test 检查 matching pennies、被支配动作、优势条件均值和单调 mixer。这里没有训练 MADDPG、COMA 或 QMIX 网络。OpenAI maddpg 是原论文代码入口，PyMARL 包含原团队多种合作算法；OpenSpiel 用于更广泛游戏与 solution concept 实验；MARL 书站另有作者代码、练习与讲义。"
+              "text": "本站 [COMA 教学实验](/zh/continual-rl/code/coma_contextual/) 包含一步局部观察、学习的联合 critic 与 actor 更新；[QMIX](/zh/continual-rl/code/qmix_cooperative/) 和 [VDN](/zh/continual-rl/code/vdn_cooperative/) 包含三步合作任务、真正的神经训练及已有学习曲线。前者不是深度 TD(λ) COMA，后两者不是循环 SMAC 全工程；小任务能检查数据流，不能替代复杂协调评估。"
+            },
+            {
+              "kind": "p",
+              "text": "连续动作的集中 critic 与局部确定性 actor，可对照 [MADDPG 原论文](https://arxiv.org/abs/1706.02275) 与 [原工程](https://github.com/openai/maddpg)；它不同于 COMA 的离散动作边际化。要检验 minimax、响应与均衡，使用 [OpenSpiel](https://github.com/google-deepmind/open_spiel) 或 [MARL 教材配套代码](https://github.com/marl-book/codebase)。这些入口分别服务算法工程和解概念，不能互作完整复现证据。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "读代码的顺序",
+                "要验证的问题"
+              ],
+              "rows": [
+                [
+                  "采样器与 controller",
+                  "动作使用了哪些观察、共同潜变量或前序动作？"
+                ],
+                [
+                  "buffer 与目标构造",
+                  "旧 log-prob、同伴版本、mask、terminal 与时间截断是否匹配？"
+                ],
+                [
+                  "learner 与 mixer / critic",
+                  "哪些目标 detach？单调权重、反事实求和、重要性比率在哪一步出现？"
+                ],
+                [
+                  "评估与 ablation",
+                  "评估是否移除训练专属信息？换新搭档后是否仍有效？"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "原工程入口包括 PyMARL、QPLEX、MAVEN、Q-DPP、on-policy、TRPO-in-MARL、A2PO 和 MAT。依赖及环境版本会影响结果。作者仓库、已验证的机制、本站训练曲线和完整 benchmark 复现是四种不同证据，不能互相替代。"
             }
           ]
         },
         {
           "id": "lesson-branches",
-          "title": "10 · 多智能体适应与 CRL 的交集",
+          "title": "23 · 与持续强化学习的衔接",
           "blocks": [
+            {
+              "kind": "p",
+              "text": "合作 MARL 是现代深度 RL 的一个分支。它不自动等于持续 RL：许多研究固定成员、反复重置环境、在训练后冻结策略。转向长期运行，首先要明确是搭档在学习、成员在更换、世界动力学在改变，还是三者同时发生。"
+            },
             {
               "kind": "list",
               "items": [
-                "共同信息不足：共享奖励不能让局部 agent 自动知道同伴的私有观察。",
-                "策略分布变化：旧对手、旧搭档和当前参与者可能不一致，评估应指定群体分布。",
-                "训练状态泄漏：中央 critic 可以用的信息不一定可以进入执行策略。"
+                "状态构造：私有历史还需保留哪些同伴行为证据？角色或意图估计是否比身份标签更可迁移？",
+                "信用与塑性：长期共享奖励是否使旧角色垄断表示？新成员加入后，既有 critic 和 trace 是否仍对应同一预测问题？",
+                "经验与模型：replay 中的队伍组成、通信协议和行为策略版本是否可追溯？旧样本在当前联合任务中代表什么？",
+                "控制评价：冻结策略 cross-play 衡量协调泛化；继续更新时的生命期总收益衡量适应过程。二者需要分别报告。"
               ]
             },
             {
               "kind": "p",
-              "text": "长期协作和对抗都要求持续识别参与者、保留可迁移技能并适应变化。可以冻结世界物理动力学，只改变同伴策略，研究 agent state 与元适应；再单独改变物理过程。这样的实验能区分社会非平稳与外部世界变化，避免把所有效果笼统归为 CRL。"
+              "text": "一个可辨别的研究协议是：先固定世界，只改变同伴策略；再固定同伴，只改变物理转移。让在线学习器与同一初始参数的冻结学习器面对相同观察和交互预算，同时记录更换后的恢复成本、遗忘与不可逆失败。若允许共享训练状态或外部 reset，单独报告其成本和权限。这是从本章提出的实验设计，不是上述算法已经完成的通用 CRL 结论。"
+            },
+            {
+              "kind": "p",
+              "text": "每轮从头训练一个新 best response 的开放种群，不等于同一个受限资源智能体持续学习。还需声明历史策略是冻结保存还是继续更新、新伙伴到来能否重置网络，以及经验、记忆、计算和外部设计各花多少资源。第三章把这种外层学习与单生命期约束分开讨论。"
             }
           ]
         },
         {
           "id": "lesson-check",
-          "title": "11 · 练习与答案",
+          "title": "24 · 练习与判断依据",
           "blocks": [
             {
               "kind": "list",
               "items": [
-                "问：环境物理转移固定，独立学习者面对的过程就平稳吗？答：不一定，其他策略变化会改变其边缘转移和奖励。",
-                "问：CTDE 是否允许部署时使用全局状态？答：只有执行协议本来允许时才可以；否则违背信息边界。",
-                "问：QMIX 能表示任意合作价值矩阵吗？答：不能，单调局部排序限制表示能力。",
-                "实验：在团队矩阵中改变同伴第一列概率，求两动作等值点。方程 3p=2(1−p)，阈值为 0.4；这不是自身参数更新造成的变化。"
+                "在奖励表 (8,0;0,6) 中证明 VDN 不能精确表示，并说明为何这不排除局部固定策略执行联合最优动作。答案：交叉差为 14，不满足可加条件；但双方固定选 0 即可。",
+                "同一动作上，COMA 两个反事实优势之和为什么不是联合优势？答案：它们固定的同伴条件与边际化顺序不同；只有逐前缀差分才逐项相消。",
+                "HAPPO 在当前动作上乘前序策略比，是否已把未来 critic 变成部分更新后策略的精确价值？答案：没有；当前动作重加权与整段策略评价是不同问题，A2PO 正针对后者。",
+                "设计一个测试揭露 MAT 的信息泄漏：固定 agent 的局部历史，改变其本不应获得的同伴私有观察，比较动作分布。若分布改变，该实现不符合这次声明的无通信执行协议。",
+                "为何 Q-DPP 对数行列式需要数值与秩检查？答案：PSD 只保证行列式非负，不保证严格正；线性相关向量会令 log det 为负无穷。数值正则会改变所实现的函数。",
+                "只观察最终 SMAC 胜率，能判断结构化探索改善了无重置生命期收益吗？不能；需补充有预算、有后果、保留适应过程的协议。"
               ]
             }
           ]
@@ -8227,113 +8838,1622 @@
         {
           "title": "Bernstein et al. · The Complexity of Decentralized Control of MDPs",
           "url": "https://pubsonline.informs.org/doi/10.1287/moor.27.4.819.297",
-          "note": "分散控制与局部信息条件的原始理论研究。"
+          "note": "分散控制与局部信息的原始理论研究；局部历史不等于所有参与者共享的充分状态。"
         },
         {
-          "title": "Lowe et al. · Multi-Agent Actor-Critic",
-          "url": "https://arxiv.org/abs/1706.02275",
-          "note": "MADDPG 与混合合作—竞争环境。"
+          "title": "Albrecht、Christianos、Schäfer · Multi-Agent Reinforcement Learning",
+          "url": "https://marl-book.com/",
+          "note": "免费教材、课程、讲义与练习；用 games 和 solution concepts 区分共同收益、最佳响应与均衡。"
         },
         {
-          "title": "OpenAI · MADDPG",
-          "url": "https://github.com/openai/maddpg",
-          "note": "原论文算法工程，阅读 centralized critic 与局部 actor 输入。"
-        },
-        {
-          "title": "Foerster et al. · Counterfactual Multi-Agent Policy Gradients",
-          "url": "https://arxiv.org/abs/1705.08926",
-          "note": "COMA baseline 与团队信用分配。"
-        },
-        {
-          "title": "Rashid et al. · QMIX",
-          "url": "https://proceedings.mlr.press/v80/rashid18a.html",
-          "note": "单调混合与分散 greedy 一致性。"
-        },
-        {
-          "title": "Oxford · PyMARL",
-          "url": "https://github.com/oxwhirl/pymarl",
-          "note": "原团队合作 MARL 框架，含 QMIX、COMA 等具体实现。"
+          "title": "MARL 教材 · 作者代码",
+          "url": "https://github.com/marl-book/codebase",
+          "note": "教材配套 Python 算法；用于学习和机制核对，不应与某篇原始实验工程混同。"
         },
         {
           "title": "DeepMind · OpenSpiel",
           "url": "https://github.com/google-deepmind/open_spiel",
-          "note": "博弈环境与算法平台，适合检查不同 solution concept。"
+          "note": "游戏、解概念与算法实验平台；需按目标选择环境和评价，不用单次胜率代替均衡差距。"
         },
         {
-          "title": "Albrecht、Christianos、Schäfer · MARL 教材",
-          "url": "https://marl-book.com/",
-          "note": "作者免费教材、视频课程、讲义与练习入口；先读 games 与 solution concepts。"
+          "title": "Lowe et al. · Multi-Agent Actor-Critic",
+          "url": "https://arxiv.org/abs/1706.02275",
+          "note": "MADDPG 的集中 critic、局部 actor 和混合合作—竞争设置；不是 COMA 反事实求和的连续版。"
         },
         {
-          "title": "MARL 教材作者代码",
-          "url": "https://github.com/marl-book/codebase",
-          "note": "教材配套自包含 Python 算法，与原论文工程用途不同。"
+          "title": "OpenAI · MADDPG",
+          "url": "https://github.com/openai/maddpg",
+          "note": "原论文工程入口；比较训练时 critic 与部署时 actor 的输入权限。"
+        },
+        {
+          "title": "Foerster et al. · Counterfactual Multi-Agent Policy Gradients",
+          "url": "https://arxiv.org/abs/1705.08926",
+          "note": "§4 的反事实 baseline 与附录条件；不能把局部收敛论证外推为任意深度 critic 的每步改善。"
+        },
+        {
+          "title": "Sunehag et al. · Value-Decomposition Networks",
+          "url": "https://arxiv.org/abs/1706.05296",
+          "note": "从团队回报学习局部 utility 的加法分解；utility 不等于给定的个体奖励价值。"
+        },
+        {
+          "title": "Rashid et al. · QMIX",
+          "url": "https://proceedings.mlr.press/v80/rashid18a.html",
+          "note": "单调混合、状态条件 hypernetwork 与分散 argmax；单调性不是跨训练迭代的性能保证。"
+        },
+        {
+          "title": "Wang et al. · QPLEX",
+          "url": "https://arxiv.org/abs/2008.01062",
+          "note": "§3 与 Proposition 2；IGM 完整表达以足够函数逼近能力为条件。"
+        },
+        {
+          "title": "Mahajan et al. · MAVEN",
+          "url": "https://arxiv.org/abs/1910.07483",
+          "note": "共享 episode 潜变量、互信息辅助目标与协调探索；2-corridors 不是一般单生命期证明。"
+        },
+        {
+          "title": "Yang、Wen et al. · Multi-Agent Determinantal Q-Learning",
+          "url": "https://proceedings.mlr.press/v119/yang20i.html",
+          "note": "§3 的分区约束、质量—多样性表示、正交充分条件和近似采样边界；§3.6 区分完整深度工程与概念验证。"
+        },
+        {
+          "title": "Yu et al. · The Surprising Effectiveness of PPO in Cooperative, Multi-Agent Games",
+          "url": "https://arxiv.org/abs/2103.01955",
+          "note": "MAPPO 的经验评估与实现选择；参数共享和集中 critic 都不是无条件协调保证。"
+        },
+        {
+          "title": "Kuba et al. · Trust Region Policy Optimisation in MARL",
+          "url": "https://arxiv.org/abs/2109.11251",
+          "note": "Lemma 1、Algorithm 1、Theorem 2–3 与 practical algorithms；分开读理想 max-KL 更新和 HATRPO/HAPPO 近似。"
+        },
+        {
+          "title": "Wang et al. · Order Matters: Agent-by-agent Policy Optimization",
+          "url": "https://arxiv.org/html/2302.06205v2",
+          "note": "§3.3 PreOPC、误差项 ξ 与 §4 实际裁剪。较紧误差界不直接证明实际样本效率排序。"
+        },
+        {
+          "title": "Wen et al. · Multi-Agent Reinforcement Learning is a Sequence Modeling Problem",
+          "url": "https://arxiv.org/abs/2205.14953",
+          "note": "优势分解、联合观察编码与自回归执行；实际 PPO clip 不能单凭恒等式获得逐步性能保证。"
+        },
+        {
+          "title": "Peng、Wen et al. · BiCNet",
+          "url": "https://arxiv.org/abs/1703.10069",
+          "note": "§3 的双向隐层通信、团队确定性策略梯度与固定敌方设定；不是完全无通信执行，也不是平均奖励证明。"
+        },
+        {
+          "title": "Zhou、Wen et al. · Factorized Q-Learning for Large-Scale Multi-Agent Systems",
+          "url": "https://arxiv.org/abs/1809.03738",
+          "note": "§3.1–3.3 的低秩成对项、同类参数共享和旧同伴动作近似；坐标形式不是精确联合求解保证。"
+        },
+        {
+          "title": "Hu、Wen et al. · PMAT",
+          "url": "https://arxiv.org/html/2502.16496v1",
+          "note": "§5 的 AGPS、Plackett–Luce 排列概率与评分器梯度；动作生成次序不同于参数更新次序。"
+        },
+        {
+          "title": "Li、Wen et al. · Aligning Individual and Collective Objectives in Multi-Agent Cooperation",
+          "url": "https://arxiv.org/html/2402.12416v3",
+          "note": "AgA §4.2 与附录 Algorithm 1；混合动机、邻域方向与符号条件不能简写为任意深度博弈中的全局最优保证。"
+        },
+        {
+          "title": "Oxford · PyMARL",
+          "url": "https://github.com/oxwhirl/pymarl",
+          "note": "COMA、VDN、QMIX 的原团队工程入口；连读 controller、learner、mixer 和环境版本。"
+        },
+        {
+          "title": "QPLEX · 作者实现",
+          "url": "https://github.com/wjh720/QPLEX",
+          "note": "dmaq_general、dmaq_si_weight 与 dmaq_qatten_learner 对照完整结构，不只摘取一条公式。"
+        },
+        {
+          "title": "MAVEN · 作者实现",
+          "url": "https://github.com/AnujMahajanOxf/MAVEN",
+          "note": "noise_controller、noise_q_learner 与高层 bandit；区分默认配置和辅助损失变体。"
+        },
+        {
+          "title": "Q-DPP · 作者实现",
+          "url": "https://github.com/QDPP-GitHub/QDPP",
+          "note": "qdpp_controller、projection_selector、qdpp mixer；训练联合采样与测试局部策略的数据权限不同。"
+        },
+        {
+          "title": "MAPPO · 官方 on-policy",
+          "url": "https://github.com/marlbenchmark/on-policy",
+          "note": "集中价值、局部策略、价值归一化、GAE 与 rollout / active masks 的工程入口。"
+        },
+        {
+          "title": "HATRPO / HAPPO · 作者实现",
+          "url": "https://github.com/cyanrain7/TRPO-in-MARL",
+          "note": "base_runner 的随机顺序与 factor 累乘，happo_trainer / hatrpo_trainer 的不同更新。"
+        },
+        {
+          "title": "A2PO · 作者实现",
+          "url": "https://github.com/xihuai18/A2PO-ICLR2023",
+          "note": "`shared_buffer` 的轨迹修正和 `r_mappo` 的顺序训练；仓库 README 明示重构版本的复现边界。"
+        },
+        {
+          "title": "MAT · 作者实现",
+          "url": "https://github.com/PKU-MARL/Multi-Agent-Transformer",
+          "note": "ma_transformer、transformer_act 与 mat_trainer；检查联合输入、因果 mask、顺序采样和 PPO clip。"
+        },
+        {
+          "title": "PMAT · 作者实现",
+          "url": "https://github.com/NUDT-BI-MARL/PMAT",
+          "note": "pma_transformer、transformer_policy 和 mat_trainer；对照评分、排列采样、索引还原与动作网络更新。"
+        }
+      ]
+    },
+    {
+      "id": "study-deep-marl-reasoning",
+      "track": "deep",
+      "order": 15,
+      "path": "foundations/deep/multi-agent-reasoning/",
+      "title": "对手建模与递归推理：预测谁，回应什么？",
+      "question": "给定合作或竞争的评价目标，怎样利用他者模型和有限递归改善响应，并检验其是否真的有用？",
+      "objectives": [
+        "区分外层评价与目标构建、内层行为预测与响应学习。",
+        "理解自对弈、历史平均、FSP、NFSP 和反事实遗憾。",
+        "推导 PR2 的变分响应与 GR2 的有限递归，辨明理论和实现边界。"
+      ],
+      "prerequisites": [
+        {
+          "term": "随机博弈与信息集",
+          "explanation": "联合动作决定转移；各参与者只能按自己的可用信息行动。"
+        },
+        {
+          "term": "策略评价与改善",
+          "explanation": "评价固定策略与求最优响应是不同问题。"
+        },
+        {
+          "term": "概率、熵与 KL",
+          "explanation": "区分真实分布与拟合模型；知道 KL 非负。"
         }
       ],
+      "bookSections": [
+        "Fictitious Play 与 Fictitious Self-Play",
+        "NFSP 与 CFR",
+        "PR2（ICLR 2019）",
+        "GR2（IJCAI 2020）"
+      ],
+      "connectsTo": [
+        "state",
+        "control",
+        "meta",
+        "experiments",
+        "architectures"
+      ],
+      "executable": {
+        "file": "marl_objectives_lab.py",
+        "command": "python3 marl_objectives_lab.py test",
+        "scope": "下载本页配套脚本后运行。精确条件评分、虚拟博弈与零和 gap 的机制检查，不是 PR2/GR2 神经训练。"
+      },
       "problem": {
-        "setting": "多个决策者同时影响环境。它们可能共享目标，也可能具有相互冲突的收益。",
+        "setting": "有限双人博弈，或具有已声明观察权限的折扣随机博弈。对手可以固定、从一个分布抽取，或随训练更新；三种协议分别讨论。",
         "given": [
-          "智能体集合 $i=1,\\ldots,N$，联合策略 $\\pi=(\\pi_1,\\ldots,\\pi_N)$，每个参与者的目标 $J_i(\\pi)$。",
-          "执行时局部历史 $H_t^i$；训练时额外可见量必须明确声明。"
+          "自身可用历史、动作集和奖励。",
+          "对手身份与已执行动作是否可见，是否有共同随机信号。",
+          "对手分布 q、模型族、更新预算和独立评价对手。"
         ],
-        "sought": "先选择解概念：团队最优、零和 minimax 或一般和均衡，再设计相应学习器。",
-        "information": "集中训练信息不自动在分散执行时可得；其他学习者改变策略会改变个体所见过程。",
+        "sought": "学习可检验的行为或响应模型，并求对指定对手分布的近似最优响应；均衡目标还需检查所有单方偏离。",
+        "information": "同时行动时，不能把自身尚未执行的本步动作视为对手已收到的观察。训练期记录联合动作不等于执行前可见。",
         "objective": {
-          "tex": "J_i(\\pi_i^*,\\pi_{-i}^*)\\ge J_i(\\pi_i,\\pi_{-i}^*)\\quad\\text{for every }i,\\pi_i",
-          "explain": "这是 Nash 条件：其他策略固定时无人能单边获益。它不同于最大化总收益；团队和零和只是特殊收益结构。"
+          "tex": "J_i(\\pi_i;q)=\\mathbb E_{\\pi_{-i}\\sim q}\\mathbb E_{\\pi_i,\\pi_{-i}}\\!\\left[\\sum_{t=0}^{T-1}\\gamma^tR^i_{t+1}\\right],\\quad \\operatorname{BR}_i(q)\\in\\arg\\max_{\\pi_i}J_i(\\pi_i;q)",
+          "explain": "q 每局抽取完整对手策略，局内冻结。无限时域取 0≤γ<1、奖励有界。对固定 q 求响应不等于求 Nash 均衡。"
         },
         "assumptions": [
-          "信息结构与允许策略类固定；精确最优或均衡未必容易计算。",
-          "把其他智能体当环境时，必须处理其策略学习造成的非平稳性。"
+          "策略遵守既定信息结构；历史摘要的充分性需独立论证。",
+          "矩阵算例使用已知收益；神经实验还存在采样和逼近误差。",
+          "精确响应、无遗憾和收敛结论保留其博弈类别与优化条件。"
         ],
-        "success": "按所声明解概念评价：团队收益、可利用性或单边偏离收益，而非只看训练均值。",
+        "success": "分别检查预测误差、固定对手收益、交叉对战与偏离收益，不能彼此替代。",
         "relations": [
           {
             "kind": "generalization",
             "target": "control",
-            "explanation": "多个优化者产生多个目标及战略反馈，不能直接使用单智能体最优策略概念。"
+            "explanation": "对手分布进入控制目标，单方策略改善与均衡评价需要分开。"
           },
           {
             "kind": "composition",
             "target": "state",
-            "explanation": "局部信息需要记忆；集中 critic 不会替执行策略提供缺失观察。"
+            "explanation": "对手类型不可见时，历史和信念进入行为预测与控制。"
+          },
+          {
+            "kind": "composition",
+            "target": "meta",
+            "explanation": "选择响应对象与更新规则发生在基础策略学习之外，不能与局内推理混同。"
           }
         ],
         "nonGoals": [
-          "把一个训练稳定的联合策略自动称为 Nash 均衡。"
+          "不从条件相关推断因果影响。",
+          "不把内部递归层数当作真实对手的心理层次。",
+          "不声称深度 PR2、GR2、NFSP 在任意游戏中收敛。"
         ],
         "solution": {
-          "difficulty": "其他参与者也在改变行为，局部信用和局部信息又限制各自的学习。",
-          "insight": "先固定收益与信息结构，再选择均衡求解、集中 critic 或价值分解等不同机制。",
+          "difficulty": "对手行为、训练分布与双方更新相互影响，短期胜利可能只是利用暂时弱点。",
+          "insight": "先固定评价对象，再分开数据生成、模型推断与策略响应。",
           "steps": [
             {
-              "sectionId": "lesson-games",
-              "title": "先确定什么叫更好的联合行为",
-              "explanation": "零和与一般和采用不同解概念，团队最优也不等于任意均衡。"
+              "title": "明确对谁学习",
+              "explanation": "区分最新对手和历史平均。",
+              "sectionId": "lesson-self-play"
             },
             {
-              "sectionId": "lesson-credit",
-              "title": "用集中信息帮助训练信用",
-              "explanation": "反事实基线处理个体动作贡献，但不改变执行时信息权限。"
+              "title": "定义模型",
+              "explanation": "区别行为拟合、假设响应与真实信息权限。",
+              "sectionId": "lesson-opponent-model"
             },
             {
-              "sectionId": "lesson-factorization",
-              "title": "让集中价值支持分散选择",
-              "explanation": "QMIX 的单调结构使局部 argmax 可组合，同时限制可表达联合价值。"
+              "title": "构造响应",
+              "explanation": "从变分目标到有限层递归。",
+              "sectionId": "lesson-pr2"
+            },
+            {
+              "title": "检验边界",
+              "explanation": "分别评价模型、收益、预算和偏离。",
+              "sectionId": "lesson-limits"
             }
           ],
-          "guarantees": "特定博弈或分解结构的结果不等于一般多智能体持续学习收敛。",
+          "guarantees": "解析恒等式可精确验证；它们不推出神经网络训练的普遍收敛。",
           "alternatives": [
             {
-              "name": "团队优化 / Nash",
-              "difference": "一个共同目标与多方单边偏离条件是不同问题。"
+              "name": "NFSP",
+              "difference": "用历史平均构造训练分布，不必显式预测候选动作的响应。"
             },
             {
-              "name": "集中 critic / 单调价值分解",
-              "difference": "前者辅助局部策略梯度，后者施加支持分散 argmax 的表示约束。"
+              "name": "CFR",
+              "difference": "在信息集上累计反事实遗憾，不拟合条件对手模型。"
+            },
+            {
+              "name": "PSRO",
+              "difference": "评价并扩充完整策略种群，不等于增加内部推理层数。"
             }
           ]
         }
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 他者建模在多智能体学习中的位置",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "本章讨论合作与开放式多智能体学习的支撑方法：预测其他参与者，并据此改善自己的响应。这里的“对手模型”也可用于伙伴；建模对象的名称不决定双方的奖励关系。"
+            },
+            {
+              "kind": "p",
+              "text": "在[合作多智能体学习](/zh/continual-rl/foundations/deep/multi-agent/)中，核心问题包括怎样发现有效的联合行为，以及怎样把共同结果归因于各自行动。预测伙伴能帮助组织探索和控制，但不会自动解决联合探索或信用分配。在[开放式多智能体学习](/zh/continual-rl/foundations/deep/multi-agent-populations/)中，竞争与开放合作还需评价现有策略、构建下一轮对手或伙伴分布，再检查策略改善。更准确的模型可以提高内层响应质量，却不替代外层评价和目标构建，也不保证整体性能单调提高。"
+            },
+            {
+              "kind": "p",
+              "text": "面对另一个学习者，先问评价时对手是谁，再问对其行为知道什么，最后问下一轮应训练什么策略。三个问题分别决定回报分布、预测模型与改善算子。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "对象",
+                "输入与输出",
+                "边界"
+              ],
+              "rows": [
+                [
+                  "对手分布 q",
+                  "给完整策略或历史版本分配概率",
+                  "近期对手不是未来所有对手"
+                ],
+                [
+                  "行为模型 ρ",
+                  "给定可用信息预测对手行为",
+                  "预测准确不自动使自身稳健"
+                ],
+                [
+                  "响应算子 BR",
+                  "给定对手分布和自身奖励，求改善策略",
+                  "一次响应不是双方均衡"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "对手固定、全状态可见且各方使用 Markov 策略时，可以积分掉对手动作，得到单智能体 MDP。若对手依赖私有历史，或每局抽取未知类型，当前观察通常仍非 Markov。冻结对手消除了参数更新，不会消除隐藏信息。"
+            },
+            {
+              "kind": "p",
+              "text": "以下先用矩阵游戏隔离学习动力学，再扩展到序列决策。随机博弈、局部信息和联合价值的共同设定见[合作多智能体学习](/zh/continual-rl/foundations/deep/multi-agent/)；这里在这些设定之上明确模型预测什么、响应优化什么。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-self-play",
+          "title": "2 · 自对弈也在产生训练问题",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\pi_i^{k+1}\\approx\\operatorname{BR}_i(q_{-i}^{k}),\\qquad q_{-i}^{k}=\\delta_{\\pi_{-i}^{k}}",
+              "explain": "最新策略自对弈用对手当前版本定义本轮目标。实际可只做少量梯度步，而非求完整 best response。"
+            },
+            {
+              "kind": "p",
+              "text": "每轮固定训练对手，采集对局，再更新策略。轮换与同时训练有不同数据分布。共享网络是对称任务中的一种实现，不是自对弈的定义；不对称游戏仍可为不同角色维护不同策略。"
+            },
+            {
+              "kind": "p",
+              "text": "石头—剪刀—布中，只回应最新纯策略会反复经历石头、布、剪刀。每次响应都正确，最新策略却始终容易被利用。“战胜上一轮”因此不等于全局进步。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\operatorname{Gap}(x,y)=\\max_a(Ay)_a-\\min_b(x^\\top A)_b",
+              "explain": "A 是有限双人零和游戏的行玩家收益矩阵。gap 等于双方最优单方偏离收益之和；零 gap 才说明该策略对是均衡。"
+            },
+            {
+              "kind": "p",
+              "text": "收益回答“对这一分布表现如何”，gap 回答“还有哪些偏离能获利”。只报告相邻训练版本的胜率，会漏掉循环和未遇见的克制策略。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-fictitious",
+          "title": "3 · 虚拟博弈：回应历史平均",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\beta_i^{k+1}\\in\\operatorname{BR}_i(\\bar\\pi_{-i}^{k}),\\qquad \\bar\\pi_i^{k+1}=\\frac{k\\bar\\pi_i^{k}+\\beta_i^{k+1}}{k+1}",
+              "explain": "有限正规形游戏中，平均完整策略的概率分布；k 是已纳入平均的响应数。"
+            },
+            {
+              "kind": "p",
+              "text": "历史平均保留已经遇到的行为，避免只追逐最新对手。经典虚拟博弈在有限双人零和等游戏中有平均策略的收敛结论，不是一般和游戏或最新策略的普遍结论。"
+            },
+            {
+              "kind": "p",
+              "text": "序列游戏不能简单地对每个信息集的动作概率做等权平均。几乎不到达某处的策略，不应与经常到达的策略在该处获得相同权重。Fictitious Self-Play 用实现概率处理这个问题。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\bar\\pi_i(a\\mid I)=\\frac{\\sum_k w_k r_i^{\\pi_i^k}(I)\\pi_i^k(a\\mid I)}{\\sum_k w_k r_i^{\\pi_i^k}(I)}",
+              "explain": "I 是信息集，r 是玩家自身动作对到达 I 的概率贡献。完美回忆下，它与先按 w 抽取完整策略的混合实现等价；分母为零处可任意定义。网络参数平均不能替代此式。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-nfsp",
+          "title": "4 · NFSP：响应学习与平均策略学习",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "NFSP 用 Q 网络近似响应，用另一网络拟合自己的历史响应行为。前者学习怎样获胜，后者保留已经采用过什么。平均策略网络不是用来拟合对手动作的。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\sigma_i=(1-\\eta)\\bar\\pi_i+\\eta\\beta_i,\\qquad 0<\\eta<1",
+              "explain": "完整策略层面的 anticipatory mixture；原算法在每局开始选择平均或响应模式，不是每一步重新抽模式。"
+            },
+            {
+              "kind": "math",
+              "tex": "L_{\\rm SL}(\\vartheta)=\\mathbb E_{(I,a)\\sim\\mathcal M_{\\rm SL}}[-\\log\\bar\\pi_\\vartheta(a\\mid I)]",
+              "explain": "只将执行响应模式时的自身行为写入监督记忆。Reservoir sampling 使有限记忆近似保留整段行为流，不保证精确保存全部策略。"
+            },
+            {
+              "kind": "code",
+              "code": "每局开始，以概率 η 执行近似响应 β，否则执行平均策略。\n所有转移写入 RL replay。\n仅将响应模式下的自身 (信息集, 动作) 写入 SL reservoir。\n用 Q-learning 更新响应；用交叉熵更新平均策略。\n冻结平均策略，独立计算或估计可利用性。",
+              "caption": "两种记忆的对象、采样方式和用途不同。"
+            },
+            {
+              "kind": "p",
+              "text": "改用最近窗口会改变所拟合的平均对象。非线性逼近、有限记忆与不精确响应也会改变理论条件。NFSP 是 FSP 的可扩展近似，不是“给 DQN 加一个网络就保证 Nash”。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-cfr",
+          "title": "5 · CFR：从反事实遗憾组织自对弈",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "CFR 问：在自己能够决策的信息集，若换一个动作，累计会少后悔多少？它据此组织下一轮策略。COMA 的反事实 baseline 则服务于策略梯度的方差缩减；二者不是同一种更新。"
+            },
+            {
+              "kind": "math",
+              "tex": "v_i^\\sigma(I,a)=\\sum_{h\\in I}\\rho_{-i}^\\sigma(h)\\sum_{z\\succeq ha}\\rho^\\sigma(ha,z)u_i(z)",
+              "explain": "h 是信息集内历史，z 是终局。第一个权重含对手与 chance 到达 h 的贡献，排除自身到达概率；之后强制选 a，再按 σ 继续。此值不是归一化的条件期望。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}r_i^k(I,a)&=v_i^{\\sigma^k}(I,a)-\\sum_b\\sigma_i^k(b\\mid I)v_i^{\\sigma^k}(I,b),\\\\R_i^K(I,a)&=\\sum_{k=1}^K r_i^k(I,a),\\\\\\sigma_i^{K+1}(a\\mid I)&=\\frac{[R_i^K(I,a)]_+}{\\sum_b[R_i^K(I,b)]_+}.\\end{aligned}",
+              "explain": "分母为零时取均匀分布。这是原始累计遗憾的 regret matching；CFR+ 的逐轮截断是另一更新。"
+            },
+            {
+              "kind": "p",
+              "text": "有限、完美回忆的双人零和游戏中，局部反事实遗憾控制整体外部遗憾，再由双方平均遗憾界控制平均策略的均衡误差。采样、神经近似和游戏抽象各有额外条件；局部指标小不能独立证明任意深度策略达到均衡。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-opponent-model",
+          "title": "6 · 行为预测不等于真实因果响应",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "L_{\\rm pred}(\\phi)=-\\mathbb E_{(H_i,A_{-i})\\sim D}\\log\\rho_\\phi(A_{-i}\\mid H_i)",
+              "explain": "用允许观测的历史预测对手已执行动作。动作不可观察时需额外推断，不能凭空得到监督标签。"
+            },
+            {
+              "kind": "p",
+              "text": "条件模型还可输入候选自身动作，写成 $\\rho(a_{-i}\\mid s,a_i)$。它可以表示数据相关性，也可以表示内部假设的响应；二者都不意味着同时行动的对手已经看到了 $a_i$。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\pi(a_i,a_{-i}\\mid s)=\\pi_i(a_i\\mid s)\\pi_{-i}(a_{-i}\\mid s)",
+              "explain": "给定同一个完整状态、双方独立随机行动时，真实联合分布满足此因子化。隐变量、共同信号或混合的训练版本会改变条件独立关系。"
+            },
+            {
+              "kind": "p",
+              "text": "要把条件相关解释为“我改变动作就使对手改变动作”，需实际观察顺序、承诺机制或因果假设。先行动并被对手看见的 Stackelberg 游戏，与同时行动的 Nash 游戏是不同问题。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\widetilde Q_i(s,a_i)=\\sum_b\\rho_\\phi(b\\mid s,a_i)Q_i(s,a_i,b)",
+              "explain": "固定 φ 和 Q 后，这是模型内的期望评分。真实评价仍需由环境中的实际对手执行。"
+            },
+            {
+              "kind": "p",
+              "text": "actor 可能选择数据未覆盖的动作，利用模型虚构的有利回应。应分别检查保留轨迹上的预测误差、动作覆盖、模型失配以及环境真实回报。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-pr2",
+          "title": "7 · PR2：从价值构造变分响应",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "PR2 使用条件对手模型与概率推断近似响应，再改进自身策略。重点不是把对手网络拼到输入，而是规定响应分布怎样从价值和正则项产生。下面在有限动作上推导其软响应核。"
+            },
+            {
+              "kind": "math",
+              "tex": "F_i(s,a_i)=\\alpha\\log\\sum_b e^{Q_i(s,a_i,b)/\\alpha},\\qquad \\rho^*(b\\mid s,a_i)=e^{[Q_i(s,a_i,b)-F_i(s,a_i)]/\\alpha}",
+              "explain": "α>0。F 是软聚合值，不是固定真实对手下的普通价值。连续动作还需声明积分的基准测度与可积性。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\alpha D_{\\rm KL}(\\rho\\Vert\\rho^*)=F_i-\\mathbb E_\\rho Q_i-\\alpha H(\\rho)",
+              "explain": "代入 log ρ*=(Q−F)/α 并使用概率和为一，即得恒等式。"
+            },
+            {
+              "kind": "math",
+              "tex": "F_i=\\max_\\rho\\{\\mathbb E_\\rho Q_i+\\alpha H(\\rho)\\}",
+              "explain": "KL 非负给出上界，ρ=ρ* 时达到。限制模型族后，最小化 KL 是变分近似；有限粒子又增加采样近似。"
+            },
+            {
+              "kind": "p",
+              "text": "指数中使用的是玩家 i 的价值，不能因此说对手在最大化其自身奖励。这是推断构造中的响应目标，不是任意竞争对手的通用行为定律。未经检验地替代真实对手分布，可能产生乐观失配。"
+            },
+            {
+              "kind": "p",
+              "text": "取 Q=(0,1)、α=1，ρ*≈(0.269,0.731)，普通期望≈0.731，熵≈0.582，F≈1.313。F 大于最大 Q=1 不代表获得额外环境奖励；差额来自正则化。若真实对手总选第一项，期望仍为零。"
+            },
+            {
+              "kind": "math",
+              "tex": "(\\mathcal T^{\\pi_i}Q_i)(s,a_i,b)=r_i(s,a_i,b)+\\gamma\\mathbb E_{s',a_i'\\sim\\pi_i}[F_i(s',a_i')]",
+              "explain": "与上述软响应配套的理想固定自身策略备份。神经 critic 用停止梯度的 target 版本计算右端，再回归当前 joint Q；若任务真实终止则不 bootstrap。PR2 的软值不能换成普通对手期望而仍称同一算子。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-response-gradient",
+          "title": "8 · 回应模型时，对什么求导？",
+          "blocks": [
+            {
+              "kind": "math",
+              "tex": "\\nabla_a\\widetilde Q(a)=\\sum_b\\rho_\\phi(b\\mid a)\\nabla_aQ(a,b)+\\sum_bQ(a,b)\\nabla_a\\rho_\\phi(b\\mid a)",
+              "explain": "固定 φ，对候选动作 a 求导。第一项改变自身动作，第二项计入模型预测的对手分布变化。"
+            },
+            {
+              "kind": "p",
+              "text": "stop-gradient 对手响应会删除第二项，因此改变更新算子，而不只是节省计算。保留第二项也只说明优化了模型评分，不能把它当作真实对手的因果导数。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\nabla_a F(a)=\\sum_b\\rho^*(b\\mid a)\\nabla_aQ(a,b)",
+              "explain": "直接微分 log-sum-exp 即得。它不与上式冲突：F 还包含熵，ρ* 是内层最优解。不能混用普通期望与软值的梯度。"
+            },
+            {
+              "kind": "code",
+              "code": "声明对手协议、可用信息、响应模型和正则化目标。\n收集自身奖励、后继观察以及允许记录的联合动作。\n固定 target 版本，用选定软 Bellman 目标更新 joint critic。\n用 KL / 粒子近似更新条件响应模型。\n更新 actor，明确哪些响应分支 stop-gradient；更新 target。\n在冻结且未参与拟合的对手上独立评价。",
+              "caption": "PR2/GR2 型工程的阅读顺序；不是宣称不同论文采用相同的软聚合算子。"
+            },
+            {
+              "kind": "p",
+              "text": "PR2-Q 与 PR2-Actor-Critic 分别使用价值控制与 actor–critic。原算法的数据元组包含对手已执行动作；分散训练不等于“不需要任何其他玩家行为信息”。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-gr2",
+          "title": "9 · GR2：有限递归与层次混合",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "模型还可以假设：对手正在回应一个关于我的模型。递归必须从 level-0 行为假设开始，并在有限深度停止。零层可以是均匀行为或学习到的基础策略，不是未经定义的“不会思考”。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\pi_i^{(k)}=\\operatorname{BR}_i(\\pi_{-i}^{(k-1)}),\\qquad k\\ge1",
+              "explain": "单状态、精确响应的教学抽象。GR2-L 以条件策略交替展开自身与对手的推理；实际更新不逐层求精确 BR。"
+            },
+            {
+              "kind": "math",
+              "tex": "q_{-i}^{(<k)}=\\sum_{\\ell=0}^{k-1}w_\\ell^{(k)}\\pi_{-i}^{(\\ell)},\\quad w_\\ell^{(k)}=\\frac{\\lambda^\\ell/\\ell!}{\\sum_{j=0}^{k-1}\\lambda^j/j!},\\quad \\pi_i^{(k)}=\\operatorname{BR}_i(q_{-i}^{(<k)})",
+              "explain": "λ>0。截断 Poisson 混合说明 cognitive hierarchy 与 GR2-M 的动机；不声称作者工程逐行实现这个教学形式。"
+            },
+            {
+              "kind": "p",
+              "text": "用猜数说明响应的精确含义。n 人选数，目标为全体均值的 p 倍。已知其他 n−1 人均值 m，自己命中目标需满足 x=p[x+(n−1)m]/n，故 x=p(n−1)m/(n−p)。常见 x≈pm 忽略自身对均值的影响，只在 n 很大等近似条件下成立。"
+            },
+            {
+              "kind": "p",
+              "text": "取 n=2、p=0.7、零层 m=50，精确响应≈26.923，不是 35。再假设对手处于该一层，二层响应≈14.497。这是固定对手数字、平方偏差最小化的教学任务；胜负奖励、随机对手与并列规则需另定义响应。"
+            },
+            {
+              "kind": "p",
+              "text": "GR2 实践使用确定性内部展开、跨层参数共享与辅助层间改善目标控制成本。深层也重复使用有偏模型，未必更准。作者工程还截断部分对手分支梯度；递归展开不等于所有层完整反向传播。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-rommeo",
+          "title": "10 · ROMMEO：有利响应不能脱离经验依据",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "PR2 之后的一个自然问题是：模型偏向有利行为时，怎样防止它想象一个现实中不存在的合作伙伴？Tian、Wen 等的 ROMMEO 从合作决策的概率推断出发，用观测到的行为分布约束对手模型。它不是简单地提高行为预测准确率，而是在协调收益与经验依据之间建立明确目标。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathcal J_s(\\pi,\\rho)=\\mathbb E_{b\\sim\\rho,a\\sim\\pi(\\cdot\\mid s,b)}Q(s,a,b)+\\alpha\\mathbb E_{b\\sim\\rho}H(\\pi(\\cdot\\mid s,b))-D_{\\rm KL}(\\rho(\\cdot\\mid s)\\Vert P(\\cdot\\mid s))",
+              "explain": "固定状态的改善子问题。P 是经验对手先验；这里 KL 系数为一，与原文该形式对应。π 的条件输入 b 在执行时来自内部模型，不等于提前偷看真实动作。"
+            },
+            {
+              "kind": "math",
+              "tex": "F(s,b)=\\alpha\\log\\sum_a e^{Q(s,a,b)/\\alpha},\\qquad \\rho^*(b\\mid s)=\\frac{P(b\\mid s)e^{F(s,b)}}{\\sum_{b'}P(b'\\mid s)e^{F(s,b')}}",
+              "explain": "先对自身条件策略优化，再对 ρ 优化，分别得到软响应与经验先验的指数倾斜。与 PR2 中对对手动作做无先验软聚合不同，ROMMEO 明确保留 P 的约束。"
+            },
+            {
+              "kind": "p",
+              "text": "若 P(b|s)=0，有限 KL 不允许模型给该行为正概率。这个限制能抑制虚构响应，也可能排除尚未观察到的有益协调方式。怎样平滑先验和收集覆盖需要另行定义。原文的理论设置及实验重点是合作游戏；不能把其乐观协调模型当作零和对抗的安全保证。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-gscu",
+          "title": "11 · GSCU：何时利用模型，何时保守行动？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "另一个问题不在递归深度，而在于是否应相信模型。Fu、Tian、Wen 等的 GSCU 先离线学习对手策略的连续嵌入，并训练一个条件化该嵌入的近似响应。线上根据已经完成的对局更新嵌入后验，再在实时利用策略与固定保守策略之间做 bandit 选择。"
+            },
+            {
+              "kind": "p",
+              "text": "该设置允许对手改变，但准备阶段已经提供训练对手集合与较强的保守策略。原文主要设定还允许读取历史对局中对手的观察—动作轨迹；当前局的未知动作并未提前提供。后验分布表达模型内的不确定性，不保证涵盖训练外对手。"
+            },
+            {
+              "kind": "p",
+              "text": "原算法将嵌入的后验均值输入条件响应策略。EXP3 根据获得的回报更新两个候选的选择权重；它不是检查后验方差是否超过某个阈值，再机械切换到保守策略。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\max_{e\\in\\{\\mathrm{greedy},\\mathrm{safe}\\}}\\sum_{j=1}^{T}g_j(e)-\\mathbb E\\sum_{j=1}^{T}g_j(E_j)=O(\\Delta\\sqrt T)",
+              "explain": "这是两臂 EXP3 型选择器的外部遗憾尺度；每局反馈有界于跨度 Δ，且需遵守相应 bandit 协议。比较对象是两个候选过程，不是所有可能策略或每局事后最优选择。"
+            },
+            {
+              "kind": "p",
+              "text": "若对手会因自己历史选择而改变，“相同实现反馈序列上的外部遗憾”和“如果一直采取另一策略，对手本来会怎样反应”也不同。不能把前者直接称为长期因果安全。GSCU 说明有价值的分工：后验推断管理模型不确定性，条件策略产生响应，外层选择器控制使用哪个候选。它不要求线上重新训练整个响应网络。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-limits",
+          "title": "12 · 理论边界：稳定的是哪个过程？",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "PR2 软价值迭代的结论具有对称性、特定均衡和价值算子条件，不能外推到任意一般和游戏及非线性 actor–critic。GR2 的均衡存在性涉及构造的推理博弈，不等于学习必然找到它。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\frac{d}{dt}\\begin{bmatrix}x\\\\y\\end{bmatrix}=\\begin{bmatrix}0&a\\\\b&0\\end{bmatrix}\\begin{bmatrix}x\\\\y\\end{bmatrix},\\qquad ab<0",
+              "explain": "两动作单状态游戏内部均衡附近的一类连续时间动力学；特征值 ±i√(−ab) 表示绕行。这种中性稳定不应简单叫作发散。"
+            },
+            {
+              "kind": "math",
+              "tex": "M_\\zeta=\\begin{bmatrix}\\zeta ab&a\\\\b&\\zeta ab\\end{bmatrix},\\qquad \\lambda(M_\\zeta)=\\zeta ab\\pm i\\sqrt{-ab}",
+              "explain": "在该局部模型中加入 ζ>0 的预期响应项，实部变负。它说明某种预期更新可阻尼旋转，不证明任意递归深度都更好。"
+            },
+            {
+              "kind": "math",
+              "tex": "0<\\eta<\\frac{2\\zeta}{1-\\zeta^2ab}",
+              "explain": "显式 Euler 更新还需此步长条件，使 |1+ηλ|<1。连续时间稳定不保证任意学习率下稳定；此模型不覆盖概率边界与神经随机梯度。"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "预测检验：新轨迹上的概率校准与未访问动作的覆盖。",
+                "控制检验：相同对手下比较无模型、无条件模型与条件模型。",
+                "递归检验：匹配环境步数和计算预算，分开深度与计算量。",
+                "稳健检验：保留错误层次、未知类型与变化的对手，同时报告偏离或交叉对战。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "13 · 先验证响应核，再阅读神经工程",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "marl_objectives_lab.py",
+              "region": "conditional_response",
+              "caption": "在完全给定的两动作任务上，比较条件响应与其边缘分布如何改变动作排序。没有拟合模型或运行 PR2 优化器。"
+            },
+            {
+              "kind": "source",
+              "file": "extended_foundations_lab.py",
+              "region": "multi_agent",
+              "caption": "matrix_value、minimax_2x2 与 zero_sum_gap 检验矩阵评价；没有训练 PR2、GR2 或 NFSP 网络。"
+            },
+            {
+              "kind": "code",
+              "code": "from math import exp, log\n\ndef soft_response(values, alpha=1.0):\n    if alpha <= 0:\n        raise ValueError(\"alpha must be positive\")\n    peak = max(values)\n    weights = [exp((q-peak)/alpha) for q in values]\n    z = sum(weights)\n    return [w/z for w in weights], peak + alpha*log(z)\n\nq = [0.0, 1.0]\nrho, free_value = soft_response(q)\nexpected = sum(p*v for p, v in zip(rho, q))\nentropy = -sum(p*log(p) for p in rho if p > 0)\nassert abs(free_value-expected-entropy) < 1e-12\n# Differentiate F([a, 1-a]) at a = 0.3.\na, eps = 0.3, 1e-6\nprobs, _ = soft_response([a, 1-a])\nfinite = (soft_response([a+eps, 1-a-eps])[1]\n          - soft_response([a-eps, 1-a+eps])[1]) / (2*eps)\nassert abs(finite-(probs[0]-probs[1])) < 1e-8\nprint(rho, expected, entropy, free_value)\nprint(\"soft-value gradient:\", finite)",
+              "caption": "可复制为独立 Python 文件运行；检查软值恒等式和有限差分，不是学习实验。",
+              "language": "python"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "原始入口",
+                "阅读位置",
+                "实现边界"
+              ],
+              "rows": [
+                [
+                  "ying-wen/gr2",
+                  "code/maci/get_agents.py；learners/mavb_ac.py",
+                  "joint critic、SVGD 粒子、soft backup、replay 和 target；旧 TensorFlow 依赖需独立配置"
+                ],
+                [
+                  "MultiLevelPolicy",
+                  "policies/level_k_policy.py 的 actions_for",
+                  "交替自身/对手策略；部分对手分支 stop_gradient"
+                ],
+                [
+                  "GeneralizedMultiLevelPolicy",
+                  "level_distribution 与 actions_for",
+                  "对 1…k 层确定动作加权；动作平均不同于先随机选一个策略"
+                ],
+                [
+                  "OpenSpiel NFSP / CFR",
+                  "python/pytorch/nfsp.py；python/algorithms/cfr.py",
+                  "平台实现，不标作原论文当年实验快照"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "复现应记录提交、依赖、实际输入权限、层数、粒子数、replay 预算与更新顺序。先在小型游戏验证数据路径，再做高维任务。能导入旧工程并不说明已经复现论文结果。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "14 · 从内部模型到持续适应与策略种群",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "对手模型可在局内依据历史推断，也可跨局积累参数或记忆。前者可能只是状态推断，后者涉及持久改变；应分别说明。固定网络增加内部推理深度，增加的是当次计算，不自动产生跨经历的持续学习。"
+            },
+            {
+              "kind": "p",
+              "text": "长期面对新参与者，还需处理模型失配后的可塑性、身份未知时的状态构建、历史保留与资源预算。“对手总比自己少想一层”只是可检验假设。"
+            },
+            {
+              "kind": "p",
+              "text": "策略种群解决哪些完整策略值得保留、怎样选择训练对手或伙伴、下一次应补哪个弱点。它可使用对手模型，却不要求每个成员递归推理。将内层响应放回评价、目标构建与改善的循环，见[开放式多智能体学习](/zh/continual-rl/foundations/deep/multi-agent-populations/)；联合探索与团队信用的困难则回到[合作多智能体学习](/zh/continual-rl/foundations/deep/multi-agent/)。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "15 · 检查理解",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：自对弈必须共享网络吗？答：不需要。各角色的奖励和信息可以不同。",
+                "问：$\\rho(a_{-i}\\mid s,a_i)$ 证明对手看到本步动作吗？答：不能。真实权限由环境协议决定。",
+                "问：F 大于最大 Q 违反回报上界吗？答：不违反。F 包含正则项，不是原始奖励期望。",
+                "问：level-3 必然战胜 level-2 吗？答：不必然；模型失配、响应近似与资源成本都影响结果。",
+                "练习：将算例 α 改为 0.1 和 10。分别计算普通期望与软值，解释二者差异。",
+                "练习：两个策略各自连续两步总选左或总选右。比较每局抽一次策略和每步混合动作可产生的轨迹。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Heinrich、Lanctot、Silver · Fictitious Self-Play（ICML 2015）",
+          "url": "https://proceedings.mlr.press/v37/heinrich15.html",
+          "note": "阅读实现等价的行为平均与 XFP/FSP，注意到达概率权重。"
+        },
+        {
+          "title": "Heinrich、Silver · Neural Fictitious Self-Play（2016）",
+          "url": "https://arxiv.org/abs/1603.01121",
+          "note": "Algorithm 1 的按局模式抽样、两种记忆与平均策略评价。"
+        },
+        {
+          "title": "Zinkevich 等 · Regret Minimization in Games with Incomplete Information（2007）",
+          "url": "https://poker.cs.ualberta.ca/publications/NIPS07-cfr.pdf",
+          "note": "反事实价值、局部到整体遗憾界与完美回忆条件。"
+        },
+        {
+          "title": "Wen、Yang、Luo、Wang、Pan · PR2（ICLR 2019）",
+          "url": "https://arxiv.org/abs/1901.09207",
+          "note": "条件响应的变分推断、Theorem 1/2 和 PR2-Q/PR2-AC；保留定理假设。"
+        },
+        {
+          "title": "Wen、Yang、Wang · GR2（IJCAI 2020）",
+          "url": "https://www.ijcai.org/proceedings/2020/58",
+          "note": "第 4 节层次模型与第 5 节实现近似；有限理性模型不是人类心理机制的实证证明。"
+        },
+        {
+          "title": "Tian、Wen 等 · ROMMEO（IJCAI 2019）",
+          "url": "https://www.ijcai.org/proceedings/2019/85",
+          "note": "阅读经验对手先验、KL 正则与合作场景；它改变模型目标，不只是增加预测头。"
+        },
+        {
+          "title": "ROMMEO 作者代码",
+          "url": "https://github.com/rommeoijcai2019/rommeo",
+          "note": "论文指定的表格与 actor–critic 实现；不是任意对抗场景的稳健性保证。"
+        },
+        {
+          "title": "Fu、Tian、Wen 等 · GSCU（ICML 2022）",
+          "url": "https://proceedings.mlr.press/v162/fu22b.html",
+          "note": "阅读离线策略嵌入、线上后验与两策略选择；遗憾比较对象及信息权限须保留。"
+        },
+        {
+          "title": "GSCU 作者代码",
+          "url": "https://github.com/YeTianJHU/GSCU",
+          "note": "embedding_learning、conditional_RL 与 online_test 分别对应准备、响应训练和线上适应。"
+        },
+        {
+          "title": "GR2 作者代码与理论附录",
+          "url": "https://github.com/ying-wen/gr2",
+          "note": "原文指定工程，含 PR2 基线；附录 D 的低维动力学分析不是深度训练全局定理。"
+        },
+        {
+          "title": "GR2 · 递归与层次混合实现",
+          "url": "https://github.com/ying-wen/gr2/blob/master/code/maci/policies/level_k_policy.py",
+          "note": "检查 stop_gradient 与确定动作加权，勿称精确随机层次混合。"
+        },
+        {
+          "title": "GR2 · 条件响应与 actor–critic",
+          "url": "https://github.com/ying-wen/gr2/blob/master/code/maci/learners/mavb_ac.py",
+          "note": "检查 critic、SVGD、粒子软聚合与 replay 字段；仍需独立运行验证兼容性。"
+        },
+        {
+          "title": "OpenSpiel · NFSP",
+          "url": "https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/pytorch/nfsp.py",
+          "note": "公开平台实现；阅读按局策略抽样、reservoir 和监督损失。"
+        },
+        {
+          "title": "OpenSpiel · CFR",
+          "url": "https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/cfr.py",
+          "note": "对照 counterfactual reach、regret matching 和 average_policy。"
+        },
+        {
+          "title": "Lanctot 等 · Policy-Space Response Oracles（2017）",
+          "url": "https://arxiv.org/abs/1711.00832",
+          "note": "将训练对手与新增响应组织为种群循环，和内部递归是不同维度。"
+        }
+      ]
+    },
+    {
+      "id": "study-deep-marl-populations",
+      "track": "deep",
+      "order": 16,
+      "path": "foundations/deep/multi-agent-populations/",
+      "title": "开放式多智能体学习：评估、目标构建与策略改善",
+      "question": "怎样由交互评估构建每轮学习目标，使竞争或合作能力沿明确的评价准则持续改善？",
+      "objectives": [
+        "沿竞争自对弈、策略种群与 PSRO 理解开放式多智能体学习。",
+        "建立评估、目标构建、响应学习与重新评估的循环，并定义所追求的单调提升。",
+        "理解 COLE 与 HOLA 怎样把这条思路扩展到合作伙伴与团队组合。",
+        "区分固定对手回报、可利用度、种群安全价值与陌生伙伴泛化。"
+      ],
+      "prerequisites": [
+        {
+          "term": "联合策略与局部信息",
+          "explanation": "各参与者按自己的观察历史行动。集中训练不等于执行时可获得所有信息。"
+        },
+        {
+          "term": "最佳响应",
+          "explanation": "固定其他参与者后，使自身期望回报最大的策略。实际 RL 通常只能给出近似响应。"
+        },
+        {
+          "term": "Nash 均衡",
+          "explanation": "没有参与者能通过单方偏离提高自身收益。合作中的均衡不必是最高团队回报。"
+        }
+      ],
+      "bookSections": [
+        "MARL book 第 3–6 章：博弈、解概念与博弈学习",
+        "MARL book 第 9–11 章：深度算法、实现与环境",
+        "PSRO、EPSRO、COLE 与 HOLA 原文"
+      ],
+      "connectsTo": [
+        "control",
+        "exploration",
+        "goals",
+        "meta",
+        "retention",
+        "experiments",
+        "architectures"
+      ],
+      "problem": {
+        "setting": "开放式多智能体学习：多个参与者反复交互，学习系统依据已有策略的交互评估，不断产生下一轮对手、伙伴和响应目标。先沿竞争自对弈与种群学习建立框架，再研究合作场景中的兼容性与团队组合。主体采用固定奖励与动力学、可重置回合；生命期与有限资源问题另作扩展。",
+        "given": [
+          "各角色允许使用的观察、历史与通信。",
+          "任务奖励、回合长度、初始分布与交互预算。",
+          "初始策略池，以及明确的外部评价准则。"
+        ],
+        "sought": "构建能暴露当前能力缺口的学习目标，训练并保留有用响应，选择可提交的策略或组合；在固定评价定义下建立或检验逐轮改善。",
+        "information": "外层评估与课程模块可读取训练策略之间的经验回报。执行策略不得因此获取对手私有状态、未来动作或测试伙伴身份。",
+        "objective": {
+          "tex": "J_k(\\pi)=\\mathbb E_{\\xi\\sim\\mu_k}[u(\\pi,\\xi)]+\\lambda_k D_k(\\pi),\\qquad \\mathcal E(\\mathcal O_{k+1})\\ge\\mathcal E(\\mathcal O_k)",
+          "explain": "左式是可随轮次改变的训练目标，μ 是对手或伙伴分布，D 是可选的多样性项。右式是希望建立的单调改善性质，不是假定已成立的算法定理。O 是明确声明的输出，E 是各轮相同、越大越好的评价准则。"
+        },
+        "assumptions": [
+          "仅在两人零和分支使用极小极大性质。",
+          "精确响应、完整对手空间与无遗憾条件逐项核对。",
+          "课程生成和最终评估分开；双方消耗的资源均计入预算。"
+        ],
+        "success": "说明改善对象和评价空间；给出相应条件下的保证，或用独立数据检验逐轮改善及退步。同步报告估计误差、测试覆盖和全部交互成本。",
+        "relations": [
+          {
+            "kind": "composition",
+            "target": "exploration",
+            "explanation": "不只决定当前动作，也决定与谁交互以发现学习机会。"
+          },
+          {
+            "kind": "objective-change",
+            "target": "control",
+            "explanation": "参与者分布改变后，期望回报目标随之改变。"
+          },
+          {
+            "kind": "composition",
+            "target": "retention",
+            "explanation": "策略档案保存旧响应，删除或蒸馏会改变可用组合。"
+          }
+        ],
+        "nonGoals": [
+          "不把种群增长直接视为有限资源单一生命的完整解。",
+          "不把零样本合作直接称为部署阶段的持续参数学习。",
+          "不将不同单调性结果合并成“每一代都更强”。"
+        ],
+        "solution": {
+          "difficulty": "参与者分布决定当前学习目标；策略更新又会改变下一轮可选的参与者。没有分清评价空间，就可能把池内成功误当作稳健性或泛化。",
+          "insight": "用评估发现能力缺口，把缺口转成下一轮学习目标，再训练响应并重新评估。目标构建连接当前不足与下一步学习；保留旧解和选择新输出为建立单调改善提供可能。",
+          "steps": [
+            {
+              "title": "定义进步并评估现状",
+              "explanation": "声明提交策略还是种群，固定 Gap、安全价值或测试伙伴回报的定义。",
+              "sectionId": "lesson-evaluation"
+            },
+            {
+              "title": "把竞争弱点变成响应目标",
+              "explanation": "PSRO 用元策略构建训练对手；响应学习后扩池并重新评估。",
+              "sectionId": "lesson-psro"
+            },
+            {
+              "title": "学习课程生成规则",
+              "explanation": "NAC 将多轮训练后的评价反传给课程生成器，区分内外层时钟。",
+              "sectionId": "lesson-curricula"
+            },
+            {
+              "title": "将兼容性缺口转为伙伴分布",
+              "explanation": "COLE 的求解器评价策略间关系，训练器优化给定伙伴课程。",
+              "sectionId": "lesson-cole"
+            },
+            {
+              "title": "评价完整伙伴组合",
+              "explanation": "HOLA 用高阶组合表示两两关系无法表达的合作机会。",
+              "sectionId": "lesson-hola"
+            }
+          ],
+          "guarantees": "嵌套己方集合的最佳安全价值不下降；精确有限零和 DO 有相应终止证书。平均无遗憾界、局部偏好结果与实际神经训练分别有条件，均不自动给出全寿命或陌生伙伴回报单调改善。",
+          "alternatives": [
+            {
+              "name": "冻结伙伴／对手分布",
+              "difference": "评价简单，但不能主动寻找新的弱点或兼容性缺口。"
+            },
+            {
+              "name": "无差别增加种群规模",
+              "difference": "增加资源，不一定增加响应覆盖，也未定义哪些策略值得保留。"
+            },
+            {
+              "name": "仅评价最后网络",
+              "difference": "忽略种群的组合能力，也忽略整个学习期间的成本。"
+            }
+          ]
+        }
+      },
+      "sections": [
+        {
+          "id": "lesson-setting",
+          "title": "1 · 开放式多智能体学习：评估怎样产生下一轮目标",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "给定对手与奖励，强化学习回答怎样改进策略。对手也在学习时，还要回答：下一轮应当回应谁，针对什么弱点学习，怎样判断整体能力提高了？开放式多智能体学习把这些问题纳入学习系统，以交互评估持续产生新的学习目标。"
+            },
+            {
+              "kind": "p",
+              "text": "这一方向的一条主流脉络来自竞争场景：自对弈用当前对手产生挑战；历史策略和种群保留已遇到的行为；PSRO 进一步把策略间评估、对手混合与响应训练组织成循环。竞争暴露的克制关系由此成为后续学习的材料。[PSRO 原文](https://arxiv.org/abs/1711.00832)"
+            },
+            {
+              "kind": "p",
+              "text": "合作也需要构建学习目标，但缺口从“被谁克制”变为“与谁不能配合”。温颖及合作者的 COLE 将这条思路扩展到合作兼容性：评估策略间关系，生成伙伴课程，再学习新的合作策略。HOLA 进一步处理多个伙伴的组合关系。[COLE](https://proceedings.mlr.press/v202/li23au.html) · [HOLA](https://arxiv.org/abs/2409.08767)"
+            },
+            {
+              "kind": "math",
+              "tex": "u_i(\\pi_i,\\pi_{-i})=\\mathbb E\\left[\\sum_{t=0}^{H-1}\\gamma^tR^i_{t+1}\\right]",
+              "explain": "$u_i$ 是固定环境、起点、回合长度和各方策略后的期望回报。策略可以依赖局部历史，不要求物理状态完全可见。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\widehat U_k=\\operatorname{Evaluate}(\\mathcal P_k),\\quad \\mu_k=\\operatorname{Target}(\\widehat U_k,\\mathcal P_k),\\quad \\pi_{k+1}=\\operatorname{Learn}(J_k),\\quad \\mathcal P_{k+1}=\\operatorname{Retain}(\\mathcal P_k,\\pi_{k+1})",
+              "explain": "P 是策略档案；U 是交互评估；Target 将弱点或兼容性缺口转成训练分布。Learn 使用有限预算求响应，Retain 保留所需策略；随后重新评估。评估器、目标构建器和学习器具有不同职责。"
+            },
+            {
+              "kind": "p",
+              "text": "例如，已有策略能战胜对手甲，却持续输给乙。评估先定位乙揭露的弱点；目标构建提高相关挑战的训练权重；响应学习形成新策略；重新评估检查它是否弥补弱点，也检查旧能力是否保留。合作中可以把乙换成难以配合的伙伴。关键不是盲目扩大种群，而是让每轮学习针对可识别的能力缺口。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "问题",
+                "学习对象",
+                "最终检验"
+              ],
+              "rows": [
+                [
+                  "固定团队合作",
+                  "共同训练的参与者",
+                  "遵守执行信息限制时的团队回报。"
+                ],
+                [
+                  "竞争种群学习",
+                  "新响应与历史对手混合",
+                  "对完整或明确测试对手空间的可利用度。"
+                ],
+                [
+                  "开放合作",
+                  "学习者与训练伙伴组合",
+                  "未共同训练伙伴上的收益与失败分布。"
+                ],
+                [
+                  "部署期持续学习",
+                  "同一学习者长期遇到新旧参与者",
+                  "全寿命收益、适应损失、记忆与恢复成本。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "这里专指 open-ended multi-agent learning。开放的是由交互结果不断构建后续学习问题的过程，不要求奖励函数或物理世界不断改变。它是开放式人工智能的一条具体研究线，不是整个 open-ended AI 的定义。它也不等同于 CRL：种群可在可重置回合中训练新策略；CRL 还需声明同一学习者的生命期、资源与知识更新。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-evaluation",
+          "title": "2 · 评价策略，与评价一个种群，不是同一问题",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "单调提升是本章希望建立的性质。先把第 $k$ 轮提交的对象记为 $\\mathcal O_k$，并固定越大越好的评价函数 $\\mathcal E$。对象可以是一个策略、一个混合，或一个允许重新选择混合的种群。逐轮改善要求 $\\mathcal E(\\mathcal O_{k+1})\\ge\\mathcal E(\\mathcal O_k)$；它比仅要求最终一轮更好更强。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "学习问题",
+                "可选择的评价准则",
+                "怎样理解进步"
+              ],
+              "rows": [
+                [
+                  "竞争中的提交策略对",
+                  "完整游戏的负 Gap",
+                  "更少的单方偏离获利空间。"
+                ],
+                [
+                  "竞争中的策略档案",
+                  "面对固定完整对手空间的最佳安全价值",
+                  "可从档案组合出的最强防守不退步。"
+                ],
+                [
+                  "开放合作中的提交策略",
+                  "固定伙伴分布上的期望团队回报",
+                  "在相同配合要求下，合作收益提高。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "训练分布可以改变，比较进步的准则仍需可比。若同时更换考题和策略，分数变化混合了两个原因。保留旧策略可使旧解仍然可选；是否能找到并提交更好的解，则取决于评估和优化精度。以下先给出确实成立的集合层面结论，再说明它与最新策略改善的区别。"
+            },
+            {
+              "kind": "p",
+              "text": "先取两人零和游戏，行方最大化 $u$，列方最小化 $u$。$\\Pi_1,\\Pi_2$ 是完整策略集合；$\\mathcal P_1,\\mathcal P_2$ 是已发现的有限池；$x,y$ 是完整策略上的混合。每回合抽一个策略，与每一步重抽策略，不是同一个执行过程。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}\\operatorname{Gap}(x,y)&=\\max_{p\\in\\Delta(\\Pi_1)}u(p,y)-\\min_{q\\in\\Delta(\\Pi_2)}u(x,q),\\\\v(\\mathcal P_1)&=\\max_{x\\in\\Delta(\\mathcal P_1)}\\min_{q\\in\\Delta(\\Pi_2)}u(x,q).\\end{aligned}",
+              "explain": "Gap 衡量提交策略对的单方获利空间；部分文献将其一半称为 exploitability。种群安全价值则允许重新选择池内混合，但仍面对完整对手空间。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathcal P_1\\subseteq\\mathcal P'_1\\quad\\Longrightarrow\\quad v(\\mathcal P'_1)\\ge v(\\mathcal P_1)",
+              "explain": "旧混合仍可行，因此扩张己方集合不能降低最佳安全价值。这是集合包含的结论，不是神经网络训练定理。"
+            },
+            {
+              "kind": "p",
+              "text": "它没有保证实际求解器找到这个最优混合，也没有保证最新单策略更强。若同时扩大对手池，受限游戏的数值可能下降，因为新对手暴露了旧漏洞。只在自己的档案中评价，会把尚未发现的反例当作不存在。"
+            },
+            {
+              "kind": "p",
+              "text": "普通剪刀石头布中，双方池里只有石头时，池内 Gap 为零；完整游戏中双方都出石头的 Gap 为二。另一个加权游戏甚至允许“加入精确响应后，受限均衡的完整 Gap 变大”，下一节给出手算。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-psro",
+          "title": "3 · DO 与 PSRO：评价、生成反例、扩张策略集合",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "竞争中的目标构建有一个直接依据：当前策略仍能被什么行为利用？用这样的对手组织响应学习，再把学到的行为纳入种群，可以逐步补齐战略覆盖。DO 与 PSRO 将这个直觉变成可执行的评估—响应循环。"
+            },
+            {
+              "kind": "p",
+              "text": "Double Oracle 从受限集合开始。先解受限游戏，再到完整策略空间寻找有利偏离。PSRO 将完整行为策略作为元博弈的动作，用 RL 近似求响应。原框架允许不同元求解器；这里只推导两人零和的 Nash 版本。[PSRO 原文](https://arxiv.org/abs/1711.00832)"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}A^k_{ab}=u(\\pi_1^a,\\pi_2^b),\\qquad(x_k,y_k)\\in\\operatorname{NE}(A^k),\\\\\\pi_1^{k+1}\\approx\\arg\\max_{\\pi_1}u(\\pi_1,y_k),\\qquad\\pi_2^{k+1}\\approx\\arg\\min_{\\pi_2}u(x_k,\\pi_2).\\end{gathered}",
+              "explain": "矩阵通常由多次交互估计。固定对方元策略并从中抽完整对手，响应训练就形成一个可用单智能体 RL 求解的子问题。"
+            },
+            {
+              "kind": "code",
+              "code": "保留双方策略池，以及每个策略版本的身份。\n评估新增策略对，记录 payoff、样本数与估计误差。\n在受限游戏中求元策略 x、y。\n固定 y 训练行方响应；固定 x 训练列方响应。\n独立评价新响应的获利幅度，再加入档案。\n重新求元策略，并在完整或独立对手集合上评价。",
+              "caption": "响应训练与响应评价使用不同随机数据，避免把训练噪声当成新的弱点。"
+            },
+            {
+              "kind": "math",
+              "tex": "A=\\begin{pmatrix}0&-1&1\\\\1&0&-10\\\\-1&10&0\\end{pmatrix}",
+              "explain": "行方最大化。初始双方池均为 {0}，唯一池内均衡是动作零，完整 Gap 为 1−(−1)=2。动作一是对动作零的精确最佳响应。"
+            },
+            {
+              "kind": "p",
+              "text": "双方加入动作一后，受限矩阵为 $\\left(\\begin{smallmatrix}0&-1\\\\1&0\\end{smallmatrix}\\right)$，唯一均衡双方都选一。面对完整游戏，它的 Gap 为 $10-(-10)=20$。没有采样误差，也没有神经优化失败；变化来自受限均衡没有防守尚未纳入的动作二。"
+            },
+            {
+              "kind": "p",
+              "text": "有限两人零和游戏中，若受限均衡与完整最佳响应都精确，双方均无有利偏离就是终止证书。近似 RL 没找到新策略，只说明本次搜索失败；不能证明不存在更好的响应。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-epsro",
+          "title": "4 · EPSRO：响应与对手混合共同更新",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "标准 PSRO 分开进行元游戏评估和冻结混合上的响应训练。EPSRO 使用 unrestricted–restricted game，简称 URR：一方搜索完整策略类，另一方只在旧池中混合，两者共同更新。URR 是问题设定，不是另一篇独立算法论文。[EPSRO](https://arxiv.org/abs/2202.00633)"
+            },
+            {
+              "kind": "math",
+              "tex": "\\max_{p\\in\\Delta(\\Pi_1)}\\min_{y\\in\\Delta(\\mathcal P_2^k)}u(p,y)",
+              "explain": "行方不只回应冻结权重；列方也调整旧策略混合，继续暴露行方弱点。反向的 URR 可用于另一方。"
+            },
+            {
+              "kind": "p",
+              "text": "实践中，一边用 RL 改进 response，一边以在线无遗憾方法更新元策略；旧信息可用于 warm start，响应可以流水并行。“减少完整元博弈评估”不等于无需交互：训练和收益估计仍消耗数据。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\operatorname{Gap}_{\\rm URR}(\\bar p_T,\\bar y_T)\\le\\frac{R_1(T)+R_2(T)}{T}",
+              "explain": "有限双线性零和 URR 中，Gap 的行方最大化遍历完整集合，列方最小化仅遍历该轮受限池。若双方在这些集合上的累积外部遗憾为 R，时间平均策略满足此界。它不是对双方完整策略空间的无条件 Gap 界。"
+            },
+            {
+              "kind": "p",
+              "text": "平均策略界不保证最后一次参数更新。EPSRO 的精确 URR 均衡、嵌套集合及遗憾分析也不能替换成任意深度 RL oracle。声称单调改善时，必须说明评价对象、策略空间、求解精度，以及输出是平均策略还是最新网络。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-diversity",
+          "title": "5 · 多样性：去过哪里，与能应对谁",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "两个策略可以走不同路线，却输给同一类对手；也可以只有一个关键动作不同，却克制不同对手。参数距离、占据分布和响应向量不是同一种多样性。Diverse-PSRO 研究 payoff 表征上的 DPP 指标；BD/RD 区分行为与响应两个层面。[Diverse-PSRO](https://proceedings.mlr.press/v139/perez-nieves21a.html) · [BD/RD](https://arxiv.org/abs/2106.04958)"
+            },
+            {
+              "kind": "math",
+              "tex": "a(\\pi)_j=u(\\pi,\\pi_2^j),\\qquad D_R(\\pi)=\\min_{w\\in\\Delta(\\mathcal P_1^k)}\\|a(\\pi)-(A^k)^\\top w\\|_2^2",
+              "explain": "响应多样性衡量新 payoff 向量到旧向量凸包的距离。它依赖作为坐标的参考对手，不能直接代表所有未知对手。"
+            },
+            {
+              "kind": "math",
+              "tex": "J_k(\\pi)=u(\\pi,y_k)+\\lambda_B D_f(\\rho_{\\pi,y_k}\\Vert\\rho_{x_k,y_k})+\\lambda_R D_R(\\pi)",
+              "explain": "这里用共同教学记号，ρ 是归一化折扣占据分布。若原文采用占据测度下平均奖励，权重需按回报尺度调整。加正则后不再是纯任务收益最佳响应。"
+            },
+            {
+              "kind": "p",
+              "text": "凸包外也可能有很差的策略：新向量每个坐标都更低，仍可能离凸包很远。多样性要服务于发现有效响应，而不能自己充当最终成绩。复制策略能增加人数，却不增加可表达的混合。"
+            },
+            {
+              "kind": "p",
+              "text": "合作的结构化探索与此相关，但尺度不同。Q-DPP 在联合行动层组织探索；BD/RD 在完整策略种群层组织探索。前者不自动生成稳健课程，后者也不自动解决轨迹内的团队信用分配。[Q-DPP](https://proceedings.mlr.press/v119/yang20i.html)"
+            }
+          ]
+        },
+        {
+          "id": "lesson-curricula",
+          "title": "6 · NAC：直接学习怎样安排下一轮课程",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "如果响应训练只有有限预算，最适合学习的对手混合未必是当前受限 Nash。NAC 参数化元求解器，再根据若干轮后的可利用度训练它。[Neural Auto-Curricula](https://arxiv.org/abs/2106.02745)"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mu_k=f_\\psi(A^k),\\quad\\theta_{k+1}=\\operatorname{BRLearn}(\\theta_k,\\mu_k),\\quad\\min_\\psi\\mathbb E_{G\\sim\\mathcal D}\\operatorname{Gap}_G(x_T(\\psi),y_T(\\psi))",
+              "explain": "元参数决定课程；课程影响响应；响应又改变未来矩阵。外层评价必须考虑这条依赖，不是只对当前对手概率做一次动作层策略梯度。"
+            },
+            {
+              "kind": "p",
+              "text": "原文研究展开优化、元梯度和进化策略等途径。内层在一个游戏中增加策略，外层跨训练游戏更新课程生成器。跨游戏泛化与一个游戏中的逐轮改善不同。"
+            },
+            {
+              "kind": "p",
+              "text": "固定外部评价仍然存在。自动学习的是为它服务的课程规则，不是凭空创造最终好坏标准。展开长度、训练游戏分布和响应质量限定了结论。[作者代码](https://github.com/waterhorse1/NAC)"
+            }
+          ]
+        },
+        {
+          "id": "lesson-composition",
+          "title": "7 · 策略生成：继承、融合与信息状态级组合",
+          "blocks": [
+            {
+              "kind": "table",
+              "headers": [
+                "方法",
+                "改变哪个环节",
+                "必须保留的边界"
+              ],
+              "rows": [
+                [
+                  "Fusion-PSRO",
+                  "按元策略权重融合历史参数，再训练 response",
+                  "参数平均不等于策略概率混合；网络的局部对齐条件重要。"
+                ],
+                [
+                  "Conflux-PSRO",
+                  "状态级路由调用不同子策略，再蒸馏",
+                  "路由和子策略同时更新，不是固定 MDP 的表格算法。"
+                ],
+                [
+                  "XDO / NXDO",
+                  "在信息状态级组织受限游戏与组合",
+                  "相邻团队工作；神经近似不自动继承表格 XDO 的界。"
+                ]
+              ]
+            },
+            {
+              "kind": "math",
+              "tex": "\\theta_{\\rm init}=\\sum_jx_k(j)\\theta_j,\\qquad\\pi_{\\theta_{\\rm init}}\\ne\\sum_jx_k(j)\\pi_{\\theta_j}\\quad\\text{一般情况下}",
+              "explain": "Fusion-PSRO 改的是 response 的起点。即使权重来自均衡，也不能据此宣称融合网络仍是均衡或拥有所需状态覆盖。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\pi_{\\rm route}(a\\mid h)=\\sum_j\\mu(j\\mid h)\\pi_j(a\\mid h)",
+              "explain": "逐信息历史路由与回合开始一次抽取不同，后者保留跨时间相关性。若路由读取部署者不允许获得的全局状态，则改变了原问题。"
+            },
+            {
+              "kind": "p",
+              "text": "XDO/NXDO 由 McAleer 等提出，不属于温颖共同作者系列。它在信息状态上组织组合，与 EPSRO 联动元策略和 response 的做法不同。组合扩大候选类，但近似优化仍可能失败；应给路由、蒸馏和评估同等预算。[Fusion-PSRO](https://doi.org/10.3233/FAIA251106) · [Conflux-PSRO](https://arxiv.org/abs/2410.22776) · [XDO/NXDO](https://arxiv.org/abs/2103.06426)"
+            }
+          ]
+        },
+        {
+          "id": "lesson-cole",
+          "title": "8 · COLE：把合作不兼容转成下一轮伙伴课程",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "前面的竞争主线通过评估寻找克制关系，再据此构建训练目标。转向合作后，核心循环保留，评价关系改变：需要发现哪些约定或伙伴组合尚不能兼容，并使后续策略学会配合。这是 COLE 扩展开放式多智能体学习的出发点。"
+            },
+            {
+              "kind": "p",
+              "text": "共同回报矩阵 $C=\\left(\\begin{smallmatrix}3&0\\\\0&2\\end{smallmatrix}\\right)$ 有两种成功约定。总选左和总选右在各自自博弈中表现良好，彼此组队却得零。提高 self-play 分数不等于解决 cross-play。"
+            },
+            {
+              "kind": "p",
+              "text": "COLE 用图记录策略间合作收益。节点是策略，边权是互动评价；不是物理连接。求解器识别兼容性缺口，生成伙伴分布，再由 RL 训练新策略。新的互动结果重新进入图，使评价、目标构建与策略改善连接起来。原始论文是 ICML 2023，JAIR 2024 为扩展。[COLE](https://proceedings.mlr.press/v202/li23au.html)"
+            },
+            {
+              "kind": "math",
+              "tex": "M^k_{ij}=u(\\pi_i,\\pi_j),\\quad q_k=\\operatorname{Solver}(M^k),\\quad J_k(\\pi)=\\mathbb E_{j\\sim q_k}u(\\pi,\\pi_j)+\\alpha u(\\pi,\\pi)",
+              "explain": "第一项学习与难配合伙伴合作，第二项保留自我配合目标。外部任务奖励可以不变，训练伙伴分布持续改变。"
+            },
+            {
+              "kind": "p",
+              "text": "COLE-SV 的 graphic Shapley value 评价策略在合作图中的作用，以构建课程；不是将每步团队奖励分摊给动作。COMA baseline、团队成员 Shapley 信用与种群课程评价是三个不同对象。"
+            },
+            {
+              "kind": "p",
+              "text": "局部偏好收敛分析要求 response oracle 满足规定质量，不保证任意 PPO 调用都产生合格响应，更不保证所有陌生人类回报单调提高。当前池内兼容性、冻结测试伙伴表现和人机评价应分开。[JAIR 扩展](https://doi.org/10.1613/jair.1.15884)"
+            }
+          ]
+        },
+        {
+          "id": "lesson-hola",
+          "title": "9 · HOLA：伙伴组合具有两两关系之外的结构",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "COLE 说明怎样从两方合作关系构建课程。多个伙伴同时参与时，目标构建还需知道“哪些组合”值得学习；不能只把所有两两评价分别提高。HOLA 将评估单元扩展为整个团队组合，再用评估结果形成下一轮课程。"
+            },
+            {
+              "kind": "p",
+              "text": "一个任务同时需要侦察者、搬运者和协调者。任意两两组合都可能失败，三者一起才能成功。此时“某个伙伴好不好”不能独立回答；学习机会属于整个组合。"
+            },
+            {
+              "kind": "math",
+              "tex": "W_k(i_1,\\ldots,i_m)=u(\\pi_{i_1},\\ldots,\\pi_{i_m}),\\qquad J_k(\\pi)=\\mathbb E_{\\boldsymbol z\\sim q_k}[u(\\pi,\\boldsymbol z)]",
+              "explain": "超边对应一个策略组合，权重为共同回报。课程分布选择伙伴元组，而非必然独立抽样的单个伙伴。"
+            },
+            {
+              "kind": "p",
+              "text": "HOLA-Drone 用超图及偏好关系组织评估，生成下一轮伙伴课程，研究多无人机与未见伙伴的配合。超图是博弈关系的表示，不等于策略必须使用超图神经网络。[HOLA-Drone](https://arxiv.org/abs/2409.08767)"
+            },
+            {
+              "kind": "p",
+              "text": "组合数随种群和团队规模增长。未评价的超边不能当作零收益，共享成员的组合也不是独立样本。评价采样和不确定性应计入算法成本。"
+            },
+            {
+              "kind": "p",
+              "text": "后续 Multi-Robot Open Adaptive Teaming 考察环境、伙伴及团队规模变化。无微调迁移表明已训练策略可以适应；它不等于同一实体在部署中持续更新参数。[后续原文](https://arxiv.org/abs/2607.04972)"
+            }
+          ]
+        },
+        {
+          "id": "lesson-test-distribution",
+          "title": "10 · 独立评价：训练课程不能同时充当考卷",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "训练分布由方法选择，测试分布应由研究问题确定。若每种方法挑自己的容易伙伴，平均回报不能比较。即便共用伙伴，不同伙伴能实现的最佳团队收益也可能不同。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\operatorname{Regret}(\\pi,z)=\\max_{\\pi'}u(\\pi',z)-u(\\pi,z)",
+              "explain": "伙伴条件 regret 比较同一个伙伴下的收益差。复杂环境的最大值通常未知，只能用独立训练的近似响应作参考。"
+            },
+            {
+              "kind": "p",
+              "text": "ZSC-Eval 通过行为偏好奖励生成候选伙伴，按所需最佳响应的差异筛选集合，再用 BR-Prox 等衡量适应差距。它使“哪些配合能力还没有学会”成为可研究的评价问题。[ZSC-Eval](https://arxiv.org/abs/2310.05208)"
+            },
+            {
+              "kind": "p",
+              "text": "参考响应并不等于真实最优。BR-Prox 分母近零、收益可正可负或参考训练不足时，不能机械套用比值。必须同时报告原始回报、分伙伴结果、区间和参考训练预算。测试生成过程也只是部署分布的代理。"
+            },
+            {
+              "kind": "p",
+              "text": "人类会主动迁就 AI。首次与重复配合、角色和沟通权限、主观负担都应记录，以区分 AI 适应、人类适应和共同适应。短期人机高分不直接证明长期协作稳定。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-series",
+          "title": "11 · 扩展同一条主线：数据限制、团队结构与一般和目标",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "开放式多智能体学习不只面临“再增加一个策略”的问题。无法继续采样时，响应必须受已有数据约束；双方各有一支团队时，需要声明能否相关地选择联合策略；利益不完全对立时，则要改变解概念。以下作品分别扩展评估、目标构建或响应学习的条件。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "问题",
+                "温颖及合作者的工作",
+                "核心思想与边界"
+              ],
+              "rows": [
+                [
+                  "无法继续与对手交互",
+                  "[Offline Fictitious Self-Play](https://arxiv.org/abs/2403.00841)",
+                  "重加权固定数据来近似不同对手下的经验，再用离线 RL 学响应；重要性采样不能创造数据未覆盖的动作。"
+                ],
+                [
+                  "对手能整队协调偏离",
+                  "[Leveraging Team Correlation](https://arxiv.org/abs/2403.00255)",
+                  "区分个人偏离与团队相关偏离，以受限团队解和顺序相关机制组织搜索；安全性只相对于声明的偏离空间。"
+                ],
+                [
+                  "队友角色不同",
+                  "[Heterogeneous-PSRO](https://arxiv.org/abs/2410.01575)",
+                  "扩展异质团队策略的表达与顺序响应；表示限制、理想改进界与有限训练误差需要分别分析。"
+                ],
+                [
+                  "既非共同奖励也非零和",
+                  "[Stochastic Games with Potentials](https://proceedings.mlr.press/v139/mguni21a.html)",
+                  "利用特殊势结构关联个人改进和共同势函数；不是任意一般和游戏都能化为单目标优化。"
+                ],
+                [
+                  "采样、训练、评估彼此嵌套",
+                  "[MALib](https://jmlr.org/papers/v24/22-0169.html)",
+                  "以任务调度和 Actor–Evaluator–Learner 支持种群课程；并行吞吐是系统指标，不是学习质量保证。"
+                ]
+              ]
+            },
+            {
+              "kind": "math",
+              "tex": "\\sigma_{\\rm team}\\in\\Delta\\!\\left(\\prod_i\\Pi_i\\right)\\quad\\text{与}\\quad(\\sigma_i)_i\\in\\prod_i\\Delta(\\Pi_i)",
+              "explain": "左侧允许对联合策略进行相关随机选择；右侧仅独立随机化。两个集合对应不同的协作与对手能力假设。事前协商不等于允许执行时共享私有观察。"
+            },
+            {
+              "kind": "p",
+              "text": "若对手被允许整队协调改变策略，只测试单个成员偏离不够。反之，不能把己方有特权通信、对方只能独立随机化时的优势称为公平的均衡比较。异质性也不等于必须完全独立参数：共享网络若有充分角色条件，可能表达不同角色；应检验具体函数类。"
+            },
+            {
+              "kind": "p",
+              "text": "Off-FSP 属于数据受限的竞争学习，不能因为使用历史经验就称为在线 CRL。势博弈是结构性分支，不能将其收敛结论外推给所有开放合作。上述研究分别改变数据协议、策略可行集合、评价或计算组织，因而需要不同实验。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "12 · 开放式多智能体学习与 CRL：评价整个学习过程",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "开放式多智能体学习研究怎样由交互生成新的学习目标，并沿明确准则改善能力。把它放入 CRL 的生命期设定后，还要把形成能力的过程本身纳入评价。最终档案更强与同一智能体一生获得更高收益，是相关但不同的目标。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "现有机制",
+                "新增困难",
+                "所需对照"
+              ],
+              "rows": [
+                [
+                  "策略池不断增加",
+                  "参数、检索和评估开销不能无限增长",
+                  "固定档案容量，比保留、删除、蒸馏后的旧弱点。"
+                ],
+                [
+                  "每回合抽取伙伴",
+                  "伙伴会返回、漂移或在途中离开",
+                  "控制变化可观测性，测恢复时间与历史利用。"
+                ],
+                [
+                  "冻结策略零样本适应",
+                  "状态、记忆和参数是不同更新载体",
+                  "分别冻结各载体，不把活动变化当作无适应。"
+                ],
+                [
+                  "只测最终 checkpoint",
+                  "探索、更新和错误在生命中有成本",
+                  "全寿命回报、适应损失、失败与恢复代价。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "合作结构化探索决定一次经历发现什么；种群课程决定下一轮遇到什么；持续学习还要决定保留哪些知识、何时更新和付出多少代价。三层相连，但一层的成功不能代替其他层的证据。"
+            },
+            {
+              "kind": "p",
+              "text": "可以先固定物理规则，只让伙伴约定变化；再固定伙伴，改变动力学。最后组合二者，研究有限记忆下的状态、预测和控制学习，避免把所有困难笼统归为非平稳。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "13 · 可运行的评价反例，与原始工程入口",
+          "blocks": [
+            {
+              "kind": "source",
+              "file": "marl_objectives_lab.py",
+              "region": "population_evaluation",
+              "caption": "精确小博弈：fictitious play 的平均混合与最新响应、完整 gap、伙伴分布变化，以及精确最佳响应扩池后的反例。不是神经 PSRO 复现。"
+            },
+            {
+              "kind": "code",
+              "code": "python3 marl_objectives_lab.py test\npython3 marl_objectives_lab.py demo --out results/marl-objectives",
+              "caption": "标准库运行。枚举期望和精确最佳响应，不含采样置信区间；图用于检验机制而非论文性能。",
+              "language": "bash"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "原始入口",
+                "重点代码接口",
+                "边界"
+              ],
+              "rows": [
+                [
+                  "[OpenSpiel PSRO](https://github.com/google-deepmind/open_spiel/tree/master/open_spiel/python/algorithms/psro_v2)",
+                  "元游戏、求解器、response oracle、evaluation",
+                  "通用 PSRO 不是 EPSRO 作者实现。"
+                ],
+                [
+                  "[NAC](https://github.com/waterhorse1/NAC)",
+                  "课程网络、展开内循环、外层评价",
+                  "元梯度不提供最后策略的普遍单调保证。"
+                ],
+                [
+                  "[NXDO](https://github.com/indylab/nxdo)",
+                  "信息状态 meta-action 与受限求解",
+                  "神经版本不自动满足表格定理。"
+                ],
+                [
+                  "[COLE-Platform](https://github.com/liyang619/COLE-Platform)",
+                  "cole_training 与 baseline_training 分支",
+                  "main 分支不能直接当作 COLE-SV 训练器。"
+                ],
+                [
+                  "[ZSC-Eval](https://github.com/sjtu-marl/ZSC-Eval)",
+                  "伙伴生成、筛选、参考响应、分伙伴评价",
+                  "有限伙伴池不代表所有部署人群。"
+                ],
+                [
+                  "[MALib](https://github.com/sjtu-marl/malib)",
+                  "种群与经验管理基础设施",
+                  "清单中未勾选的算法不是实现证据。"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "EPSRO、BD/RD、Fusion-PSRO、Conflux-PSRO 与 HOLA 的原文见参考。这里不以背景仓库替代尚未确认的完整作者实现，也不把小矩阵核的正确性当作大规模训练性能证据。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-check",
+          "title": "14 · 练习：同一结果为什么会有不同解读",
+          "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：扩池后仍提交旧混合，实际表现一定提高吗？答：不一定。最佳安全价值不下降，实际输出可以完全不变。",
+                "问：新 payoff 向量离旧凸包很远，一定有用吗？答：不一定，它可能在所有参考对手上更差。",
+                "问：COLE 的 Shapley 思想和 COMA baseline 相同吗？答：不同。前者评价策略课程，后者构造动作梯度 baseline。",
+                "问：部署权重固定、recurrent state 改变，是否完全没有适应？答：仍可能适应，只是载体不同。",
+                "实验：固定协调矩阵，改变训练伙伴分布，再用同一冻结测试分布重算回报，检查课程分数上升是否代表泛化改善。",
+                "实验：复算加权剪刀石头布的 Gap 2→20；分别记录池内 Gap、完整 Gap、最新策略收益与种群安全价值，解释排序差异。"
+              ]
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "title": "Albrecht、Christianos、Schäfer · Multi-Agent Reinforcement Learning",
+          "url": "https://www.marl-book.com/",
+          "note": "先读博弈与解概念，再读深度算法和实现；官网提供教材、讲义与代码。"
+        },
+        {
+          "title": "Lanctot et al. · A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning",
+          "url": "https://arxiv.org/abs/1711.00832",
+          "note": "PSRO 元博弈、元策略与学习响应接口；框架和具体解概念分开。"
+        },
+        {
+          "title": "Zhou et al. · Efficient Policy Space Response Oracles",
+          "url": "https://arxiv.org/abs/2202.00633",
+          "note": "URR、response 与元策略联合学习、warm start 和并行；保留均衡与遗憾条件。"
+        },
+        {
+          "title": "Perez-Nieves et al. · Modelling Behavioural Diversity for Learning in Open-Ended Games",
+          "url": "https://proceedings.mlr.press/v139/perez-nieves21a.html",
+          "note": "DPP 期望集合大小和 payoff 几何，与动作层 Q-DPP 不同。"
+        },
+        {
+          "title": "Liu et al. · Towards Unifying Behavioral and Response Diversity",
+          "url": "https://arxiv.org/abs/2106.04958",
+          "note": "占据分布、响应向量、gamescape 与 population effectivity。"
+        },
+        {
+          "title": "Feng et al. · Neural Auto-Curricula",
+          "url": "https://arxiv.org/abs/2106.02745",
+          "note": "依据后续可利用度训练课程生成器，连接种群学习与元学习。"
+        },
+        {
+          "title": "Lian et al. · Fusion-PSRO",
+          "url": "https://doi.org/10.3233/FAIA251106",
+          "note": "Nash 加权参数融合用于 response 初始化，不等于概率混合。"
+        },
+        {
+          "title": "Huang et al. · Conflux-PSRO",
+          "url": "https://arxiv.org/abs/2410.22776",
+          "note": "状态级路由复用子策略，再蒸馏；机制说明不等于无条件性能排序。"
+        },
+        {
+          "title": "McAleer et al. · XDO: A Double Oracle Algorithm for Extensive-Form Games",
+          "url": "https://arxiv.org/abs/2103.06426",
+          "note": "信息状态级组合及 NXDO；相邻团队研究，表格界与神经近似分开。"
+        },
+        {
+          "title": "Li et al. · Cooperative Open-ended Learning Framework for Zero-shot Coordination",
+          "url": "https://proceedings.mlr.press/v202/li23au.html",
+          "note": "ICML 2023 原始 COLE：图评价、兼容性课程与局部偏好目标。"
+        },
+        {
+          "title": "Li et al. · Tackling Cooperative Incompatibility for Zero-Shot Human-AI Coordination",
+          "url": "https://doi.org/10.1613/jair.1.15884",
+          "note": "JAIR 2024 扩展，含 COLE-SV、COLE-R 与人机研究。"
+        },
+        {
+          "title": "Li et al. · HOLA-Drone",
+          "url": "https://arxiv.org/abs/2409.08767",
+          "note": "超图合作关系、多伙伴课程与实体无人机零样本配合，部署策略固定。"
+        },
+        {
+          "title": "Li et al. · Multi-Robot Open Adaptive Teaming Across Unseen Environments, Partners, and Scales",
+          "url": "https://arxiv.org/abs/2607.04972",
+          "note": "后续环境、伙伴与规模变化研究；无微调不等于部署阶段参数学习。"
+        },
+        {
+          "title": "Wang et al. · ZSC-Eval",
+          "url": "https://arxiv.org/abs/2310.05208",
+          "note": "测试伙伴生成、BR-Div 与 BR-Prox，评价未见伙伴泛化。"
+        },
+        {
+          "title": "Yang et al. · Multi-Agent Determinantal Q-Learning",
+          "url": "https://proceedings.mlr.press/v119/yang20i.html",
+          "note": "联合行动探索结构，连接但不代替种群课程。"
+        },
+        {
+          "title": "Chen et al. · Offline Fictitious Self-Play for Competitive Games",
+          "url": "https://arxiv.org/abs/2403.00841",
+          "note": "固定数据上的对手重加权和离线响应；数据支持缺口不能由权重消除。"
+        },
+        {
+          "title": "Liu et al. · Leveraging Team Correlation for Approximating Equilibrium in Two-Team Zero-Sum Games",
+          "url": "https://arxiv.org/abs/2403.00255",
+          "note": "团队相关、偏离空间与受限团队解，连接合作内层与竞争外层。"
+        },
+        {
+          "title": "Liu et al. · Computing Ex Ante Equilibrium in Heterogeneous Zero-Sum Team Games",
+          "url": "https://arxiv.org/abs/2410.01575",
+          "note": "H-PSRO 的异质团队表达与顺序更新；区分局部训练界和总体均衡近似。"
+        },
+        {
+          "title": "Mguni et al. · Learning in Nonzero-Sum Stochastic Games with Potentials",
+          "url": "https://proceedings.mlr.press/v139/mguni21a.html",
+          "note": "特殊势结构下的一般和学习，不覆盖任意利益关系。"
+        },
+        {
+          "title": "Zhou et al. · MALib",
+          "url": "https://jmlr.org/papers/v24/22-0169.html",
+          "note": "JMLR 2023 种群训练系统，组织采样、评价与训练的嵌套工作负载。"
+        }
+      ],
+      "executable": {
+        "file": "marl_objectives_lab.py",
+        "command": "python3 marl_objectives_lab.py test",
+        "scope": "精确有限游戏的评价与学习目标诊断；不是神经 PSRO、COLE 或 HOLA 的论文性能复现。"
       }
     }
   ]

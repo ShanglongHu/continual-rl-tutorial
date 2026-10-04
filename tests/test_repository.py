@@ -32,9 +32,16 @@ class Documentation(unittest.TestCase):
     def test_complete_textbook_and_prerequisites(self):
         inventory=json.loads((ROOT/'data/site-export.json').read_text())
         self.assertEqual(len(inventory['chapters']),23)
-        self.assertEqual(len(inventory['lessons']),26)
+        self.assertEqual(len(inventory['lessons']),28)
         self.assertIn('reward-design', {c['id'] for c in inventory['chapters']})
-        self.assertEqual(sum(l['track']=='deep' and l['order']>=7 for l in inventory['lessons']),7)
+        self.assertEqual(sum(l['track']=='deep' and l['order']>=7 for l in inventory['lessons']),9)
+        marl = [l for l in inventory['lessons'] if '/multi-agent' in l['path']]
+        self.assertEqual({l['path'] for l in marl}, {
+            'foundations/deep/multi-agent/',
+            'foundations/deep/multi-agent-reasoning/',
+            'foundations/deep/multi-agent-populations/',
+        })
+        self.assertTrue((ROOT/'examples/marl_objectives_lab.py').is_file())
         for chapter in inventory['chapters']:
             path=ROOT/'textbook'/(chapter['id']+'.md')
             self.assertTrue(path.exists())

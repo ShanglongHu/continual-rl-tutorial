@@ -19,6 +19,8 @@
 - [离线强化学习：数据支持、策略评估与保守改进](offline.md)
 - [模型学习与规划：MPC、短模型 rollout 和潜在想象](model-based.md)
 - [约束强化学习：占据测度、拉格朗日与可行策略](constraints.md)
-- [多智能体：博弈、局部信息与集中训练](multi-agent.md)
+- [多智能体合作：结构化探索与信用分配](multi-agent.md)
+- [对手建模与递归推理：预测谁，回应什么？](multi-agent-reasoning.md)
+- [开放式多智能体学习：评估、目标构建与策略改善](multi-agent-populations.md)
 
 [全部基础分册](../README.md) · [进入 CRL](../../textbook/README.md)

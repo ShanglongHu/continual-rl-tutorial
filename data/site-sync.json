@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source": "https://yingwen.io/zh/continual-rl/",
-  "source_export_sha256": "6e49eb9b00b37bf8bf956786d064ed776b292b76f86c33f64effddd62656b5f0",
+  "source_export_sha256": "9390270b8729c59b978152d7ef904d6f5f41cbb91f3887fd909ab458d95c4c23",
   "files": {
     "algorithms/01-value.md": {
       "sha256": "673186b94fb8a07b3289252bc8653b6cad5186ae9b5af57cea92f0b180db2afa",
@@ -84,20 +84,20 @@
       "source_sha256": "77ab2b308acd7c752d3916e4dd2c69fa65c3af1a11e20944e6805abda4201e53"
     },
     "data/field-framework.json": {
-      "sha256": "7f9a62aec02d9c9579dcea177b0868b8066d698563a7cf7558c319c19de6f921",
-      "source_sha256": "7f9a62aec02d9c9579dcea177b0868b8066d698563a7cf7558c319c19de6f921"
+      "sha256": "ddc3ca0c3576c84fddde1527fe1a796337488770917a3a5f984144366bd57604",
+      "source_sha256": "ddc3ca0c3576c84fddde1527fe1a796337488770917a3a5f984144366bd57604"
     },
     "data/foundations.json": {
-      "sha256": "1295a2cc8d78ce93ba64095a85c48801f4d8abf6b1bc7c0a79d03dc9f6f77904",
-      "source_sha256": "1295a2cc8d78ce93ba64095a85c48801f4d8abf6b1bc7c0a79d03dc9f6f77904"
+      "sha256": "e69e11e7c6ffbcbcd6fca1c9da23f27ba9f60c6f7261d1f565d7b37db575a8ff",
+      "source_sha256": "e69e11e7c6ffbcbcd6fca1c9da23f27ba9f60c6f7261d1f565d7b37db575a8ff"
     },
     "data/implementations.json": {
       "sha256": "e328a1d26492666143091ed3c9cd3fefe8ff898ee4346744a3a6e0e39c9e042d",
       "source_sha256": "e328a1d26492666143091ed3c9cd3fefe8ff898ee4346744a3a6e0e39c9e042d"
     },
     "data/learning-route.json": {
-      "sha256": "d7e3a56864f8a25e87ace04375a0d86bb944841e6e834816cdc9e39ea4677701",
-      "source_sha256": "d7e3a56864f8a25e87ace04375a0d86bb944841e6e834816cdc9e39ea4677701"
+      "sha256": "c41f55d021044f9b94a860281309735e8a04f6ec5eea05dd29ac094e9d401007",
+      "source_sha256": "c41f55d021044f9b94a860281309735e8a04f6ec5eea05dd29ac094e9d401007"
     },
     "data/library-index.json": {
       "sha256": "48dba984aadca7c2de478a30514e70934ca65e09dcec4d6767e05fc14e0a95c5",
@@ -116,7 +116,7 @@
       "source_sha256": "8c80547578e6747cf31dc4d48ada3a0926baf8cda055be332f0c636ceb6cd342"
     },
     "data/site-export.json": {
-      "sha256": "6e49eb9b00b37bf8bf956786d064ed776b292b76f86c33f64effddd62656b5f0",
+      "sha256": "9390270b8729c59b978152d7ef904d6f5f41cbb91f3887fd909ab458d95c4c23",
       "source_sha256": null
     },
     "data/source-figures.json": {
@@ -142,6 +142,10 @@
     "docs/agent-construction.md": {
       "sha256": "07b487b25f1cc5ef2f8d3663fb8ed95b660d04bc421e9e819677d222bf5276a8",
       "source_sha256": "9d5302659cf941d22616222b280853444d90fba995599838e0252854eb439f18"
+    },
+    "docs/agent-perspective.md": {
+      "sha256": "189eb3ee6cb5edccf65571534510d0d9e5cb17bc0a939238a63e4d2305373a48",
+      "source_sha256": "abfe9f8b28a380cebc6a3c7aa24bebcb354c1ca64dcba2009548b39eff9b7614"
     },
     "docs/algorithm-map.md": {
       "sha256": "99731d90d31775d818ea36408017986f16580041eff37f289c08cfb9c79f1786",
@@ -172,16 +176,16 @@
       "source_sha256": "9bca380325b2d47e4d68ceccccad4e80fd527e3e09a9cc2d7be2da45cee17306"
     },
     "docs/experiments.md": {
-      "sha256": "3036e54aa8bc077d0c8afe7c57c470342617ac0aafe2a01e858b90cfbc82abe9",
+      "sha256": "27f38763c55a35a163ae09e06b0b7665bfcf330d8c613e629f48469b38609d14",
       "source_sha256": null
     },
     "docs/field-framework.md": {
-      "sha256": "89e9b35075e27389f508990f5c71e2a7d5013d6af6e3a803233222afff81e1ca",
-      "source_sha256": "89e9b35075e27389f508990f5c71e2a7d5013d6af6e3a803233222afff81e1ca"
+      "sha256": "09552ce4e0228a4a1aa287e5c1e198e22a0798b2fd09e20384eff668da818233",
+      "source_sha256": "0228af384795abcad4f8d6e67d19bfbfd9ecbfc4d5dced4f3e1324694df60443"
     },
     "docs/foundations.md": {
-      "sha256": "c0ace5ff5937b797f1028234b085d9c981c78ad17ff8b794c0a075fe66516bda",
-      "source_sha256": "4e044af1f46fd3e7325ef0831dbe04cf2b188f28301d4cb29903620edd6682fc"
+      "sha256": "f9a940e1058d6e71a065f91df35a2789548d811760795f157fb39268580a61ed",
+      "source_sha256": "df37496ba828d4c46bbba262cd75a635e257d98a2b57e5cb1ccd10d2732d9a2d"
     },
     "docs/implementations.md": {
       "sha256": "991da1747c721c73a712448cf9413f1bb3ea3942cd167f5e874b82d337e630b8",
@@ -200,16 +204,16 @@
       "source_sha256": "8886118763d60aeb87955638d271224284921c4efcaa154c9ad717d4b73e9db7"
     },
     "docs/learning-route-deep-rl.md": {
-      "sha256": "a2e57a06bb82c2222c8dfeb8b1e997abb92081d250061d249341786096bdb2fa",
-      "source_sha256": "d805615f78bc40b20afb4563df24fa65f445e6f629882b3560124165d0bddbe4"
+      "sha256": "06ac781c2d1d7941440a7d55ede9da212aa61afddb5ade35f6bdff20c75cc40e",
+      "source_sha256": "f2f637e6b5e0c76162351503bf7e85312e7770e72d4927a380540d7c91a4b35a"
     },
     "docs/learning-route.md": {
-      "sha256": "131b8c8c3f3676e7a2d274124c468d1f20da75813d498e8a41dc6408547e37b8",
-      "source_sha256": "bacc3a213cb20eb79fa3805acc063d72eaacd999195d53ffc5615679d7bb00c6"
+      "sha256": "8616c7a19de5ee7044ff5a0f781362fd41df77ca9f8652e0e98bedc439d1701a",
+      "source_sha256": "8a88acd848c7fd9c6286b9db5c00282f09e85f27c7ffbc7ec5053465cb0ba0d8"
     },
     "docs/overview.md": {
-      "sha256": "6a5c30169e9903fec1a717422b98f2a6043b39bf3db6e029fd07bb3fd39c0e37",
-      "source_sha256": "e7d0dde812cca669cdaf53f2cafccfd4fec0f11a6ada02381ed7f8554e4b3a2d"
+      "sha256": "60806ea4ad0614e3590ea25d984461f04608d35a7d06e985b8e4142ca51e8050",
+      "source_sha256": "90c17e2a3d672308bfd33416f4e5e600e87db9877c4a98b042b4a08017f34dd9"
     },
     "docs/previous-intro.md": {
       "sha256": "60beeaf5c10bb50b57ab1ee04e55720ff6f9a08a46b8e21c70ca5387c09e600b",
@@ -319,6 +323,10 @@
       "sha256": "356019e8fea9c2e2624877abd70a9900d3fdf24ac803f92b92304fcb4a1fd382",
       "source_sha256": "356019e8fea9c2e2624877abd70a9900d3fdf24ac803f92b92304fcb4a1fd382"
     },
+    "examples/marl_objectives_lab.py": {
+      "sha256": "8ddbc8835cab99ec09bca0f6add8393700a36fcf8e7e72878d220e3930df1107",
+      "source_sha256": "8ddbc8835cab99ec09bca0f6add8393700a36fcf8e7e72878d220e3930df1107"
+    },
     "examples/mechanisms.py": {
       "sha256": "63b0dc57c34d792b87254000d49e33566e4b291ef248fb36a79b2ed1252636e2",
       "source_sha256": "63b0dc57c34d792b87254000d49e33566e4b291ef248fb36a79b2ed1252636e2"
@@ -348,7 +356,7 @@
       "source_sha256": "25daa70a42101b1f04c1d898fc81b8cce8de054cc7e71d04b90c58cd64976861"
     },
     "foundations/README.md": {
-      "sha256": "6abb4a8a394678b9089fc5576039acbbbed76133830b662b27f31581d605722a",
+      "sha256": "33ede3f0ee8c9f6c64b8e74ca3db8007d9df2a3eef3b79b0e428b44e0b5f4c14",
       "source_sha256": null
     },
     "foundations/approximation/README.md": {
@@ -380,7 +388,7 @@
       "source_sha256": "d1d4f42822234f69c1ff96eab16ddb880cb480a3da3a862d7fbd934523946b4a"
     },
     "foundations/deep/README.md": {
-      "sha256": "681bd01ad24a82ae9678dedc927142a41e6ee83a8b07e551f3a1df59037f3d88",
+      "sha256": "68b3b0e46a85ca9ad8cf2ca7156433bc1fe8299fd229590407a117fee6b36b9a",
       "source_sha256": null
     },
     "foundations/deep/constraints.md": {
@@ -411,9 +419,17 @@
       "sha256": "bef5ee72585b6ed90298e74c422db63fee7a7630f43013250a543c48b5d00efc",
       "source_sha256": "08b51e95c2ce4c103733ddeb630f23c977bc51bb10aadc794b16ac2294590070"
     },
+    "foundations/deep/multi-agent-populations.md": {
+      "sha256": "6d121052d66c9f86718bf8ebcd87b041220078f61fc3c0c01bb1e764d7a67c91",
+      "source_sha256": "483ddaeb5a558a1f640ad8cc4dbaa7d6c6d958142e0e118c6c0208c642b27d3c"
+    },
+    "foundations/deep/multi-agent-reasoning.md": {
+      "sha256": "13f4519c3c329d31c08cb035a55450b448c38025f5093c3ba476c118a56489d9",
+      "source_sha256": "1ee82c35f764eacc3209442107f3a6a49e60bdc848bbbeeab4f945666f0ad640"
+    },
     "foundations/deep/multi-agent.md": {
-      "sha256": "ff99d4030af0e9b347e9449c2e1f41d30b0113b521cd7e7e9d67df937d9b2813",
-      "source_sha256": "715a6000ad4d5ee70d2a6064f9f521378623bb2d3a979d74b3623c485a3d924b"
+      "sha256": "2b973d991ef32b7fe8558d96a466eb19afa364203a812fad6dc799c8540dec60",
+      "source_sha256": "b37d5b0832d8c0dcf014ae464677bc270302d0e9c276b3b669827f8df003c6ff"
     },
     "foundations/deep/offline.md": {
       "sha256": "ea76ae40e0e1c2077f032428dd4b05b07949a8e66a9d479153a8353e0e50a1cc",

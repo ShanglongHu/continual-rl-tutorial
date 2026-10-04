@@ -4,7 +4,7 @@
 
 从智能体与世界的持续交互出发，区分外部设计者提供的奖励、任务与资源。表格算法、函数逼近和深度 RL 提供工具；持续学习研究完整学习器怎样长期有效地适应。它们不是互相替代的问题类别。
 
-**26 章基础分册 · 23 章 CRL 教材 · 8 课导论 · 配套实现、数值检查与实验手册**
+**28 章基础分册 · 23 章 CRL 教材 · 8 课导论 · 配套实现、数值检查与实验手册**
 
 [在线阅读](https://yingwen.io/zh/continual-rl/) · [基础目录](foundations/README.md) · [CRL 教材](textbook/README.md) · [实验与代码](docs/experiments.md) · [研究问题](docs/research-atlas.md)
 

@@ -613,6 +613,66 @@
           "question": "在一个截断点 detach hidden state，但数值不清零，会改变之后的前向输出吗？",
           "answer": "不一定。相同数值可以产生相同输出，但梯度不再经过截断点返回更早的运算。需要同时检查信息保留与学习信用。"
         }
+      },
+      {
+        "id": "multi-agent-learning",
+        "title": "8 · 多智能体：合作的探索与信用，开放式学习的评估与目标",
+        "problem": "合作如何发现并学会配合？竞争和开放式合作又怎样确定每一轮该学什么，以形成可检验的策略改善？",
+        "explanation": [
+          "合作多智能体强化学习的主线是结构化探索和信用分配：前者发现有效的联合行为，后者把共同反馈转成各个策略的学习信号。Q-DPP、COMA、价值分解与联合策略优化分别处理这些环节。",
+          "顺序优化与顺序行动是不同操作。HATRPO/HAPPO、A2PO研究更新时如何考虑前序策略的变化；MAT用条件序列生成联合动作。PR2/GR2则研究对手会如何响应，以及怎样建模不同推理层次。每种方法都必须声明训练和执行可见的信息。",
+          "竞争与开放式合作的核心是评估并构建每轮学习目标，以实现有条件、可检验的单调改善。这里的开放式学习特指开放式多智能体学习：代表性脉络主要从竞争自对弈、PSRO与竞争多样性发展，温颖及合作者以COLE、HOLA拓展合作伙伴课程。先定义评价对象，再说明构建什么目标能够改善它。"
+        ],
+        "tex": "J_k(\\pi)=\\mathbb E_{\\xi\\sim\\mu_k}u(\\pi,\\xi),\\qquad \\mu_{k+1}=\\mathcal M(\\mathcal P_{k+1},\\widehat U_{k+1})",
+        "formulaExplanation": "μ 是当前对手或伙伴分布；u 是明确规定的交互收益。外层根据策略档案 P 与评价 U 构造下一轮目标，内层学习对当前目标作响应。不同轮的目标可能不同。",
+        "chapterIds": [
+          "control",
+          "state",
+          "exploration",
+          "credit",
+          "meta"
+        ],
+        "readings": [
+          {
+            "title": "合作主线与共同设定：结构化探索和信用分配",
+            "path": "foundations/deep/multi-agent/"
+          },
+          {
+            "title": "支撑方法：对手建模与递归推理",
+            "path": "foundations/deep/multi-agent-reasoning/"
+          },
+          {
+            "title": "开放式多智能体学习：评估、目标构建与策略改善",
+            "path": "foundations/deep/multi-agent-populations/"
+          }
+        ],
+        "sources": [
+          {
+            "title": "Albrecht、Christianos、Schäfer · MARL Book",
+            "url": "https://www.marl-book.com/",
+            "note": "第3–6章的交互模型与解概念，第9–11章的深度算法、实践与环境。"
+          },
+          {
+            "title": "MAT · Multi-Agent Reinforcement Learning is a Sequence Modeling Problem",
+            "url": "https://arxiv.org/abs/2205.14953",
+            "note": "固定策略的优势分解与条件动作生成。"
+          },
+          {
+            "title": "Lanctot et al. · A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning",
+            "url": "https://arxiv.org/abs/1711.00832",
+            "note": "经验元博弈、元策略求解与近似最佳响应。"
+          }
+        ],
+        "practice": {
+          "file": "marl_objectives_lab.py",
+          "command": "python3 marl_objectives_lab.py demo\npython3 marl_objectives_lab.py test",
+          "check": "精确枚举检查：COMA型基线保留梯度期望；同时最佳响应可以循环；扩张受限种群的full-game gap可由2增至20。",
+          "boundary": "这是小型博弈机制和反例，不是PR2、MAT、PSRO或COLE的完整神经系统复现。"
+        },
+        "selfTest": {
+          "question": "种群加入新策略后，为什么不能仅凭“策略更多了”就断言当前均衡更不容易被利用？",
+          "answer": "当前元均衡本身可能改变，遗漏的对手仍可能更强。集合包含关系只保证在固定评价准则下，保留旧解的最优可行值不变差；不保证任意新元均衡的完整博弈可利用性逐轮下降。"
+        }
       }
     ]
   },

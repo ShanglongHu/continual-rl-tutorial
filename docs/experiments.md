@@ -272,15 +272,36 @@ python3 examples/extended_foundations_lab.py test
 
 [源码](../examples/extended_foundations_lab.py)
 
-## [多智能体：博弈、局部信息与集中训练](../foundations/deep/multi-agent.md)
+## [多智能体合作：结构化探索与信用分配](../foundations/deep/multi-agent.md)
 
-标准库解析机制实验；不包含完整神经网络训练或大型 benchmark。
+标准库枚举的协调探索概率、反事实梯度方差与顺序更新机制实验；精确计算不是神经训练曲线，也不是完整论文复现。
 
 ```bash
-python3 examples/extended_foundations_lab.py test
+python3 examples/marl_objectives_lab.py test
+python3 examples/marl_objectives_lab.py demo --out results/marl-objectives
 ```
 
-[源码](../examples/extended_foundations_lab.py)
+[源码](../examples/marl_objectives_lab.py)
+
+## [对手建模与递归推理：预测谁，回应什么？](../foundations/deep/multi-agent-reasoning.md)
+
+下载本页配套脚本后运行。精确条件评分、虚拟博弈与零和 gap 的机制检查，不是 PR2/GR2 神经训练。
+
+```bash
+python3 examples/marl_objectives_lab.py test
+```
+
+[源码](../examples/marl_objectives_lab.py)
+
+## [开放式多智能体学习：评估、目标构建与策略改善](../foundations/deep/multi-agent-populations.md)
+
+精确有限游戏的评价与学习目标诊断；不是神经 PSRO、COLE 或 HOLA 的论文性能复现。
+
+```bash
+python3 examples/marl_objectives_lab.py test
+```
+
+[源码](../examples/marl_objectives_lab.py)
 
 ## [强化学习问题的形式化：交互、目标与持续学习](../textbook/objectives.md)
 
