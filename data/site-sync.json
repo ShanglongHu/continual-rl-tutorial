@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source": "https://yingwen.io/zh/continual-rl/",
-  "source_export_sha256": "041398e6c44cec08f159c2662804f4cb42957005f956b26af6a83a40cb41ad31",
+  "source_export_sha256": "6e49eb9b00b37bf8bf956786d064ed776b292b76f86c33f64effddd62656b5f0",
   "files": {
     "algorithms/01-value.md": {
       "sha256": "673186b94fb8a07b3289252bc8653b6cad5186ae9b5af57cea92f0b180db2afa",
@@ -96,8 +96,8 @@
       "source_sha256": "e328a1d26492666143091ed3c9cd3fefe8ff898ee4346744a3a6e0e39c9e042d"
     },
     "data/learning-route.json": {
-      "sha256": "240fd98731a92737c40be5a05c9dc5ab9097d021f93b80b876560b9620c68df4",
-      "source_sha256": "240fd98731a92737c40be5a05c9dc5ab9097d021f93b80b876560b9620c68df4"
+      "sha256": "d7e3a56864f8a25e87ace04375a0d86bb944841e6e834816cdc9e39ea4677701",
+      "source_sha256": "d7e3a56864f8a25e87ace04375a0d86bb944841e6e834816cdc9e39ea4677701"
     },
     "data/library-index.json": {
       "sha256": "48dba984aadca7c2de478a30514e70934ca65e09dcec4d6767e05fc14e0a95c5",
@@ -108,16 +108,20 @@
       "source_sha256": "f54d1346001a5a629d5e77d250d0884042d46f73335fae6b1172cc41547dea30"
     },
     "data/research-atlas.json": {
-      "sha256": "cf6d48cb4b8075cd737d32d97d5de4d15f7efe6c24d13bd01b5b67295048ef7f",
-      "source_sha256": "cf6d48cb4b8075cd737d32d97d5de4d15f7efe6c24d13bd01b5b67295048ef7f"
+      "sha256": "942a1a28f9ab51e76925acb3f9ff06eb62036954e463a34a056caf03396af082",
+      "source_sha256": "942a1a28f9ab51e76925acb3f9ff06eb62036954e463a34a056caf03396af082"
     },
     "data/resources.json": {
       "sha256": "8c80547578e6747cf31dc4d48ada3a0926baf8cda055be332f0c636ceb6cd342",
       "source_sha256": "8c80547578e6747cf31dc4d48ada3a0926baf8cda055be332f0c636ceb6cd342"
     },
     "data/site-export.json": {
-      "sha256": "041398e6c44cec08f159c2662804f4cb42957005f956b26af6a83a40cb41ad31",
+      "sha256": "6e49eb9b00b37bf8bf956786d064ed776b292b76f86c33f64effddd62656b5f0",
       "source_sha256": null
+    },
+    "data/source-figures.json": {
+      "sha256": "fb72346e48440ebd521c96d299395ecdc980cbb179027937f63c5088de94996f",
+      "source_sha256": "fb72346e48440ebd521c96d299395ecdc980cbb179027937f63c5088de94996f"
     },
     "data/supplements.json": {
       "sha256": "6894bf1adc17d7acb58d679b3fe7b828f9edd6eb3f21d38b61e997cf9d4ae511",
@@ -184,12 +188,12 @@
       "source_sha256": "7816009108151f3954426c61176f66777a9d273d6c4968ce26f00a4d01333f61"
     },
     "docs/learning-dynamics.md": {
-      "sha256": "5bdfd9ff294d71b01bd8490f6de10b31fa2dc0486c359f4ba0de1ee46ec914ad",
-      "source_sha256": "cef3e53f240085b47c99c3171a037512a820b3e21a1dddc5a1e0ba48d768e765"
+      "sha256": "3cf2b564c83e69b94873d29e65f0f0de02e82e8d3925c48232b0272950d7ec2d",
+      "source_sha256": "4d47d7b2590adc92b8814fdfc6782baf3d22f34544b95bac04a2448d69a61d8d"
     },
     "docs/learning-route-classic-rl.md": {
-      "sha256": "106b048162bc583eb9ab6d64b1b3b61ac94795333896fec3a72a1bc29d39d93e",
-      "source_sha256": "55627f51ad84f7a2f51e5724e2c0f5b4ec63a1e3d3af6f1839d30c06fe837b3e"
+      "sha256": "62f12634a346d000e2ccd78d51e4a40a89bf068825e1cb3cec47823bbafafa64",
+      "source_sha256": "4131e23c8ae77b98351c2f2825ed2406a3a8525454bee9baeab49e321c01ed6a"
     },
     "docs/learning-route-continual-rl.md": {
       "sha256": "ad842d17208c3482f2d5ff495d98e6cc1fc023f2bf92576ae835c08ef21f0fd0",
@@ -200,8 +204,8 @@
       "source_sha256": "d805615f78bc40b20afb4563df24fa65f445e6f629882b3560124165d0bddbe4"
     },
     "docs/learning-route.md": {
-      "sha256": "772228a62334b43ba1e6cbbefcd2b1e4d521a3742a7daca42279c34014922084",
-      "source_sha256": "15c397478b62f46d643d496638afea72760818fb14584f92c6e06fdb8474d394"
+      "sha256": "131b8c8c3f3676e7a2d274124c468d1f20da75813d498e8a41dc6408547e37b8",
+      "source_sha256": "bacc3a213cb20eb79fa3805acc063d72eaacd999195d53ffc5615679d7bb00c6"
     },
     "docs/overview.md": {
       "sha256": "6a5c30169e9903fec1a717422b98f2a6043b39bf3db6e029fd07bb3fd39c0e37",
@@ -220,28 +224,28 @@
       "source_sha256": "3413c22c3ac5b1d61a1509ea6064ce53110e29893fda9fc4349a2a82c7756cb9"
     },
     "docs/research-atlas.md": {
-      "sha256": "90bfa8d326eb30374cf346f676a883eeb65498607f2b3d0a5d3249f084e4af3f",
-      "source_sha256": "02c339dbab7ab4f25dd75d06d32a08b975cd25251be6599b8a5a0021399bf9fb"
+      "sha256": "9da2e2c1010654351f844c23e382826ca58908cea557d3da08f94892bf505dbd",
+      "source_sha256": "f488a44a13fab98ddbb7e7d9b02497c3169486ee44912bdc48b6ca8f4384f59e"
     },
     "docs/research-problems.md": {
       "sha256": "62df23c2ef24e7fa0941ea26bbece21e1aa17d5b07ee33146a61874c08335068",
       "source_sha256": "62df23c2ef24e7fa0941ea26bbece21e1aa17d5b07ee33146a61874c08335068"
     },
     "docs/supplements-full.md": {
-      "sha256": "9f0dfde7a7606f169dc80add825da0bb56f4829650ecf49db4f2408663cb3cc3",
-      "source_sha256": "f280c83c00e06244e25d14f077d0384bbc58740dca17f956e336fd339b4947d6"
+      "sha256": "3d452479bac4266df80bc299280fce9a58e0be54d2335940b9681786af541afe",
+      "source_sha256": "d6e826e26eefc13c19ea2b2c7fcc33bec5756bc721b28295f92276a436cca260"
     },
     "docs/supplements.md": {
-      "sha256": "d820bb53ed4e1577f23f51424da6bcc2f8d31c7f3679a6174da756e42ba787e2",
-      "source_sha256": "257d04f0baa915c2d66f58f84e4b1a9a629530b971e5350aef931cdbf041e418"
+      "sha256": "b4605650b65ecb01b6435d6121ce9be5e2c63481a59d59a6ddfa178eadaf7123",
+      "source_sha256": "3305299f0a3c2f3ef10c99487e26ffc33d7b0dc6c35bfb03b67b80900a5fe3f6"
     },
     "docs/tutorial.md": {
       "sha256": "cf5ae27b7dca005d4c0bab5dbfd5142d34b92dbeb8749d385319783ba50a6fce",
       "source_sha256": "cf5ae27b7dca005d4c0bab5dbfd5142d34b92dbeb8749d385319783ba50a6fce"
     },
     "docs/worlds.md": {
-      "sha256": "5f7746daeb4ed52631331231938468e45ed73ad2faec2b441e696574b105f873",
-      "source_sha256": "5f7746daeb4ed52631331231938468e45ed73ad2faec2b441e696574b105f873"
+      "sha256": "aae6f75f0a256c03a4933785c234f43bbf1829db943d8c00aee3251e282e9c1b",
+      "source_sha256": "aae6f75f0a256c03a4933785c234f43bbf1829db943d8c00aee3251e282e9c1b"
     },
     "examples/algorithm_testing_lab.py": {
       "sha256": "9dadf01125f9ee3617cc63dec3581281755c0661d864fe1a9197adfc52b50ea9",

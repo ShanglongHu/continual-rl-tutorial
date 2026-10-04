@@ -3,6 +3,56 @@
   "source": "https://yingwen.io/zh/continual-rl/",
   "code_license": "MIT",
   "text_license": "CC BY 4.0",
+  "third_party_assets": [
+    {
+      "path": "/crl-figures/forager-v1-figure-2.png",
+      "authors": "Steven Tang、Xinze Xiong、Anna Hakhverdyan、Andrew Patterson、Jacob Adkins、Jiamin He、Esraa Elelimy、Parham Mohammad Panahi、Martha White、Adam White",
+      "source": "https://arxiv.org/abs/2605.01131v1",
+      "license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "evidenceUrl": "https://arxiv.org/abs/2605.01131v1",
+        "notice": "原图版权属于 Tang 等作者，按论文所附 CC BY 4.0 许可使用。"
+      },
+      "sha256": "028a764bc1151daef49004a2d511f5d0035df68393ef9d95e90a1ce4af747ef0"
+    },
+    {
+      "path": "/crl-figures/agarcl-v3-figure-2.png",
+      "authors": "Mohamed A. Mohamed、Kateryna Nekhomiazh、Vedant Vyas、Marcos M. Jose、Andrew Patterson、Marlos C. Machado",
+      "source": "https://arxiv.org/abs/2505.18347v3",
+      "license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "evidenceUrl": "https://arxiv.org/abs/2505.18347v3",
+        "notice": "原论文图版权属于 Mohamed 等作者，按论文所附 CC BY 4.0 许可使用；不据此重新许可 Agar.io 游戏或其他资产。"
+      },
+      "sha256": "e35a1688fd8c76e1cffdfb41dec963bb6177288e4cfef633ace501f4fc405194"
+    },
+    {
+      "path": "/crl-figures/craftax-v2-figure-2.svg",
+      "authors": "Michael Matthews、Michael Beukman、Benjamin Ellis、Mikayel Samvelyan、Matthew Jackson、Samuel Coward、Jakob Foerster",
+      "source": "https://arxiv.org/abs/2402.16801v2",
+      "license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "evidenceUrl": "https://arxiv.org/abs/2402.16801v2",
+        "notice": "原图版权属于 Matthews 等作者，按论文所附 CC BY 4.0 许可使用。"
+      },
+      "sha256": "4c4065467b233dbefcdd1a68b75ac045f1cdf4dec4b2c48091760b5d0be562d9"
+    },
+    {
+      "path": "/crl-figures/plasticity-v3-figure-3.svg",
+      "authors": "Shibhansh Dohare、J. Fernando Hernandez-Garcia、Parash Rahman、A. Rupam Mahmood、Richard S. Sutton",
+      "source": "https://arxiv.org/abs/2306.13812v3",
+      "license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "evidenceUrl": "https://arxiv.org/abs/2306.13812v3",
+        "notice": "原图版权属于 Dohare 等作者；本图单独保留 CC BY-SA 4.0，不适用本站原创教程的 CC BY 4.0 许可。"
+      },
+      "sha256": "cf7065c0ffcfb2e37d4c198199a67d1f7906adfbb505c80a2e427aae404a085a"
+    }
+  ],
   "files": [
     {
       "file": "advanced.md",
@@ -421,13 +471,13 @@
     {
       "file": "learning-dynamics.md",
       "target": "docs/learning-dynamics.md",
-      "sha256": "cef3e53f240085b47c99c3171a037512a820b3e21a1dddc5a1e0ba48d768e765",
+      "sha256": "4d47d7b2590adc92b8814fdfc6782baf3d22f34544b95bac04a2448d69a61d8d",
       "page": "foundations/learning-dynamics/"
     },
     {
       "file": "learning-route-classic-rl.md",
       "target": "docs/learning-route-classic-rl.md",
-      "sha256": "55627f51ad84f7a2f51e5724e2c0f5b4ec63a1e3d3af6f1839d30c06fe837b3e",
+      "sha256": "4131e23c8ae77b98351c2f2825ed2406a3a8525454bee9baeab49e321c01ed6a",
       "page": null
     },
     {
@@ -445,13 +495,13 @@
     {
       "file": "learning-route.json",
       "target": "data/learning-route.json",
-      "sha256": "240fd98731a92737c40be5a05c9dc5ab9097d021f93b80b876560b9620c68df4",
+      "sha256": "d7e3a56864f8a25e87ace04375a0d86bb944841e6e834816cdc9e39ea4677701",
       "page": null
     },
     {
       "file": "learning-route.md",
       "target": "docs/learning-route.md",
-      "sha256": "15c397478b62f46d643d496638afea72760818fb14584f92c6e06fdb8474d394",
+      "sha256": "bacc3a213cb20eb79fa3805acc063d72eaacd999195d53ffc5615679d7bb00c6",
       "page": null
     },
     {
@@ -517,13 +567,13 @@
     {
       "file": "research-atlas.json",
       "target": "data/research-atlas.json",
-      "sha256": "cf6d48cb4b8075cd737d32d97d5de4d15f7efe6c24d13bd01b5b67295048ef7f",
+      "sha256": "942a1a28f9ab51e76925acb3f9ff06eb62036954e463a34a056caf03396af082",
       "page": null
     },
     {
       "file": "research-atlas.md",
       "target": "docs/research-atlas.md",
-      "sha256": "02c339dbab7ab4f25dd75d06d32a08b975cd25251be6599b8a5a0021399bf9fb",
+      "sha256": "f488a44a13fab98ddbb7e7d9b02497c3169486ee44912bdc48b6ca8f4384f59e",
       "page": null
     },
     {
@@ -548,6 +598,12 @@
       "file": "rl_foundations.py",
       "target": "examples/rl_foundations.py",
       "sha256": "9e4d53421edf2a15c8e73790fd04a6d547bee1e86c79fa5dcb2fa8ed6e48dc83",
+      "page": null
+    },
+    {
+      "file": "source-figures.json",
+      "target": "data/source-figures.json",
+      "sha256": "fb72346e48440ebd521c96d299395ecdc980cbb179027937f63c5088de94996f",
       "page": null
     },
     {
@@ -787,7 +843,7 @@
     {
       "file": "supplements-full.md",
       "target": "docs/supplements-full.md",
-      "sha256": "f280c83c00e06244e25d14f077d0384bbc58740dca17f956e336fd339b4947d6",
+      "sha256": "d6e826e26eefc13c19ea2b2c7fcc33bec5756bc721b28295f92276a436cca260",
       "page": null
     },
     {
@@ -799,7 +855,7 @@
     {
       "file": "supplements.md",
       "target": "docs/supplements.md",
-      "sha256": "257d04f0baa915c2d66f58f84e4b1a9a629530b971e5350aef931cdbf041e418",
+      "sha256": "3305299f0a3c2f3ef10c99487e26ffc33d7b0dc6c35bfb03b67b80900a5fe3f6",
       "page": "supplements/"
     },
     {
@@ -829,7 +885,7 @@
     {
       "file": "worlds.md",
       "target": "docs/worlds.md",
-      "sha256": "5f7746daeb4ed52631331231938468e45ed73ad2faec2b441e696574b105f873",
+      "sha256": "aae6f75f0a256c03a4933785c234f43bbf1829db943d8c00aee3251e282e9c1b",
       "page": "worlds/"
     }
   ],

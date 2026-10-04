@@ -452,6 +452,18 @@ $$
 
 研究可塑性需要更长的变化序列、固定的新任务评价协议以及重置或新网络对照。Continual Backpropagation 与 ReDo 通过不同标准检测、更新或替换低效单元。替换单元同时改变表示；相关预测头、优化器矩和资格迹是否需要重置，也必须明确。
 
+![Dohare 等预印本图 3：随着 Online Permuted MNIST 任务推进，三种步长下的不活跃单元比例与权重幅度上升，表示的有效秩下降；三幅图分别对应这三个指标。](https://yingwen.io/crl-figures/plasticity-v3-figure-3.svg)
+
+可塑性诊断：学习变慢时，网络内部发生了什么？。Shibhansh Dohare、J. Fernando Hernandez-Garcia、Parash Rahman、A. Rupam Mahmood、Richard S. Sutton，Maintaining Plasticity in Deep Continual Learning，Figure 3，arXiv:2306.13812v3（2024 预印本；不是 Nature 版本的图号）。
+
+读图：横轴是任务序号，不是回报。三幅面板分别看不活跃单元、权重幅度与有效秩，颜色表示不同步长。论文报告三十次运行的均值与正负一个标准误；这些量与新任务学习能力一起分析，才构成可塑性诊断。
+
+解释边界：该图来自监督学习的 Online Permuted MNIST，不是 RL 成绩。共变趋势并不单独识别因果机制；低秩或单元不活跃也不总意味着学习失败。要判断一个 RL 系统是否失去可塑性，仍需新经验上的受控适应测试。
+
+[论文与图注](https://arxiv.org/html/2306.13812v3#S4.F3) · [作者原图](https://arxiv.org/html/2306.13812v3/backprop_summaries.svg) · [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
+原图版权属于 Dohare 等作者；本图单独保留 CC BY-SA 4.0，不适用本站原创教程的 CC BY 4.0 许可。 直接保存作者预印本在 arXiv HTML 中提供的矢量图；未修改。中文读图说明与原图分开呈现。
+
 <a id="nonlinear-frontier-fourier"></a>
 
 ## Deep Fourier Features · 保留可训练方向，而不是只增加参数

@@ -1816,5 +1816,909 @@
       "title": "Ⅵ · 架构与证据",
       "question": "模块之间的改进能否变成长生命期收益？"
     }
-  ]
+  ],
+  "horizons": {
+    "introduction": {
+      "title": "跨场景检验：持续强化学习问题在不同世界中的表现",
+      "premise": "持续强化学习不只研究任务切换后的遗忘。它还研究一个学习系统怎样在长期交互中取得经验、形成可用知识、改善行动，并承担学习本身的成本。大模型、机器人和多智能体系统使这些问题更加具体，但应用名称不能代替问题设定。",
+      "perspective": "温颖在《从现代深度强化学习到持续强化学习》中提出一个研究视角：把预训练视为起点，把运行中可检验的第一人称经验视为后续知识来源；状态、预测、技能、模型和学习规则都可以成为更新对象。以下沿此视角提出问题，同时区分已有论文证据、邻近研究和仍待检验的设想。这不是对 CRL 的唯一界定，也不要求所有系统采用同一种架构。",
+      "perspectiveUrl": "https://yingwen.io/zh/blog/from-modern-deep-rl-to-continual-rl/",
+      "scope": "读一项工作，先问五件事：什么在持续；反馈从哪里来；谁在什么时候被重置；学习占用哪些资源；实际评价谁的收益。固定权重不等于没有适应，持续写日志也不等于取得了可用知识。下面的判别实验都是研究设计，不是本网站已经完成的实验。"
+    },
+    "groups": [
+      {
+        "id": "control-feedback",
+        "title": "持续控制、信用与反馈",
+        "question": "局部反馈是否支持生命期改善，学习还能否保留未来行动的机会？"
+      },
+      {
+        "id": "knowledge",
+        "title": "状态、记忆与预测知识",
+        "question": "什么经验值得保留，什么后果值得预测，以及它们何时失效？"
+      },
+      {
+        "id": "adaptation",
+        "title": "适应、可塑性与学习规则",
+        "question": "哪些变化可由当前状态处理，哪些需要改变知识或学习过程？"
+      },
+      {
+        "id": "construction",
+        "title": "探索、目标与可复用行为",
+        "question": "如何产生值得练习的目标，并把经验变成以后可用的能力？"
+      },
+      {
+        "id": "interaction",
+        "title": "与其他学习者共同交互",
+        "question": "当他者也根据经验变化时，怎样识别学习与协调的贡献？"
+      }
+    ],
+    "regimes": [
+      {
+        "name": "离线后训练",
+        "object": "更新模型权重；数据与训练任务由外部管线提供。",
+        "feedback": "偏好、答案检查或任务回报。",
+        "boundary": "可以使用 RL，但不因此证明部署中的同一个体能够持续学习。",
+        "connect": "language-actions"
+      },
+      {
+        "name": "单次推理与上下文适应",
+        "object": "搜索树、工作上下文或递归状态随当前交互更新。",
+        "feedback": "内部评分，或当前试次获得的外部反馈。",
+        "boundary": "固定参数可以支持学习式适应；需要另问知识是否跨试次保留，以及再次计算的成本。",
+        "connect": "open-ended-goals"
+      },
+      {
+        "name": "持续记忆与程序技能",
+        "object": "保留经验摘要、效用估计、可执行技能及其适用条件。",
+        "feedback": "后续调用的成功、失败、时间和副作用。",
+        "boundary": "跨任务持久化不等于有效迁移；历史错误也可能持续传播。",
+        "connect": "memory"
+      },
+      {
+        "name": "同一个体内在线更新",
+        "object": "状态、模型、策略或学习规则在部署期间改变。",
+        "feedback": "当前行动带来的真实结果；可能延迟或缺失。",
+        "boundary": "不能把暂停世界、额外重放或人工恢复视为零成本。世界可以平稳，学习仍可能必要。",
+        "connect": "safe-autonomy"
+      },
+      {
+        "name": "车队或平台级迭代",
+        "object": "汇总多个个体的数据，训练并发布新模型版本。",
+        "feedback": "部署日志、人工标注与批量评价。",
+        "boundary": "系统层面确实在改善，但不等同于某个机器人现场独立适应；信息共享与发布延迟是协议的一部分。",
+        "connect": "embodied-adaptation"
+      },
+      {
+        "name": "修改学习系统本身",
+        "object": "工具、检索、验证、规划甚至生成下一次修改的程序。",
+        "feedback": "独立评测与部署表现。",
+        "boundary": "改写程序不自动属于 RL；基准搜索收益也不等于开放部署下持续净收益。",
+        "connect": "self-modification"
+      }
+    ],
+    "languageLayers": [
+      {
+        "name": "外部世界",
+        "example": "真实文件、服务、用户和未结束的工作。",
+        "question": "动作改变了什么？哪些影响不能由重开会话消除？"
+      },
+      {
+        "name": "运行时",
+        "example": "权限、工具版本、模型版本、超时、可用内存。",
+        "question": "失败来自世界规律，还是接口与执行条件改变？"
+      },
+      {
+        "name": "内部任务",
+        "example": "查证、定位错误、试验修补方案、决定是否求助。",
+        "question": "这个中间目标由谁产生？它的成功是否支持总体目标？"
+      },
+      {
+        "name": "证据",
+        "example": "进程返回值、独立测试、后续用户反馈。",
+        "question": "实际执行过什么？工具成功返回不等于结果正确，测试通过也不等于长期有用。"
+      },
+      {
+        "name": "更新载体",
+        "example": "上下文、事实记忆、程序技能、价值估计、权重。",
+        "question": "哪一处因证据而改变？保持多久？如何撤销过时或错误的更新？"
+      }
+    ],
+    "layerNote": "这五层是分析语言环境的区分，不是规定智能体必须具备的五个模块。例如，一条失败日志只有与动作、前提、版本和后续用途联系起来，才可能成为可学习的经验。世界继续运行的时间也不能用生成 token 的数量替代。",
+    "questions": [
+      {
+        "id": "language-actions",
+        "group": "control-feedback",
+        "title": "选择性观察与多粒度信用：局部反馈怎样连接长程后果？",
+        "cases": "语言工具与软件维护",
+        "mechanismIds": [
+          "temporal-credit",
+          "agent-state",
+          "continual-control"
+        ],
+        "question": "一个语言智能体能否从自己执行过的行动中，学会以后更有效地观察、行动与核验？",
+        "example": "修复服务故障时，读取日志、改配置和重启进程是不同的外部动作。一个 shell 命令又包含多个 token。命令返回零可能只是成功写入了错误配置；真正损失可能在下一次部署才出现。",
+        "setting": "语言模型生成结构化动作，工具改变部分可观测的世界。奖励可以来自独立测试、用户验收或后续运行，但必须预先说明如何组合。需要同时处理动作内部的生成信用与动作之间的时间信用。内部思考步不一定推进世界，工具执行和等待通常会。",
+        "protocol": {
+          "persistent": "保留项目经验、工具后果模型或更新后的策略；分别比较，不把它们合成一个“记住了”的标签。",
+          "feedback": "原始 stdout、测试结果和学习奖励分开记录。验证器只能看到它能够检查的性质。",
+          "lifetime": "跨 issue 的知识可以保留；测试容器是否重建、工作成果是否延续需单列。",
+          "resources": "共同预算包含输入/输出 token、工具调用、等待时间、训练更新和失败后的恢复。"
+        },
+        "difficulty": "序列末尾的分数无法直接说明哪次观察或哪段命令有贡献。工具版本变化又使旧轨迹失效。若奖励只覆盖显式测试，优化器可能学会绕过测试。把每个 token 都按同一个世界时间折扣，还会引入由措辞长度造成的目标差异。",
+        "works": [
+          {
+            "id": "poad",
+            "title": "POAD：Reinforcing Language Agents via Policy Optimization with Action Decomposition",
+            "authors": "Muning Wen、Ziyu Wan、Jun Wang 等",
+            "status": "NeurIPS 2024",
+            "url": "https://arxiv.org/abs/2405.15821",
+            "contribution": "把语言动作分解为 token 决策，推导动作内与动作间一致的 Bellman backup，再用于 PPO。它处理的是语言生成与环境动作两个粒度的信用。",
+            "boundary": "证据来自规定交互任务，不是持久软件服务的长期在线部署。分解信用也不能补回验证器没有观察到的副作用。",
+            "entry": {
+              "title": "作者链接的 ADRL 仓库",
+              "url": "https://github.com/morning9393/ADRL",
+              "note": "提供 mappo 目录与依赖；仓库首页缺少完整运行说明。不能把“代码可访问”写成已独立复现。"
+            }
+          },
+          {
+            "id": "cli-a3",
+            "title": "Learning CLI Agents with Structured Action Credit under Selective Observation",
+            "authors": "Haoyang Su、Ying Wen",
+            "status": "2026 预印本",
+            "url": "https://arxiv.org/abs/2605.08013",
+            "contribution": "把 token 预算内的观察选择与结构化动作信用分开；A3 综合轨迹回报、AST 子链残差和轨迹树比较，ShellOps 提供可验证 CLI 任务。",
+            "boundary": "观察选择发生在推理时，策略信用用于训练。论文未因此证明跨长期部署的持续权重更新；AST 结构也不是真实因果贡献的直接观测。",
+            "entry": {
+              "title": "A3 与 ShellOps 作者代码",
+              "url": "https://github.com/Hoyant-Su/Agentic-RL-A3",
+              "note": "基于 verl/verl-agent，需模型训练资源和仓库执行环境。先对齐数据划分、动作解析与验证器。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "能否把“取得有用证据”作为可学的行动价值，而不是奖励更多读取和更长推理？",
+          "当反馈跨多次任务才出现时，怎样追踪信用、权限和版本，而不把未来信息泄漏给早期决策？"
+        ],
+        "experiment": {
+          "hypothesis": "动作条件的证据选择与跨调用信用能减少重复诊断成本，且不增加未被局部测试发现的回归。",
+          "design": "构造共享隐藏依赖的仓库问题序列。部分问题需要先排除错误线索；部分短期修补会破坏后续功能。保留每个学习器自己的工作空间，另设独立、固定的检查服务。",
+          "controls": "相同初始模型下比较无历史、等 token 原始历史、选择性记忆、在线策略更新；观察选择与信用规则做交叉消融。状态变化导致轨迹不同，不强行给所有策略相同历史。",
+          "measures": "整段有效修复数、回归损失、核验校准、求助次数、调用成本和端到端时延；额外报告冻结后的独立问题测试。",
+          "falsifier": "优势只来自更多工具调用，或隐藏回归抵消即时通过率，就不支持长期行动改善的解释。"
+        },
+        "chapterIds": [
+          "state",
+          "credit",
+          "control",
+          "reward-design"
+        ],
+        "environment": {
+          "title": "CL-Bench：跨实例知识利用",
+          "url": "https://github.com/pgasawa/continual-learning-bench",
+          "note": "可从 codebase adaptation 入手；其实例协议不自动具有所有动作后果的永久延续。"
+        },
+        "implementation": {
+          "title": "多步 SARSA 教学实现",
+          "url": "/zh/continual-rl/code/nstep_sarsa/",
+          "note": "用于检查多步回报与时间信用；不处理动作内部 token，也不是 POAD 的替代实现。"
+        },
+        "related": [
+          "memory",
+          "action-models",
+          "self-modification"
+        ]
+      },
+      {
+        "id": "memory",
+        "group": "knowledge",
+        "title": "长期记忆：怎样判断一条经验值得保存、调用或遗忘？",
+        "cases": "语言记忆与跨任务经验",
+        "mechanismIds": [
+          "agent-state",
+          "retention-transfer"
+        ],
+        "question": "过去经验是否在相同预算下改善后续决策，而不只是让上下文变长？",
+        "example": "数据库迁移失败后，智能体保存“先删除索引再改字段”。若失败其实由旧版本权限配置造成，这条语义上相关的记忆会在新版本持续误导操作。需要保存适用条件，也需要允许证据推翻它。",
+        "setting": "生成模型可以固定，经验库及检索策略持续改变。事实记忆、操作程序和成功效用不是同一个对象。评价既包含从旧经验获益，也包含旧规则失效后的撤销速度；未来可能回访旧情境，因此不能把最近经验总当真理。",
+        "protocol": {
+          "persistent": "记忆内容、来源、适用条件和效用估计；容量以字节与检索开销计，不只数条目。",
+          "feedback": "调用后的结果提供效用线索；未调用记忆的反事实效果通常未知。",
+          "lifetime": "跨任务保留记忆；独立测试不得写回主记忆。版本回访与新结构迁移分开。",
+          "resources": "压缩、写入、检索、嵌入服务和验证都占预算；冻结 LLM 不意味着学习成本为零。"
+        },
+        "difficulty": "相关不等于有用。被检索的记忆更容易获得反馈，形成选择偏差；错误摘要也会改变后续证据。价值下降可能表示环境改变，也可能只是新任务更难。需要把容量管理、可靠性和因果效用区分。",
+        "works": [
+          {
+            "id": "memrl",
+            "title": "MemRL：Self-Evolving Agents via Runtime Reinforcement Learning on Episodic Memory",
+            "authors": "Shengtao Zhang 等",
+            "status": "2026 预印本",
+            "url": "https://arxiv.org/abs/2601.03192",
+            "contribution": "冻结生成模型，用语义召回加效用排序选择记忆；通过反馈更新记忆的效用。具体机制采用回报均值式更新，而不是要求对生成模型做梯度更新。",
+            "boundary": "在所测任务上支持记忆选择的作用，不能推出任意变化下无遗忘。记忆效用依赖检索情境和生成器；不断变化的记忆池并不自动满足固定 MDP 的收敛条件。",
+            "entry": {
+              "title": "MemRL 官方实现",
+              "url": "https://github.com/MemTensor/MemRL",
+              "note": "包括 HLE、BigCodeBench、ALFWorld 与 LLB 入口；需模型/嵌入服务。LLB 发布实现覆盖 db/os，不含全部原基准任务。"
+            }
+          },
+          {
+            "id": "clbench",
+            "title": "Continual Learning Bench：Evaluating Frontier AI Systems in Real-World Stateful Environments",
+            "authors": "Parth Asawa、Christopher Glaze 等",
+            "status": "2026 预印本",
+            "url": "https://arxiv.org/abs/2606.05661",
+            "contribution": "以共享潜在结构的实例序列，比较有状态系统与相应无状态对照。报告中简单上下文保留优于若干专门记忆系统，提醒我们不能由模块复杂度推断学习收益。",
+            "boundary": "测的是跨实例经验利用；六类任务的世界延续方式不同。归一化增益依赖参考系统，需与绝对任务得分及成本一起看。",
+            "entry": {
+              "title": "CL-Bench 官方运行框架与数据",
+              "url": "https://github.com/pgasawa/continual-learning-bench",
+              "note": "包含任务、系统、调度与日志。部分任务依赖 Docker 或模型 API；固定这些版本才能比较记忆机制。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "一条规则应在多少反证后被降权？能否保留“在旧版本有效”的条件知识，而不是整条删除？",
+          "有限记忆应优先保存高频、稀有高损失，还是难以重新获得的经验？这三者的选择准则不同。"
+        ],
+        "experiment": {
+          "hypothesis": "带证据与适用条件的记忆，在情境返回时比纯相似度检索更有效，且更少传播过时经验。",
+          "design": "设置 A→B→A 的工具版本序列，并加入 A→C 的未见组合。隐藏版本标签，提供可探测线索；记忆不能接触后续答案。",
+          "controls": "无记忆、等字节原始轨迹、摘要记忆、效用排序、条件化效用；模型、总检索 token 和 API 版本固定。",
+          "measures": "首次复用收益、过时建议采用率、撤销延迟、回访零更新表现、再学习成本与整段效用。",
+          "falsifier": "增益随摘要空间或额外调用预算匹配而消失，或只靠记住测试答案，就不能支持可迁移经验的解释。"
+        },
+        "chapterIds": [
+          "state",
+          "retention",
+          "value",
+          "experiments"
+        ],
+        "environment": {
+          "title": "CL-Bench 文档与任务协议",
+          "url": "https://continual-learning-bench.com/docs/",
+          "note": "先区分共享潜在结构、实例重置和持久状态，再选择任务。"
+        },
+        "implementation": {
+          "title": "知识保留的机制实验",
+          "url": "/zh/continual-rl/algorithms/retention/",
+          "note": "教材实验隔离旧知识保留与再学习；并非语言记忆系统性能评估。"
+        },
+        "related": [
+          "language-actions",
+          "human-feedback",
+          "self-modification"
+        ]
+      },
+      {
+        "id": "self-modification",
+        "group": "adaptation",
+        "title": "学习规则与自修改：什么证据支持改变学习过程？",
+        "cases": "可编辑程序与语言智能体",
+        "mechanismIds": [
+          "learning-rules",
+          "integrated-architecture"
+        ],
+        "question": "修改工具、工作流程或学习规则的收益，能否在未参与选择的任务上保留？",
+        "example": "一个编程智能体把“运行一次测试”改成“先定位受影响模块，再执行相应测试”。这可能提高效率，也可能漏掉跨模块回归。若它同时能修改评分脚本，较高分数就不再是独立的效果证据。",
+        "setting": "可变对象从模型参数扩展到程序。修改者提出候选，评价过程决定保留、回滚或继续搜索。修改策略本身也可以变化，但可信执行记录、权限约束和最终评价不能仅由被评系统自行声明。",
+        "protocol": {
+          "persistent": "程序版本、学习策略、经验与候选档案；继承关系必须可追踪。",
+          "feedback": "独立执行的任务结果，不采用自报“已经通过”。开发评分与保留测试分离。",
+          "lifetime": "离线分支搜索与真正部署序列分别评估；候选克隆不是免费延长同一生命。",
+          "resources": "把全部失败候选、并行分支、评测、模型调用和回滚成本计入。"
+        },
+        "difficulty": "反复选择会过拟合评测。更好的任务执行器不必是更好的修改者；元层收益可能只是搜索更多候选。程序接口变化还可能破坏旧知识、验证器和安全假设。",
+        "works": [
+          {
+            "id": "dgm",
+            "title": "Darwin Gödel Machine：Open-Ended Evolution of Self-Improving Agents",
+            "authors": "Jenny Zhang、Shengran Hu、Cong Lu、Robert Lange、Jeff Clune",
+            "status": "2025 研究论文",
+            "url": "https://arxiv.org/abs/2505.22954",
+            "contribution": "让编码智能体提出自身代码修改，并通过任务评价形成可继续分支的候选档案。研究对象是可执行程序及其搜索历史，而非只有神经网络权重。",
+            "boundary": "这是经验评价驱动的程序搜索，不是 Gödel 式形式证明，也不是无条件自我改善。作者另报告了评测投机实例；开放部署安全仍未由基准分数保证。",
+            "entry": {
+              "title": "DGM 作者实现",
+              "url": "https://github.com/jennyzzt/dgm",
+              "note": "包含自修改与编码任务评价，依赖模型、容器及外部任务资源；必须保留沙箱与独立评测边界。"
+            }
+          },
+          {
+            "id": "hyperagents",
+            "title": "Hyperagents",
+            "authors": "Jenny Zhang、Bingchen Zhao、Jakob Foerster、Jeff Clune 等",
+            "status": "2026 预印本",
+            "url": "https://arxiv.org/abs/2603.19461",
+            "contribution": "将任务智能体和负责修改的元智能体置于可编辑程序，使“如何产生下一次改进”也成为实验对象。原文研究跨编码、评审、机器人奖励设计和数学评分的迁移。",
+            "boundary": "有限领域与有限搜索预算的结果，不是对任何可计算任务都能无限自我改善的证明。候选档案扩张和元评测成本不能从持续学习账目中省略。",
+            "entry": {
+              "title": "HyperAgents 官方代码",
+              "url": "https://github.com/facebookresearch/HyperAgents",
+              "note": "可检查任务层与元层编辑边界及实验设置；不能将代码可编辑性本身视为有效元学习。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "怎样区分可迁移的改进规则与针对当前评测漏洞的特化？",
+          "什么组件应保持外部不可改，什么组件可在受约束条件下学习？这也是问题定义，不只是实现细节。"
+        ],
+        "experiment": {
+          "hypothesis": "学习修改策略带来的收益，应超过相同候选数与总计算下的固定修改策略，并迁移到新任务族。",
+          "design": "固定初始任务 agent，比较固定与可修改的元策略。只在开发任务选择候选；在未见依赖和工具故障上评价，随后进行有容量上限的长期部署。",
+          "controls": "匹配候选数、总调用成本和可编辑接口；另设仅增加搜索预算的对照。验证器与审计记录不可修改。",
+          "measures": "保留集收益、每次有效修改成本、旧能力破坏、回滚率、越权尝试与部署净效用。",
+          "falsifier": "优势仅出现在被反复查询的开发评分，或依靠绕过核验和扩大预算，则不支持学习到改进能力。"
+        },
+        "chapterIds": [
+          "meta",
+          "architectures",
+          "reward-design",
+          "experiments"
+        ],
+        "environment": {
+          "title": "DGM 的任务与搜索设置",
+          "url": "https://github.com/jennyzzt/dgm",
+          "note": "适合先隔离程序修改与评价选择偏差；不是无重置真实世界。"
+        },
+        "implementation": {
+          "title": "元学习的教学机制",
+          "url": "/zh/continual-rl/algorithms/meta/",
+          "note": "可先掌握“改变学习过程”的比较条件；元梯度不等于程序自修改。"
+        },
+        "related": [
+          "memory",
+          "language-actions",
+          "human-feedback"
+        ]
+      },
+      {
+        "id": "embodied-adaptation",
+        "group": "adaptation",
+        "title": "快状态与慢知识：未知变化应由哪个学习过程承担？",
+        "cases": "机器人本体变化、sim-to-real 与 VLA",
+        "mechanismIds": [
+          "learning-rules",
+          "plasticity",
+          "streaming-stability"
+        ],
+        "question": "面对预训练未覆盖的身体与环境，机器人需要更新状态估计、控制参数，还是更慢的表示与技能？",
+        "example": "同一个抓取器逐渐磨损。视觉中的物体几乎不变，接触结果却改变。重新提示任务、增加相似演示和推断摩擦可能各有帮助，但不一定都能修复控制误差；磨损造成的真实失败也不能由模拟 reset 消除。",
+        "setting": "机器人从预训练策略出发，在自身动力学、观测与任务约束下行动。至少区分零样本泛化、固定参数的历史条件适应、现场在线参数更新，以及多机器人采集后统一重训。它们能组合，但信息权限与时间成本不同。",
+        "protocol": {
+          "persistent": "身体历史、隐变量估计、低层控制、VLA 或模型；逐项说明是否更新及能否保留。",
+          "feedback": "位置、力、触觉、任务结果与人工纠正；监督演示和奖励不是同一种反馈。",
+          "lifetime": "个体内连续适应与车队版本迭代分别统计；记录传感器标定和设备更换。",
+          "resources": "真实动作次数之外，计入人工布置、数据标注、训练停机、推理延迟和设备损耗。"
+        },
+        "difficulty": "相同观测可能对应不同接触条件。离线演示偏向成功分布，现场失败又稀少且昂贵。快速改权重可能破坏安全先验；不改权重的适应器也可能无法表达新规律。视觉迁移好不能证明控制对未知动力学稳健。",
+        "works": [
+          {
+            "id": "openvla",
+            "title": "OpenVLA：An Open-Source Vision-Language-Action Model",
+            "authors": "Moo Jin Kim、Karl Pertsch 等",
+            "status": "2024 研究论文",
+            "url": "https://openvla.github.io/",
+            "contribution": "把视觉与语言预训练接到机器人动作预测，提供多机器人数据训练的策略与适配入口。它说明可复用先验怎样降低新任务学习的起点成本。",
+            "boundary": "动作监督训练与下游微调不等于自主在线 RL。数据、动作尺度和本体接口的匹配仍需处理。",
+            "entry": {
+              "title": "OpenVLA 官方实现",
+              "url": "https://github.com/openvla/openvla",
+              "note": "有权重、微调和部署说明；它是先验与基线入口，不是持续学习闭环成品。"
+            }
+          },
+          {
+            "id": "rma",
+            "title": "RMA：Rapid Motor Adaptation for Legged Robots",
+            "authors": "Ashish Kumar、Zipeng Fu、Deepak Pathak、Jitendra Malik",
+            "status": "RSS 2021",
+            "url": "https://ashish-kmr.github.io/rma-legged-robots/",
+            "contribution": "在仿真中训练基础策略与适应模块，部署时从近期本体感觉历史估计环境相关隐变量，不依赖现场微调。展示了快速状态适应与慢参数学习可以分离。",
+            "boundary": "固定参数不等于固定行为，但短窗口隐变量适应不是自动获得可永久保留的新技能。结果受训练变化范围和适应器表达能力约束。",
+            "entry": {
+              "title": "项目页链接的 locomotion 代码",
+              "url": "https://github.com/antonilo/rl_locomotion",
+              "note": "检查 base policy 与 adaptation module 的训练阶段；真实部署还依赖机器人与底层控制接口。"
+            }
+          },
+          {
+            "id": "recap",
+            "title": "pi-star 0.6：a VLA That Learns From Experience",
+            "authors": "Physical Intelligence",
+            "status": "2025 研究论文",
+            "url": "https://arxiv.org/abs/2511.14759",
+            "contribution": "RECAP 把自主执行、失败与人工纠正用于价值估计及优势条件化策略提取。原文通过多轮采集和重训研究成功率与任务吞吐的改善。",
+            "boundary": "原文明确采用批量采集后的离线更新，依赖奖励标注、干预与 episode resets；不是机器人一边执行一边实时更新的完整协议。",
+            "entry": {
+              "title": "官方 openpi：相关基础模型与适配工具",
+              "url": "https://github.com/Physical-Intelligence/openpi",
+              "note": "所列仓库提供 pi0/pi0-FAST/pi0.5；不能据此声称 pi-star 0.6 与完整 RECAP 训练管线已开源。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "哪些变化适合即时隐变量估计，哪些需要新表征或权重更新？如何在可观察证据不足时识别两者？",
+          "能否在有限端侧计算下维持在线学习，并把云端更新的价值与延迟、带宽、隐私成本分开？"
+        ],
+        "experiment": {
+          "hypothesis": "快速历史条件适应与受约束慢更新的组合，能在未见动力学下产生累计收益，而不仅提高最终成功率。",
+          "design": "先在仿真中分开改变载荷、摩擦、观测标定和任务目标；再在受控设备上做小范围验证。让旧条件返回，检查快速估计与持久知识各起什么作用。",
+          "controls": "冻结先验、仅上下文适应、仅在线小参数更新、二者结合及批次重训。共享预训练检查点；并报告各组总数据、总计算和人工资源。",
+          "measures": "变化后的失误与恢复时间、在线效用、旧条件回访、控制时延、人工介入和真实时间吞吐。",
+          "falsifier": "收益只来自更强预训练覆盖，或更新停机及失败成本抵消改善，就不能声称部署生命期更优。"
+        },
+        "chapterIds": [
+          "state",
+          "meta",
+          "control",
+          "plasticity"
+        ],
+        "environment": {
+          "title": "具身世界与基准目录",
+          "url": "/zh/continual-rl/worlds/",
+          "note": "从连续控制诊断到机器人与真实时间平台逐层增加难度；相同任务名称不保证相同观测权限。"
+        },
+        "implementation": {
+          "title": "非线性逼近与表示漂移实验",
+          "url": "/zh/continual-rl/foundations/learning-dynamics/",
+          "note": "先隔离表示变化和更新干扰；这些小实验不复现真实机器人结果。"
+        },
+        "related": [
+          "safe-autonomy",
+          "action-models",
+          "social-learning"
+        ]
+      },
+      {
+        "id": "safe-autonomy",
+        "group": "control-feedback",
+        "title": "单生命与安全：怎样学习，而不耗尽以后的学习机会？",
+        "cases": "真实机器人与持续服务",
+        "mechanismIds": [
+          "lifetime-objective",
+          "continual-control",
+          "experience-selection"
+        ],
+        "question": "没有免费的外部重置时，探索、恢复、求助和任务执行应如何共同评价？",
+        "example": "机械臂把物体推到够不到的角落。短期任务失败不是主要问题；真正困难是它失去了之后的有效交互。如果人把物体放回原位，这次救援提供了能力与成本，不能在学习曲线上消失。",
+        "setting": "世界状态由前面的行动延续。允许的帮助、恢复动作、安全控制器和初始经验必须写入协议。Single-life 的一次部署、reset-free 的连续训练、长期服务的反复任务是相关但不同的问题；都不等于“无限长 episode”。",
+        "protocol": {
+          "persistent": "世界资产、损伤、知识和学习器均有状态；设备恢复不是学习器重置。",
+          "feedback": "外在收益之外单列风险、失能、恢复与求助。硬安全约束不能只靠任意惩罚权重替代。",
+          "lifetime": "独立随机世界可用于多次评测；每个受评个体内部不得暗中重生。",
+          "resources": "报告人类分钟数、恢复操作、风险暴露、设备停机以及全过程真实时间。"
+        },
+        "difficulty": "恢复需要访问训练未覆盖的状态；但尝试恢复也可能造成损伤。安全限制改变可访问经验，从而影响学习可识别性。若未知系统允许一次错误就不可逆失效，不能同时无条件保证任意探索与零失效。",
+        "works": [
+          {
+            "id": "qwale",
+            "title": "You Only Live Once：Single-Life Reinforcement Learning",
+            "authors": "Annie S. Chen、Archit Sharma、Sergey Levine、Chelsea Finn",
+            "status": "NeurIPS 2022",
+            "url": "https://arxiv.org/abs/2210.08863",
+            "contribution": "定义借助先前经验、在一个测试试次中应对新情况并完成任务的设定。QWALE 用价值加权的分布匹配，帮助回到已有经验支持的有用区域。",
+            "boundary": "一次成功任务不等于长期多目标服务；先验数据不可省略，也没有任意环境中的安全恢复保证。",
+            "entry": {
+              "title": "Single-Life RL 作者实现",
+              "url": "https://github.com/anniesch/single-life-rl",
+              "note": "可追踪预训练经验与测试时更新的权限，不能只计算最后一次试次的训练成本。"
+            }
+          },
+          {
+            "id": "morefree",
+            "title": "Reset-free Reinforcement Learning with World Models",
+            "authors": "Zhao Yang、Thomas Moerland、Mike Preuss、Aske Plaat、Edward Hu",
+            "status": "TMLR 2025",
+            "url": "https://arxiv.org/abs/2408.09807",
+            "contribution": "MoReFree 在世界模型学习中让探索和目标条件行为更多覆盖任务相关状态，学习返回与再出发，而不是依赖每次外部物理 reset。",
+            "boundary": "主要证据来自可控模拟任务，训练的 reset-free 与评测 episode 要分开；回到指定区域不是一般不可逆环境的安全证书。",
+            "entry": {
+              "title": "MoReFree 官方实现",
+              "url": "https://github.com/yangzhao-666/MoReFree",
+              "note": "有任务配置、目标采样与模型学习代码。任务相关状态的先验权限是复现实验的一部分。"
+            }
+          },
+          {
+            "id": "hil-serl",
+            "title": "Precise and Dexterous Robotic Manipulation via Human-in-the-Loop Reinforcement Learning",
+            "authors": "Jianlan Luo、Charles Xu、Jeffrey Wu、Sergey Levine",
+            "status": "2024 预印本；Science Robotics 2025",
+            "url": "https://arxiv.org/abs/2410.21845",
+            "contribution": "用演示、二元奖励分类器和训练中的人工纠正支持真实机器人学习。它使干预成为可研究的数据来源，而不是假定训练完全无人协助。",
+            "boundary": "人为布置、奖励样本和接管均需计入。高成功率不能单独证明无人恢复或长期损伤风险可接受。",
+            "entry": {
+              "title": "HIL-SERL 作者系统",
+              "url": "https://github.com/rail-berkeley/hil-serl",
+              "note": "包括控制与采集集成；需要真实硬件、安全配置和操作者，不适合将示例直接当成无人值守部署。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "何时应该花费奖励去取得关于可恢复性的证据，何时应立即请求帮助？",
+          "把帮助次数降到更少时，风险是否转移给了后续任务、设备或人工维修？"
+        ],
+        "experiment": {
+          "hypothesis": "学习可恢复性并在不确定时求助，能在同一帮助预算下提高净服务收益。",
+          "design": "从带可恢复角落与受约束风险的模拟操作开始，显式建模每次求助的时间和物理后果。先验数据固定；任务结束不重置物体。真实验证只在已有安全边界内开展。",
+          "controls": "任务策略、固定恢复规则、学得恢复策略及有限帮助策略；记录每组的帮助和失败，不给某组免费 reset。",
+          "measures": "有效工作占比、失能持续时间、恢复率、累计收益、帮助分钟数与风险事件分布。",
+          "falsifier": "收益依赖未记账的人工摆放，或以更少小失败换来更多重大失效，就不能支持安全长期改善。"
+        },
+        "chapterIds": [
+          "control",
+          "exploration",
+          "average",
+          "options"
+        ],
+        "environment": {
+          "title": "环境持续性、重置与真实时间",
+          "url": "/zh/continual-rl/worlds/",
+          "note": "选择平台前先核对失能、身体死亡、重新生成与外部重置的不同语义。"
+        },
+        "implementation": {
+          "title": "持续控制与学习器比较",
+          "url": "/zh/continual-rl/algorithms/control/",
+          "note": "先掌握生命期评价与可行比较器；教学环境不是机器人安全认证。"
+        },
+        "related": [
+          "embodied-adaptation",
+          "human-feedback",
+          "open-ended-goals"
+        ]
+      },
+      {
+        "id": "action-models",
+        "group": "knowledge",
+        "title": "可行动的模型：需要预测整个世界，还是足以作决定的后果？",
+        "cases": "机器人组合任务与语言工具接口",
+        "mechanismIds": [
+          "predictive-knowledge",
+          "reusable-models",
+          "planning-budget"
+        ],
+        "question": "怎样形成可复用、可校准的行动后果知识，并在状态与技能变化后及时修正？",
+        "example": "软件 agent 不必模拟整个互联网，才能预测“在当前权限和版本下，这个部署技能多久结束、失败概率多大、是否需要回滚”。机器人也可能更需要抓取后的接触与可达性预测，而非每个像素都逼真的长视频。",
+        "setting": "模型的输入包含行动或技能及其条件，输出是决策所需的未来事件、时长、奖励或状态分布。预测准确度与控制价值分别评价。这里的模型可以是 GVF、option 后果模型或隐空间动力学；它们的条件、停止时间和用途不同。",
+        "protocol": {
+          "persistent": "状态表示、行动模型、技能版本及不确定性；模型须注明针对哪个执行策略。",
+          "feedback": "真实执行检验预测；自生成视频或自述推理不是额外外部证据。",
+          "lifetime": "保留旧机制并接纳新机制；技能或接口变化后，旧预测需重校准。",
+          "resources": "模型训练、想象、真实探测和规划调用共享预算；比较不能只匹配真实步数。"
+        },
+        "difficulty": "低预测误差可能只反映常见但无关的观测。规划会主动寻找模型高估区域。共享编码器漂移会使旧模型失效，技能更新又改变行动条件；单步拟合好不保证长期决策可靠。",
+        "works": [
+          {
+            "id": "dreamerv3-horizon",
+            "title": "Mastering Diverse Domains through World Models",
+            "authors": "Danijar Hafner、Jurgis Pasukonis、Jimmy Ba、Timothy Lillicrap",
+            "status": "Nature 2025",
+            "url": "https://arxiv.org/abs/2301.04104",
+            "contribution": "DreamerV3 在隐状态模型中想象未来并训练行为，提供跨多个领域复用学习设计的具体系统。它是研究“模型如何服务控制”的强基线。",
+            "boundary": "跨领域采用相同算法不等于同一学习器顺序积累所有领域。图像重建、replay 和模拟回合协议均不能从预算中删去。",
+            "entry": {
+              "title": "DreamerV3 官方代码",
+              "url": "https://github.com/danijar/dreamerv3",
+              "note": "有完整模型与训练系统；要改成持续协议需另外规定重置、旧经验保留和模型版本。"
+            }
+          },
+          {
+            "id": "compositional-wm",
+            "title": "Benchmarking World Models for Continual Learning on Compositional Tasks",
+            "authors": "Haoyu Zhou、Joe Watson、Anson Lei、Ingmar Posner",
+            "status": "2026 预印本",
+            "url": "https://arxiv.org/abs/2609.22055",
+            "contribution": "用先学习组成机制、再学习组合任务的序列，分开检查动作与感知重组。研究提醒：旧模型是否真正被复用，需要干预旧模块而不是只看路由权重。",
+            "boundary": "模块化优势依赖见过全部任务演示的冻结编码器诊断；去掉这一特权时未优于对应整体模型。容量增长、任务头重置和模拟 reset 限制外推。",
+            "entry": {
+              "title": "作者项目与附录",
+              "url": "https://object814.github.io/Compositional-Continual-Learning/",
+              "note": "有任务说明与补充结果；该入口未提供可直接运行的完整作者仓库链接，不据此宣称可一键复现。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "能否按“改变决策需要哪些后果”学习模型，而不依赖设计者预先给出全部问题？",
+          "一个技能更新之后，怎样判断哪些模型仍有效？能够局部修复，而不是整套重新学习吗？"
+        ],
+        "experiment": {
+          "hypothesis": "带行动条件与版本信息的后果模型，在组合变化后能比静态通用模型更快恢复规划可靠性。",
+          "design": "设置共享部件但不同组合的操作或工具世界。分别改变视觉线索、动力学和技能实现；保持三种变化可独立控制。对规划选中的动作单独测校准。",
+          "controls": "模型自由控制、静态模型、持续整体模型和条件化模型；匹配总容量、实际数据、重放及规划次数。真实状态仅供诊断。",
+          "measures": "任务收益、决策相关事件校准、旧机制复用消融、失效发现时间和每次有效规划的总成本。",
+          "falsifier": "模型预测变好却没有改善决策，或收益只来自先见全部任务的编码器，就不支持经验构建了可复用控制知识。"
+        },
+        "chapterIds": [
+          "gvf",
+          "models",
+          "planning",
+          "options"
+        ],
+        "environment": {
+          "title": "组合机制与开放世界的比较",
+          "url": "/zh/continual-rl/worlds/",
+          "note": "Alchemy、XLand-MiniGrid 等隔离隐藏机制与试次内适应；需另设持续保留协议。"
+        },
+        "implementation": {
+          "title": "Option 后果模型教学实现",
+          "url": "/zh/continual-rl/code/option_model/",
+          "note": "可先检查真实奖励与折扣终点核；它不是视频世界模型或互联网模拟器。"
+        },
+        "related": [
+          "language-actions",
+          "embodied-adaptation",
+          "open-ended-goals"
+        ]
+      },
+      {
+        "id": "open-ended-goals",
+        "group": "construction",
+        "title": "目标形成与开放式学习：怎样选择值得学的下一件事？",
+        "cases": "开放世界、生成式课程与程序技能",
+        "mechanismIds": [
+          "goal-construction",
+          "useful-options",
+          "experience-selection"
+        ],
+        "question": "智能体能否发现有用的学习目标，而不把环境设计者的课程当成自己的发现？",
+        "example": "工坊暂时没有高收益订单。智能体可练习修理设备、调查未知配方，或重复已经掌握的廉价动作。三个行为都可能被“探索奖励”鼓励，但只有部分经验会帮助未来服务。",
+        "setting": "总体评价由任务或设计者规定；内部练习目标可以由智能体产生。另有研究允许教师生成新环境甚至奖励。两种权限必须分开：改造整个训练世界与在同一个世界中选择下一次尝试，不是同一控制问题。",
+        "protocol": {
+          "persistent": "技能、模型、课程档案或适应状态；明确哪些跨目标和世界保留。",
+          "feedback": "新奇、可学习性、成功与外部用途分开。生成更多目标不是最终效用。",
+          "lifetime": "试次内新规则适应、跨环境课程训练和同一世界长期探索分别评估。",
+          "resources": "统计教师/LLM 先验、世界生成、失败课程、重置及全部训练预算。"
+        },
+        "difficulty": "新奇不等于可学，可学不等于有用。技能库可能无限膨胀却难以组合；课程生成器可能只挑容易验证的目标。奖励与任务的无限数量也不证明能力复杂度持续增长。",
+        "works": [
+          {
+            "id": "ada-horizon",
+            "title": "Human-Timescale Adaptation in an Open-Ended Task Space",
+            "authors": "Adaptive Agent Team",
+            "status": "ICML 2023",
+            "url": "https://arxiv.org/abs/2301.07608",
+            "contribution": "AdA 在广泛任务分布上结合元 RL、注意力记忆与自适应课程，研究未见规则下从交互快速适应。结果支持训练分布、记忆和规模共同影响适应能力。",
+            "boundary": "主要是训练后上下文内适应，不是部署权重无限在线更新。XLand 训练规模与环境权限不能默认为个人可复现。",
+            "entry": {
+              "title": "AdA 官方项目与任务示例",
+              "url": "https://sites.google.com/view/adaptive-agent/",
+              "note": "提供原文与演示；公开 XLand-MiniGrid 是受启发的独立平台，不是 AdA 的完整作者训练工程。"
+            }
+          },
+          {
+            "id": "voyager",
+            "title": "Voyager：An Open-Ended Embodied Agent with Large Language Models",
+            "authors": "Guanzhi Wang、Yuqi Xie、Yunfan Jiang 等",
+            "status": "2023 研究论文",
+            "url": "https://voyager.minedojo.org/",
+            "contribution": "在 Minecraft 中结合自动课程、可执行程序技能库和执行反馈迭代。技能能保存并在新任务中复用，说明知识积累不必只发生在权重中。",
+            "boundary": "核心生成器通过模型 API 调用，不进行显式梯度式 RL 训练。动作 API、已有世界知识和技能库增长是重要条件；迁移测试也会重建世界。",
+            "entry": {
+              "title": "Voyager 作者代码",
+              "url": "https://github.com/MineDojo/Voyager",
+              "note": "包括课程、技能库与 Minecraft 接口；模型服务成本和版本需要固定并报告。"
+            }
+          },
+          {
+            "id": "omni-epic",
+            "title": "OMNI-EPIC：Environments Programmed in Code",
+            "authors": "Maxence Faldor、Jenny Zhang、Antoine Cully、Jeff Clune",
+            "status": "ICLR 2025",
+            "url": "https://arxiv.org/abs/2405.15568",
+            "contribution": "用基础模型生成环境代码与奖励，再依据可学习性和有趣性选择后续任务。把“训练问题从哪里来”变成显式研究对象。",
+            "boundary": "生成器拥有改写环境与奖励的权限；这不是固定外部世界中的自主目标形成。有趣性判据还包含预训练的人类先验。",
+            "entry": {
+              "title": "OMNI-EPIC 作者实现",
+              "url": "https://github.com/maxencefaldor/omni-epic",
+              "note": "含环境生成、Dreamer 训练与档案；所有生成失败和子任务训练均应计入成本。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "能否以未来可用性而非语义新颖程度评价技能？评估目标又如何避免偷偷给出未来任务？",
+          "在固定容量与不可重置世界中，哪些目标值得放弃，哪些技能值得重新组合？"
+        ],
+        "experiment": {
+          "hypothesis": "根据已知能力缺口与预计未来用途选练习，比只追求新奇更能改善未见组合任务。",
+          "design": "分别设固定世界中的目标选择，以及可生成世界的教师课程两条实验。开发时不透露测试组合；加入可学无用机制与不可约噪声，防止新奇代理指标独占解释。",
+          "controls": "随机目标、固定课程、纯新奇、学习进展和用途条件化选择；各组相同探索、技能容量和先验权限。",
+          "measures": "新组合首次表现、技能实际复用率、准备阶段成本、长期外部收益及能力多样性；报告失败与被放弃目标。",
+          "falsifier": "只增加目标或技能数量，未改善未见组合的行为，或收益依赖未来任务标签，就不能支持有用的自主课程。"
+        },
+        "chapterIds": [
+          "goals",
+          "exploration",
+          "options",
+          "meta"
+        ],
+        "environment": {
+          "title": "XLand-MiniGrid 官方环境与基线",
+          "url": "https://github.com/dunnolab/xland-minigrid",
+          "note": "适合隐藏规则与组合适应；试次边界和记忆重置须按研究问题重新规定。"
+        },
+        "implementation": {
+          "title": "内在奖励元梯度教学组件",
+          "url": "/zh/continual-rl/code/intrinsic_meta_gradient/",
+          "note": "展示内在奖励如何影响后续策略更新；单步组件不等于开放式课程系统。"
+        },
+        "related": [
+          "action-models",
+          "safe-autonomy",
+          "social-learning"
+        ]
+      },
+      {
+        "id": "human-feedback",
+        "group": "control-feedback",
+        "title": "奖励与反馈学习：偏好变化时，优化目标怎样保持可信？",
+        "cases": "人机协作、个性化服务与机器人反馈",
+        "mechanismIds": [
+          "reward-design",
+          "continual-control"
+        ],
+        "question": "智能体怎样在不过度索取人类注意力的条件下，校准自己正在优化的目标？",
+        "example": "家庭机器人学会快速清空桌面，却把主人希望保留的物品收走。早期两段视频的偏好标签不足以刻画后来出现的情境。再次询问有成本；不询问可能持续优化错误目标。",
+        "setting": "偏好、纠正、示范与任务结果是不同反馈渠道。学习器同时改变策略和奖励估计，因而会访问新的、标签稀缺区域。要区分固定偏好下估计不确定性、人类偏好实际变化，以及不同人之间的合理差异。",
+        "protocol": {
+          "persistent": "用户条件、奖励模型、反馈来源与策略；不把不同用户的私有经验混为共享真值。",
+          "feedback": "允许拒答、延迟、噪声和不一致；模型裁判属于代理反馈，不等同于人的真实评价。",
+          "lifetime": "从短期片段偏好到长期后果的评价需另行设计；历史标签可保留但未必永远有效。",
+          "resources": "以标注时长、被打断次数和纠错负担衡量帮助，不只统计标签数。"
+        },
+        "difficulty": "策略会利用奖励模型的误差。只在熟悉轨迹上查询可以得到高预测准确率，却放过危险的新行为。单纯加强旧偏好约束也可能妨碍对新情境的合理调整。",
+        "works": [
+          {
+            "id": "pebble",
+            "title": "PEBBLE：Feedback-Efficient Interactive Reinforcement Learning",
+            "authors": "Kimin Lee、Laura Smith、Pieter Abbeel",
+            "status": "ICML 2021",
+            "url": "https://arxiv.org/abs/2106.05091",
+            "contribution": "结合无监督预探索、偏好奖励学习与 replay 重新标注，使更新后的奖励估计可用于过去经验。它明确展示反馈学习与策略学习之间的耦合。",
+            "boundary": "对片段的偏好与长期人类效用仍有距离；重新标注也依赖保存过去数据的权限。",
+            "entry": {
+              "title": "作者 B-Pref 中的 PEBBLE 与反馈模型",
+              "url": "https://github.com/rll-research/BPref",
+              "note": "包含噪声、错误、短视、跳过等模拟教师与 PEBBLE 脚本；模拟教师不是实际用户研究。"
+            }
+          },
+          {
+            "id": "ppe",
+            "title": "Improving Reward Models with Proximal Policy Exploration for Preference-Based Reinforcement Learning",
+            "authors": "Yiwen Zhu、Jinyi Liu、Pengjie Gu 等",
+            "status": "NeurIPS 2025",
+            "url": "https://proceedings.neurips.cc/paper_files/paper/2025/file/9cd2a03f427acc03b6ddbb9c8f3be57c-Paper-Conference.pdf",
+            "contribution": "指出偏好缓冲区覆盖不足会使奖励模型在当前策略附近的新区域失准；通过邻近策略探索与混合查询改善覆盖和反馈利用。",
+            "boundary": "控制任务上的奖励模型改善，不证明真实偏好漂移、多用户冲突或长期安全已解决。更多覆盖也有实际试错成本。",
+            "entry": {
+              "title": "PPE 作者实现",
+              "url": "https://github.com/yiwenzhu-evan/PPE",
+              "note": "提供 DMControl、MetaWorld 与偏好学习基线。先匹配查询数量和交互预算，再比较查询策略。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "怎样识别“我的奖励模型错了”，而不是通过更强策略把同一错误优化得更好？",
+          "个性化学习如何在保留用户控制、数据隔离与明确撤回机制的同时共享可复用知识？"
+        ],
+        "experiment": {
+          "hypothesis": "基于决策不确定性而非单纯预测误差选择查询，可以降低人类负担并减少奖励投机。",
+          "design": "先用可控偏好模型分开测试噪声、情境依赖与真实漂移；再在获同意的人类研究中检验关键结论。设置局部看似成功但长程有代价的行为。",
+          "controls": "随机、分歧、覆盖感知与不查询；标签数量和人类时间分别匹配，不能只选有利的一种预算。评价器使用独立保留反馈。",
+          "measures": "策略效用、奖励校准、错误优化事件、用户纠错时间、旧情境回访与漂移后的响应延迟。",
+          "falsifier": "只提高训练偏好预测而不改善独立效用，或以显著更多人类负担换取收益，就不支持反馈效率提升。"
+        },
+        "chapterIds": [
+          "reward-design",
+          "control",
+          "exploration",
+          "retention"
+        ],
+        "environment": {
+          "title": "B-Pref 反馈模型与实验协议",
+          "url": "https://github.com/rll-research/BPref",
+          "note": "适合隔离反馈误差；不能用单一合成教师替代人的长期偏好。"
+        },
+        "implementation": {
+          "title": "Bradley–Terry 偏好奖励教学实现",
+          "url": "/zh/continual-rl/code/preference_reward/",
+          "note": "用于理解成对偏好怎样训练奖励模型；不包含完整人机闭环。"
+        },
+        "related": [
+          "language-actions",
+          "safe-autonomy",
+          "social-learning"
+        ]
+      },
+      {
+        "id": "social-learning",
+        "group": "interaction",
+        "title": "相互适应与非平稳性：怎样区分自己、伙伴和共同约定的变化？",
+        "cases": "人机合作与多机器人开放团队",
+        "mechanismIds": [
+          "agent-state",
+          "continual-control",
+          "measurement"
+        ],
+        "question": "与陌生伙伴合作、辨认正在变化的伙伴，以及共同形成新约定，是否需要不同的学习机制？",
+        "example": "两个仓库机器人都曾学会在路口向右让行。新伙伴遵循另一规则，而原伙伴随后又根据我的行为改变策略。失败既可能来自陌生约定，也可能来自同时适应造成的追逐；把所有变化视为固定环境噪声会掩盖区别。",
+        "setting": "他者的行动影响我的经验，他者也可能根据我改变。区分训练中的种群扩张、测试时零样本协调、试次内伙伴推断和部署期间持续共同学习。合作之外还包括竞争、资源共享与混合动机，团队奖励并非普遍存在。",
+        "protocol": {
+          "persistent": "伙伴模型、约定、角色和策略；身份是否可见、记忆是否跨伙伴保留必须明确。",
+          "feedback": "个体与团队收益、通信、人的纠正；中心化训练信息不应在分散执行时泄漏。",
+          "lifetime": "允许伙伴加入离开、再次出现或改变行为；旧伙伴回访与未见伙伴泛化分别测。",
+          "resources": "通信、种群训练、伙伴模拟和人类适应的成本分别记账。"
+        },
+        "difficulty": "收益上升可能是对方学会迁就，而不是我的模型改善。双方同时更新改变数据分布；过快适应可破坏原有约定。自博弈的共同惯例还可能妨碍与群体外成员协作。",
+        "works": [
+          {
+            "id": "cole",
+            "title": "Cooperative Open-ended Learning Framework for Zero-shot Coordination",
+            "authors": "Yang Li、Shao Zhang、Jichen Sun、Yali Du、Ying Wen 等",
+            "status": "ICML 2023；JAIR 2024 扩展",
+            "url": "https://arxiv.org/abs/2302.04831",
+            "contribution": "COLE 通过合作能力相关的种群结构扩展训练伙伴，研究与未见策略及人协调。它把伙伴多样性与合作兼容性引入训练目标。",
+            "boundary": "零样本协调不是部署中的持续参数学习。作者的人类实验也显示可预测的固定策略有时更易被人配合，单一平均团队分数不足以解释原因。",
+            "entry": {
+              "title": "COLE 作者平台与训练分支",
+              "url": "https://github.com/liyang619/COLE-Platform",
+              "note": "包含人机交互平台、基线和 COLE 训练分支；需区分真实人、代理策略及评价角色。"
+            }
+          },
+          {
+            "id": "hola",
+            "title": "Multi-Robot Open Adaptive Teaming Across Unseen Environments, Partners, and Scales",
+            "authors": "Yang Li、Feng Xue、Fan Mo、Yunhao Liu 等",
+            "status": "2026 预印本",
+            "url": "https://arxiv.org/abs/2607.04972",
+            "contribution": "用超图形式博弈表达多方合作关系，并扩展训练中的伙伴与环境。评价包含试次内成员变化，以及未见伙伴、环境和队伍规模下的实际机器人协调。",
+            "boundary": "论文强调无需现场微调的迁移；它不是持续更新权重的证据。超图形式博弈也不能直接说成一种图神经网络。",
+            "entry": {
+              "title": "原文：开放团队协议与硬件设置",
+              "url": "https://arxiv.org/html/2607.04972v1",
+              "note": "该原文未列出完整作者工程入口；可先复用 COLE 或公开多智能体环境搭建小规模判别任务，不宣称已复现 HOLA。"
+            }
+          }
+        ],
+        "openQuestions": [
+          "如何区分自己学习、伙伴学习和共同约定形成各自带来的收益？",
+          "能否对不熟悉的伙伴保留适应能力，同时不遗忘旧伙伴、不泄漏他人的私有经验，也不通过牺牲对方效用获得高分？"
+        ],
+        "experiment": {
+          "hypothesis": "显式区分伙伴推断与慢策略更新，能够在成员变化时降低协调损失，并保留对返回伙伴的知识。",
+          "design": "让 A、B 两类伙伴交替出现，并设固定伙伴和同时学习伙伴两条协议。先在可控合作游戏检查，再加入混合收益与通信成本。身份标签仅作为诊断上界。",
+          "controls": "冻结策略、仅递归伙伴状态、仅策略更新、两者结合；交叉冻结双方，另配未见伙伴池。人类实验需随机化顺序以控制熟练效应。",
+          "measures": "个体与团队整段收益、冲突率、约定恢复、对方负担、通信成本及面对群体外伙伴的表现。",
+          "falsifier": "改善完全来自伙伴对系统的迁就，或仅在给出真实伙伴身份时存在，就不支持自主持续伙伴学习。"
+        },
+        "chapterIds": [
+          "state",
+          "meta",
+          "control",
+          "experiments"
+        ],
+        "environment": {
+          "title": "多智能体与社会环境目录",
+          "url": "/zh/continual-rl/worlds/",
+          "note": "选择 Overcooked、Melting Pot 等平台时，还需明确伙伴池与测试时更新规则。"
+        },
+        "implementation": {
+          "title": "实验设计：学习器与评价单位",
+          "url": "/zh/continual-rl/experiments/",
+          "note": "将双方学习运行作为相互依赖的随机过程，不把同一对局的窗口当独立样本。"
+        },
+        "related": [
+          "open-ended-goals",
+          "human-feedback",
+          "embodied-adaptation"
+        ]
+      }
+    ],
+    "closing": {
+      "title": "从一个方向形成可检验的研究问题",
+      "paragraphs": [
+        "这些方向共享状态、信用、探索、保留与计算分配等机制，却不共享完全相同的评价目标。可从一个具体失败出发：谁缺少什么信息，哪种更新可能消除失败，它会引入什么新成本？然后再回到教材选择机制。应用场景越复杂，越需要先在小问题中区分解释，而不是只搭建更大的系统。",
+        "先确定更新载体和生命期，再选择基线。冻结权重但保留记忆不是“完全不学习”；清空记忆但保留更新后的权重也不是从头开始。冻结诊断最好在独立拷贝中进行。交互策略不同时，后续世界轨迹也会不同，因此配对初始世界不等于获得完全相同的经验。",
+        "未来的工作还包括持续科学实验、医疗与教育等反馈更慢的决策场景，以及能源、生态和社会系统中的资源分配。它们需要领域特有的伦理与安全约束。这里的九条问题线是扩展研究的入口，不是穷尽领域的分类，也不是把邻近研究统一改名为 CRL。"
+      ]
+    }
+  }
 }

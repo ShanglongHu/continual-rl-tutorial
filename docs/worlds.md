@@ -156,6 +156,18 @@ $$
 
 部分可观测性不等于随机性。同一个隐藏机械故障会让多次尝试都失败，随机噪声则可能没有这种记忆结构。非平稳性也不等于智能体正在学习：即使世界规律不变，策略改进也会改变它看到的数据。诊断环境应分别控制这些来源，避免用“分布变了”解释全部困难。
 
+![Forager 论文图 2：大幅网格布满两类有色物品，右下角放大局部网格；蓝色方块表示智能体，淡蓝色区域标出它的有限视野。](https://yingwen.io/crl-figures/forager-v1-figure-2.png)
+
+Forager：全局世界与智能体能看到的局部。Steven Tang、Xinze Xiong、Anna Hakhverdyan、Andrew Patterson、Jacob Adkins、Jiamin He、Esraa Elelimy、Parham Mohammad Panahi、Martha White、Adam White，Forager: a lightweight testbed for continual learning with partial observability in RL，Figure 2，arXiv:2605.01131v1（2026）。
+
+读图：先看整张地图，再看右下角放大的局部。世界中存在的物品，不等于此刻观察中存在的信息。蓝色方块周围的有限视野使过去经过哪里、资源何时再生，可能影响下一步决策。
+
+解释边界：这是环境设置示意，不是算法结果。有限环面可不断绕行，但不是无限地图；局部观察也不单独证明必须永远更新参数。奖励关系与再生规则须由具体配置说明。
+
+[论文与图注](https://arxiv.org/html/2605.01131v1#S4.F2) · [作者原图](https://arxiv.org/html/2605.01131v1/ForagerExtraLargeEnv-v3.png) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+
+原图版权属于 Tang 等作者，按论文所附 CC BY 4.0 许可使用。 直接保存 arXiv HTML 提供的原始 PNG；未裁剪、重绘或更改图中文字。网页仅按比例显示。
+
 <a id="worlds-action-space"></a>
 
 ### 行动与可达性：离散、连续以及可被改变的世界
@@ -251,6 +263,18 @@ $$
 串行流水线可以把采集、恢复、更新和等待时间相加。异步流水线则要测实际关键路径，不能把重叠的时间重复计入总耗时。增加并行环境往往提高吞吐量，却不一定缩短一个身体必须等待的世界时间。对于需要长期后果的研究，十万个并行短生命与一个很长的生命也不是相同经验。
 
 基准应提供低成本研究档和高预算挑战档，分别保留明确的问题。不应让默认实验必须先有大规模集群，也不应把廉价诊断的成功包装成完整世界能力。样本量少时还要报告运行间不确定性；[rliable 的原始研究](https://arxiv.org/abs/2108.13264)说明仅比较少数运行的点估计可能误导结论。
+
+![Craftax 论文图 2：横轴是并行环境数，纵轴是每秒环境步数，均用对数刻度。不同颜色比较 Craftax、Craftax-Classic、Procgen、NetHack、Crafter 与 MineRL。](https://yingwen.io/crl-figures/craftax-v2-figure-2.svg)
+
+Craftax：并行经验吞吐量不等于样本效率。Michael Matthews、Michael Beukman、Benjamin Ellis、Mikayel Samvelyan、Matthew Jackson、Samuel Coward、Jakob Foerster，Craftax: A Lightning-Fast Benchmark for Open-Ended Reinforcement Learning，Figure 2，arXiv:2402.16801v2（2024）。
+
+读图：先沿一条曲线看增加并行环境后的吞吐变化，再在相同横轴位置比较。附录 B 的测试计入整段 RL 学习过程，使用同一台 RTX 4090 与 i9-13900K 机器；不是仅运行随机动作的模拟器速度。
+
+解释边界：纵轴不是达到同一能力所需的样本数，也不是单个身体经历的时间。不同环境的规则、观察、后端与训练开销不同；曲线不能用于判断哪种算法学得更有效，更不能当作今天所有硬件上的速度排名。
+
+[论文与图注](https://arxiv.org/html/2402.16801v2#S1.F2) · [作者原图](https://arxiv.org/html/2402.16801v2/speed_comparison.svg) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+
+原图版权属于 Matthews 等作者，按论文所附 CC BY 4.0 许可使用。 直接保存 arXiv HTML 的矢量原图；没有重新计算数据或改变坐标轴、图例。
 
 <a id="worlds-experience-diversity"></a>
 
@@ -1734,6 +1758,18 @@ $$
 这里尤其要区分外部规律变化与访问分布变化。AgarCL 中，体型会改变行动能力和视野；即使完整世界的转移规则不变，学习器接收到的经验也会变化。Forager 可进一步引入隐藏奖励变化。二者都提出适应问题，但不能用同一种“非平稳”标签省略变化发生在哪里。
 
 开放式世界还有共同边界：规则、奖励渠道和对象类型往往仍被预先限定；有限地图可能允许最终记住全部规律；模拟器通常能等待计算完成。环境规模扩大不会自行解决这些问题，也不应因规模有限就否定其诊断价值。关键是结论是否超出了它实际保留的困难。
+
+![AgarCL 论文图 2 的六组前后对照：吞食、主动分裂、合并、碰撞病毒后碎裂、吸收病毒，以及喷出质量影响其他实体。](https://yingwen.io/crl-figures/agarcl-v3-figure-2.png)
+
+AgarCL：行动改变身体，也改变后续行动条件。Mohamed A. Mohamed、Kateryna Nekhomiazh、Vedant Vyas、Marcos M. Jose、Andrew Patterson、Marlos C. Machado，The Cell Must Go On: Agar.io for Continual Reinforcement Learning，Figure 2，arXiv:2505.18347v3（2026 修订）。
+
+读图：按编号比较每组动作前后。吞食增加质量；主动分裂可换取追击机会，也使较小身体暴露于危险。相同碰撞的后果还取决于自身质量。要学习的不只是“选哪个按钮”，还包括自身状态如何改变未来可行的行为。
+
+解释边界：图展示机制，不给出学习效果。状态依赖的速度与碰撞后果，可以来自固定转移规则，不能据此断言世界规律本身非平稳。主世界保留后果，但个体仍能再生；论文中的其他个体采用手工策略。
+
+[论文与图注](https://arxiv.org/html/2505.18347v3#S3.F2) · [作者原图](https://arxiv.org/html/2505.18347v3/figure_3.png) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+
+原论文图版权属于 Mohamed 等作者，按论文所附 CC BY 4.0 许可使用；不据此重新许可 Agar.io 游戏或其他资产。 直接保存 arXiv HTML 提供的原始 PNG；保留六个面板和原始顺序，未作裁剪或重绘。
 
 <a id="worlds-continual-single-life"></a>
 
