@@ -18,12 +18,15 @@ spec.loader.exec_module(gallery)
 
 
 class GalleryTests(unittest.TestCase):
+    @unittest.skipUnless(importlib.util.find_spec('torch') is not None,
+                         'CLEAR retention integration uses optional dependency torch')
     def test_clear_retention_plot_uses_same_complete_population(self):
         selected={key:path for key,path in runtime.discover().items() if key in ('extended-clear','extended-fresh_ac')}
         self.assertEqual(len(selected),2)
         with tempfile.TemporaryDirectory() as temp,patch.object(runtime,'discover',return_value=selected):
             out=Path(temp)
-            runtime.experiment(list(selected),[0,1],40,out/'clear')
+            manifest=runtime.experiment(list(selected),[0,1],40,out/'clear')
+            self.assertEqual(manifest['status'],'complete',manifest['runs'])
             diagnostics=gallery.verified_gallery(out)[4]
             for key in selected:
                 values=[]
