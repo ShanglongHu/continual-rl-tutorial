@@ -10,6 +10,22 @@
 - 区分 HAPPO 的顺序参数更新、A2PO 的评价修正与 MAT 的顺序动作生成。
 - 核对理论中的精确优势与信赖域条件，不把 PPO 裁剪或网络结构当成回报保证。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### MDP、POMDP 与策略评价
+
+理解转移、回报和观察历史。团队共享目标，不代表每个人能看到相同信息；本章将从这些单智能体概念建立共同设定。
+
+### DQN 与策略梯度
+
+理解冻结 TD 目标、经验回放、score-function 梯度和与当前动作无关的 baseline。
+
+### PPO 与异策略修正
+
+理解新旧动作概率比、GAE、裁剪替代目标。样本上的 ratio 裁剪不是对全部状态的 KL 约束。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -88,22 +104,6 @@ $$
 
 - 独立学习：实现简单，但自身看到的边缘过程随同伴策略变化。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### MDP、POMDP 与策略评价
-
-理解转移、回报和观察历史。团队共享目标，不代表每个人能看到相同信息；本章将从这些单智能体概念建立共同设定。
-
-### DQN 与策略梯度
-
-理解冻结 TD 目标、经验回放、score-function 梯度和与当前动作无关的 baseline。
-
-### PPO 与异策略修正
-
-理解新旧动作概率比、GAE、裁剪替代目标。样本上的 ratio 裁剪不是对全部状态的 KL 约束。
 
 <a id="lesson-setting"></a>
 
@@ -289,10 +289,12 @@ $$
 求和只替换本人的动作。它不是把同伴也重新采样，更不是对实际世界进行了一次因果干预。
 
 $$
-\mathbb E_{A_i\sim\pi_i}[b_i\nabla_{\theta_i}\log\pi_i(A_i\mid h_i)\mid X,\mathbf a_{-i}]=b_i\sum_u\nabla_{\theta_i}\pi_i(u\mid h_i)=0
+\mathbb E_{A_i\sim\pi_i}[b_i\nabla_{\theta_i}\log\pi_i(A_i\mid h_i)\mid X,\mathbf h,\mathbf a_{-i}]=b_i\sum_u\nabla_{\theta_i}\pi_i(u\mid h_i)=0
 $$
 
-在声明的条件独立采样下，baseline 不依赖本次采到的 Aᶦ，因此其 score 期望消去。共享随机变量存在时，条件集合也需包含它。
+在声明的条件独立采样下，固定各人历史，baseline 不依赖本次采到的 Aᶦ，因此其 score 期望消去。共享随机变量存在时，条件集合也需包含它。
+
+条件中保留历史有实际意义。仅给环境状态而混合不同控制器记忆时，条件动作分布未必等于式中的局部策略。若各 actor 共享参数，联合 log-probability 的梯度是各人的 score 之和；baseline 仍须逐项停止梯度，但一次共享参数更新可能同时改变所有人的行为。
 
 在共同收益矩阵 $(8,0;0,6)$ 中，同伴选 0、自己均匀采样时，baseline 为 4。选 0 的反事实优势为 4，选 1 为 −4。均值为零并不表示学习信号为零；优势与动作 score 的乘积仍有非零期望。不同 agent 的反事实优势不必相加为团队优势。
 
@@ -372,6 +374,8 @@ y=r+\gamma(1-d)Q_{\bar\theta}(X',\mathbf a'),\quad \delta=y-Q_\theta(X,\mathbf a
 $$
 
 目标 y 停止梯度。局部 utility 通过团队 TD 误差和 mixer 导数收到更新，这与 COMA 的动作边际化 baseline 是不同的信用机制。
+
+这里的后继动作 a′ 还需指定选择器。Double 型目标用当前局部 utility 各自选择合法的贪心动作，再交给目标局部网络与目标 mixer 评价；另一种目标直接由目标 utility 选择。二者都能使用单调结构避免枚举联合动作，但数值标签未必相同。若 utility 共享参数，上式是经第 i 条分支传来的梯度贡献，总更新还要加上其他分支。
 
 训练依次执行联合采样、存储转移、重放 batch、构造冻结目标、更新局部网络与 mixer、更新目标网络。必须同时保存每人的终止/存活 mask、合法动作与记忆边界。PyMARL 的 qmix.py 使用绝对值生成非负权重；这不是约束所有网络参数为正。[VDN 原文](https://arxiv.org/abs/1706.05296) · [QMIX 原文](https://proceedings.mlr.press/v80/rashid18a.html) · [mixer](https://github.com/oxwhirl/pymarl/blob/master/src/modules/mixers/qmix.py)。
 
@@ -501,6 +505,14 @@ $$
 
 F 修正给定状态下前序动作的分布。它不单独修正完整状态占据分布，也没有把旧价值自动变成部分更新后联合策略的价值。
 
+$$
+\mathbb E_{\mathbf a\sim\boldsymbol\pi}[F_{m-1}(\rho_{i_m}-1)A^{\boldsymbol\pi}]=\mathbb E_{a^{i_{1:m-1}}\sim\bar\pi,\,a^{i_m}\sim\pi_{\theta_{i_m}}}[A_m^{\boldsymbol\pi}(s,a^{i_{1:m}})]
+$$
+
+在固定状态、因子化旧策略及足够概率支持下成立。先积分掉未更新的后缀：$\rho$ 项成为候选当前动作下的 $Q_m-V$；减一项成为旧当前动作平均的 $Q_{m-1}-V$。两者相减正是前缀优势 $A_m$。因此无需为每个前缀另训练一个 critic，旧联合优势加概率比即可表达该期望。
+
+当已更新的前序策略被冻结时，$\mathbb E[F_{m-1}A^{\boldsymbol\pi}]$ 不依赖当前参数。因此去掉减一项，最大化 $\mathbb E[\rho_{i_m}M_m]$ 的梯度不变；再将它裁剪才得到上面的 HAPPO 近似目标。这里的等价只指未裁剪目标的梯度，不能由此推出 clip 有精确改善保证。若共享参数连带改变前序策略，原来应为常数的项也会变化。
+
 **算法：实际工程须保留旧 log-prob，不能随着每个 minibatch 覆盖行为策略版本。**
 
 1. 1. 固定联合策略版本，采一批轨迹并估计旧策略优势。
@@ -555,7 +567,7 @@ $$
 \widehat A_t^{(m)}=\delta_t+\sum_{k\ge1}\gamma^k\!\left(\prod_{j=1}^{k}c_{t+j}^{(m)}\right)\delta_{t+k},\qquad c_u^{(m)}=\lambda\min\!\left(1,{\boldsymbol\pi^{(m-1)}(\mathbf a_u\mid s_u)\over\boldsymbol\pi^{(0)}(\mathbf a_u\mid s_u)}\right)
 $$
 
-PreOPC 将前序策略变化放入后续 TD 误差的迹系数。δ=r+γV(s′)−V(s)。有限轨迹、价值逼近和权重截断仍有误差；不是为一批旧样本补一个权重就得到精确新策略优势。
+PreOPC 将前序策略变化放入后续 TD 误差的迹系数。δ=r+γbV(s′)−V(s)，b 只在真终止时为零；上述和只在同一序列内部展开，不能接入 reset 后另一回合的残差。有限轨迹、价值逼近和权重截断仍有误差；不是为一批旧样本补一个权重就得到精确新策略优势。
 
 $$
 B_m\le {4\gamma\varepsilon_m\over(1-\gamma)^2}\,\alpha_m\sum_{j\le m}\alpha_j+{\xi_m\over1-\gamma}
@@ -862,6 +874,17 @@ python3 examples/marl_objectives_lab.py demo --out results/marl-objectives
 ## 与教材主线的衔接
 
 本章是可按问题选择的并列研究分支，不要求先读完其他深度研究分支。
+
+### 一次策略更新，为什么能改善未来？
+
+精确策略改善使用旧策略的真实价值；策略梯度使用与目标匹配的访问分布。值函数近似或梯度估计误差会破坏这些推理的前提。
+
+函数逼近与深度方法：PPO 的动作概率比不等于新策略的状态访问比。连续动作 actor 还会追逐 critic 的误差。限制局部更新尺度与证明实际回报单调提高是不同要求。
+
+持续学习中的研究问题：动作不仅改变世界，也改变未来数据与学习。比较冻结策略不等于比较持续更新的智能体；什么时候应付出当前回报去获得长期有用的经验？
+
+[精确策略改善](../tabular/dynamic-programming.md) → [策略梯度定理](../approximation/policy-gradient.md) → [TRPO 与 PPO 的近似](trust-region.md) → [持续控制的比较器](../../textbook/control.md)
+
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 

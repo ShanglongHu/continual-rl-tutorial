@@ -8,6 +8,22 @@
 - 完成开发选择、独立测试、整次运行配对 bootstrap 的可执行实验。
 - 分别解释在线收益、冻结诊断、恢复、失败和跨任务推广。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 随机变量与样本均值
+
+相同算法多次运行会产生不同收益。单次结果为 $X_i$，总体期望为 $\mu=\mathbb E[X]$，样本均值为 $\bar X=n^{-1}\sum_iX_i$。
+
+### 在线学习
+
+动作依据当前可得历史产生。环境反馈发生后，学习器才更新参数。测试一个持续学习算法时，学习本身通常仍然开启。
+
+### 实验控制器
+
+它管理随机分配、预算、记录与评价。环境提供反馈，学习器只接收协议允许的信息。统计分析可以读取真实变化时间，但不能将其回传给学习器。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -43,7 +59,7 @@ $A,B$ 为完整算法，$h_A,h_B$ 为开发后封存的配置，$\xi$ 为运行�
 ### 适用边界
 
 - 测试通过不是算法长期有效或回报优势的证据。
-- 开发集最高分和tiny有符号差不能直接称为已证优势。
+- 开发集最高分不能代替独立评价；未分析不确定性的微小分数差不能直接证明优势。
 
 ### 与其他问题的关系
 
@@ -83,22 +99,6 @@ $A,B$ 为完整算法，$h_A,h_B$ 为开发后封存的配置，$\xi$ 为运行�
 
 - 独立寿命比较：估计封存算法的在线差值及不确定性，推广需追加未见条件。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 随机变量与样本均值
-
-相同算法多次运行会产生不同收益。单次结果为 $X_i$，总体期望为 $\mu=\mathbb E[X]$，样本均值为 $\bar X=n^{-1}\sum_iX_i$。
-
-### 在线学习
-
-动作依据当前可得历史产生。环境反馈发生后，学习器才更新参数。测试一个持续学习算法时，学习本身通常仍然开启。
-
-### 实验控制器
-
-它管理随机分配、预算、记录与评价。环境提供反馈，学习器只接收协议允许的信息。统计分析可以读取真实变化时间，但不能将其回传给学习器。
 
 <a id="lesson-setting"></a>
 
@@ -590,7 +590,7 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
@@ -655,12 +655,14 @@ $$
 - [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
 - [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
 - [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+- [Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots](https://yingwen.io/zh/continual-rl/research/#recent-openmind-physical-atari)
+- [The Open Ant: A Robot Platform for Reinforcement Learning Research](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ant-platform)
 
 #### 完整智能体与研究基础
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Rethinking the Foundations for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rethinking-crl-foundations)
 
@@ -1192,6 +1194,78 @@ Forward–Backward 表示联合学习行为条件的未来占用与奖励读出�
 [论文作者团队仓库；归档工程，依赖和旧环境需单独核验。](https://github.com/facebookresearch/controllable_agent)
 
 FB 与 SF 的训练、固定数据实验及奖励查询示例。
+
+### Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots
+
+Khurram Javed, Joseph Modayil, Gloria Kennickell, Richard S. Sutton, John Carmack
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+在真实延迟、视觉观测与不同身体下，经典游戏任务能提供怎样的控制学习证据？
+
+#### 关键机制
+
+机器人实际操纵手柄，摄像头读取运行中的 Atari 游戏。先发动作后学习的调度，分离了身体响应、观测和更新的时间。
+
+#### 证据
+
+平台论文报告六个游戏中多次试验的累计运行与跨身体性能变化；作者公开硬件及学习工程。
+
+#### 条件与限制
+
+累计运行时间不是单条终生学习轨迹。作者学习器仍有经验回放和目标网络；平台可靠性与长期知识增长是不同主张。
+
+#### 阅读与实验
+
+同时比较环境步数和物理小时下的学习曲线，并记录动作延迟、身体差异与人工干预。
+
+#### 原文与相关入口
+
+- [作者项目与论文](https://keenagi.com/research/physical-atari/)：项目已从旧 GitHub Pages 地址迁移到 Keen 官方域名。
+
+#### 作者代码
+
+[作者团队发布的完整工程。](https://github.com/Keen-Technologies/physical-atari-rlc)
+
+身体搭建、传感控制、智能体和实验脚本。运行需实物设备。
+
+### The Open Ant: A Robot Platform for Reinforcement Learning Research
+
+Elena Sorina Lupu, Patrick Spieler, Khurram Javed, Kris De Asis, John D. Martin, Martha Steenstrup, Joseph Modayil
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+能否在有限场地中直接从身体经验学习，并明确比较仿真、实机和维护条件？
+
+#### 关键机制
+
+开放硬件四足平台配合模拟器、传感接口和学习器。越界后切换目标方向，使任务无需每走到边界就结束回合。
+
+#### 证据
+
+论文比较 SARSA(λ) 与 SAC 的实机学习，给出模拟—实机对照。公开工程包含身体设计、组装演示和运行入口。
+
+#### 条件与限制
+
+缆线仍可能需要人工解缠。两学习器的动作及经验协议不同；真机运行、无回合任务与无人维护的持续学习不能混称。
+
+#### 阅读与实验
+
+先列状态与动作权限，再核对时间戳、奖励方向和恢复记录。用同一真实时间预算检验新增预测或规划是否值得其计算成本。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/abs/2607.18488)：平台、任务、实机实验与局限。
+
+#### 作者代码
+
+[Openmind 官方工程仓库。](https://github.com/Openmind-Research-Institute/open-ant)
+
+硬件、MuJoCo 模拟、SARSA/SAC 与主控制入口。
 
 
 <a id="chapter-code"></a>

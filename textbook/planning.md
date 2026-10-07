@@ -9,6 +9,30 @@
 - 把 option model 变成正确 backup，推导收缩和模型误差放大。
 - 解释 MPC、MCTS/MuZero 与 Dreamer 在何时计算、更新对象、误差来源上的差异。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 规划的操作性定义
+
+用模型得到的后果，而非新发生的一次真实转移，改善价值、策略或当前动作选择。模型可以是已知模拟器，也可以是从经验学来的；“有网络”不意味着“有模型”。
+
+### Bellman backup
+
+把即时 reward 与下一状态的估计价值合成当前标签。一次 backup 可以是赋值（value iteration）或小步拟合（TD）。
+
+$$
+y=r+\gamma(1-d)\max_{a'}Q(s',a'),\qquad Q(s,a)\leftarrow Q(s,a)+\alpha[y-Q(s,a)]
+$$
+
+### 模型接口
+
+一步模型给 $(r,s',d)$ 的样本或分布；option 模型给技能内折扣奖励 $r_o$ 和已经含 $\gamma^\tau$ 的折扣终点权重 $p_o^\gamma$。后者做 backup 时不应再乘一次 $\gamma$。
+
+### 真实数据预算与计算预算
+
+一次真实动作和一次模型 rollout 不是同一成本。比较规划方法时应同时计入环境步数、模型调用次数、更新次数、内存和决策延迟。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -87,35 +111,11 @@ $\hat P,\hat r$ 为当前模型，$H$ 为规划时域，$\hat V$ 为尾值，$\g
 - 想象训练actor：模型计算摊销进策略，部署快但可能固化模型偏差。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 规划的操作性定义
-
-用模型得到的后果，而非新发生的一次真实转移，改善价值、策略或当前动作选择。模型可以是已知模拟器，也可以是从经验学来的；“有网络”不意味着“有模型”。
-
-### Bellman backup
-
-把即时 reward 与下一状态的估计价值合成当前标签。一次 backup 可以是赋值（value iteration）或小步拟合（TD）。
-
-$$
-y=r+\gamma(1-d)\max_{a'}Q(s',a'),\qquad Q(s,a)\leftarrow Q(s,a)+\alpha[y-Q(s,a)]
-$$
-
-### 模型接口
-
-一步模型给 $(r,s',d)$ 的样本或分布；option 模型给技能内折扣奖励 $r_o$ 和已经含 $\gamma^\tau$ 的折扣终点权重 $p_o^\gamma$。后者做 backup 时不应再乘一次 $\gamma$。
-
-### 真实数据预算与计算预算
-
-一次真实动作和一次模型 rollout 不是同一成本。比较规划方法时应同时计入环境步数、模型调用次数、更新次数、内存和决策延迟。
-
 <a id="lesson-setting"></a>
 
 ## 1. 用已有的后果知识改善决策
 
-一条走廊尽头的奖励由 1 变成 10。直接 TD 必须再次走过前面的状态，才能逐步把价值变化向前传播；若已学会哪些动作通向哪里，就能在不额外消耗机器人电量的情况下，把新 reward 沿模型反向传播。规划的价值是把已有知识转成新决策。它没有创造新的环境证据：如果门已经关上但模型仍说门开着，更多想象只会更加确信一条错误路线。
+一条走廊尽头的奖励由 1 变成 10。只做一步表格 TD、没有资格迹或经验重放时，前面状态通常要等再次访问才获得新价值的影响。资格迹可以更新近期经历过的状态；已学模型则还允许查询未在近期经历的前驱。规划的价值是利用已有后果知识重新计算决策。它没有创造新的环境证据：如果门已经关上但模型仍说门开着，更多想象仍在求解错误的路线。
 
 | 算法线 | 模型用于什么 | 主要修改对象 |
 | --- | --- | --- |
@@ -218,6 +218,41 @@ $$
 
 Prioritized replay 按训练样本的 TD error 调整采样机会；prioritized sweeping 还利用模型找到受影响的前驱并传播变化。两者可以结合，但使用的信息和计算过程不同，比较时需要分别记录模型知识、样本访问与 backup 预算。
 
+<a id="rlss-feature-priorities"></a>
+
+## 从前驱状态到前驱特征：优先扫描到底沿哪条边反传
+
+对固定线性模型 $Fx$，可以选择单位基向量 $e_j$ 作为内部规划查询。它不必对应某个真实可访问状态；这是线性模型允许的计算查询，不是新环境经验。该查询只更新第 j 个价值权重。
+
+$$
+\delta_j=b_j+\gamma(F^\top w)_j-w_j
+=b_j+\gamma\sum_iF_{ij}w_i-w_j,\qquad
+w_j\leftarrow w_j+\alpha\delta_j.
+$$
+
+F 的第 j 列表示当前特征 j 对未来各特征的预测影响。若未来特征 i 的价值权重变化，所有 Fᵢⱼ 非零的 j 都可能需要更新。把行列弄反会让优先级沿错误方向传播。
+
+$$
+\Delta\delta_j=\gamma F_{ij}\Delta w_i\quad(j\ne i),\qquad
+p_j\ \text{可用}\ |\gamma F_{ij}\Delta w_i|\ \text{作为待检查优先级}.
+$$
+
+j=i 时还要计入 −Δwᵢ。这里给出单次权重变化造成的精确残差变化；以其绝对值排序是一种局部调度启发式，不是对真实控制收益的精确预测。
+
+例如只有 F₂₁=0.8 非零，γ=0.9，第 2 个权重增加 0.5。第 1 个查询的模型目标增加 0.36。应重新检查特征 1，而不是只重复更新刚变化的特征 2。真正实现还要删除过时队列项、限制重复入队，并把模型 F 自身变化带来的新残差加入维护。
+
+**算法：特征级优先扫描的实现规程；队列阈值与覆盖调度须显式给定**
+
+1. 真实转移：更新价值，同时拟合奖励与特征模型。
+1. 把本次显著变化的价值维度加入优先队列。
+1. 在内部计算预算内：
+  1. 弹出一项，依据当前模型重算相关前驱的残差。
+  1. 对被选前驱单位向量做线性模型 backup。
+  1. 将新产生的权重变化传播到它的前驱。
+1. 定期补充覆盖查询，避免只关注已有优先级而永久遗漏某些方向。
+
+当特征由神经网络在线生成时，矩阵元素已经不再代表固定的关系。新特征的前驱未知，旧队列的高优先级也可能只因尺度变化而大。此时要先说明特征版本、模型校准和队列重建，再比较规划收益。原始线性实验的固定表示与此不同。
+
 <a id="lesson-options"></a>
 
 ## 4. Option planning 与收缩：粗时间尺度为什么能加速
@@ -237,6 +272,8 @@ $$
 第一步使用 τ≥1，第二步使用两个 max 的差不大于候选值的最大差，最后把最大值差提出求和。固定精确模型、相同 option 集合下，反复 value iteration 收敛到唯一固定点。
 
 长 options 的折扣行和可能更小；若集合里仍有一步动作，统一收缩率上界 $\kappa$ 却仍可能等于 $\gamma$。此外，技能后果的学习成本、候选数量和与任务的相关性都会影响实际速度。因此，收缩率解释了某一种传播优势，但系统效率还要计入其余成本。
+
+这些式子把终止状态留在模型里并令其后续价值为零。也可只存可继续决策的状态，并将真实环境终止的终点核置零；此时核的行和是折扣后的非终止质量，上面的收缩上界仍成立。两种约定不能交叉使用。有限预算还要求决定哪些后果值得建模：在不影响备份的像素上更精确，可能增加计算而不改变任何动作。模型的用途应从规划所需的量反向确定。
 
 $$
 \begin{aligned}\|\hat V^*-V^*\|_\infty&\leq\kappa\|\hat V^*-V^*\|_\infty+\|(\hat T-T)V^*\|_\infty\\ \|\hat V^*-V^*\|_\infty&\leq\frac{\varepsilon_r+\varepsilon_p\|V^*\|_\infty}{1-\kappa}\end{aligned}
@@ -592,6 +629,51 @@ Dyna 的五状态小链会学到贪心状态值 $[0.729,0.81,0.9,1,0]$。训练�
 
 研究上更有辨识力的问题是：“每步有限 B 次计算，应优先验证哪个模型、更新哪个技能模型、还是改进哪个价值？”这连接了变化检测、价值相关模型误差、元学习计算分配与长期知识维护。把所有预算都放进更大模型，并不能自动解决这一调度问题。
 
+<a id="rlss-incremental-planning-budget"></a>
+
+## 把规划拆成有成本的循环：状态选择、技能比较与增量最大化
+
+一次 Bellman backup 看似只有一个式子，却包含几种不同的计算。先选在哪个状态规划；再比较这个状态下的可用行动或 options；对每个候选，还可能要估计随机后继的期望。最后才更新价值或策略。若世界继续运行，这些计算必须与当前行动共用时间预算。
+
+| 计算层次 | 需要决定什么 | 计算不足带来的误差 |
+| --- | --- | --- |
+| 外层：状态与重复次数 | 当前状态、想象状态或前驱状态；哪个值得再次更新 | 重要状态长时间没有传播新价值 |
+| 中层：行动或 option | 比较全部候选，还是先检查少量可能有用的候选 | 错过尚未检查的高价值行为 |
+| 内层：后果期望 | 使用精确期望、学习的期望模型或有限样本 | 模型偏差与 Monte Carlo 波动 |
+| 写回与维护 | 更新多少参数，怎样维护优先级、缓存与模型版本 | 旧估计继续参与后续比较 |
+
+$$
+C\approx N_s\!\left[N_o(C_{\rm model}+N_zC_v)+C_{\rm update}\right].
+$$
+
+一个均匀成本的记账例子：更新 N_s 个状态，每个比较 N_o 个技能，每个后果期望使用 N_z 个样本。C_model 是每个技能生成这一批后果的总成本，C_v 是单个后继的价值计算成本。选择状态、维护缓存等额外成本尚未计入。真实实现应测量各项，而不是只报 backup 次数。
+
+例如更新 8 个状态，每个比较 6 个技能，每个技能采样 4 个后继，仅后继价值计算就有 192 次。若技能之间的后果复杂度不同，“每步做 8 次规划”无法说明实际资源。线性价值配合期望特征模型可以消去一层采样，但这依赖模型所预测的量与价值表达式匹配；非线性价值通常不能把期望直接移入网络。
+
+增量最大化只检查部分候选。固定当前状态与模型、价值的同一快照，记候选 o 的精确 backup 值为 $q_o$，已检查集合为 $E_k$。若集合只增不减，已检查候选的最大值会单调增加。这个结论属于同一次固定问题的搜索，不是智能体真实回报的单调提升定理。
+
+$$
+E_k\subseteq E_{k+1}\quad\Longrightarrow\quad
+ \max_{o\in E_k}q_o\leq\max_{o\in E_{k+1}}q_o\leq\max_{o\in\mathcal O}q_o.
+$$
+
+只对同一组固定、精确的 q 成立。候选尚未检查时，best-so-far 只是已知集合中的最好结果。
+
+持续学习破坏了这个固定快照。三个技能的旧分数是 5、4、1，当前分数已经变成 0、4、8。若只重算第二个，并继续使用另外两个旧缓存，系统仍选择第一个。问题不是最大化公式有错，而是它把三个不同时间的问题答案当成了同一时刻的值。重新检查、版本失效、误差界或保守的缓存策略都需要额外计算。
+
+$$
+L_o\leq q_o\leq U_o\quad\text{for every }o,\qquad
+ L_j\geq\max_{o\ne j}U_o\quad\Longrightarrow\quad j\in\arg\max_o q_o.
+$$
+
+若全部候选都有当前有效的上下界，可提前证明 j 不差于任何其他候选。学习模型的置信区间不自动满足这个条件：覆盖不足、表示改变与模型偏差都可能使界失效。缺少有效界时，提前停止只是有预算的近似决策。
+
+在固定、正确的表格折扣模型中，适当覆盖所有状态的异步价值迭代可利用压缩性分析。在同时改变表示、模型和技能的系统中，不能直接搬用同一个收敛结论。应分开测量：有限规划预算留下的数值误差、模型失真、旧缓存失效，以及实际行动延迟。
+
+OaK 讲义的 SuperDyna 内循环草案把交互、预测与策略学习、特征和技能的增删、剩余时间内的规划放在一起。它明确留下了状态更新、特征构造、技能筛选和规划查询选择等待定项。这说明需要哪些接口，不等于给出了完整可复现算法。流式更新方法可以实现部分学习接口，但不会自动解决查询调度或结构发现。
+
+可先在固定的四房间模型中比较均匀枚举、优先状态更新和增量技能检查。统一真实交互时长、规划墙钟预算与模型权限。再单独引入技能后果漂移，比较无版本缓存、定期重查与变化触发重查。记录每层实际调用数、错过最优候选的差距、行为延迟和累计奖励。第二阶段测试的是缓存与调度的适应性，不是完整架构的有效性。
+
 <a id="research-planning-allocation-and-error"></a>
 
 ## 规划预算应分给可靠且会改变决策的查询
@@ -699,7 +781,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
@@ -709,7 +791,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
@@ -724,7 +806,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
 - [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
@@ -745,15 +827,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -1092,11 +1174,11 @@ python3 examples/knowledge_algorithms_lab.py planning
 
 ## 参考文献与实现
 
-- [Sutton & Barto — Reinforcement Learning，第 8 章](http://incompleteideas.net/book/the-book-2nd.html)：Dyna、变化环境和 prioritized sweeping 的系统教材入口；本页用独立小链把各循环展开。
+- [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：第 7、8、12、13 章；期望备份、资格迹、策略梯度与算法条件。
 
 - [Moore & Atkeson — Prioritized Sweeping](https://doi.org/10.1007/BF00993104)：原论文。关键在模型前驱与优先调度，不能与只提高旧样本抽样频率的 prioritized replay 混为一谈。
 
-- [Sutton et al. — Linear Dyna and Prioritized Sweeping](https://proceedings.mlr.press/r6/sutton08a.html)：原文。展示从前驱状态到前驱特征的扩展；收敛结论有明确线性模型/策略评估条件。
+- [Sutton et al. · Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping](https://proceedings.mlr.press/r6/sutton08a.html)：UAI 2008 原文。固定模型的 TD/残差迭代、收敛条件，以及从状态前驱到特征前驱的优先扫描。
 
 - [Sutton et al. — Reward-Respecting Subtasks](https://arxiv.org/html/2202.03466v3)：第 5 节以 learned option models 做规划；模型和发现成本应与规划收益一起评价。
 
@@ -1147,3 +1229,7 @@ python3 examples/knowledge_algorithms_lab.py planning
 - [2025 首稿](https://arxiv.org/abs/2506.09985v1)：action-free 预训练、2-AC 后训练、真实规划与第 4.3 节限制；此处不赋予未核实会议状态。
 
 - [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。
+
+- [Richard Sutton · The OaK Architecture](https://oaklab.ai/posts/the-oak-architecture)：公开架构讲座入口。差分子问题依据 RLSS 收录的 OaK/NeurIPS 讲义第 24 页；学习的四种作用、消费者信用和增量规划讨论依据 OaK thinker 讲义。本文的成本记账、删除诊断和缓存反例用于澄清机制，不是作者已完成的通用算法。
+
+- [Sutton · Toward a New Approach to Model-based Reinforcement Learning](https://www.incompleteideas.net/papers/MBRL2.pdf)：课程指定阅读 Introduction 与 §1：近似 agent state、特征对当前表现与未来学习的用途、学习与规划的耦合。

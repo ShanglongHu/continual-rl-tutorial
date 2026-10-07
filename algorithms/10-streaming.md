@@ -8,6 +8,22 @@
 - 在流式协议中实现 TD(λ)，检查痕迹与终止时序；将时间信用分配与更新稳定性分开分析。
 - 推导并比较 ObGD、StreamingOptimizer 与 Intentional Updates 的尺度机制、保证范围和失败条件。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 价值函数
+
+$v(s)$ 预测从状态 $s$ 出发按固定策略累积的折扣奖励。学习器根据不断到来的经验修正这个预测。
+
+### 半梯度 TD
+
+误差 $\delta=r+\gamma v(s')-v(s)$ 中的两个预测使用同一份旧参数；更新方向只对当前预测求导。
+
+### 资格迹
+
+与参数同维的向量，积累过去预测对参数的敏感性。它保存信用分配所需的统计量，而不保存原始样本。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -86,22 +102,6 @@ $\xi_t$ 是刚收到的经验，$M_t$ 是全部持久学习状态，$U$ 是更�
 - Intentional Updates：按局部输出变化选尺度，含预条件、迹和在线平均近似。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 价值函数
-
-$v(s)$ 预测从状态 $s$ 出发按固定策略累积的折扣奖励。学习器根据不断到来的经验修正这个预测。
-
-### 半梯度 TD
-
-误差 $\delta=r+\gamma v(s')-v(s)$ 中的两个预测使用同一份旧参数；更新方向只对当前预测求导。
-
-### 资格迹
-
-与参数同维的向量，积累过去预测对参数的敏感性。它保存信用分配所需的统计量，而不保存原始样本。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 流式学习的数据与计算约束
@@ -119,7 +119,75 @@ $v(s)$ 预测从状态 $s$ 出发按固定策略累积的折扣奖励。学习�
 | 实时计算预算 | 一次或固定少数次前后向 | 限制每步计算与历史回溯 |
 | 学习评价 | 实际每步延迟、内存、累计奖励 | GPU 吞吐量不能单独代表实时控制能力 |
 
-把 DQN 的 replay capacity 改成 1 是可用的诊断基线，却未必保留 DQN 的稳定性。原方法依靠的样本混合、target network 和批平均同时改变了。研究问题应是“哪些机制能在这个协议下工作”，而不是只换一个 buffer 参数。
+把 DQN 的 replay capacity 改成 1 是可用的诊断基线，却未必保留 DQN 的稳定性。它移除了跨经验的样本混合，也使从这个 buffer 抽出的批次只包含同一条经验；但不会自动移除 target network。若同一转移仍被重复更新，也不符合本章严格的一次使用协议。比较时应分别说明回放、更新次数、目标副本和批大小怎样改变。研究问题应是“哪些机制能在这个协议下工作”，而不是只换一个 buffer 参数。
+
+<a id="course-streaming-tracking-floor"></a>
+
+## 持续更新不等于持续学会：噪声、遗忘与追踪的最小计算
+
+流式协议允许每步更新，但不保证更新还来得及追踪目标，也不保证网络保有学习能力。先去掉 TD、自举和神经网络，只研究一个标量预测。这个小问题已包含持续学习中的两个相反要求：平均更多数据能减少噪声，给旧数据较小权重才能及时适应。
+
+$$
+y_t=m_t+\epsilon_t,\qquad w_t=(1-\alpha)w_{t-1}+\alpha y_t,\qquad 0<\alpha\leq1.
+$$
+
+$m_t$ 是此刻要预测的均值；噪声独立、零均值且方差为 $\sigma^2$。$w_t$ 是读取当前样本后的预测。这个固定步长更新只需要一个数的持久存储。
+
+$$
+w_t=(1-\alpha)^t w_0+\alpha\sum_{k=1}^{t}(1-\alpha)^{t-k}y_k.
+$$
+
+旧样本的权重随年龄几何衰减。没有保存原始数据，不等于不受历史影响；这里的历史保存在统计量中。固定步长也不是完全遗忘：过去信号仍以递减权重参与。
+
+$$
+m_t=m:\quad \lim_{t\to\infty}\operatorname{Var}(w_t-m)=\frac{\alpha\sigma^2}{2-\alpha};\qquad m_t=m_0+vt:\quad \lim_{t\to\infty}\mathbb E[w_t-m_t]=-\frac{1-\alpha}{\alpha}v.
+$$
+
+左式由误差方差递推求固定点；右式由均值误差递推求固定点。前者说明小步长降低稳态噪声，后者说明小步长增加持续线性漂移下的滞后。漂移例是局部追踪诊断，不是有界奖励的无限时域控制模型。
+
+取 σ²=1、每步均值漂移 v=0.01。α=0.1 时，稳态方差约 0.0526、均值滞后 −0.09；α=0.01 时，方差降至约 0.00503，滞后却变为 −0.99。把目标漂移阶段的误差全部称为随机噪声，并继续减小步长，会使问题更严重。
+
+这个更新始终有非零灵敏度：对新样本的导数为 α。因此它的追踪失败可以来自步长与时间尺度失配，而不是可塑性丧失。神经网络则多出梯度通路、特征退化和优化器统计等困难。必须先分开“仍能改变但改变太慢”与“相同训练协议下越来越难学到新目标”。
+
+| 要区分的困难 | 先固定什么 | 比较什么 |
+| --- | --- | --- |
+| 采样噪声 | 固定均值与数据生成过程 | 不同步长的估计方差 |
+| 目标漂移 | 相同漂移轨迹与输入尺度 | 滞后、变化后的累计误差 |
+| 表示或优化器老化 | 同一 probe 数据、容量和训练预算 | 已有网络与匹配的新网络学习能力 |
+| 控制造成的数据变化 | 相同控制权限，另设固定数据诊断 | 新状态覆盖与同数据学习表现 |
+
+接回 CRL，同一个 GVF 会因目标策略或问题函数改变而需要追踪；option 模型会因技能改善而改变；价值又受模型规划与 actor 更新影响。即使外部世界固定，这些内部目标仍可能移动。多个学习器都“使用常数步长”不是完整答案：各自的噪声、变化速度和资源成本不同，且它们的更新会影响彼此。
+
+思考：若减小 critic 步长使 TD loss 更平稳，却降低变化后的收益，怎样检验是目标追踪太慢、探索减少还是表示退化？先在共同固定的数据流上定位学习问题，再回到各自产生经验的闭环实验。两类实验回答不同问题，不能互相替代。
+
+<a id="research-openmind-time-discretization"></a>
+
+## 学得及时，还要说明奖励发生在何时
+
+逐转移更新并不自动统一物理时间。若一个机器人每 10 毫秒控制一次，另一个每 100 毫秒一次，相同的每步折扣会定义不同的未来尺度。De Asis 与 Sutton（RLC 2024）进一步指出：奖励在区间末端到达，却把第一条奖励视为无需折扣，也会改变连续时间回报的离散近似。
+
+$$
+\widetilde G(t)=\int_t^T e^{-\kappa(u-t)}r(u)\,\mathrm du,\qquad G_t^{\rm RP}=\sum_{k=t}^{T-1}e^{-\kappa\sum_{i=t}^{k}\Delta_{i+1}}r_{k+1}\Delta_{k+1}
+$$
+
+这是原文式 (7) 的右端点形式，将每单位时间折扣写成 $e^{-\kappa}$。$\Delta_{i+1}>0$ 是真实区间时长，$r_{k+1}$ 是区间末采样的奖励率；若环境已经返回区间积分奖励，不能未经检查再乘时长。
+
+传统离散回报的第一条奖励权重为一；右端点近似则同时将奖励和折扣放在区间末端。固定 Δ 时，两种回报只差一个共同正比例，策略排序不因此改变。若 Δ 随时间、动作或计算耗时变化，该比例就不再能从整个和式中提出。
+
+$$
+G_t^{\rm RP}=e^{-\kappa\Delta_{t+1}}\left(r_{t+1}\Delta_{t+1}+G_{t+1}^{\rm RP}\right)
+$$
+
+这是上述目标直接给出的递推。相应 TD target 也应同时折扣本区间奖励率近似与后继价值；先确定传感器奖励的时间语义，才能选择这个公式。
+
+手算积分检查：奖励率恒为 1，每单位时间折扣 0.9，取两段时长 1 和 2。右端点近似是 $0.9+2\times0.9^3=2.358$；若折扣取左端点、奖励取右端点，则是 $1+2\times0.9=2.8$。二者都只是积分近似；在这个例子中准确积分为 $(1-0.9^3)/(-\log0.9)\approx2.572$。
+
+论文研究的是给定奖励采样语义下的目标离散化，不是关于所有控制问题的万能修正。它既不消除低采样频率漏失事件，也不解决动作延迟、探索风险或表示学习。奖励已在高频内部正确积分的 SMDP／option 接口，需要按其实际定义处理。
+
+与本章更新尺度控制的关联在于：Intentional Updates 约束每次学习产生的局部变化；真实时间目标决定这些次数及奖励延迟意味着什么。Kris 的 Design for Learning 立场文章进一步讨论硬件可恢复性与学习算法共同设计，但该文章本身不是持续机器人性能实验。
+
+- 思考：固定 Δ 的共同比例虽不改最优排序，为什么仍会改变学习率、奖励尺度与数值难度？
+- 实验设计：固定每秒目标，记录真实时间戳，在相同物理时长下改变控制周期及其抖动；分别报告回报积分误差、每秒更新数、决策延迟和实际控制收益。
 
 <a id="lesson-derive"></a>
 
@@ -285,6 +353,8 @@ $$
 $$
 
 观测按各坐标中心化并缩放；奖励只缩放，不减均值。奖励迹使用已到来的奖励，是未来 return 尺度的因果代理。2026 实现先更新统计并缩放当前奖励，再在 episode 边界清零奖励迹；累计均值和方差保留。
+
+固定正数缩放全部奖励会按同一比例改变回报，保留原来的策略排序；随经验变化的缩放没有这条直接保证。比如两个行为的两步奖励分别为 (2,0) 与 (0,3)，未折扣总分原来偏好后者，若第二步统一缩小为原来的十分之一，排序便反转。在线尺度处理首先是更新机制的一部分，应保留原始奖励作评价，并检查它与 critic、actor、终止及温度的共同作用。
 
 LayerNorm 在单个观测的一层预激活上计算均值和方差，因而不需要 batch。稀疏初始化则改变参数更新对不同输入的共享程度。二者不相同：前者控制层内尺度，后者改变初始连接。2024 的逐层固定稀疏率在低输入维度下可能将一层全部置零；2026 的 layer-aware 初始化分配全网非零连接预算，复现时应连同 sparse_init.py 一起使用。
 
@@ -647,7 +717,7 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
@@ -675,6 +745,15 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
 - [Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-upgd-utility-protection)
+- [An Idiosyncrasy of Time-discretization in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-openmind-time-discretization)
+
+#### 持续控制、平均奖励与重置
+
+当学习、行动和恢复占用同一条时间轴时，应优化什么，又怎样探索？
+
+平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
+
+- [Extending Differential Temporal Difference Methods for Episodic Problems](https://yingwen.io/zh/continual-rl/research/#recent-openmind-episodic-differential)
 
 #### 新学习能力、知识保留与负迁移
 
@@ -693,6 +772,7 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 - [Step-size Optimization for Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-step-size-optimization)
 - [Learning from experience instead of curated datasets](https://yingwen.io/zh/continual-rl/research/#recent-oak-network-idbd)
 - [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+- [MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters](https://yingwen.io/zh/continual-rl/research/#recent-openmind-metaoptimize)
 
 #### 持续问题与可比较实验
 
@@ -701,6 +781,8 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
 
 - [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+- [Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots](https://yingwen.io/zh/continual-rl/research/#recent-openmind-physical-atari)
+- [The Open Ant: A Robot Platform for Reinforcement Learning Research](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ant-platform)
 
 ### Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks
 
@@ -1038,6 +1120,177 @@ masked MuJoCo仍落后批量PPO。固定参数精确RTRL不代表在线变参敏
 
 - [2026年v2原文](https://arxiv.org/html/2605.24709v2)：方法、5-seed实验、masked MuJoCo负边界与staleness诊断。
 
+### MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters
+
+Arsalan Sharifnassab, Saber Salehkaleybar, Richard S. Sutton
+
+ICML 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+怎样根据后来真正发生的损失，评价过去采用的步长，而不预知未来？
+
+#### 关键机制
+
+先写未来损失的元目标，再以历史敏感度建立因果后向更新。优化器状态也进入递推。完整联合敏感度、分块尺度及 Hessian-free 近似承担不同计算代价。
+
+#### 证据
+
+正式论文包含静态图像、语言建模与非平稳 CIFAR100 实验；部分近似可接近精心选择的学习率计划。分块步长不在所有实验中优于标量版本。
+
+#### 条件与限制
+
+这些实验主要检验优化与监督学习，不能自动推出持续 actor–critic 的回报改善。元优化器仍有步长和结构选择；元目标折扣也不是环境回报折扣。
+
+#### 阅读与实验
+
+先在元学习章手算一次步长对后续误差的影响，再对照作者代码辨认内层状态、元状态和被删去的导数路径。
+
+#### 原文与相关入口
+
+- [ICML 正式论文](https://proceedings.mlr.press/v267/sharifnassab25a.html)：正式年份为 2025；2024 是早期预印本年份。
+- [定稿推导与实验](https://arxiv.org/html/2402.02342v6)：未来元目标、后向代理及多种计算近似。
+
+#### 作者代码
+
+[正式论文链接的作者仓库。](https://github.com/sabersalehk/MetaOptimize)
+
+原作者提供的优化器组合与实验实现；不同配置不是同一条更新规则。
+
+### Extending Differential Temporal Difference Methods for Episodic Problems
+
+Kris De Asis, Mohamed Elsayed, J. He
+
+RLC 2026 / RLJ · 2026 · 支持方法与理论
+
+#### 研究问题
+
+中心化怎样加速回合任务的学习，又不因为回合长度不同而改变目标？
+
+#### 关键机制
+
+处理终止边界的中心化尾项，再用共享价值偏置重参数化。区分奖励单位的中心与价值单位的偏置，使最终终止的无折扣回合也能使用适当形式。
+
+#### 证据
+
+论文分别研究固定中心化的策略不变性、在线偏置学习的线性 TD 分析，以及流式深度实验。教材给出遗漏终止补偿导致排序翻转的两动作反例。
+
+#### 条件与限制
+
+这里沿用原回合目标，不是把目标改成长期平均奖励。线性预测条件不保证非线性控制全局收敛；采样截断也不是自然终止。
+
+#### 阅读与实验
+
+计算立即终止和延迟终止两条路径的原始、错误中心化、正确补偿回报。再辨认代码里的偏置、终止分支和更新前 TD 误差。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：问题、保证与实验分别阅读。
+- [原文](https://arxiv.org/html/2605.04368v1)：终止补偿、共享偏置与回合式扩展。
+
+### An Idiosyncrasy of Time-discretization in Reinforcement Learning
+
+Kris De Asis, Richard S. Sutton
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同样的物理奖励流，为什么会因奖励和折扣放在区间的不同位置而得到不同目标？
+
+#### 关键机制
+
+从连续时间回报的右端点近似出发，让区间奖励与后继价值按到达时间共同折扣。固定间隔时只差一个比例，不等间隔时这个比例一般无法提出求和。
+
+#### 证据
+
+原文给出时间离散化分析与实验。教材用恒定奖励率的两段时间计算，比较左右端点近似与精确积分。
+
+#### 条件与限制
+
+奖励率采样与已经积分的区间奖励不同。该修正不能消除动作延迟或低采样率遗漏事件，也不是任意 SMDP 接口都应照搬的公式。
+
+#### 阅读与实验
+
+固定每秒的目标而非每步折扣，再改变采样周期及抖动。报告积分误差、每秒更新次数和控制收益。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式出版入口。
+- [原文推导](https://arxiv.org/html/2406.14951v2)：式 7 与不均匀时间步的回报定义。
+
+### Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots
+
+Khurram Javed, Joseph Modayil, Gloria Kennickell, Richard S. Sutton, John Carmack
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+在真实延迟、视觉观测与不同身体下，经典游戏任务能提供怎样的控制学习证据？
+
+#### 关键机制
+
+机器人实际操纵手柄，摄像头读取运行中的 Atari 游戏。先发动作后学习的调度，分离了身体响应、观测和更新的时间。
+
+#### 证据
+
+平台论文报告六个游戏中多次试验的累计运行与跨身体性能变化；作者公开硬件及学习工程。
+
+#### 条件与限制
+
+累计运行时间不是单条终生学习轨迹。作者学习器仍有经验回放和目标网络；平台可靠性与长期知识增长是不同主张。
+
+#### 阅读与实验
+
+同时比较环境步数和物理小时下的学习曲线，并记录动作延迟、身体差异与人工干预。
+
+#### 原文与相关入口
+
+- [作者项目与论文](https://keenagi.com/research/physical-atari/)：项目已从旧 GitHub Pages 地址迁移到 Keen 官方域名。
+
+#### 作者代码
+
+[作者团队发布的完整工程。](https://github.com/Keen-Technologies/physical-atari-rlc)
+
+身体搭建、传感控制、智能体和实验脚本。运行需实物设备。
+
+### The Open Ant: A Robot Platform for Reinforcement Learning Research
+
+Elena Sorina Lupu, Patrick Spieler, Khurram Javed, Kris De Asis, John D. Martin, Martha Steenstrup, Joseph Modayil
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+能否在有限场地中直接从身体经验学习，并明确比较仿真、实机和维护条件？
+
+#### 关键机制
+
+开放硬件四足平台配合模拟器、传感接口和学习器。越界后切换目标方向，使任务无需每走到边界就结束回合。
+
+#### 证据
+
+论文比较 SARSA(λ) 与 SAC 的实机学习，给出模拟—实机对照。公开工程包含身体设计、组装演示和运行入口。
+
+#### 条件与限制
+
+缆线仍可能需要人工解缠。两学习器的动作及经验协议不同；真机运行、无回合任务与无人维护的持续学习不能混称。
+
+#### 阅读与实验
+
+先列状态与动作权限，再核对时间戳、奖励方向和恢复记录。用同一真实时间预算检验新增预测或规划是否值得其计算成本。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/abs/2607.18488)：平台、任务、实机实验与局限。
+
+#### 作者代码
+
+[Openmind 官方工程仓库。](https://github.com/Openmind-Research-Institute/open-ant)
+
+硬件、MuJoCo 模拟、SARSA/SAC 与主控制入口。
+
 
 <a id="chapter-code"></a>
 
@@ -1065,7 +1318,7 @@ python examples/lifelong_algorithms_lab.py streaming
 
 - [Intentional-AC 作者 actor–critic 主循环](https://github.com/sharifnassab/Intentional_RL/blob/e86e26fd8613ac212e9a52c3fed8a01d0a31f685/intentional_ac.py#L79)：update_params 用旧 critic 构造 TD 误差；actor 熵项乘该误差的符号，随后将合成梯度送入独立的 policy 优化器。
 
-- [Sutton & Barto · Reinforcement Learning, Chapter 12](http://incompleteideas.net/book/the-book-2nd.html)：前向 λ-return、资格迹与控制中的 trace 语义；本页已给出所需核心推导。
+- [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
 
 - [van Seijen & Sutton · True Online TD Learning](https://proceedings.mlr.press/v32/seijen14.html)：线性在线前向/后向精确等价的适用范围，区别于普通 accumulating traces。
 
@@ -1078,3 +1331,11 @@ python examples/lifelong_algorithms_lab.py streaming
 - [Stream-X · 2026 作者实现](https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b)：依次阅读 obs_reward_transforms.py、sparse_init.py、optimizer.py 和相应 agent；代码采用 CC BY-NC 4.0 许可证。
 
 - [Welford · Note on a Method for Calculating Corrected Sums of Squares and Products](https://doi.org/10.1080/00401706.1962.10490022)：在线均值与方差递推的原始统计方法。
+
+- [Dohare et al. — Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7)：将持续追踪困难与长期可塑性问题分开；标量追踪例不用于解释全部深网老化机制。
+
+- [De Asis & Sutton · An Idiosyncrasy of Time-discretization in RL · RLC 2024](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式 RLJ/RLC 条目，区分连续奖励率采样与已经积分的区间奖励。
+
+- [Time-discretization · 原文式 (7)](https://arxiv.org/html/2406.14951v2)：更早折扣、时长缩放与不等间隔的右端点回报；固定间隔仅差共同比例。
+
+- [Kris De Asis · Design for Learning · 2025](https://kris.pengy.ca/designforlearning)：作者关于硬件与学习共同设计的立场文章；与实证论文分开。

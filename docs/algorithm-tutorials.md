@@ -120,6 +120,38 @@ Dyna 用真实经验学习模型，再用模型更新价值。Option 模型预�
 - 说明随机停止解释和势函数塑形的成立条件，计算条件失效时的反例。
 - 在同一资源预算下比较整个学习过程与冻结策略，区分 continuing、continual 和 non-stationary。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 期望
+
+同一策略可能产生多条轨迹。期望按这些轨迹的概率加权，而不是只选成功轨迹。
+
+$$
+\mathbb E[X]=\sum_x P(X=x)x
+$$
+
+### 条件概率
+
+给定已经看到的历史和选定动作，描述下一条经验的分布。条件中不能包含尚未到达的信息。
+
+$$
+P(O_{t+1},R_{t+1}\mid H_t,A_t)
+$$
+
+### 几何级数
+
+固定比例衰减的无限和有闭式解。折扣回报、随机停止和周期算例都用到它。
+
+$$
+\sum_{k=0}^{\infty}\gamma^k=\frac1{1-\gamma},\qquad0\le\gamma<1
+$$
+
+### 马尔可夫状态
+
+若状态保留了预测下一步奖励和状态所需的历史信息，就能支持一步递推。当前图像不一定满足这个条件。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -195,38 +227,6 @@ $T$ 是评价长度，$0\le\gamma\le1$ 是时间权重，$R_{t+1}$ 是执行动�
 
 - 有限寿命评价：保留启动、探索与恢复成本，长度本身是协议的一部分。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 期望
-
-同一策略可能产生多条轨迹。期望按这些轨迹的概率加权，而不是只选成功轨迹。
-
-$$
-\mathbb E[X]=\sum_x P(X=x)x
-$$
-
-### 条件概率
-
-给定已经看到的历史和选定动作，描述下一条经验的分布。条件中不能包含尚未到达的信息。
-
-$$
-P(O_{t+1},R_{t+1}\mid H_t,A_t)
-$$
-
-### 几何级数
-
-固定比例衰减的无限和有闭式解。折扣回报、随机停止和周期算例都用到它。
-
-$$
-\sum_{k=0}^{\infty}\gamma^k=\frac1{1-\gamma},\qquad0\le\gamma<1
-$$
-
-### 马尔可夫状态
-
-若状态保留了预测下一步奖励和状态所需的历史信息，就能支持一步递推。当前图像不一定满足这个条件。
 
 <a id="lesson-setting"></a>
 
@@ -832,6 +832,44 @@ python3 implementations/learner_control/online_differential_q.py --steps 1200 --
 
 [源码](../implementations/learner_control/online_differential_q.py) · [逐种子记录](https://yingwen.io/crl-code/results/learner_control_online/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learner_control_online/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learner_control_online/curves.json)
 
+<a id="rlss-temporal-uniformity"></a>
+
+## 时间上的统一性：持续更新与计算代价
+
+Alberta Plan 所说的 temporal uniformity，指学习、规划、表征构造不依赖一个特殊且不计代价的训练阶段。它不是“环境不变化”，也不是“每一步必须执行完全相同数量的梯度更新”。条件触发的更新、休眠和自适应步长都可以由同一个持续运行的规则决定。
+
+$$
+Z_{t+1}=\mathcal U(Z_t,A_t,O_{t+1},R_{t+1}),\qquad A_{t+1}\sim\Pi(\cdot\mid Z_{t+1}).
+$$
+
+Z 包括用于行动的状态、模型参数、资格迹、统计量、元参数和规划队列。规则 U 持续适用；它的输出与计算路径可以依赖当前信息。这是有限学习器的记账表达，不是某一种固定架构。
+
+“从不关掉学习”也不充分。若步长只能减小、不能在变化后恢复，更新虽然非零，也可能几乎无法改变预测。反过来，稳定时期暂时不更新某个模型，不必违背持续学习；需要说明何种可观测事件会重新启动它，以及监测本身占多少资源。
+
+| 计量 | 适用情形 | 不能漏掉的成本 |
+| --- | --- | --- |
+| 真实交互步 | 仿真器等待学习器，环境步定义固定 | 每步多少更新、模型查询与持久存储 |
+| 真实经过时间 | 世界在计算时仍演化 | 响应延迟、等待动作、逾期或恢复 |
+| 有限生命期收益 | 学习成本属于智能体表现 | 探索、技能学习与表示替换期间的损失 |
+
+例子：两个方法使用同样一千条真实转移，一个每步做一次更新，另一个做一百次模型 backup。按交互步画图可以比较经验利用；不能由此声称第二个方法计算更高效。若环境每十毫秒必须接收动作，额外规划还可能推迟动作，进而改变实际获得的数据。
+
+$$
+g_{\rm time}(\Lambda)=\lim_{n\to\infty}\frac{\mathbb E_\Lambda[\sum_{k=0}^{n-1}R_{k+1}]}{\mathbb E_\Lambda[\sum_{k=0}^{n-1}\tau_k]}.
+$$
+
+这是一个需要极限及相应长期条件的单位时长评价。τ 是真实经过时间。它不是 E[R/τ]，也不是每个决策步等权的奖励平均。任务若采用有限时限，应直接报告该时限内实际得到的总收益。
+
+**算法：从研究设定到可执行的资源协议**
+
+1. 先规定世界时钟：学习期间是否继续演化？
+1. 再规定动作截止时间、等待动作及逾期后果。
+1. 记录实际交互步、实际时长、更新数、模型查询数与峰值内存。
+1. 区分上线前数据/调参成本与计入生命期的学习成本。
+1. 比较算法时保持同一评价协议；另用同数据诊断定位更新机制。
+
+因此，大世界观点并不要求把原来每项保证全部抛弃。应先标出保证依赖的条件，再逐项改变信息、表示、数据权限或计算预算。这样，失败时才能区分目标变了、信息不足、估计不稳，还是来不及完成决策。
+
 <a id="lesson-code"></a>
 
 ## 10. 运行与检查
@@ -930,9 +968,17 @@ preferences 输出折扣价值、奖励率和前五步收益。stopping 独立�
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Distributional Model Equivalence for Risk-Sensitive Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-distributional-model-equivalence)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [An Idiosyncrasy of Time-discretization in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-openmind-time-discretization)
 
 #### 持续控制、平均奖励与重置
 
@@ -946,7 +992,7 @@ preferences 输出折扣价值、奖励率和前五步收益。stopping 独立�
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Rethinking the Foundations for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rethinking-crl-foundations)
 - [Plasticity as the Mirror of Empowerment](https://yingwen.io/zh/continual-rl/research/#recent-plasticity-mirror-empowerment)
@@ -1050,6 +1096,37 @@ NeurIPS 2023 · 2023 · 支持方法与理论
 
 分布模型等价与风险敏感实验；不提供任意任务的安全证书。
 
+### An Idiosyncrasy of Time-discretization in Reinforcement Learning
+
+Kris De Asis, Richard S. Sutton
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同样的物理奖励流，为什么会因奖励和折扣放在区间的不同位置而得到不同目标？
+
+#### 关键机制
+
+从连续时间回报的右端点近似出发，让区间奖励与后继价值按到达时间共同折扣。固定间隔时只差一个比例，不等间隔时这个比例一般无法提出求和。
+
+#### 证据
+
+原文给出时间离散化分析与实验。教材用恒定奖励率的两段时间计算，比较左右端点近似与精确积分。
+
+#### 条件与限制
+
+奖励率采样与已经积分的区间奖励不同。该修正不能消除动作延迟或低采样率遗漏事件，也不是任意 SMDP 接口都应照搬的公式。
+
+#### 阅读与实验
+
+固定每秒的目标而非每步折扣，再改变采样周期及抖动。报告积分误差、每秒更新次数和控制收益。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式出版入口。
+- [原文推导](https://arxiv.org/html/2406.14951v2)：式 7 与不均匀时间步的回报定义。
+
 
 <a id="chapter-code"></a>
 
@@ -1089,6 +1166,8 @@ python3 examples/objectives_lab.py all
 
 - [Kumar et al. · Continual Learning as Computationally Constrained Reinforcement Learning](https://arxiv.org/html/2307.04345v3)：第 2 节明确比较完整智能体的平均奖励与计算限制，同时指出平均奖励不能区分所有有限时间损失；第 3 节区分计算、信息和物理容量。
 
+- [Sutton、Bowling、Pilarski · The Alberta Plan for AI Research](https://arxiv.org/abs/2208.11173)：Research Vision 区分经验、时间统一、计算约束和其他智能体；本文预算例子是教学分析。
+
 
 ---
 
@@ -1102,6 +1181,26 @@ python3 examples/objectives_lab.py all
 - 说明奖励表示定理的条件，并构造 Markov 奖励不能表达的排序。
 - 推导势函数塑形、偏好学习和有限轨迹 MaxEnt IRL 的更新。
 - 设计可以区分目标错误、奖励模型错误与优化错误的实验。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 历史与策略
+
+历史包含已经发生的观测和动作。策略或完整学习器诱导历史上的概率分布。设计者也可能观察智能体看不到的变量。
+
+### 回报
+
+本章用有限时域折扣回报推导。平均奖励和风险准则会另行说明。
+
+$$
+G_T=\sum_{t=0}^{T-1}\gamma^t R_{t+1}
+$$
+
+### 概率模型与梯度
+
+知道条件概率、期望与链式法则即可。对数配分函数的梯度会在正文推导。
 
 <a id="problem-definition"></a>
 
@@ -1178,26 +1277,6 @@ $A,B$ 是结果历史的概率分布，$\succeq$ 是设计者偏好，$U$ 是其
 
 - 最优内部奖励：选择信号使受限学习器提高外部评价，一般无策略不变性保证。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 历史与策略
-
-历史包含已经发生的观测和动作。策略或完整学习器诱导历史上的概率分布。设计者也可能观察智能体看不到的变量。
-
-### 回报
-
-本章用有限时域折扣回报推导。平均奖励和风险准则会另行说明。
-
-$$
-G_T=\sum_{t=0}^{T-1}\gamma^t R_{t+1}
-$$
-
-### 概率模型与梯度
-
-知道条件概率、期望与链式法则即可。对数配分函数的梯度会在正文推导。
 
 <a id="lesson-setting"></a>
 
@@ -1289,6 +1368,32 @@ def ordered_goal(events):
 ```
 
 增加记忆修复的是这个信息缺失。它不证明任意偏好都有有限状态表示，也不自动修复彩票偏好违反独立性的问题。Abel 等人的 Markov 奖励表达能力研究应当放在这一层理解。
+
+<a id="research-openmind-ungrounded-alignment"></a>
+
+## 奖励里的“那个对象”是谁：未接地的目标与感知编码
+
+写出“拾起垃圾得 1 分”已经确定了一部分偏好，却还没有告诉系统哪段传感器数据表示垃圾。如果相机输入被置换、换了感知模态，或内部表示在学习中重排，奖励公式中的变量可能失去原来的指代。这里的问题先发生在概念与感知的对应关系上；一个优化完全正确的控制器也可能在错误事件上得到奖励。
+
+Pickett、Nain、Modayil 与 Jones 的 The Ungrounded Alignment Problem（2024 预印本，ICDL 2025）用一个刻意简化的问题隔离这层困难：系统预先知道要识别的字母序列，却不知道字母将以何种图像编码出现，训练时没有图像到字母的标签。作者固定英语字符的 bigram 关系表，让共享编码器输出的相邻字符分布与该表给出的关系相吻合。
+
+$$
+e_t=E_\theta(x_t),\qquad d_{t+1}(y)=\sum_{x\in\Sigma}B(y\mid x)e_t(x)
+$$
+
+这里用统一记号重写关系传播：E 把未知感知编码映成字母概率，B 是预先给定且冻结的字符转移知识，d 是由前一字符推得的下一字符分布。学习再用批内对比损失约束 d 与下一图像的编码；不是由奖励大小直接学习字母名称。
+
+原文在置换 EMNIST 字符序列上的触发词 fnord 检测达到 99.88%，但在 CIFAR26 编码上为 85.49% ± 1.59%。不能只用前者概括跨感知编码的结果。实验预先提供字符关系，进行 64 次随机重启以缓解局部最优，并用触发词出现概率设定阈值。它是一项接地问题的受控解法，不能据此宣称已解决人类价值对齐，也不是固定预算单生命期流式 RL 的实证。
+
+接回奖励设计，可以把任务写成两个待检查的映射：先从经历识别事件，再由事件计算奖励。下面的分解是教学用的接口，不是该论文提出的新 RL 算法。奖励权重可以保持不变，而事件识别器需要随传感器变化重新接地；反过来，识别正确而权重改变，才是在改变评价偏好。
+
+$$
+Z_{t+1}=g_{\eta_t}(H_{t+1}),\qquad R_{t+1}=\rho_\psi(Z_{t+1})
+$$
+
+g 负责“发生了什么”的识别，ρ 负责“这个事件值多少”的评分。若二者都可学习，必须保存其版本和各自监督来源。正确识别一个事件不自动证明给它的分数合适。
+
+思考：让感知映射变化而事件关系固定，再让事件关系变化而感知固定，会分别破坏上面哪一项假设？如果两类事件在所有已知关系中完全对称，仅靠无标签关系匹配能否唯一确定它们的名字？需要加入什么经验或先验才能打破对称？
 
 <a id="lesson-derive"></a>
 
@@ -1480,10 +1585,10 @@ $$
 Z 是所有可行轨迹指数分数的和。固定环境和轨迹集合。若轨迹具有不同基准概率，应把它们纳入分布，而不是当作奖励。
 
 $$
-\mathcal L(\theta)=\log Z(\theta)-\theta^\top\widehat F,\qquad \nabla\mathcal L=\sum_\tau P_\theta(\tau)F(\tau)-\widehat F
+\widehat F=\frac1M\sum_{i=1}^M F(\tau_i),\qquad\mathcal L(\theta)=\log Z(\theta)-\theta^\top\widehat F,\qquad \nabla\mathcal L=\sum_\tau P_\theta(\tau)F(\tau)-\widehat F
 $$
 
-对 log Z 求导：先对指数求导，再除以 Z，得到模型期望特征。负对数似然的梯度就是“模型特征−示范特征”。梯度下降使两者靠近。
+$\tau_1,\ldots,\tau_M$ 是给定的 $M\ge1$ 条示范，$\widehat F$ 是每条示范的累计特征再取样本平均，而不是对所有时间步重新平均。这里 $\mathcal L$ 是平均负对数似然。对 $\log Z$ 求导得到模型期望特征，所以梯度是“模型特征−示范特征”。梯度下降使两者靠近。
 
 有限轨迹 MaxEnt 负对数似然与精确梯度。测试不是完整随机 MDP 的 MaxCausalEnt 实现。
 
@@ -1711,11 +1816,19 @@ def intrinsic_meta_gradient(theta, eta, alpha):
 
 ### 问题支线
 
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
+
+- [The Ungrounded Alignment Problem](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ungrounded-alignment)
+
 #### 子任务、技能与经验获取
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Reward-Aware Proto-Representations in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-reward-aware-proto-representations)
@@ -1725,7 +1838,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 
@@ -1745,15 +1858,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -1834,6 +1947,43 @@ ICLR 2025 · 2025 · 支持方法与理论
 
 MaestroMotif 的偏好处理、技能组织与 RL 实验。
 
+### The Ungrounded Alignment Problem
+
+Marc Pickett, Aakash Kumar Nain, Joseph Modayil, Llion Jones
+
+ICDL 2025（预印本 2024） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+即使目标已经写明，智能体怎样知道其中的概念对应哪一段未知感知输入？
+
+#### 关键机制
+
+利用固定的字符转移关系知识，对未知图像编码进行无标签对齐。共享编码器与对比学习把感知模式连接到既有关系结构。
+
+#### 证据
+
+原文在置换像素的字符序列上检验触发词识别。这隔离了概念指代与感知编码的问题，而非直接训练一般 RL 控制器。
+
+#### 条件与限制
+
+预先给定的关系、重启训练与阈值选择是实验条件。受控接地任务的准确率不能当作通用价值对齐或单生命期适应的证据。
+
+#### 阅读与实验
+
+分别改变感知编码和事件关系，区分事件识别失败、预测失败与奖励偏好错误。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/html/2408.04242v1)：问题定义、关系传播与训练条件。
+- [机构发表目录](https://www.openmindresearch.org/research)：列为 ICDL 2025。
+
+#### 作者代码
+
+[原论文给出的作者仓库。](https://github.com/EmergenceAI/babybeaver)
+
+作者字符接地任务实现；不是流式 actor–critic 代码。
+
 
 <a id="chapter-code"></a>
 
@@ -1892,6 +2042,10 @@ python3 examples/reward_design_lab.py test
 
 - [AI Safety Gridworlds：原始环境代码](https://github.com/google-deepmind/ai-safety-gridworlds)：小型安全诊断环境。仓库已归档；独立 performance 指标不是智能体的训练奖励。
 
+- [Pickett et al. — The Ungrounded Alignment Problem](https://arxiv.org/html/2408.04242v1)：2024 预印本；Openmind 与 ICDL 官方日程列为 ICDL 2025。关系先验、无标签感知接地与触发词检测。
+
+- [EmergenceAI — babybeaver 作者代码](https://github.com/EmergenceAI/babybeaver)：论文直接给出的原作者仓库；检查训练重启、关系表和触发阈值，不能误标为流式 RL 实现。
+
 
 ---
 
@@ -1906,6 +2060,22 @@ python3 examples/reward_design_lab.py test
 - 独立对应同策略与异策略 Differential TD、多状态 Differential Q、已知模型 RVI 和学习模型 Differential Dyna 的更新与诊断。
 - 严格区分目标折扣、中心化折扣 critic 和资格迹衰减；识别有限折扣带来的价值及 actor 方向偏差。
 - 解释非线性逼近、流式更新、慢混合与 option 随机时长增加的困难，不将表格保证外推到深网。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 状态与马尔可夫性
+
+给定当前状态和动作，下一步奖励与状态的条件分布不再依赖更早历史；观测不充分时，需要先构造带记忆的 agent state。
+
+### 策略评估与控制
+
+策略评估求固定策略 $\pi$ 的价值；控制则寻找收益更高的策略。控制样本可由探索策略 $b$ 产生，因此样本奖励均值未必是最优策略的奖励率。
+
+### TD 与半梯度
+
+用当前估计的下一状态价值补齐未知未来，把它视作本步固定目标再更新当前估计；这不是对整个 Bellman residual 求全梯度。
 
 <a id="problem-definition"></a>
 
@@ -1983,22 +2153,6 @@ $T$ 是原始环境步数，$\Pi$ 是允许的策略集合。预测只估计固�
 - 奖励中心化：处理共同奖励偏移；折扣联合更新的中心不应预先当成奖励率。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 状态与马尔可夫性
-
-给定当前状态和动作，下一步奖励与状态的条件分布不再依赖更早历史；观测不充分时，需要先构造带记忆的 agent state。
-
-### 策略评估与控制
-
-策略评估求固定策略 $\pi$ 的价值；控制则寻找收益更高的策略。控制样本可由探索策略 $b$ 产生，因此样本奖励均值未必是最优策略的奖励率。
-
-### TD 与半梯度
-
-用当前估计的下一状态价值补齐未知未来，把它视作本步固定目标再更新当前估计；这不是对整个 Bellman residual 求全梯度。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 每单位时间的收益
@@ -2020,7 +2174,7 @@ $g_\pi$ 是每个原始环境步的平均收益。本章假设它与初始状态
 | $h(s)$ / $q(s,a)$ | 差分价值，又称 bias | 根据 TD 误差更新 |
 | $\alpha$、$\eta$ | 价值步长、奖励率相对步长 | 本页固定；非平稳场景可研究自适应 |
 
-奖励率衡量长期稳态表现，相对价值衡量从当前状态出发，在进入稳态之前比平均水平多赚或少赚多少。两者都需要：两条策略可能长期奖励率相同，但在前几百步的收益相差很大。对有限预算研究还要报告累计收益、变化后恢复时间，不能只报告最终 g。
+奖励率衡量长期单位时间的表现。差分价值通过扣除这一共同增长率，描述起点对累计收益的相对影响；它并不假定过程会在某个有限时刻精确进入稳态。两条策略可能奖励率相同，却在前几百步收益相差很大。差分价值在跨策略比较时还要统一规范，有限预算研究则应直接报告累计收益和恢复成本。
 
 <a id="lesson-discount-choice"></a>
 
@@ -2178,6 +2332,8 @@ $d_\pi(s)$ 是策略长期访问状态 s 的比例。把 Poisson 方程左乘 $d
 | 单常返类，允许暂态 | 仍有唯一稳态分布；gain 不依赖初态 | Poisson 解只差常数；周期性仍可能使逐步极限振荡 |
 | 多个常返类 | 可能因初态或最终进入的类而异 | 一般需要状态相关 gain；本章标量方程可能无解 |
 
+最小反例是两个互不相通的自环状态，奖励分别恒为 0 和 1。两个起点的奖励率分别为 0 和 1；若强行共用一个标量 $g$，Poisson 方程会同时要求 $g=0$ 和 $g=1$。所以“有限、平稳、持续运行”不足以保证本章的标量设定。相反，周期性本身不阻止时间平均存在：奖励依次为 0、2 的二状态环具有 $g=1$，但逐时刻期望奖励不收敛。
+
 $$
 (I-P_\pi)h_\pi=r_\pi-g_\pi\mathbf1,\qquad d_\pi^\top h_\pi=0.
 $$
@@ -2333,6 +2489,40 @@ $$
 甚至方向也会相反。令 $\pi_p$ 在状态 0 以概率 p 选择 A，其余时候选择 B，$0<p<1$。其稳态分布为 $(1,10p,10(1-p))/11$，所以 $g(p)=(10-6p)/11$、$dg/dp=-6/11$。但 $\gamma=0.5$ 时，精确折扣动作价值差是 $4-\gamma/(1-0.9\gamma)=34/11$。稳态 score 更新方向因此是 $B_\gamma(p)=34/121>0$，与真实梯度相反。这里 critic 没有训练误差，gain 也完全正确。
 
 若用 logit 参数 $p=\sigma(\theta)$，两个方向都再乘 $p(1-p)$；在 $p=1/2$ 时分别为 $-3/22$ 和 $17/242$。因此“去掉目标中的折扣、在学习算法中加回”是一项需要证明或量化偏差的设计，不是一条不带条件的等价变换。可以研究随数据增加的折扣调度、对平均梯度的显式校正，或不改变 Poisson 目标的信用分配衰减；三者应分别命名。
+
+<a id="course-average-slow-modes"></a>
+
+## 把折扣作为求解参数：它先压掉了哪些长期差异？
+
+中心化折扣 critic 在有限折扣下不同于差分价值。差异有多大，取决于环境的时间尺度，不只取决于 γ 看上去是否接近 1。冻结一条有限、不可约的策略链，可以用一个最小例子把这层误差算出来。
+
+$$
+P=\begin{pmatrix}1-\varepsilon&\varepsilon\\\varepsilon&1-\varepsilon\end{pmatrix},\qquad r=\begin{pmatrix}1\\-1\end{pmatrix},\qquad d=\begin{pmatrix}1/2\\1/2\end{pmatrix},\qquad g=d^\top r=0.
+$$
+
+$0<\varepsilon<1/2$。两个状态都有较大概率停留，长期访问各半；奖励率为零，但初始处于高奖励状态仍比处于低奖励状态有利。
+
+$$
+Pr=(1-2\varepsilon)r,\quad h=\frac{r}{2\varepsilon},\quad u_\gamma=\frac{r}{1-\gamma(1-2\varepsilon)},\quad \frac{u_\gamma(s)}{h(s)}=\frac{2\varepsilon}{1-\gamma+2\gamma\varepsilon}.
+$$
+
+这里 $r$ 恰是非恒定特征方向，且其稳态均值为零。分别代入 $(I-P)h=r$ 与 $(I-\gamma P)u_\gamma=r$ 即得。比值同时适用于两个非零状态值，不涉及常数规范的混淆。
+
+取 ε=0.01，差分价值是 (50,−50)。即使 γ=0.99，中心化折扣值也只有约 (33.557,−33.557)。准确奖励率已经被减去，仍有约 32.9% 的状态差异被压小。若 ε=0.0001 而 γ 仍为 0.99，该比值仅约 0.0196。对慢得多的过程，同一个折扣几乎抹掉了差分价值中的长期结构。
+
+若希望这项相对缩小不超过 $\eta\in(0,1)$，令 $q=1-\gamma$，由上式可直接得到 $q\leq 2\varepsilon\eta/[(1-\eta)(1-2\varepsilon)]$。这个界只属于本例，但它说明“足够接近 1”必须相对于混合时间解释。增大 γ 让估计更接近 bias，也增加需要从经验分辨的时长。
+
+课程提出过从较小折扣逐步趋向 1 的思路：目标保持平均奖励，折扣仅作为中间估计器参数。它是一条求解思路，不是仅凭固定策略极限就得到的在线控制定理。每次调整折扣，critic 的目标会移动；同时学习策略、奖励率和表示时，还有其他移动目标。
+
+$$
+u_{\gamma_{t+1}}-u_{\gamma_t}\approx(\gamma_{t+1}-\gamma_t)(I-\gamma_tP)^{-1}P\,u_{\gamma_t}.
+$$
+
+这是冻结 P、奖励与正确 g 后，对折扣求导得到的一阶变化。靠近慢模态时逆矩阵的作用较强。固定折扣增量未必造成固定大小的目标移动；critic 尚未跟上时再次增大折扣，会增加跟踪误差。
+
+这个例子没有动作，所以尚不证明策略选择受损。要检验控制影响，应加入一个可以改变到达概率或转换成本的动作，再与精确 Poisson 解比较。记录有限折扣偏差、采样误差与策略改善方向，不能只因学习曲线变平就判定折扣调度已正确逼近平均奖励控制。
+
+一个有区分力的研究问题是：能否依据已有经验对关键时间尺度的分辨程度调整折扣，而不是按训练步数预设日程？在严格流式条件下，旧数据不能重新计算新时域标签；适应折扣、保留多尺度 GVF 和直接差分预测各需要不同的记忆与计算。应在同一预算下比较，而非将辅助预测数量视为免费。
 
 <a id="lesson-trace-decay"></a>
 
@@ -2887,6 +3077,42 @@ $$
 
 原文提供线性诊断实验，但尚未确认对应的作者代码仓库。BEC 的作者仓库不能自动充当 RETD 的官方实现。上述矩阵检查是可独立完成的教学验证；完整复现仍需核对论文附录的全部采样、步长与统计协议。
 
+<a id="research-openmind-episodic-centering"></a>
+
+## 回合会终止，中心化怎样保持原来的目标
+
+在无限折扣流中，每步减去常数只平移价值；在长短不一的回合中，这会变成按持续时间收费。De Asis、Elsayed 与 He（RLC 2026）从终止边界出发推广 Differential TD，让中心化也能服务原有的 episodic 目标。此处的“differential”描述参数化与更新，不能据名字把评价目标改为平均奖励。
+
+反例：$\gamma=0.9$。动作 A 立即给 1 并终止；B 先给 0，再给 1.2 并终止。原回报分别为 1 和 1.08，B 更好。若仅在真实回合内每步减去 $c=0.2$，回报变成 0.8 和 0.7，排序翻转。
+
+$$
+\Phi(s)=\frac{c}{1-\gamma}\ (s\ne S_T),\quad \Phi(S_T)=0,\qquad F(s,s')=\gamma\Phi(s')-\Phi(s)=\begin{cases}-c/(1-\gamma),&s'=S_T,\\-c,&s'\ne S_T,\end{cases}\quad(s\ne S_T).
+$$
+
+固定 $c$、$\gamma<1$ 时，这是满足终止势函数为零的 potential shaping。分段式针对从非终止状态出发的转移；吸收终点自身的转移有 $F(S_T,S_T)=0$。普通转移仍减 $c$，进入终点则减 $c/(1-\gamma)$。这样整段回报统一减去起点势函数，而非按回合长度扣费。
+
+在上例中，修正后的 A 为 −1，B 为 −0.92，二者都恰好减去 2，原排序恢复。终止边界补偿并不是让机器人真的在终点继续运行；它只是将假想吸收状态上的折扣尾部写入价值定义。
+
+$$
+V(s;w,b)=V^\Delta(s;w)+b,\qquad V^\Delta(S_T;w)=-b,\qquad \delta_t=\begin{cases}R_{t+1}-b_t-V^\Delta(S_t;w_t),&S_{t+1}=S_T,\\R_{t+1}-(1-\gamma)b_t+\gamma V^\Delta(S_{t+1};w_t)-V^\Delta(S_t;w_t),&\text{otherwise}.\end{cases}
+$$
+
+改用共享的价值偏置 $b$ 可避免除以 $1-\gamma$。在折扣情形 $c=(1-\gamma)b$；这两个符号属于不同单位，更新比例也需对应重参数化。该价值偏置形式还能用于最终终止、总回报有限的 $\gamma=1$ 回合。
+
+$$
+w_{t+1}=w_t+\alpha_t\delta_t\nabla_wV^\Delta(S_t;w_t),\qquad b_{t+1}=b_t+\eta\alpha_t\delta_t
+$$
+
+两条更新使用同一个旧误差。在线变化的 $b$ 不能只靠“固定势函数保持策略排序”的结论论证；论文进一步通过共享偏置的线性 TD 表示讨论其保证。
+
+共享偏置是所有非终止状态共用一个标量，多动作网络中也须跨输出共享；它不等同于为每个动作随意增加一个独立 bias。论文的线性预测分析依赖固定表示、访问与终止等条件；流式深度实验是另一层证据，不能推广为任意深网控制收敛定理。
+
+这与本章的奖励率 g、折扣 TD 参照 c 各有含义。把终点视为无限零奖励吸收状态时，任何最终终止策略的长期平均奖励均为零；因此仍需评价原来的回合总回报或折扣回报。
+
+- 思考：如果只是采样窗口用完，能否采用终止分支？不能；真实后继价值仍属于目标。
+- 比较固定中心化、遗漏终止补偿、正确补偿与学习共享偏置四种情况；先核对策略排序，再研究学习速度。
+- 将常数奖励偏移、回合时长和任务 reset 权限分别控制，避免把目标变化误认为样本效率提升。
+
 <a id="lesson-nonlinear"></a>
 
 ## 12 · 换成神经网络：哪些结构不再成立
@@ -2915,29 +3141,41 @@ $$
 
 有些 actor–critic 分析要求 actor 步长 $\beta_t$ 相对 critic 步长 $\alpha_t$ 满足 $\beta_t/\alpha_t\to0$，并配合其他假设。不能把“代码里 actor 学习率较小”当成全部条件。表格 Differential TD/Q 的固定 η 联合更新则属于另一条证明路线，两者不能混称。
 
-流式实验应先固定表示与策略，检查预测；再允许策略改善；最后才允许表示学习与模型规划同时发生。每加一个移动对象，都保持相同环境流、日志预算和关闭该机制的对照。至少记录奖励率误差、参考漂移、梯度范数、不同状态的预测变化与真实策略收益。
+流式实验应先固定表示与策略，检查预测；再允许策略改善；最后才允许表示学习与模型规划同时发生。固定数据的预测比较可以使用同一条转移流。控制比较则匹配初始条件、外生随机性和资源预算，让各算法的动作产生各自的后续经验；强行给它们相同状态轨迹会改变闭环控制问题。每增加一个可学习对象，都保留关闭该机制的对照。至少记录奖励率误差、参考漂移、梯度范数、不同状态的预测变化与真实策略收益，并计入学习和规划的成本。
 
 <a id="research-average-aro-ddpg"></a>
 
 ## 深度连续控制 · ARO-DDPG 如何连接奖励率、critic 与确定性策略
 
-问题是连续动作的平均奖励控制。确定性策略输出动作，critic 表示该策略的差分动作价值。Saxena 等人的 ARO-DDPG（ICML 2023）把平均奖励 actor–critic 推向连续控制，但需要区分策略梯度恒等式、有限时间理论和完整深网工程。
+差分 critic 已经能比较“先做这个动作，再执行当前策略”的长期后果。连续动作控制还需要知道，稍微改变这个动作会怎样改变奖励率。确定性策略 μθ 直接输出动作；下面从它的差分方程出发，寻找可以交给 actor 的方向。先考虑有限状态、连续动作，策略附近的诱导链不可约，所需导数存在且可交换求和与微分。
+
+$$
+q^\mu(s,a)=r(s,a)-g_\mu+\sum_{s'}P(s'\mid s,a)h_\mu(s'),\qquad h_\mu(s)=q^\mu(s,\mu_\theta(s)).
+$$
+
+g 是每步奖励率，h 是按固定规范确定的差分状态价值。给全部 h 和 q 加同一个常数，不改变动作间的差别。动作导数先固定当前策略及其后续 h，只改变最初的动作。
+
+$$
+\nabla_\theta g_\mu+\nabla_\theta h_\mu(s)=u_\theta(s)+\sum_{s'}P_\mu(s,s')\nabla_\theta h_\mu(s'),\qquad u_\theta(s)=\nabla_\theta\mu_\theta(s)\nabla_aq^\mu(s,a)\big|_{a=\mu_\theta(s)}.
+$$
+
+对差分方程求导。u 收集当前动作改变奖励与转移的影响；最后一项保留后续策略变化造成的差分价值变化。下一步将它消去，而不是把它假装成常数。
 
 $$
 \nabla_\theta g_{\mu_\theta}=\mathbb E_{S\sim d_{\mu_\theta}}\!\left[\nabla_\theta\mu_\theta(S)\,\nabla_a q^{\mu_\theta}(S,a)\big|_{a=\mu_\theta(S)}\right]
 $$
 
-在相应平稳性、可微性与可积条件下，确定性策略梯度使用当前策略的平稳状态分布。d 是状态分布，不是任意 replay 分布；公式中的 q 是该策略的差分价值。
+用当前策略的平稳分布 d 对前式求平均。由 $d^\top P_\mu=d^\top$，两边的差分价值导数相消，剩下奖励率梯度。连续状态需以积分替代求和，并满足相应平稳、可积与微分条件。
 
-推导的关键是对策略的 Poisson 方程微分，再用平稳分布消去后继偏差函数的变化项。差分价值的共同常数不影响动作导数。然而，改变 replay 分布一般会改变估计的方向；target network 也不能使离策略样本自动成为精确的当前策略梯度。
+这个消去步骤解释了为什么状态分布不能任换成 replay 频率：其他分布一般不满足同一平稳等式。Saxena 等人的 ARO-DDPG（ICML 2023）研究怎样在离策略数据上近似这项更新，再将其用于深度连续控制。目标网络减慢 critic 变化，但不完成状态分布校正。
 
 原论文定理 3.4 明确把行为稳态权重下的方向称为近似梯度，并在一致遍历与其他正则条件下约束其误差。第 4 节的随机逼近分析使用线性 critic、步长/时间尺度和投影等条件；有限时间结论控制梯度范数，并保留逼近与采样误差项。它不是深网找到全局最优策略的保证。
 
 $$
-y=r+(1-d)\min_i Q^-_i(s^+,\mu^-(s^+)),\qquad L_Q=\frac12\sum_i\bigl(Q_i(s,a)+\rho-y\bigr)^2
+y=r+(1-d_{\rm end})\min_i Q^-_i(s^+,\mu^-(s^+)),\qquad L_Q=\frac12\sum_i\bigl(Q_i(s,a)+\rho-y\bigr)^2
 $$
 
-作者工程 cheetah_run/ddpg_model.py 中的主要 critic 损失。ρ 是可训练的奖励率标量；同一损失同时更新 critic 与 ρ。d 是工程使用的边界标记，必须回到环境检查其语义。这里不是把 d 的所有含义都认定为真实终止。
+作者工程 cheetah_run/ddpg_model.py 中的主要 critic 损失。ρ 是可训练的奖励率标量；同一损失同时更新 critic 与 ρ。$d_{\rm end}$ 是代码的边界标记，与上面的稳态分布 d 不同；是否代表真正终止，须由环境协议确定。
 
 作者工程包含双 critic、目标网络、replay 和训练段落。train.py 会重新初始化环境段落。因此该工程可以帮助研究深度平均奖励控制，却不能仅凭名称当作不重置的单次生命算法。论文理论的函数类、采样与步长条件，也不能替代完整深网联合训练的证明。
 
@@ -2954,7 +3192,7 @@ $$
 
 ## 平均奖励最大熵控制 · ASAC 的策略改善比较什么
 
-ASAC（RLC 2025）研究平均奖励下的熵正则控制。先固定一个参考策略 $\pi_0$ 和温度 α。目标是长期外部奖励率减去相对 $\pi_0$ 的信息代价。改变温度或参考策略，就改变了优化目标，而不只是改变训练技巧。
+差分价值允许共同加一个常数，所以不能通过“新 critic 的数值更大”判断策略是否变好。若还希望策略保留一定随机性，应先把这种偏好写进长期目标，再推导改善。固定参考策略 $\pi_0$ 和温度 α，目标取长期外部奖励率减去相对参考策略的信息代价。这是 ASAC（RLC 2025）研究的平均奖励熵正则问题。
 
 $$
 g^\alpha_\pi=\lim_{T\to\infty}\frac1T\mathbb E_\pi\!\left[\sum_{t=0}^{T-1}\left(R_{t+1}-\alpha\log\frac{\pi(A_t\mid S_t)}{\pi_0(A_t\mid S_t)}\right)\right],\quad\alpha>0
@@ -2962,13 +3200,39 @@ $$
 
 使用 α 表示温度，相当于论文的逆温度 β 的倒数。要求策略在参考策略支持集内，并满足相应长期平均存在条件。外部奖励率与含正则项的奖励率需分开报告。
 
+先在有限状态动作上推导，假定参考动作概率为正，所比较策略诱导不可约链，奖励有界。固定当前策略 π，令 q 为它的准确 soft 差分动作价值：本步先计外部奖励，动作的信息代价通过状态价值计入。这样可把一次动作改善和长期率的变化接起来。
+
 $$
-\pi^+(a\mid s)=\frac{\pi_0(a\mid s)\exp(q(s,a)/\alpha)}{\int \pi_0(\tilde a\mid s)\exp(q(s,\tilde a)/\alpha)\,d\tilde a},\qquad L_\pi=\mathbb E\!\left[\alpha\log\frac{\pi(A\mid S)}{\pi_0(A\mid S)}-q(S,A)\right]
+q(s,a)=r(s,a)-g_\pi^\alpha+\sum_{s'}P(s'\mid s,a)h(s'),\qquad h(s)=\sum_a\pi(a\mid s)\left[q(s,a)-\alpha\log\frac{\pi(a\mid s)}{\pi_0(a\mid s)}\right].
 $$
 
-固定 q 后，对每个状态最大化动作价值减去 KL 代价，得到指数倾斜策略。离散动作时分母改为求和。Lπ 是对应的策略投影目标；神经策略只能近似该解。
+q 和 h 对应同一固定策略与同一熵约定，不是任意两个网络输出。h 是在当前状态按 π 选择动作时的正则价值。
 
-平均奖励策略改善应比较策略的奖励率，而不是未经规范化的两个差分价值。给整个 q 加常数，指数倾斜策略不变，q 的数值大小却改变。原文的证明使用新策略的稳态分布、可积的差分值和相应支持条件；它并不保证任意连续空间神经近似与联合优化的每一步都改善收益。
+$$
+\mathcal I_q(\kappa;s)=\sum_a\kappa(a\mid s)\left[q(s,a)-\alpha\log\frac{\kappa(a\mid s)}{\pi_0(a\mid s)}\right],\qquad\pi^+(a\mid s)=\frac{\pi_0(a\mid s)e^{q(s,a)/\alpha}}{Z_q(s)}.
+$$
+
+κ 是候选动作分布。对概率求导并满足总和为一，得到右边的指数倾斜分布，Z 是其归一化常数。连续动作可改为密度与积分，但须存在有限的 Z 及相关期望。
+
+$$
+\mathcal I_q(\kappa;s)=\alpha\log Z_q(s)-\alpha D_{\rm KL}(\kappa(\cdot\mid s)\Vert\pi^+(\cdot\mid s)),\qquad\mathcal I_q(\pi^+;s)\ge\mathcal I_q(\pi;s)=h(s).
+$$
+
+KL 非负，因此 π⁺ 对每个状态至少与旧策略一样好。这时比较的是固定旧 q 下的局部动作选择，还不是两个新旧 critic 的任意数值。
+
+$$
+g_\kappa^\alpha-g_\pi^\alpha=\mathbb E_{S\sim d_\kappa}[\mathcal I_q(\kappa;S)-h(S)].
+$$
+
+代入 q 的差分方程，右边成为新策略的正则奖励率减旧率，再加 dκ 加权的 Pκh−h；最后一项由平稳性消去。取 κ=π⁺，上面的逐状态不等式便给出率不下降。
+
+一个单状态例子是 $q=(0,1)$、参考概率各半、$\alpha=1$。指数倾斜给出高值动作概率 $e/(1+e)\approx.7311$。此时 $\mathcal I_q(\pi^+)=\log((1+e)/2)\approx.6201$，高于均匀选择的 .5。给两个 q 同加十，动作概率不变，两个局部值都加十，改善差仍为 .1201。
+
+$$
+L_\pi(\theta)=\mathbb E_{S\sim\nu,\ A\sim\pi_\theta(\cdot\mid S)}\left[\alpha\log\frac{\pi_\theta(A\mid S)}{\pi_0(A\mid S)}-Q_\phi(S,A)\right].
+$$
+
+工程中以经验状态分布 ν 和近似 critic 替代上述逐状态准确改善。这一步固定 critic 参数 φ 和参考策略；重参数化 actor 时仍需对其采样动作求 Q 的动作导数。共享策略网络只能近似指数倾斜，减小此经验损失不等于已经证明真实率改善。
 
 $$
 \operatorname{KL}\!\left(\pi\,\middle\|\,\frac{\pi_0 e^{\beta q}}{Z}\right)=\mathbb E_{\pi}\!\left[\log\frac{\pi}{\pi_0}-\beta q\right]+\log Z,\qquad\alpha=1/\beta
@@ -3194,9 +3458,17 @@ reset critic 使用 reset 指示作为信号，fd 按对应移动参考更新。
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Posterior Sampling for Continuing Environments](https://yingwen.io/zh/continual-rl/research/#recent-cpsrl-continuing-exploration)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [An Idiosyncrasy of Time-discretization in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-openmind-time-discretization)
 
 #### 持续控制、平均奖励与重置
 
@@ -3208,6 +3480,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 - [Reward Centering](https://yingwen.io/zh/continual-rl/research/#recent-reward-centering-discounted)
 - [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
 - [Posterior Sampling for Continuing Environments](https://yingwen.io/zh/continual-rl/research/#recent-cpsrl-continuing-exploration)
+- [Extending Differential Temporal Difference Methods for Episodic Problems](https://yingwen.io/zh/continual-rl/research/#recent-openmind-episodic-differential)
 
 #### 持续问题与可比较实验
 
@@ -3351,6 +3624,68 @@ CPSRL 以独立随机时钟重采样模型并规划，而不等待真实 reset �
 - [RLC 2024 原文](https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_277.pdf)：随机重采样、折扣联系与 Bayesian regret 假设。
 - [RLJ 论文记录](https://rlj.cs.umass.edu/2024/papers/Paper277.html)：作者、会议与理论结果。
 
+### Extending Differential Temporal Difference Methods for Episodic Problems
+
+Kris De Asis, Mohamed Elsayed, J. He
+
+RLC 2026 / RLJ · 2026 · 支持方法与理论
+
+#### 研究问题
+
+中心化怎样加速回合任务的学习，又不因为回合长度不同而改变目标？
+
+#### 关键机制
+
+处理终止边界的中心化尾项，再用共享价值偏置重参数化。区分奖励单位的中心与价值单位的偏置，使最终终止的无折扣回合也能使用适当形式。
+
+#### 证据
+
+论文分别研究固定中心化的策略不变性、在线偏置学习的线性 TD 分析，以及流式深度实验。教材给出遗漏终止补偿导致排序翻转的两动作反例。
+
+#### 条件与限制
+
+这里沿用原回合目标，不是把目标改成长期平均奖励。线性预测条件不保证非线性控制全局收敛；采样截断也不是自然终止。
+
+#### 阅读与实验
+
+计算立即终止和延迟终止两条路径的原始、错误中心化、正确补偿回报。再辨认代码里的偏置、终止分支和更新前 TD 误差。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：问题、保证与实验分别阅读。
+- [原文](https://arxiv.org/html/2605.04368v1)：终止补偿、共享偏置与回合式扩展。
+
+### An Idiosyncrasy of Time-discretization in Reinforcement Learning
+
+Kris De Asis, Richard S. Sutton
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同样的物理奖励流，为什么会因奖励和折扣放在区间的不同位置而得到不同目标？
+
+#### 关键机制
+
+从连续时间回报的右端点近似出发，让区间奖励与后继价值按到达时间共同折扣。固定间隔时只差一个比例，不等间隔时这个比例一般无法提出求和。
+
+#### 证据
+
+原文给出时间离散化分析与实验。教材用恒定奖励率的两段时间计算，比较左右端点近似与精确积分。
+
+#### 条件与限制
+
+奖励率采样与已经积分的区间奖励不同。该修正不能消除动作延迟或低采样率遗漏事件，也不是任意 SMDP 接口都应照搬的公式。
+
+#### 阅读与实验
+
+固定每秒的目标而非每步折扣，再改变采样周期及抖动。报告积分误差、每秒更新次数和控制收益。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式出版入口。
+- [原文推导](https://arxiv.org/html/2406.14951v2)：式 7 与不均匀时间步的回报定义。
+
 
 <a id="chapter-code"></a>
 
@@ -3368,7 +3703,7 @@ python examples/lifelong_algorithms_lab.py average
 
 ## 参考文献与实现
 
-- [Sutton & Barto · Reinforcement Learning: An Introduction · §10.3–10.4、§13.6](http://incompleteideas.net/book/the-book-2nd.html)：平均奖励问题、按自身稳态分布评价折扣价值，以及持续任务的策略梯度。固定起点目标与自身稳态目标必须分开。
+- [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
 
 - [Sutton, McAllester, Singh & Mansour · Policy Gradient Methods with Function Approximation · 1999](https://proceedings.neurips.cc/paper/1999/file/464d828b85b0bed98e80ade0a5c43b0f-Paper.pdf)：平均奖励策略梯度及相容函数逼近的经典原文；本章从稳态与 Poisson 方程逐步重推，不将相容条件省略为任意神经 critic。
 
@@ -3436,6 +3771,10 @@ python examples/lifelong_algorithms_lab.py average
 
 - [A Harmonic Mean Formulation of Average Reward RL in SMDPs · 2026](https://arxiv.org/abs/2605.04880)：作为目标一致性审查材料；本节给出与总奖励/总时间不等价的确定性反例，不作为默认算法。
 
+- [De Asis, Elsayed & He · Extending Differential TD for Episodic Problems · RLC 2026](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：RLJ 第 7 卷正式条目；固定中心化的策略不变性、在线偏置学习与深度实测分别理解。
+
+- [Episodic Differential TD · 原文 §3–4 与附录 C](https://arxiv.org/html/2605.04368v1)：区分奖励单位的中心 c 与价值单位的共享偏置 b；终止边界和 γ=1 回合形式需成套使用。
+
 
 ---
 
@@ -3449,6 +3788,34 @@ python examples/lifelong_algorithms_lab.py average
 - 从条件概率推导 belief 更新，从链式法则推导 RTRL、BPTT 和 TBPTT，写清楚各自保留与丢弃的梯度。
 - 读懂 RNN、GRU、LSTM、预测状态、GVFN、RTU 分别改变了什么，运行能逐项检查的记忆实验。
 - 区分状态更新与参数学习，设计无任务边界、固定资源预算的 CRL 状态构造实验。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 条件概率
+
+对未观察到的变量保留分布；新证据到来后按似然重新加权并归一化。不是把观测当成真实状态。
+
+$$
+P(x\mid o)=\frac{P(o\mid x)P(x)}{\sum_{x'}P(o\mid x')P(x')}
+$$
+
+### 链式法则
+
+当前状态依赖旧状态，旧状态也依赖参数；求导必须同时包含当前直接影响和历史间接影响。
+
+$$
+\frac{d f_\theta(h_\theta)}{d\theta}=\frac{\partial f}{\partial\theta}+\frac{\partial f}{\partial h}\frac{dh_\theta}{d\theta}
+$$
+
+### TD 半梯度
+
+把 bootstrap target 暂时视为常数，沿当前预测的梯度更新；这不等于完整地对平方 Bellman 残差求导。
+
+$$
+\theta^+=\theta+\alpha\bigl(r+\gamma v_\theta(h')-v_\theta(h)\bigr)\nabla_\theta v_\theta(h)
+$$
 
 <a id="problem-definition"></a>
 
@@ -3477,7 +3844,7 @@ $Y$ 是本任务指定的未来后果，$a$ 是当前干预动作，$z(h)$ 是�
 
 ### 成立条件与解的含义
 
-- 充分性必须相对后果、未来行为和时间尺度定义；任意多预测坐标不自动构成充分状态。
+- 充分性必须相对后果、未来行为和时间尺度定义。由一步推到多步的精确结论要求完整条件分布一致，以及固定且可递推的摘要；只匹配均值或少量预测不够。
 - RTRL固定参数全历史敏感度、在线参数变化和截断BPTT分别说明，不能共用精确梯度称谓。
 
 判断准则：在同观测但不同历史的别名反例上保持不同预测/动作；用匹配历史探针测预测误差，敏感度对固定参数有限差分吻合，并报告内存与每步时间。
@@ -3526,39 +3893,11 @@ $Y$ 是本任务指定的未来后果，$a$ 是当前干预动作，$z(h)$ 是�
 - 截断BPTT/UORO：分别丢弃长路径或随机压缩导数，产生不同偏差与方差。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 条件概率
-
-对未观察到的变量保留分布；新证据到来后按似然重新加权并归一化。不是把观测当成真实状态。
-
-$$
-P(x\mid o)=\frac{P(o\mid x)P(x)}{\sum_{x'}P(o\mid x')P(x')}
-$$
-
-### 链式法则
-
-当前状态依赖旧状态，旧状态也依赖参数；求导必须同时包含当前直接影响和历史间接影响。
-
-$$
-\frac{d f_\theta(h_\theta)}{d\theta}=\frac{\partial f}{\partial\theta}+\frac{\partial f}{\partial h}\frac{dh_\theta}{d\theta}
-$$
-
-### TD 半梯度
-
-把 bootstrap target 暂时视为常数，沿当前预测的梯度更新；这不等于完整地对平方 Bellman 残差求导。
-
-$$
-\theta^+=\theta+\alpha\bigl(r+\gamma v_\theta(h')-v_\theta(h)\bigr)\nabla_\theta v_\theta(h)
-$$
-
 <a id="lesson-setting"></a>
 
 ## 1. 问题设定：当前观测为什么不足以决定动作
 
-任务目标规定哪些结果更好。状态构造规定决策时保留哪些信息。本章固定任务目标，研究第二个问题。智能体状态是可递归更新的历史摘要。它不等于当前观测，也不等于控制器要追求的目标。
+前面的价值方程使用状态来描述未来：给定状态和动作，早先经历便不再改变后果的条件分布。机器人实际收到的却是传感器观测。若相同画面出现在不同情境中，价值函数需要的信息就还没有准备好。我们因此研究怎样从经历过的观测、动作和奖励构造一个可递归更新的摘要，再把它交给预测器与控制器。这是状态构造的问题；本章先固定任务目标。
 
 设想走廊入口闪一次红灯或蓝灯，随后四个时刻看到的都是同一面灰墙。走到岔路，红灯要求向左，蓝灯要求向右。只接收当前灰墙图像的策略没有任何变量能区分这两段经历；在两种提示等概率、奖励只取决于最终方向时，再大的前馈网络也不能把平均正确率提高到 50% 以上。增加训练步数不能恢复已经被输入接口丢掉的信息。
 
@@ -3587,6 +3926,10 @@ $$
 
 若条件对所有相关历史和动作成立，且摘要能由自身与新经验按固定规则递归更新，则可递推得到多步动作条件的观测与奖励预测。这里要求所有动作条件，而不只是当前行为策略常见的动作。
 
+这个充分性结论包含两个条件。一步预测必须给出完整的条件分布，而不只是下一观测的均值；状态更新还必须使相同摘要在收到相同动作和反馈后得到相同的新摘要。这样才能先算第一步结果的概率，再更新摘要、条件化第二步，并依次展开任意有限未来。状态维度固定或网络具有递归连接，单独都不保证这些条件。
+
+精确结论也不能直接改成“小的一步误差保证小的长期误差”。例如真实系统永远停留在正常状态，模型却在每一步赋予 $0.01$ 的概率进入吸收故障状态；其一步转移分布的总变差距离仅为 $0.01$。一百步内从未故障的概率，真实值为 1，模型值却为 $0.99^{100}\approx0.3660$。这个反例说明需要按所关心的时间尺度检查误差；它不说明长期预测必然无用，也不否认附加条件下可以建立误差界。
+
 $$
 \exists\,\bar\pi\quad\text{s.t.}\quad\pi^*(a\mid H)=\bar\pi(a\mid f(H))\quad\text{for all relevant }H,a
 $$
@@ -3600,6 +3943,43 @@ $$
 - 允许信息：过去与当前的观测、自己的动作、已经到达的奖励，以及事先声明的模型。
 - 不默认允许：环境隐藏状态、任务 ID、变化时刻、随意 reset、将未来奖励输入过去状态。
 - 优化目标：最终仍是长期控制表现；预测误差、记忆任务准确率和状态重构误差是诊断，不是同一个目标。
+
+<a id="course-state-updateability"></a>
+
+## 一步预测正确，为什么仍可能没有可用的状态？
+
+递归可更新性不是实现时才考虑的附加要求。它决定了一组预测能否成为逐步运行的状态。Sutton 的 Markov and Agent State 短文给出一个反例：一个摘要能在读取完整历史后准确预测下一观测，却不能仅凭旧摘要与新观测更新自己。下面把这个区别完整展开。
+
+考虑没有动作的过程，观测只有 1、2、3。刚观察到 1 或 2 时，下一观测以相同概率为 1、2、3。刚观察到 3 时，下一观测必定重复这个 3 之前的数字。于是历史以 13 结尾时，下一项必为 1；以 23 结尾时，下一项必为 2。这个过程可以由有限隐藏状态产生，不需要假设世界在变化。
+
+$$
+f(h1)=f(h2)=u,\qquad f(h13)=a,\qquad f(h23)=b.
+$$
+
+摘要 $u$ 表示下一观测为均匀分布；$a$ 表示下一观测必为 1；$b$ 表示下一观测必为 2。若每次允许重新读取完整历史，这个摘要的下一步预测完全正确。
+
+问题发生在新观测 3 到来时。旧摘要都是 $u$，新输入也都是 3，但新摘要一个应该是 $a$，另一个应该是 $b$。不存在一个确定的递归更新函数同时满足这两种要求。
+
+$$
+f(h1)=f(h2)\quad\text{but}\quad f(h13)\ne f(h23)\quad\Longrightarrow\quad \nexists U:\ f(ho)=U(f(h),o).
+$$
+
+矛盾来自相同函数输入要求产生不同输出。它不是预测器容量不足，也不是 SGD 尚未收敛。此前压缩已经删掉了下一次更新所需的信息。
+
+可行的递归状态需区分“当前为 1”“当前为 2”“当前为 3 且前一项为 1”“当前为 3 且前一项为 2”。前两种状态的即时预测虽然相同，仍不能合并。保留它们的意义不是改善眼下这一项预测，而是让将来的状态更新有依据。
+
+| 检查 | 读取完整历史的预测摘要 | 四种情况的递归摘要 |
+| --- | --- | --- |
+| 此刻预测下一观测 | 可以精确 | 可以精确 |
+| 只用旧摘要与新观测更新 | 不可以 | 可以 |
+| 每步存储不随历史长度增长 | 每次重读历史的实现不满足 | 四种状态即可 |
+| 变成神经网络后 | 大网络不能弥补输入丢失 | 仍需学会保留并更新对应信息 |
+
+这解释了为什么只给神经状态增加一步预测损失未必足够。训练时的 encoder 可能读取整段历史，而部署时只有上一步的压缩状态。二者不是同一信息协议。即便训练与部署都递归，一步损失也可能没有及时区分目前预测相同、将来却需区分的历史；长时标预测、动作条件预测与跨时间信用分配因此有各自作用。
+
+活动状态、学习参数与优化器统计仍应分开。活动状态解决这次经历中需要记住什么；参数决定如何写入与读取；资格迹和元梯度状态则保存哪些历史参数作用仍有待归因。完整学习器会使用三者，但不能以“参数也有记忆”为理由，省去对决策状态递归接口的检查。
+
+思考与检验：先列举上述四种情况的转移表，验证每行预测。再只训练“一步预测分布”作为瓶颈状态，检查 13 与 23 是否发生混叠。最后保留相同容量，加入一个跨过观测 3 的两步预测。若性能改善，继续检查收益究竟来自更好的历史区分，还是额外训练信号与计算。
 
 <a id="lesson-derive"></a>
 
@@ -3917,6 +4297,87 @@ $$
 
 如果只是把 GVF 头挂在一个自由隐藏层后面，那么隐藏状态本身不必等于预测：这是辅助任务结构。两种结构都值得比较，但不能混称。设计研究时还应设置坏问题对照：大量准确却与决策无关的预测，可能耗费预算而不改善控制。预测充分性、易学性和控制实用性需要分别测量。
 
+<a id="research-openmind-external-memory"></a>
+
+## 记忆可以留在环境中吗：Artifacts 与智能体边界
+
+回到入口提示与走廊岔路的例子。若机器人经过入口时留下一个可再次看见的标记，到岔路前绕回读取，它可以从当前观测恢复部分历史。于是“完成任务需要多少内部记忆”还取决于环境允许保存什么、观测通道允许读到什么。这个变化没有取消历史依赖，而是改变了历史信息的存放位置与访问方式。
+
+Martin、Mince、Saleh 与 Pajak 的 Artifacts as Memory Beyond the Agent Boundary（2026 预印本）把这一直觉写成严格但较窄的条件：某种当前观测能确定此前出现过另一种观测，便可充当后者的 artifact。文中的历史缩减定理在其条件下保留关于下一观测的互信息；它不是任意行动条件下的控制充分性定理，更没有说所有外部标记都能替代递归状态。
+
+$$
+\Pr(O_{t'}=o'\mid O_t=o)=1,\qquad 0<t'<t,\quad o'\ne o
+$$
+
+这个条件表示当前 artifact 对过去观测提供确定性信息。带噪声、可能被别人移动或逐渐褪色的标记，需要进一步分析可靠性；不能直接继承确定性条件下的保证。
+
+作者用空间路径与地标比较有无 artifact 时的学习表现，并改变价值函数的表示容量。这里的容量以可学习参数数目为操作性度量；DQN 的回放缓存被作为固定开销排除。因此，达到相近表现时所需参数较少，支持的是该设定中的外部记忆效应，不能直接换算成减少了多少字节的工作记忆。该论文也没有把参数记忆、递归活动与回放容量视作同一种资源。
+
+持续学习中的下一步问题是：读取过去是否值得当前付出的成本？下面是本教材提出的扩展实验，并非原论文已经验证的结论。让机器人选择直接前往岔路、回到标记处读取，或花一步写下新标记；统一计入移动时间、写读动作、错误决策以及被占用的存储。若允许环境保存的痕迹无界增长，即使网络内存固定，也不能宣称整个系统的存储预算固定。
+
+$$
+J_{\rm life}=\mathbb E\!\left[\sum_{t=0}^{T-1}\left(R_{t+1}-c_{\rm write}W_t-c_{\rm read}Q_t\right)\right]
+$$
+
+这是一个教学用的有成本任务定义，W、Q 分别记录写入和查询动作，成本须事先以任务奖励的单位给定。若原任务已经通过时间步成本计费，不应重复扣除同一代价；计费方式改变的是任务，不只是记录格式。
+
+可反驳的消融先保持身体、观测维数、参数预算和训练规则一致，只删除标记与过去事件之间的关系，例如随机置换标记内容；再分别改变擦除率、读取距离与写入成本。这样可以区分额外视觉结构、路径提示与历史信息的作用。还要保留内部记忆对照，检查外部标记不可达时是否仍能决策。原论文关于观测型 artifact 的结果，是这个研究问题的起点。
+
+思考：若一个预先画好的路标提高了回报，哪些证据能区分“它直接告诉我往哪走”与“它帮助我恢复以前发生过什么”？如果任务规则悄悄改变，谁负责判定标记已经过时，又应从哪个时间点计入纠正它的代价？
+
+<a id="rlss-predictive-state-coordinates"></a>
+
+## 预测能否成为状态：可更新性、可辨识性与一个完整算例
+
+预测性状态不是给隐藏状态换一个名称。它用可观测未来的概率描述历史。首先要问这些预测是否足以区分我们关心的未来；其次要问新观察到来后，能否只用当前预测和新输入得到下一组预测。对当前一个标签预测准确，不保证满足第二个条件。
+
+考虑一个无动作的二状态 HMM。隐藏位 $X_t\in\{0,1\}$ 以概率 p 保持，以概率 $1-p$ 翻转。传感器以概率 c 正确报告当前隐藏位。设 $b_t=\Pr(X_t=1\mid H_t)$，历史包含当前观察。我们改用下一次观察为一的概率 $q_t=\Pr(O_{t+1}=1\mid H_t)$ 作为状态。
+
+$$
+\bar b_{t+1}=(1-p)+(2p-1)b_t,\qquad
+q_t=(1-c)+(2c-1)\bar b_{t+1}.
+$$
+
+第一式先经过隐藏转移；第二式再经过传感器。这个例子的动力学与传感器已知，因此可精确推导。
+
+$$
+p=0.97,\ c=0.72:\qquad q_t=0.2932+0.4136b_t,\qquad
+b_t=\frac{q_t-0.2932}{0.4136}.
+$$
+
+在这个模型里，单个预测与完整 belief 一一对应。相同的信息可以使用不同坐标，并不必须解释为真实状态的名称或位置。
+
+$$
+b_{t+1}=\begin{cases}
+\dfrac{c\bar b_{t+1}}{c\bar b_{t+1}+(1-c)(1-\bar b_{t+1})},&O_{t+1}=1,\\[6pt]
+\dfrac{(1-c)\bar b_{t+1}}{(1-c)\bar b_{t+1}+c(1-\bar b_{t+1})},&O_{t+1}=0.
+\end{cases}
+$$
+
+把 q 反解为 b，做一次 Bayes 更新，再转回下一观察预测，就得到只依赖 q 与新观察的递归更新。这里构造的是精确坐标变换，不是从未知世界自动学习 PSR。
+
+若 $c=1/2$，传感器完全无信息，q 恒为 1/2。若 $p=1/2$，下一隐藏位与当前位无关，q 也恒为 1/2。此时不能反解旧 belief；但对这个无动作、只有该传感器的例子，旧 belief 对未来观察也不再有预测价值。不能反解隐藏状态，并不自动说明预测状态不充分。若另加依赖隐藏位的奖励或可揭示隐藏位的动作，就必须扩充问题集合。
+
+这也解释了 bit-to-bit 网格的对称性：旋转后的四个姿态可能对所有允许的行动产生相同的相对观察。绝对方向不可辨识，不等于未来行动后果不可预测。评价应检查控制相关的未来，而不是要求恢复实验设计者给隐藏变量起的全部名字。
+
+| 构造 | 信息从哪里来 | 尚未解决的部分 |
+| --- | --- | --- |
+| 已知模型的 Bayes filter | 设计者给出转移与观察模型 | 未知模型的学习、近似和资源限制 |
+| 有限历史窗口 | 保存最近若干行动与观察 | 窗口以外的依赖、组合稀疏与长度选择 |
+| 预测性状态 PSR | 行动条件下的一组未来检验 | 检验选择、可更新性、覆盖与估计稳定性 |
+| TD network | 预测节点依赖后继预测节点与观察 | 问题网络设计与答案网络共同学习的误差传播 |
+
+$$
+Y^{(1)}_t=O_{t+1},\qquad
+Y^{(h)}_t=\operatorname{sg}\bigl(q^{(h-1)}(S_{t+1})\bigr),\quad h>1.
+$$
+
+无动作、多步观察预测链的教学目标。第一个节点直接接地于观察，后续节点向前一个节点的后继答案自举。sg 表示本次回归不对标签求导；存在动作时还必须给出每个问题的行动条件或目标策略。
+
+问题网络指定“预测什么”，答案网络学习“如何由经验得到答案”。增添更多节点不保证状态充分，也不保证收敛；有偏的浅层答案会进入深层标签，共享表示又可能反过来改变浅层答案。若精确 belief 已作为输入提供，实验检验的是给定状态下的预测学习；只有进一步移除这个先验，才开始检验未知世界中的状态构造。
+
+可先做三组对照：已知模型的精确递推；相同问题但从数据估计答案；同时学习问题或状态。每一组记录未来检验误差、递归更新的一致性与主任务回报。第三组多出的不稳定性不能归咎于“部分可观测”一个笼统标签。
+
 <a id="lesson-rtu"></a>
 
 ## 7. RTU：通过递归结构降低敏感度计算成本
@@ -4207,7 +4668,7 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
@@ -4217,6 +4678,8 @@ $$
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
 - [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+- [Artifacts as Memory Beyond the Agent Boundary](https://yingwen.io/zh/continual-rl/research/#recent-openmind-artifacts-memory)
+- [The Ungrounded Alignment Problem](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ungrounded-alignment)
 
 #### 时间信用分配与离策略多步学习
 
@@ -4232,7 +4695,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Proper Laplacian Representation Learning](https://yingwen.io/zh/continual-rl/research/#recent-proper-laplacian-representations)
 - [METRA: Scalable Unsupervised RL with Metric-Aware Abstraction](https://yingwen.io/zh/continual-rl/research/#recent-metra-skills)
@@ -4243,7 +4706,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
 - [DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning](https://yingwen.io/zh/continual-rl/research/#recent-dino-wm-feature-planning)
@@ -4280,7 +4743,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
 - [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
@@ -4981,6 +5444,74 @@ V-JEPA 2 先学被遮蔽视频的潜在特征预测；V-JEPA 2-AC 冻结编码�
 
 官方视频表征与动作条件模型；数据、机器人部署条件与检查点分别核验。
 
+### Artifacts as Memory Beyond the Agent Boundary
+
+John D. Martin, Fraser Mince, Esra’a Saleh, Amy Pajak
+
+arXiv 预印本 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+完成任务所需的内部记忆，是否也取决于世界能替我们保存哪些历史信息？
+
+#### 关键机制
+
+把对过去观测提供确定信息的当前观测定义为 artifact。在特定条件下分析历史缩减，并通过环境中的地标与痕迹研究外部记忆效应。
+
+#### 证据
+
+论文给出关于下一观测信息的形式化结果，以及不同价值函数参数容量的实验。外部痕迹能影响完成任务所需的表示容量。
+
+#### 条件与限制
+
+关于观测信息的结论不是任意策略的控制充分性定理。参数数量不等于全部工作内存；论文对回放的计费与严格流式协议不同。
+
+#### 阅读与实验
+
+比较历史痕迹、直接动作提示和随机标记；另提出写读有成本的任务，记录内部状态、环境存储和移动时间。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/html/2604.08756v1)：定义、信息结果、表示容量实验与限制。
+- [John Martin 发表目录](https://jdmartin86.github.io/research/)：连接其规划、奖励与智能体边界的个人研究脉络。
+
+### The Ungrounded Alignment Problem
+
+Marc Pickett, Aakash Kumar Nain, Joseph Modayil, Llion Jones
+
+ICDL 2025（预印本 2024） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+即使目标已经写明，智能体怎样知道其中的概念对应哪一段未知感知输入？
+
+#### 关键机制
+
+利用固定的字符转移关系知识，对未知图像编码进行无标签对齐。共享编码器与对比学习把感知模式连接到既有关系结构。
+
+#### 证据
+
+原文在置换像素的字符序列上检验触发词识别。这隔离了概念指代与感知编码的问题，而非直接训练一般 RL 控制器。
+
+#### 条件与限制
+
+预先给定的关系、重启训练与阈值选择是实验条件。受控接地任务的准确率不能当作通用价值对齐或单生命期适应的证据。
+
+#### 阅读与实验
+
+分别改变感知编码和事件关系，区分事件识别失败、预测失败与奖励偏好错误。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/html/2408.04242v1)：问题定义、关系传播与训练条件。
+- [机构发表目录](https://www.openmindresearch.org/research)：列为 ICDL 2025。
+
+#### 作者代码
+
+[原论文给出的作者仓库。](https://github.com/EmergenceAI/babybeaver)
+
+作者字符接地任务实现；不是流式 actor–critic 代码。
+
 
 <a id="chapter-code"></a>
 
@@ -4998,11 +5529,13 @@ python3 examples/state_meta_lab.py state
 
 ## 参考文献与实现
 
+- [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
+
 - [Williams & Zipser：RTRL 原始论文](https://doi.org/10.1162/neco.1989.1.2.270)：理解固定参数下的全历史敏感度；本页给出独立的标量推导与实现。
 
 - [Williams & Zipser：递归网络梯度与复杂度](https://web.stanford.edu/class/psych209a/ReadingsByDate/02_25/Williams%20Zipser95RecNets.pdf)：补读精确求导与持续在线权重变化之间的区别。
 
-- [Littman、Sutton、Singh：Predictive Representations of State](https://proceedings.neurips.cc/paper/2001/file/1e4d36177d71bbb3558e43af9577d70e-Paper.pdf)：原始 PSR 研究；关注 core tests 与条件更新，不把任意预测集合都称作充分状态。
+- [Littman、Sutton、Singh · Predictive Representations of State](https://proceedings.neurips.cc/paper/2001/file/1e4d36177d71bbb3558e43af9577d70e-Paper.pdf)：行动条件下的未来检验与预测状态；本节二状态 HMM 是可完整手算的教学实例。
 
 - [Abel、Hershkowitz、Littman：Near Optimal Behavior via Approximate State Abstraction](https://proceedings.mlr.press/v48/abel16.html)：按保留的价值、模型和行为性质区分抽象，分析近似抽象造成的控制损失。
 
@@ -5032,6 +5565,8 @@ python3 examples/state_meta_lab.py state
 
 - [Recurrent Reinforcement Learning with Memoroids · 作者实现](https://github.com/proroklab/memoroids)：memory 模型、buffer、losses 与 segment_dqn/tape_dqn 对照。 论文附录原链接 memory-monoids 对应作者 Prorok Lab 的现有 memoroids 仓库；README 标明论文。
 
+- [Sutton, Bowling & Pilarski — The Alberta Plan for AI Research](https://arxiv.org/abs/2208.11173)：状态构造与有限资源智能体的研究背景；本节的递归更新反例依据 Sutton 2019 年 Markov and Agent State 原始短文，不将讲义重构冒充口述。
+
 - [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
 
 - [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
@@ -5054,6 +5589,14 @@ python3 examples/state_meta_lab.py state
 
 - [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。
 
+- [Martin et al. — Artifacts as Memory Beyond the Agent Boundary（2026）](https://arxiv.org/html/2604.08756v1)：预印本；第 3 节定义与定理、第 4 节容量比较、第 5 节限制。外部写读成本消融是教材提出的后续实验。
+
+- [Martin — Artifacts as Memory，PRL Symposium（2026）](https://all.cs.umass.edu/PRL-Symposium/)：主办方提供讲座摘要及 slides；讲座用于概念引入，论证以论文为准。
+
+- [Sutton、Tanner · Temporal-Difference Networks](https://papers.neurips.cc/paper_files/paper/2004/file/9d28de8ff9bb6a3fa41fddfdc28f3bc1-Paper.pdf)：区分问题网络与答案网络；预测之间的自举关系不自动提供未知世界的充分状态。
+
+- [Sutton · Toward a New Approach to Model-based Reinforcement Learning](https://www.incompleteideas.net/papers/MBRL2.pdf)：课程指定阅读 Introduction 与 §1：近似 agent state、特征对当前表现与未来学习的用途、学习与规划的耦合。
+
 
 ---
 
@@ -5066,6 +5609,22 @@ python3 examples/state_meta_lab.py state
 - 从 return 逐行推到 Bellman 方程，辨认模型期望和经验采样。
 - 独立实现 MC 与 TD，解释为什么同一条轨迹给出的第一次更新不同。
 - 理解 $\lambda$ 在传播信用中做什么，以及为什么普通在线 TD($\lambda$) 与固定参数前向视图不能无条件画等号。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 一条经验
+
+在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
+
+### 折扣与终止
+
+$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
+
+### 表格与函数逼近
+
+表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
 
 <a id="problem-definition"></a>
 
@@ -5142,22 +5701,6 @@ $\pi$ 是给定策略，$G_t$ 是随机回报，$\gamma_{t+1}$ 是当前转移�
 
 - TD与多步：用后继估计补足未来，改变目标偏差、方差与反馈延迟。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 一条经验
-
-在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
-
-### 折扣与终止
-
-$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
-
-### 表格与函数逼近
-
-表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
 
 <a id="lesson-setting"></a>
 
@@ -5252,10 +5795,16 @@ $$
 终止时截到终点。n 小更依赖价值估计，n 大使用更多实际结果，也等待更久、通常有更大方差。具体的误差权衡取决于奖励噪声、价值估计和轨迹长度。
 
 $$
-G_t^\lambda=(1-\lambda)\sum_{n\ge1}\lambda^{n-1}G_t^{(n)},\qquad G_t^\lambda-V(S_t)=\sum_{k\ge0}(\gamma\lambda)^k\delta_{t+k}
+G_t^\lambda=(1-\lambda)\sum_{n\ge1}\lambda^{n-1}G_t^{(n)},\quad 0\le\lambda<1,\qquad G_t^\lambda-V(S_t)=\sum_{k\ge0}(\gamma\lambda)^k\delta_{t+k}
 $$
 
-在无限折扣轨迹、固定 V 下，展开 n-step，按相同奖励与 V 项收集，价值项逐项抵消，就得到右边的 TD error 加权和。有限终止轨迹的最后一项吸收剩余权重。
+在无限折扣轨迹、奖励和冻结 V 有界时，展开 n-step，按相同奖励与 V 项收集，价值项逐项抵消，就得到右边的 TD error 加权和。不能直接在左侧无限几何式中代入 λ=1。
+
+$$
+G_t^\lambda=(1-\lambda)\sum_{n=1}^{T-t-1}\lambda^{n-1}G_t^{(n)}+\lambda^{T-t-1}G_t,\quad 0\le\lambda\le1.
+$$
+
+有限终止轨迹的最后一项吸收全部剩余权重；T 是真正终点。λ=1 得完整回报，λ=0 得一步目标（最后一步的空和为零）。无限折扣情形的 λ=1 则按 λ↑1 的极限定义。
 
 $$
 e_t=\gamma\lambda e_{t-1}+x_t,\qquad w_{t+1}=w_t+\alpha\delta_t e_t
@@ -5365,7 +5914,23 @@ def prediction(method="td", episodes=200, alpha=0.1):
 | 平均奖励 TD | 去掉长期增长的奖励率，学习差分价值 | 奖励率与价值的联合估计 |
 | 神经网络 TD | 用共享非线性表示 | 自举、离策略、函数逼近的耦合 |
 
-常数步长不追求在静止问题里把噪声彻底平均掉，而是保留对新规律的响应。有效样本权重随年龄呈指数衰减；真正的变化检测、滑动窗口选择和历史情境复用则是进一步的问题，不是 TD 自动具备的功能。
+常数步长不追求在静止问题里把噪声彻底平均掉，而是保留对新规律的响应。标量均值更新 Q←Q+α(R−Q) 对历史奖励给出几何衰减权重；TD 还含自举与状态访问，不能直接套用同一权重解释。例如单状态每步奖励 r、回到自己，TD 为 V⁺=[1−α(1−γ)]V+αr。α=.1、γ=.9 时旧 V 的系数是 .99，不是 .9；共享参数下还会产生矩阵耦合。变化检测、滑动窗口选择和历史情境复用则是进一步的问题，不是 TD 自动具备的功能。
+
+<a id="rlss-pid-dynamics"></a>
+
+## 目标不变，求解动力学能否改变？
+
+固定时域预测改变所问的未来。PID 加速路线则尝试保留原 Bellman 固定点，改变接近它的动态过程。先看已知模型的固定策略评价：令 B(v)=Tπv−v。普通价值迭代就是 v 加上这个残差。
+
+$$
+z_{k+1}=\beta z_k+a_I B(v_k),\qquad v_{k+1}=v_k+k_PB(v_k)+k_Iz_{k+1}+k_D(v_k-v_{k-1}).
+$$
+
+这是 PID value iteration 的结构。P 使用当前 Bellman 残差，I 保存衰减的残差积累，D 使用价值迭代差。k 是内部迭代次数；z 不是资格迹，不负责把真实后果分配给过去特征。
+
+取 $k_P=1,k_I=k_D=0$ 恢复普通价值迭代。即使目标相同，参数也可能使递推失稳。最小例子是一个自循环状态，奖励一、折扣 0.9；正确价值为十。只有比例项时，误差递推为 $e_{k+1}=(1-0.1k_P)e_k$，因此需要 $0<k_P<20$ 才会收敛。目标正确不保证任意增益正确。
+
+PID Accelerated TD 进一步处理只能获得样本的情形，包括随机逼近和增益适应。它不是在任意深网 TD error 上随意加一项积分与差分。原论文的 D 项使用价值差；对噪声很大的连续 TD error 直接作差，已经是另一规则。这里给出机制与稳定性入口，完整随机理论与论文实验仍属进阶阅读。
 
 <a id="lesson-check"></a>
 
@@ -5407,7 +5972,7 @@ def prediction(method="td", episodes=200, alpha=0.1):
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-self-prediction-auxiliary-tasks)
 
@@ -5422,6 +5987,7 @@ def prediction(method="td", episodes=200, alpha=0.1):
 - [Convergent Tree Backup and Retrace with Function Approximation](https://yingwen.io/zh/continual-rl/research/#recent-convergent-tree-retrace)
 - [Multi-Step Reinforcement Learning: A Unifying Algorithm](https://yingwen.io/zh/continual-rl/research/#recent-q-sigma-backups)
 - [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
+- [Per-decision Multi-step Temporal Difference Learning with Control Variates](https://yingwen.io/zh/continual-rl/research/#recent-openmind-control-variates)
 
 #### 流式协议下的稳定更新
 
@@ -5438,6 +6004,7 @@ def prediction(method="td", episodes=200, alpha=0.1):
 平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
 
 - [Reward Centering](https://yingwen.io/zh/continual-rl/research/#recent-reward-centering-discounted)
+- [Extending Differential Temporal Difference Methods for Episodic Problems](https://yingwen.io/zh/continual-rl/research/#recent-openmind-episodic-differential)
 
 #### 学习规则本身的适应
 
@@ -5666,6 +6233,67 @@ arXiv预印本 · 2016 · 支持方法与理论
 
 - [作者原文](https://arxiv.org/html/1607.00446)：局部目标、状态λ、均值／二阶矩预测与完整算法。
 
+### Extending Differential Temporal Difference Methods for Episodic Problems
+
+Kris De Asis, Mohamed Elsayed, J. He
+
+RLC 2026 / RLJ · 2026 · 支持方法与理论
+
+#### 研究问题
+
+中心化怎样加速回合任务的学习，又不因为回合长度不同而改变目标？
+
+#### 关键机制
+
+处理终止边界的中心化尾项，再用共享价值偏置重参数化。区分奖励单位的中心与价值单位的偏置，使最终终止的无折扣回合也能使用适当形式。
+
+#### 证据
+
+论文分别研究固定中心化的策略不变性、在线偏置学习的线性 TD 分析，以及流式深度实验。教材给出遗漏终止补偿导致排序翻转的两动作反例。
+
+#### 条件与限制
+
+这里沿用原回合目标，不是把目标改成长期平均奖励。线性预测条件不保证非线性控制全局收敛；采样截断也不是自然终止。
+
+#### 阅读与实验
+
+计算立即终止和延迟终止两条路径的原始、错误中心化、正确补偿回报。再辨认代码里的偏置、终止分支和更新前 TD 误差。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：问题、保证与实验分别阅读。
+- [原文](https://arxiv.org/html/2605.04368v1)：终止补偿、共享偏置与回合式扩展。
+
+### Per-decision Multi-step Temporal Difference Learning with Control Variates
+
+Kristopher De Asis, Richard S. Sutton
+
+UAI 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+怎样保留长路径中的新奖励信息，同时减去已经可预测的采样波动？
+
+#### 关键机制
+
+在逐决策重要性采样回报中加入条件均值为零的控制变量。期望动作价值承担可预测部分，重要性比率仍作用于真实回报相对当前预测的残差。
+
+#### 证据
+
+原文统一讨论动作和状态价值的多步目标，并连接 Expected Sarsa、Tree-backup 与 Retrace。教材枚举一个两动作例子的期望和方差。
+
+#### 条件与限制
+
+无新增偏差不代表没有 bootstrap 误差，也不保证任意差预测都降低方差。此为研究者加入 Openmind 前的工作。
+
+#### 阅读与实验
+
+保持采样策略、价值函数与路径长度不变，分别计算控制变量前后的均值和方差；随后再讨论神经网络参数变化。
+
+#### 原文与相关入口
+
+- [原论文](https://arxiv.org/html/1807.01830v1)：重点读动作价值回报、条件均值与 λ-return 的关系。
+
 
 <a id="chapter-code"></a>
 
@@ -5690,6 +6318,8 @@ python3 examples/foundations_detail_lab.py test
 
 - [van Seijen & Sutton · True Online TD($\lambda$)](https://proceedings.mlr.press/v32/seijen14.html)：检查在线前向视图、Dutch trace 与修正项；它解决的不是简单加大 $\lambda$。
 
+- [Bedaywi、Rakhsha、Farahmand · PID Accelerated Temporal Difference Algorithms](https://arxiv.org/abs/2407.08803)：§2.1 PID value iteration 与 §3 采样扩展；区分残差积分、价值差和资格迹。
+
 
 ---
 
@@ -5702,6 +6332,30 @@ python3 examples/foundations_detail_lab.py test
 - 从一个自然语言问题写出 cumulant、continuation、目标策略和状态条件，分清问题与学习器。
 - 独立推导 Bellman 方程、线性 TD、资格迹、GTD2/TDC、GTD($\lambda$) 与 Emphatic TD 的更新。
 - 逐行运行多问题共享经验的学习循环，检查解析解、off-policy 发散反例与实现时序。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 价值函数与条件期望
+
+$v_\pi(s)$ 是在状态 s 出发、以后按 $\pi$ 行动时，一个指定未来累计量的条件期望。改变后续行为或累计信号，就改变了问题，即使物理状态相同。
+
+### Bootstrap 与半梯度
+
+用当前预测的下一状态值构造训练目标叫 bootstrap。更新当前预测时，把这个目标暂时当常数叫半梯度；不是把整条 Bellman 残差对全部参数求导。
+
+### 固定特征与线性逼近
+
+x(s) 是给定的 d 维特征，w 是学习的 d 维参数。one-hot 特征让每个状态有自己的参数，退化为表格；一般特征会让不同状态的更新相互影响。
+
+$$
+\hat v_w(s)=w^\top x(s)
+$$
+
+### 行为策略与目标策略
+
+b 实际选动作并产生数据；$\pi$ 是问题中假想后续采用的策略。预测“若一直向右”的后果，不要求真实机器人永远向右，但需要相应经验覆盖。
 
 <a id="problem-definition"></a>
 
@@ -5730,7 +6384,7 @@ $C$ 是由信号规则 $c$ 生成的累计信号，$\gamma$ 为转移延续因�
 
 ### 成立条件与解的含义
 
-- 分析期间环境、目标策略与表示固定，状态Markov且累计量存在；延续矩阵谱半径小于1提供唯一解条件。
+- 分析期间环境、目标策略与表示固定，状态满足马尔可夫条件，累计量可积。期望的存在不自动保证贝尔曼方程解唯一；有限问题中延续矩阵谱半径小于1提供唯一性条件。
 - 离策略需要覆盖；GTD/ETD稳定性须满足相应线性、遍历和步长条件，不推广为任意深网定理。
 
 判断准则：有限题目直接解线性Bellman系统核对预测与单位；在离策略反例上分开测价值误差、发散和重要性比方差。
@@ -5781,30 +6435,6 @@ $C$ 是由信号规则 $c$ 生成的累计信号，$\gamma$ 为转移延续因�
 - Emphatic TD：调整历史和状态强调权重，目标权重及方差与GTD不同。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 价值函数与条件期望
-
-$v_\pi(s)$ 是在状态 s 出发、以后按 $\pi$ 行动时，一个指定未来累计量的条件期望。改变后续行为或累计信号，就改变了问题，即使物理状态相同。
-
-### Bootstrap 与半梯度
-
-用当前预测的下一状态值构造训练目标叫 bootstrap。更新当前预测时，把这个目标暂时当常数叫半梯度；不是把整条 Bellman 残差对全部参数求导。
-
-### 固定特征与线性逼近
-
-x(s) 是给定的 d 维特征，w 是学习的 d 维参数。one-hot 特征让每个状态有自己的参数，退化为表格；一般特征会让不同状态的更新相互影响。
-
-$$
-\hat v_w(s)=w^\top x(s)
-$$
-
-### 行为策略与目标策略
-
-b 实际选动作并产生数据；$\pi$ 是问题中假想后续采用的策略。预测“若一直向右”的后果，不要求真实机器人永远向右，但需要相应经验覆盖。
-
 <a id="gvf-reward-versus-knowledge"></a>
 
 ## 先分开两个问题：什么值得做，什么会发生？
@@ -5824,7 +6454,7 @@ $D_{t+1}$ 是本步交付指示，$E_{t+1}\geq0$ 是本步消耗的电能。这�
 | 送货 critic | 外部任务奖励 R = 10D − E | 本例持续折扣 0.9，不因充电而终止 | 按送货策略 μ 的任务回报；策略改善围绕它展开 |
 | 能耗 GVF | 正的耗电量 E | 沿指定策略 π，累计至下一次到达充电点 | 预期需要多少电；预测值大表示耗电多，不表示行为好 |
 | 步数 GVF | 每次转移的信号 1 | 沿同一 π，累计至下一次到达充电点 | 期望所需步数；要求期望到达时间有限 |
-| 到达 GVF | 到充电点的指示 A | 首次到达后不再累计这个问题 | 从当前条件出发的到达概率；不是本步得到的主任务奖励 |
+| 到达 GVF | 到充电点的指示 $I^{\rm chg}$ | 首次到达后不再累计这个问题 | 从当前条件出发的到达概率；不是本步得到的主任务奖励 |
 
 $$
 \delta_t^R=R_{t+1}+\gamma_R V_R(S_{t+1})-V_R(S_t),\qquad
@@ -5875,7 +6505,7 @@ General Value Function（通用价值函数）把通常只问“未来有多少�
 | 延续因子 $\gamma_{t+1}\in[0,1]$ | 到达后是否继续累计，或者如何折扣 | 到充电点为 0，其他地方为 1 |
 | 答案 v(s) | 给定上述规格，未来累计量的期望 | 到下次充电点的期望总耗电 |
 
-本章先假定状态 s 是 Markov 的，环境、目标策略和特征在分析期间固定，且累计量存在。Markov 指给定当前状态和动作后，预测下一步不再需要完整历史。若只输入不充分的摄像头画面，不能直接沿用后面的精确 Bellman 方程或线性收敛结论。我们最后再讨论表示和预测问题本身不断变化的 CRL 情形。
+本章先假定状态 s 是 Markov 的，环境、目标策略和特征在分析期间固定。预测值的定义要求回报可积；由 Bellman 方程唯一求出这个值，还需要延续过程的条件。二者将在第 3 节分别检查。Markov 指给定当前状态和动作后，预测下一步不再需要完整历史；这里还要求 cumulant 和 continuation 的生成规则所需的信息已包含在状态与本次转移中。若只输入不充分的摄像头画面，不能直接沿用后面的精确 Bellman 方程或线性收敛结论。
 
 数据接口是一条条 $(S_t,A_t,S_{t+1})$、传感器信号和行为概率 $b(A_t\mid S_t)$。一个 question 函数把每条真实经验变成自己的 $(C_{t+1},\gamma_{t+1},\pi(A_t\mid S_t))$。真实奖励可以是传感器信号之一，但不必是这个 GVF 的 cumulant。
 
@@ -5953,12 +6583,12 @@ continuation 首先是“后面的量还计多少”的系数。到达事件使�
 固定 γ = 0.9 在这里表示指数折扣。也可以另行构造一个每步以概率 0.9 继续的随机停止过程，使其未折扣期望累计量与折扣累计量相同。这是一种数学解释，不是说机器人有 90% 的物理存活率，也不是说到达概率为 90%。只有把这个随机停止过程也纳入问题时，“到达前未被停止”的概率才与相应折扣到达量一致。
 
 $$
-\tau=\inf\{k\geq1:A_{t+k}=1\},\qquad
+\tau=\inf\{k\geq1:I^{\rm chg}_{t+k}=1\},\qquad
 v_{\rm hit}(s)=\Pr_\pi(\tau<\infty\mid S_t=s),\qquad
 v_{\rm hit,\beta}(s)=\mathbb E_\pi[\beta^{\tau-1}\mathbf1\{\tau<\infty\}\mid S_t=s]
 $$
 
-前一个问题在非到达步用 γ = 1；后一个用 γ = β，$0<\beta<1$。它们到达时都置 γ = 0，且当前到达信号为 1。后者偏重较早到达，一般不是最终到达概率。到达概率可以存在，即使期望到达步数无穷大；不能把步数 GVF 的有限期望条件省略。
+$I^{\rm chg}_{t+k}$ 是第 $k$ 次转移到达充电点的事件指示，不是动作 $A_{t+k}$；没有到达时取 $\tau=\infty$，折扣到达量按 0 计。前一个问题在非到达步用 γ = 1；后一个用 γ = β，$0<\beta<1$。它们到达时都置 γ = 0，且当前到达信号为 1。后者偏重较早到达，一般不是最终到达概率。到达概率可以存在，即使期望到达步数无穷大；不能把步数 GVF 的有限期望条件省略。
 
 如果要问“十步内是否到达”，还要记录从提问起已过去几步，并在窗口末端停止。固定折扣没有一个硬截止点。为这种有限窗口增加计时状态，或使用相应预测结构，是问题定义的一部分，不是换一个较大的网络就自动获得的语义。
 
@@ -5986,13 +6616,35 @@ $$
 
 配套练习：把本章到达指示改成两个互斥终点的指示，保留真正终止；先验证 γ=1 时两个命中概率之和，再改 γ<1 并解释和为何改变。无需重写 TD 算法，改变的是问题规格。
 
+<a id="research-openmind-grounded-knowledge"></a>
+
+## 从 Horde 到 nexting：预测何时成为可用的经验知识
+
+一个预测头标着“电量”并不能保证它学的是电量，几千个预测也不保证形成了有用的世界知识。需要沿着传感器、问题规格、学习更新和使用者逐段核对。Horde 与 nexting 提供了在真实机器人上检查这条链路的早期实例。
+
+Horde（AAMAS 2011）把一条身体经验交给多个独立的学习器。各学习器指定自己的策略、累计信号与终止语义，并用适合离策略学习的 TD 方法更新。它的架构贡献是把多种知识写成可同时回答的问题；固定学习器集合时，单步时间和存储不随生命长度增加，但仍随问题数与特征数增加。问题本身不是由并行运行自动发现的。
+
+Multi-timescale Nexting（Adaptive Behavior 2014；早期预印本 2011）进一步检验许多近未来预测能否实时形成。论文报告用线性 TD(λ) 在笔记本上以超过 10 Hz 更新约两千个预测，每个预测依赖约六千个状态特征，预测尺度覆盖 0.1 至 8 秒。这个结果建立了多尺度传感器预测的可行性；它没有同时证明这些预测能改善任意控制任务，也不等于已学得完整动作条件的世界模型。
+
+$$
+v^{(j)}(h_t)=\mathbb E_\pi\!\left[\sum_{k\geq0}\gamma_j^k C_{t+k+1}\mid h_t\right],\qquad \tau_j\approx\frac{\Delta t}{1-\gamma_j}
+$$
+
+固定折扣下，τ 是一种近似有效时间尺度，不是“恰好未来 τ 秒”的硬窗口。相同信号配不同 γ 提出不同问题；改变采样周期时也要重审它们在物理时间中的含义。
+
+本章后面的 Nibbler 将关注点推进到“哪些预测值得构建、给它们哪些局部输入、怎样把学到的特征交给主任务”。这与 Horde 的多问题调度、nexting 的多尺度预测分别处于不同层次。再往前还存在感知接地：cumulant 所用的“接触”“物体”或“充电点”从哪个观测识别出来？Ungrounded Alignment 研究在未知感知编码中利用固定关系知识辨认概念，能够帮助定位这个接口，但它本身不是 GVF 学习器。
+
+一个教学实验可以让送货机器人的同一能耗预测分别使用真实电表、校准后的估计电表和被置换的传感器通道。记录信号识别误差、条件回报误差和控制收益；再只切断控制器读取预测的路径。这个设计分别检验接地、预测和使用，避免把“TD loss 降低”当作三者一起成功。
+
+思考：将所有传感器索引随机置换以后，哪些知识只需换名字，哪些学习器必须重新发现输入结构？如果奖励相关事件识别错了，但对应 GVF 对错误信号预测得很准，应该修改问题定义、感知模块，还是 TD 更新？
+
 <a id="gvf-hand-calculation"></a>
 
 ## 手算同一条轨迹：奖励为负，耗电信号为什么为正？
 
 沿一条确定的路线，机器人从仓库经过走廊，到达充电点，再送达货物。此处令送货策略与三个辅助问题的目标策略都走这条路线，先排除离策略修正。电能单位固定；到达充电点那一步仍然消耗 1 单位电。充电提供的电量不是此处的“驱动耗电”信号。
 
-| 真实转移 | 耗电 E | 交付 D | 到充电点 A | 外部奖励 R = 10D − E | 充电相关问题的 γ |
+| 真实转移 | 耗电 E | 交付 D | 到充电点 $I^{\rm chg}$ | 外部奖励 R = 10D − E | 充电相关问题的 γ |
 | --- | --- | --- | --- | --- | --- |
 | 仓库 s0 → 走廊 s1 | 2 | 0 | 0 | −2 | 1 |
 | 走廊 s1 → 充电点 s2 | 1 | 0 | 1 | −1 | 0 |
@@ -6040,6 +6692,10 @@ $$
 
 M 是已经含延续权重的转移矩阵，不一定每行和为 1。若谱半径小于 1，逆矩阵存在。统一 $\gamma\le\gamma_{\max}<1$ 是一个充分条件；事件终止时可通过转移结构满足该条件，不要求每个 $\gamma$ 都小于 1。
 
+回报存在不等于这个逆一定存在。仍以首次到达为例：从 $s$ 下一步有一半概率到达充电点，另一半进入永远离不开的 $f$；在 $f$ 中信号恒为 0、延续恒为 1。真实到达概率是 $v(s)=1/2,v(f)=0$，但 Bellman 方程只有 $v(s)=1/2+v(f)/2$ 与 $v(f)=v(f)$，不能排除其他答案。即使把预测限制在 $[0,1]$，解仍不唯一。对这个非负到达问题，从零开始的有限步递推趋向最小非负解；一般 TD 初始化不能代替所需边界条件。
+
+有限状态、时齐的延续过程若从每个相关状态都几乎必然结束，则 $M^n\to0$，从而谱半径小于 1，期望延续时长也有限。超出这一设定时，几乎必然结束本身未必保证有限期望时长；对一般有正有负的信号还要检查可积性。后面的解析小实验满足所需条件。GTD 或 ETD 的稳定性结果也各有假设，不能只凭“这是一个 GVF”便一并引用。
+
 “解方程”适用于已知模型。本章用它给小实验提供独立正确答案。机器人通常不知道 M 和 $r_c$，因此需要从经验估计固定点。TD 的意义正是每收到一条转移就改进一次答案，而不等模型和完整回报都准备好。
 
 $$
@@ -6047,6 +6703,108 @@ q(s,a)=\mathbb E[C_{t+1}+\gamma_{t+1}\sum_{a'}\pi(a'\mid S_{t+1})q(S_{t+1},a')\m
 $$
 
 如果问题还条件于“第一步选 a”，就得到 action-value 形式；下一步仍对指定 $\pi$ 求期望。把这个期望换成 max，会把固定行为的预测问题变成控制问题。
+
+<a id="course-gvf-terminal-outcome"></a>
+
+## 四个问题函数与一个答案：终端结果怎样接到 TD 更新
+
+常用实现把 GVF 写成目标策略 $\pi$、累积信号 $C$ 和延续系数 $\Gamma$。课程还单列了停止时读取的结果 $Z$，从而写成四个问题函数。两种接口并不矛盾。终端结果可以吸收到累积信号中；关键是明确结果在哪一步加入、是否另有时间折扣。
+
+先考虑最清楚的随机停止版本。每一步先得到 $C_{t+1}$ 和新状态；随后以 $\beta(S_{t+1})$ 停止。停止时再加 $Z(S_{t+1})$。在本节中，$\Gamma=1-\beta$ 只表示继续概率，没有额外的折扣因子。假定停止时间 $T>t$ 几乎必然有限，且下面的回报可积。
+
+$$
+v_{\pi,\beta,C,Z}(s)=\mathbb E\!\left[\sum_{k=t+1}^{T}C_k+Z(S_T)\mid S_t=s,\pi,\beta\right].
+$$
+
+$C$ 回答沿途累计什么，$Z$ 回答结束时读取什么，$\pi$ 规定怎样行动，$\beta$ 规定何时结束这项预测。环境可以继续运行；停止的只是这个问题的预测范围。
+
+$$
+v(s)=\mathbb E_\pi\!\left[C_{t+1}+\beta(S_{t+1})Z(S_{t+1})+(1-\beta(S_{t+1}))v(S_{t+1})\mid S_t=s\right].
+$$
+
+先加入本步累计量，再对“停止并读取结果”与“继续预测”两个互斥分支求期望。不能既加入终端结果，又在同一个停止分支继续 bootstrap。
+
+$$
+\widetilde C_{t+1}=C_{t+1}+\beta(S_{t+1})Z(S_{t+1}),\qquad \Gamma_{t+1}=1-\beta(S_{t+1}),\qquad \delta_t=\widetilde C_{t+1}+\Gamma_{t+1}\widehat v(S_{t+1})-\widehat v(S_t).
+$$
+
+这就还原到本章的三函数 TD 接口。将停止抽样平均掉是一个期望目标；另一实现可采样一次停止事件，停止时使用 C+Z，否则使用 C+v。二者的条件均值相同，但方差不同。
+
+手算：$C=2,\beta=1/4,Z=10,\widehat v(s')=4$。停止分支的目标为 12，继续分支为 6；平均为 $12/4+3\times6/4=7.5$。吸收结果后的信号是 $\widetilde C=4.5$，延续项是 $0.75\times4=3$，仍得到 7.5。若把 $Z=10$ 每步无条件相加，得到的是另一个问题。
+
+| 所问的问题 | 沿途 C | 停止结果 Z | 额外前提 |
+| --- | --- | --- | --- |
+| 执行该行为直到停下，一共耗时多少 | 每步 1 | 0 | 期望停止时间有限 |
+| 停下时某个特征有多大 | 0 | 该终点特征 | 特征坐标与停止规则固定 |
+| 该行为沿途获得多少真实奖励 | 真实 R | 0 | 不把人为子任务奖金混入 |
+| 追求某个终点特征的子任务 | 例如真实 R 或中心化 R | 主任务后续价值加特征奖金 | 允许优化策略/停止时，已由预测进入控制 |
+
+若另外规定每步时间折扣 $\bar\gamma$，必须从回报重新推导。例如终端项按 $\bar\gamma^{T-t}Z(S_T)$ 计权时，单步目标为 $C+\bar\gamma\beta Z+\bar\gamma(1-\beta)v'$。另一些文献把终端结果计在最后一个累积信号的时刻，指数少一位。符号看起来相同，边界约定却不同；比较论文或代码时应先用“一步即停止”验证。
+
+学习答案时四个问题函数固定，TD 更新答案参数。学习问题时，算法还会改变其中一个或多个函数；此时监督对象本身在移动。学会耗时与终点后果，并不自动改进主任务策略。控制器必须明确使用这些预测来比较候选行为，或者通过共享表示受到它们影响。无论哪条路径，都需要保留关闭使用路径的对照。
+
+这也限制了“知识就是 GVF”的用法。GVF 提供一类有经验检验方式的问题语言；有限个准确 GVF 不等于掌握所有未来问题。未被问题集区分的历史、缺乏行为覆盖的策略、已经改变的停止规则，都可能让下游决策失效。
+
+<a id="rlss-gvf-question-existence"></a>
+
+## 问句必须先有有限答案：停止、尺度和兴趣权重
+
+把四个函数写出来，还不能保证问题存在有限答案。考虑每步累计一、永不停止的问句。它完全符合“指定策略、累计信号和延续规则”的接口，但答案是无穷。学习器输出有限数字，不会使原问题变成有穷。
+
+$$
+v(s)=\mathbb E_s\!\left[\sum_{k=1}^{\tau}C_k+Z_\tau\right],\qquad
+|C_k|\leq C_{\max},\ |Z_\tau|\leq Z_{\max},\ \mathbb E_s[\tau]<\infty
+\ \Longrightarrow\ |v(s)|\leq C_{\max}\mathbb E_s[\tau]+Z_{\max}.
+$$
+
+这是充分条件，不是必要条件。仅有“几乎必然最终停止”还不保证有限期望停止时间。若采用累计折扣而非显式随机停止，类似条件是绝对加权回报可积。
+
+常数延续概率 $\gamma<1$、到达后决定是否继续、至少经历一步的约定给 $\mathbb E[\tau]=1/(1-\gamma)$。取 $C=1,Z=0$，答案正是这个数，而不是某个事件发生概率。用事件指示反复累计，得到的是折扣事件计数；只在首次事件停止并设置相应终端信号，才得到另一个“首次到达”问题。单位和停止顺序决定解释。
+
+| 对象 | 它改变什么 | 若改变，原答案还有效吗 |
+| --- | --- | --- |
+| 策略 π、cumulant C、延续 Γ、终端信号 Z | 问句及其真实数值答案 | 一般不再对应同一问句 |
+| Interest i | 哪些起始状态或更新更受重视 | 表格精确目标不因此改写；逼近所得投影可能改变 |
+| λ、步长、优化器 | 怎样从经验估计答案 | 不应偷偷重新定义 cumulant 或停止 |
+| 特征与容量 | 哪些答案能够表示、更新如何共享 | 可能改变逼近误差和稳定性 |
+| 主任务奖励 R | 控制器最终偏好的行为 | 辅助问句不应未经说明替代它 |
+
+因此，interest 不能拿来替换 GVF 四函数中的终端信号。问题定义和答案算法应分开存储。修改 interest 可能通过函数逼近权重改变误差分配，但这与修改世界中要预测的量不同。修改 λ 则改变多步估计方式，不意味着智能体突然要预测另一种感官后果。
+
+一个实用检查是先给每个问句写单位、取值范围和一条可手算轨迹。例如“等待事件的步数”有步数单位；“事件前能量消耗”有能量单位；“截至首次事件的成功指示”介于零与一。范围错误往往能先于学习曲线发现重复计数、终端值双加或多乘一次折扣。
+
+<a id="rlss-gvf-question-variables"></a>
+
+## 从预测到控制：先说明四个问题函数中哪些固定，哪些待求
+
+同一个 GVF 表达式可以描述预测，也可以定义控制子问题。区别不在算法名称，而在未知量。预测把行为和停止规则作为问题的一部分，学习它们的后果。控制则把某些行为或停止选择留作待求变量。构造新问题还要决定哪些后果值得问。三者不可用一个“学习 GVF”概括。
+
+| 问题层次 | 先固定什么 | 待求对象 | 怎样判断正确或有用 |
+| --- | --- | --- | --- |
+| 预测一个问句 | π、Γ、C、Z 与输入语义 | 答案 v 或 q 的参数 | 对给定行为与停止规则检验预测误差 |
+| 求解一个控制子问题 | C、Z 和固定停止规则 | 策略 π 及其价值 | 同一个子问题下比较真实回报 |
+| 同时学习行为和停止 | C、Z、可行策略与停止类 | π 与停止规则 | 包含沿途代价的最优停止/控制目标 |
+| 构造和保留问题 | 主问题及计算、存储预算 | 候选 C、Z、行为类、停止类及其分配 | 预测的下游作用减去取得和维护成本 |
+
+例如固定 $C=-1,Z=0$，只在到达目标 g 时停止，再优化 π，得到期望到达步数最小化。这里仍需存在能以有限期望时间到达 g 的策略。若目标不可达，得到的不是一个应该靠较大步长解决的有限预测问题。若只问当前固定 π 多久到达 g，则是评价，不是求最短路。
+
+特征到达子问题还允许选择何时停止。取 $Z_i(s)=\widehat v_0(s)+\kappa\phi_i(s)$，保留真实奖励作 C。为看清停止的作用，先用无额外折扣的有限停止版本，并固定 $\widehat v_0$ 与特征。若允许在当前状态立即停止，下面是相应最优停止 Bellman 方程。
+
+$$
+W_i(s)=\max\!\left\{Z_i(s),\ \max_a\mathbb E[R_{t+1}+W_i(S_{t+1})\mid s,a]\right\}.
+$$
+
+第一项是不再行动、读取当前终点值。第二项是至少再行动一步。该式需适当的有限价值和停止条件；可无限积累正奖励的循环可能使无折扣问题无界。课程使用的 option 问句通常要求启动后至少行动一步，因而其初始 q 使用继续分支，不能把立即停止的 W 直接冒充同一个 q。
+
+持续平均奖励版本还需重新定义沿途的中心化奖励及基准奖励率。不能仅把上式的折扣符号删掉，就宣布得到平均奖励最优控制。这里的最大化是定义子问题；用什么离策略算法学 π、怎样保证停止，以及表示不断改变时怎样跟踪，仍是分别需要设计的学习环节。
+
+$$
+\widetilde C_{t+1}=C_{t+1}+(1-\Gamma_{t+1})Z(S_{t+1}),\qquad \left.\frac{\partial\widetilde C_{t+1}}{\partial\Gamma_{t+1}}\right|_{C,Z}=-Z(S_{t+1}).
+$$
+
+对固定停止规则，终端值可以折入 cumulant，得到前面三函数 TD 接口。但当 Γ 是待优化变量时，折入后的 cumulant 也随 Γ 改变。若只改 bootstrap 系数而冻结这个合并信号，就已经换了原来的最优停止问题。额外时间折扣存在时，还要保留相应乘子。
+
+因此，学习器应能分别回答三件事：当前问题是什么，当前答案在跟踪哪个问题，当前行为在优化哪个问题。生成一个更容易预测的问句，不等于产生了更有用的知识；把终点奖金设得更大，也不构成主任务性能改善。
 
 <a id="gvf-td"></a>
 
@@ -6180,6 +6938,40 @@ $m_R^{\rm total}$ 预测未折扣的实际外部奖励之和。时间问题取 c
   1. 5. 汇总所有共享参数方向，再执行参数写入；不要先更新 head 1 的 trunk，再用它计算 head 2 的旧 target。
   1. 6. 若有已完成的 option，更新其模型；规划只查询已记录的行为版本。
   1. 7. 下一动作使用新的参数；若改变问题或 option 规格，显式处理旧答案及其消费者。
+
+<a id="rlss-gvf-model-coordinates"></a>
+
+## d+1 个答案怎样构成模型，为什么问句也必须留在智能体内
+
+固定一个 option o 的内部策略与停止规则，停止时间为 T，状态特征为 $\phi(S)\in\mathbb R^d$。先不另加时间折扣。用 d 个终点问句预测停止时各个特征，再用一个沿途问句预测累计真实奖励。
+
+$$
+m_i^o(s)=\mathbb E_o[\phi_i(S_T)\mid S_t=s],\quad i=1,\ldots,d,\qquad r^o(s)=\mathbb E_o\!\left[\sum_{k=t+1}^{T}R_k\mid S_t=s\right].
+$$
+
+每个 mᵢ 用 C=0、Z=φᵢ，奖励问句用 C=R、Z=0。它们共享同一个 π 和停止规则。d+1 指一个 option 模型的输出数，不是整个 agent 只需要 d+1 个参数或学习器。回报存在有限期望是前提。
+
+$$
+\widehat v_w(s)=w^\top\phi(s)\quad\Longrightarrow\quad \mathbb E_o\!\left[\sum_{k=t+1}^{T}R_k+\widehat v_w(S_T)\mid s\right]=r^o(s)+w^\top m^o(s).
+$$
+
+先预测后果，再用当前 w 对预测后果评分。这个等式不要求奖励与终点独立，也不要求模型对输入是线性的；它要求后续价值对同一组输出特征线性。若用神经网络价值，通常 E[v(φ)]≠v(E[φ])。
+
+若目标带额外时间折扣 $\bar\gamma$，应预测 $r_{\bar\gamma}^o=\mathbb E[\sum_{j=1}^{T-t}\bar\gamma^{j-1}R_{t+j}]$ 和 $m_{\bar\gamma}^o=\mathbb E[\bar\gamma^{T-t}\phi(S_T)]$，不能把未折扣的 m 直接乘同一个固定常数。随机 option 时长必须留在每条样本内计权。已有 GVF→option 模型接口给出了对应的单步学习信号。
+
+手算：两个等概率后果的累计奖励分别为 1、3，终点特征为 (1,0)、(0,2)。于是 $r=2,m=(.5,1)$。取 $w=(4,-1)$，模型 backup 为 $2+4\times.5-1=3$；直接平均两条后果的 $1+4=5$ 和 $3-2=1$，同样得到 3。平均特征不必是任何真实状态，它仍能作为线性价值的期望查询。
+
+| 必须保存的对象 | 为什么仅保存答案权重不够 |
+| --- | --- |
+| 问题函数或其可执行描述：π、Γ、C、Z | 同一个数值可对应完全不同的经验问题 |
+| 问题版本与 option 策略/停止版本 | 问题改变后，旧答案是旧问题的估计，不是新知识 |
+| 终点特征坐标及其版本 | m 的第 i 维与下游 w 的第 i 维必须说同一件事 |
+| 目标策略概率和实际行为概率 | 共享流的离策略校正依赖这两个分布 |
+| 该答案的使用者与取得/维护预算 | 判断是否值得保留，不能只看答案容易学或数值很大 |
+
+固定问题时，算法代码可以隐含保存问句；所有实现都不必复制一套昂贵的描述语言。但若智能体自行更换问题，运行期就必须有可区分的新问句及其语义。一个 head 编号本身不够。只有明确该编号引用哪些信号、策略、停止和特征，学习更新与模型消费者才知道该怎样使用它。
+
+FOAK 的联系由此清楚：从已有答案的使用情况选择候选特征；把“如何到达该特征”写成控制子问题；用得到的 option 提出后果预测；再将预测用于规划。这里的语义接口可以写清，特征选择的长期效用和整个闭环的稳定性却不随之自动解决。下一层架构章节讨论这些并行过程的维护与评价。
 
 <a id="gvf-reward-contract"></a>
 
@@ -6463,6 +7255,38 @@ $$
 
 本章 $\lambda$ 为常数。若使用状态相关 $\lambda$，下一状态 continuation 中的 $\lambda$ 下标也要按该算法原定义重新核对，不同下标约定对应不同的前向回报与资格迹。GTD 系列牺牲了额外向量与步长调节成本，以处理特定离策略函数逼近问题；它并不总是在有限样本上最快。
 
+<a id="rlss-horde-gq"></a>
+
+## 回到 Horde 的原始更新：GQ 学动作值，不要混同状态值 TDC
+
+原 Horde 为每个问句近似 $q(s,a)=\theta^\top\phi(s,a)$。当前动作已经作为条件给定，只有后继动作按目标策略取期望。因此需要 $\bar\phi_{t+1}=\sum_a\pi(a|S_{t+1})\phi(S_{t+1},a)$。这与本章前面的状态值 TDC 更新不同：状态值预测需要校正当前动作；动作值问句则从给定动作出发。
+
+$$
+\rho_t=\frac{\pi(A_t|S_t)}{b(A_t|S_t)},\quad
+\delta_t=C_{t+1}+(1-\Gamma_{t+1})Z_{t+1}+\Gamma_{t+1}\theta_t^\top\bar\phi_{t+1}-\theta_t^\top\phi_t,\qquad
+e_t=\phi_t+\Gamma_t\lambda_t\rho_t e_{t-1}.
+$$
+
+原论文的 GQ(λ) 把当前动作比率放在旧迹延续项，不把整个新迹乘 ρ。若 ρ=0，旧迹被切断，当前 φ 仍留下；条件动作值仍可从这次 (s,a) 的真实后果学习。
+
+$$
+\theta_{t+1}=\theta_t+\alpha\left[\delta_te_t-\Gamma_{t+1}(1-\lambda_{t+1})(h_t^\top e_t)\bar\phi_{t+1}\right],\qquad
+h_{t+1}=h_t+\eta\left[\delta_te_t-(h_t^\top\phi_t)\phi_t\right].
+$$
+
+两条更新都使用旧 θ、旧 h 和刚计算的 e。h 是梯度校正的辅助向量。Γ 与 λ 的当前/后继索引不可互换。停止时本步累计量与终端值仍保留，下一价值消失。
+
+固定目标策略、固定线性特征、充分覆盖及算法步长等条件是稳定性分析的一部分。把目标策略每步改成自己的贪心策略，形成控制 demon，是另一个问题；不能直接把固定策略预测定理称为完整 Greedy-GQ 控制保证。多个问句也可以引用彼此的输出，但这会进一步引入移动目标。
+
+**算法：Horde 原动作值问句的 GQ 调度。状态值 TDC 使用本章另外给出的递推，不能仅把算法标签改成 GQ。**
+
+1. 1. 保存同一真实转移与行为动作概率 b(a|s)。
+1. 2. 对每个 demon 读取自己的 π、C、Γ、Z、λ。
+1. 3. 枚举后继动作，计算目标策略下的平均后继特征。
+1. 4. 用旧答案和旧辅助权重算 δ 与新迹 e。
+1. 5. 先保存 Δθ、Δh，再同时应用两条更新。
+1. 6. 世界只前进一步；demon 的伪终止不重置世界。
+
 <a id="gvf-etd"></a>
 
 ## 10 · Emphatic TD 与状态加权
@@ -6677,6 +7501,24 @@ python3 -m unittest discover -s tests -p test_streaming_composition.py
 
 实验可逐步放宽假设：先固定表示与问题，再分别改变策略覆盖、噪声、预测时域或特征混叠，最后考虑表示与控制的联合学习。预测精度衡量回答问题的能力；后续控制任务的样本需求衡量这些预测的用途。两类指标应分别报告。
 
+<a id="rlss-horde-evidence"></a>
+
+## Horde 原实验回答了什么，尚未回答什么
+
+Horde 的实质不是给一个网络增加许多输出头。它让多个具备不同问句与目标策略的学习器，使用同一条行为经验流。原论文以固定稀疏特征和梯度 TD 类算法处理离策略学习。问句是否有经验意义、是否获得行为覆盖、更新是否稳定、答案是否帮助控制，仍是四个不同问题。
+
+| 原论文实验 | 学习和检验的安排 | 可以支持的结论 |
+| --- | --- | --- |
+| 碰撞时间与停止时间预测 | 指定策略，步数 cumulant，事件停止；停止时间实验先后改变接触表面 | 同一语义的预测可从传感器数据学习并适应后果变化 |
+| 八个传感器目标的控制 demons | 同一随机旋转行为流训练；另行接管控制评估各 demon | 无需逐个执行其目标策略，也能从覆盖相关动作的流中学习不同控制行为 |
+| 追光控制 | 保存约 8.5 小时行为数据，离线两遍训练，再运行目标策略评估 | 离策略经验可以产生不同于行为策略的能力；这项具体实验不是严格单遍流式训练 |
+
+论文中的“每步时间与内存固定”是相对于已固定的特征数、demon 数和动作集合而言，不是说增加问句没有成本。一个答案向量、一个辅助校正向量和一个资格迹已需要多份参数规模的内存；动作期望还要支付动作枚举成本。固定总计算下，问句的数量、跨度和稳定化机制必须共同预算。
+
+原论文没有完成一般问题发现，也没有证明任意共享非线性表征下所有 demons 都稳定。共享同一个固定特征输入，不等于共享一套会被全部损失共同修改的神经编码器。后者引入目标干扰、梯度陈旧和多个问题的采样权重；需要另作消融。
+
+先把实验拆开：在表格环形世界上验证不同 π 确实得到不同答案；在 Baird 型线性反例上验证更新稳定性；再让多个头共享可变表示；最后把预测接入控制器并测原始奖励与额外资源。前两项成功不能替代后两项。已有环形 nexting 教学实验只用于语义与时序诊断，不是原机器人的复现。
+
 <a id="lesson-branches"></a>
 
 ## 14 · 预测方法的关系
@@ -6843,13 +7685,14 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
 - [When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-self-prediction-auxiliary-tasks)
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
 - [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+- [The Ungrounded Alignment Problem](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ungrounded-alignment)
 
 #### 时间信用分配与离策略多步学习
 
@@ -6859,12 +7702,13 @@ $$
 
 - [Deep Reinforcement Learning with Gradient Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces)
 - [Expected Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-expected-eligibility-traces)
+- [Per-decision Multi-step Temporal Difference Learning with Control Variates](https://yingwen.io/zh/continual-rl/research/#recent-openmind-control-variates)
 
 #### 后果模型、知识保留与规划
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
 
@@ -6880,7 +7724,7 @@ $$
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
 - [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
@@ -7182,6 +8026,73 @@ Value equivalence 以策略集合和函数集合定义模型规格：模型对�
 - [NeurIPS 2020 原文](https://papers.nips.cc/paper/2020/hash/3bb585ea00014b0e3ebe4c6dd165a358-Abstract.html)：VE 依赖策略与函数集合。
 - [Proper Value Equivalence · NeurIPS 2021](https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html)：多步算子、固定点与规划充分性；不是任意潜在网络的保证。
 
+### Per-decision Multi-step Temporal Difference Learning with Control Variates
+
+Kristopher De Asis, Richard S. Sutton
+
+UAI 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+怎样保留长路径中的新奖励信息，同时减去已经可预测的采样波动？
+
+#### 关键机制
+
+在逐决策重要性采样回报中加入条件均值为零的控制变量。期望动作价值承担可预测部分，重要性比率仍作用于真实回报相对当前预测的残差。
+
+#### 证据
+
+原文统一讨论动作和状态价值的多步目标，并连接 Expected Sarsa、Tree-backup 与 Retrace。教材枚举一个两动作例子的期望和方差。
+
+#### 条件与限制
+
+无新增偏差不代表没有 bootstrap 误差，也不保证任意差预测都降低方差。此为研究者加入 Openmind 前的工作。
+
+#### 阅读与实验
+
+保持采样策略、价值函数与路径长度不变，分别计算控制变量前后的均值和方差；随后再讨论神经网络参数变化。
+
+#### 原文与相关入口
+
+- [原论文](https://arxiv.org/html/1807.01830v1)：重点读动作价值回报、条件均值与 λ-return 的关系。
+
+### The Ungrounded Alignment Problem
+
+Marc Pickett, Aakash Kumar Nain, Joseph Modayil, Llion Jones
+
+ICDL 2025（预印本 2024） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+即使目标已经写明，智能体怎样知道其中的概念对应哪一段未知感知输入？
+
+#### 关键机制
+
+利用固定的字符转移关系知识，对未知图像编码进行无标签对齐。共享编码器与对比学习把感知模式连接到既有关系结构。
+
+#### 证据
+
+原文在置换像素的字符序列上检验触发词识别。这隔离了概念指代与感知编码的问题，而非直接训练一般 RL 控制器。
+
+#### 条件与限制
+
+预先给定的关系、重启训练与阈值选择是实验条件。受控接地任务的准确率不能当作通用价值对齐或单生命期适应的证据。
+
+#### 阅读与实验
+
+分别改变感知编码和事件关系，区分事件识别失败、预测失败与奖励偏好错误。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/html/2408.04242v1)：问题定义、关系传播与训练条件。
+- [机构发表目录](https://www.openmindresearch.org/research)：列为 ICDL 2025。
+
+#### 作者代码
+
+[原论文给出的作者仓库。](https://github.com/EmergenceAI/babybeaver)
+
+作者字符接地任务实现；不是流式 actor–critic 代码。
+
 
 <a id="chapter-code"></a>
 
@@ -7212,7 +8123,7 @@ python3 examples/gvf_lab.py test
 
 - [McLeod et al. · Continual Auxiliary Task Learning（NeurIPS 2021）](https://papers.nips.cc/paper/2021/hash/68331ff0427b551b68e911eebe35233b-Abstract.html)：研究行为策略与辅助预测共同学习时的非平稳性，以及 successor features 的作用。
 
-- [Modayil & Abbas · Towards model-free RL algorithms that scale well with unstructured data（2023）](https://arxiv.org/html/2311.02215v1)：Nibbler 的问题选择、局部输入选择与特征复用；算法 1–5 给出完整更新次序。
+- [Modayil & Abbas — Nibbler（2023）](https://arxiv.org/html/2311.02215v1)：选择 GVF 与局部输入，再将特征用于主任务；合成组合问题上的规模实验。
 
 - [Voelcker et al. · When does Self-Prediction Help?（RLC 2024）](https://openreview.net/forum?id=izAJ8sHF5q)：比较观测重构与潜在自预测在独立表示学习和辅助 TD 学习中的不同作用。
 
@@ -7224,7 +8135,7 @@ python3 examples/gvf_lab.py test
 
 - [Sutton, Mahmood & White · An Emphatic Approach (2016)](https://www.jmlr.org/papers/v17/14-488.html)：interest、follow-on、emphasis 与线性稳定性；随机收敛需相应附加条件。
 
-- [Sutton & Barto · 第 9、11、12 章](http://incompleteideas.net/book/the-book-2nd.html)：函数逼近、离策略预测、资格迹的完整教材背景。
+- [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：第 7、8、12、13 章；期望备份、资格迹、策略梯度与算法条件。
 
 - [RLPark · GTDLambda.java 固定版本](https://github.com/rlpark/rlpark/blob/2baf7389c75a31831e5b1a68539771c1947b7f09/rlpark.plugin.rltoys/jvsrc/rlpark/plugin/rltoys/algorithms/predictions/td/GTDLambda.java)：对照 update 中 $\gamma$t / $\gamma$t+1、$\rho$、correction 与旧辅助参数。Java 使用 v 为主权重、w 为辅助权重；本章使用 w、h。
 
@@ -7233,6 +8144,10 @@ python3 examples/gvf_lab.py test
 - [GVFN · 作者代码](https://github.com/mkschleg/GVFN)：问题参与递归状态之后，需要额外处理表示与预测依赖。
 
 - [GVFHordes.jl · 作者问题库](https://github.com/mkschleg/GVFHordes.jl)：按 cumulant / discount / policy 组织问题接口；可与本页 question 函数逐项对应。
+
+- [Sutton et al. — Horde（AAMAS 2011）](https://josephmodayil.com/papers/horde-final.pdf)：作者存档；多问题、共享经验、离策略实时学习。
+
+- [Sutton et al. — Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://arxiv.org/abs/2202.03466)：第 2–4 节，GVF 问题、option 解与模型后果。注意终端结果的折扣位置与本文随机停止规范的区别。
 
 - [Janjua et al. · GVFs in the Real World · Machine Learning](https://link.springer.com/article/10.1007/s10994-023-06413-x)：观测记忆、TD与n-step、离线初始化及按时间顺序的模拟部署；不是真实闭环工厂控制验证。
 
@@ -7254,6 +8169,12 @@ python3 examples/gvf_lab.py test
 
 - [Touati & Ollivier · Learning One Representation to Optimize All Rewards](https://arxiv.org/abs/2103.07945)：FB 表示的理论出发点；探索/经验覆盖、近似误差及奖励查询约定。
 
+- [Modayil, White & Sutton — Multi-timescale Nexting](https://arxiv.org/abs/1112.1133)：早期预印本 2011；期刊版 Adaptive Behavior 2014。多尺度传感器预测的真实机器人证据。
+
+- [Sutton et al. · Horde（AAMAS 2011）](https://www.ifaamas.org/Proceedings/aamas2011/papers/A6_R70.pdf)：§2–4 区分问句函数和答案函数；§5.1–5.3 明确预测、并行控制及两遍离线追光实验协议。
+
+- [Wan et al. · Planning with Expectation Models](https://www.ijcai.org/proceedings/2019/506)：期望模型与线性后续价值的配合条件。本文 d+1 问句接口还参考 Sutton 原始 GVF/GVF-EQ 课件，严格区分预测问句、控制子问题和问题构造。
+
 
 ---
 
@@ -7268,6 +8189,22 @@ python3 examples/gvf_lab.py test
 - 逐步计算短期与长期排序反转、相同策略的不同学习能力、不可逆后果三个反例。
 - 区分可实现比较者、知晓未来的 oracle、偏离遗憾与从初始世界出发的比较。
 - 运行精确枚举、重要性采样和有限差分测试，为自己的 CRL 实验写明目标、信息与资源边界。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 期望与条件信息
+
+$\mathbb E[X\mid h]$ 表示已经知道历史 $h$ 后，对仍未知的后果取平均。不同条件信息对应不同的预测问题。
+
+### 策略与学习规则
+
+策略决定现在怎样行动；学习规则决定收到经验后，未来的策略怎样改变。学习率、优化器状态、记忆与表示更新都会影响后者。
+
+### 一次环境转移
+
+时刻 $t$ 的智能体先选 $A_t$，随后收到 $R_{t+1},O_{t+1}$，再更新内部状态。动作不能使用尚未收到的后果。
 
 <a id="problem-definition"></a>
 
@@ -7345,27 +8282,11 @@ $\mathcal A$ 是行为、更新与初始化组成的完整算法，$\mathfrak A_
 - 初始世界生命期比较：保留行动造成的长期分支，需要独立可重复世界或额外识别假设。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 期望与条件信息
-
-$\mathbb E[X\mid h]$ 表示已经知道历史 $h$ 后，对仍未知的后果取平均。不同条件信息对应不同的预测问题。
-
-### 策略与学习规则
-
-策略决定现在怎样行动；学习规则决定收到经验后，未来的策略怎样改变。学习率、优化器状态、记忆与表示更新都会影响后者。
-
-### 一次环境转移
-
-时刻 $t$ 的智能体先选 $A_t$，随后收到 $R_{t+1},O_{t+1}$，再更新内部状态。动作不能使用尚未收到的后果。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 持续控制的对象
 
-普通策略评价提出一个明确的反事实问题：如果从这里开始，一直按给定策略 $\pi$ 行动，会得到什么？持续学习提出的另一个问题是：如果从这里开始，继续运行这个学习智能体，会得到什么？两者都可以有数学定义，但它们一般不是同一个量。第二个问题包括以后会发生的探索、参数更新、表示变化、记忆淘汰与技能获取。
+Q-learning 和策略梯度本来就从交互中学习。分析这些方法时，我们常先固定环境、表示和策略类，研究价值估计或策略怎样改善。若智能体要长期运行，学习期间付出的代价、已经形成的知识以及继续学习的能力也会影响表现。于是需要把完整学习过程作为比较对象。固定策略评价问的是“以后一直按 $\pi$ 行动会怎样”；持续学习评价还要计入以后会发生的探索、参数更新、表示变化与记忆管理。
 
 例如，两个机器人现在都选择同一条路线。其中一个会从故障中更新模型，另一个的更新已经停止。当前动作分布无法区分它们，但后续表现可能截然不同。反过来，两个当前价值相近的机器人也可能因记忆容量、更新延迟或探索权限不同，获得不同的未来经验。
 
@@ -8096,7 +9017,7 @@ MoReFree 则以真实动作返回初始区域，训练无需调用外部 reset�
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reset-free Reinforcement Learning with World Models](https://yingwen.io/zh/continual-rl/research/#recent-morefree-reset-free-models)
 - [Posterior Sampling for Continuing Environments](https://yingwen.io/zh/continual-rl/research/#recent-cpsrl-continuing-exploration)
@@ -8105,7 +9026,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reset-free Reinforcement Learning with World Models](https://yingwen.io/zh/continual-rl/research/#recent-morefree-reset-free-models)
 
@@ -8371,6 +9292,26 @@ DQN 用神经网络近似动作价值。在共享参数下，一次更新会影�
 - 实现两层 ReLU Q 网络及其反向传播。
 - 知道 buffer、更新比率、目标滞后和非平稳环境之间的冲突。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 一条经验
+
+在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
+
+### 折扣与终止
+
+$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
+
+### 表格与函数逼近
+
+表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
+
+### 链式法则与 stop-gradient
+
+同一个数可以参与前向计算但不参与本次求导。DQN 把本次目标当作固定标签；这不是遗漏反向传播。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -8446,26 +9387,6 @@ $R,S'$ 是真实条件后果，$0\le\gamma<1$。这是理想最优价值固定�
 
 - Double DQN：分开选择与评估来源，减少一类最大化偏差而不消除所有误差。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 一条经验
-
-在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
-
-### 折扣与终止
-
-$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
-
-### 表格与函数逼近
-
-表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
-
-### 链式法则与 stop-gradient
-
-同一个数可以参与前向计算但不参与本次求导。DQN 把本次目标当作固定标签；这不是遗漏反向传播。
 
 <a id="lesson-setting"></a>
 
@@ -8727,7 +9648,7 @@ DQN 保留 TD 目标。网络、回放与目标网络增加新的时间尺度，
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
 
@@ -8744,7 +9665,7 @@ DQN 保留 TD 目标。网络、回放与目标网络增加新的时间尺度，
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [TD-MPC2: Scalable, Robust World Models for Continuous Control](https://yingwen.io/zh/continual-rl/research/#recent-tdmpc2-decision-time-model)
 
@@ -8776,7 +9697,7 @@ DQN 保留 TD 目标。网络、回放与目标网络增加新的时间尺度，
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
 
@@ -9021,6 +9942,30 @@ python3 examples/foundations_detail_lab.py test
 - 由 TD error 递推计算 GAE，正确处理终止、截断和 rollout 边界。
 - 手算 PPO 的正负 advantage 裁剪，并运行有真实采样循环的最小实现。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 一条经验
+
+在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
+
+### 折扣与终止
+
+$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
+
+### 表格与函数逼近
+
+表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
+
+### 随机策略
+
+$\pi_\theta$(a|s) 是动作概率。二动作可用 p=$\sigma$($\theta$)，softmax 推广到多动作；连续动作通常是参数化概率密度。
+
+### 梯度上升与损失下降
+
+要最大化回报 J，就沿 ∇J 上升；框架常定义 loss=−代理目标再下降，符号必须一致。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -9097,30 +10042,6 @@ $\theta$ 为策略参数，$p_\theta$ 为策略诱导的轨迹分布，$T$ 为�
 - PPO/TRPO：分别通过裁剪代理与约束近似管理策略变化，求解成本和保证不同。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 一条经验
-
-在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
-
-### 折扣与终止
-
-$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
-
-### 表格与函数逼近
-
-表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
-
-### 随机策略
-
-$\pi_\theta$(a|s) 是动作概率。二动作可用 p=$\sigma$($\theta$)，softmax 推广到多动作；连续动作通常是参数化概率密度。
-
-### 梯度上升与损失下降
-
-要最大化回报 J，就沿 ∇J 上升；框架常定义 loss=−代理目标再下降，符号必须一致。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 先用有限时域把梯度推清楚
@@ -9153,7 +10074,7 @@ $$
 \sum_a\pi_\theta(a\mid s)\nabla\log\pi_\theta(a\mid s)b(s)=b(s)\nabla\sum_a\pi_\theta(a\mid s)=0
 $$
 
-任意不依赖当前动作的 baseline 都不改变期望。取 $b=V_\pi$，权重成为 advantage；若 baseline 共享参数，actor 更新中须将 baseline 当作固定权重，不额外沿它求导。
+给定动作前历史，baseline 须在本次采样前确定或满足相应条件独立性，才有上面的零期望。取真实 $b=V_\pi$，权重成为 advantage；共享参数时 actor 更新须将 baseline 当作固定权重。stop-gradient 只控制求导路径，不会消除先用同一样本拟合 baseline 所造成的统计依赖。
 
 $$
 A_\pi(s,a)=Q_\pi(s,a)-V_\pi(s),\qquad \delta_t=R_{t+1}+\gamma_{t+1}V(S_{t+1})-V(S_t)
@@ -9526,6 +10447,26 @@ python3 examples/foundations_detail_lab.py test
 - 辨认 soft Q、策略熵、双 critic 和自动温度分别起什么作用。
 - 实现离散熵正则 actor 更新，并能检查连续 SAC 的 log-prob 和梯度路径。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 一条经验
+
+在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
+
+### 折扣与终止
+
+$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
+
+### 表格与函数逼近
+
+表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
+
+### 熵与温度
+
+H($\pi$)=−Σ$\pi$ log$\pi$ 衡量离散分布不确定性；$\tau$>0 是熵权重。本章用 $\tau$ 避免与学习率 $\alpha$ 混淆。连续密度的微分熵依赖坐标尺度，不与离散熵直接数值比较。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -9601,26 +10542,6 @@ $\gamma<1$ 是折扣，$\tau>0$ 是熵温度，$\mathcal H$ 为离散熵或明�
 
 - SAC：以回放、双critic和重参数化actor近似实现，含额外估计和工程误差。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 一条经验
-
-在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
-
-### 折扣与终止
-
-$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
-
-### 表格与函数逼近
-
-表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
-
-### 熵与温度
-
-H($\pi$)=−Σ$\pi$ log$\pi$ 衡量离散分布不确定性；$\tau$>0 是熵权重。本章用 $\tau$ 避免与学习率 $\alpha$ 混淆。连续密度的微分熵依赖坐标尺度，不与离散熵直接数值比较。
 
 <a id="lesson-setting"></a>
 
@@ -9941,6 +10862,34 @@ python3 examples/foundations_detail_lab.py test
 - 从广义投影 Bellman 误差推导 GTD2／TDC／TDRC 的三条迹，核对非线性冻结总和等价。
 - 连接 actor–critic、GAE 和 RTRL／RTU，区分回报信用、状态敏感度与参数变化造成的过时导数。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 价值预测
+
+固定策略的价值 $v_\pi(s)$ 是未来回报的条件期望。网络 $v_w$ 只是估计。以下先讨论固定策略的预测问题。
+
+### TD 误差
+
+一步奖励与下一状态预测形成目标，再减去当前预测。两次预测使用同一组更新前参数。
+
+$$
+\delta_t=R_{t+1}+\gamma v_w(S_{t+1})-v_w(S_t)
+$$
+
+### 线性逼近
+
+固定特征 $x_t$ 与权重 $w$ 的内积构成预测。对权重的梯度是 $x_t$；学习特征的情况需要额外求导。
+
+$$
+v_w(S_t)=w^\top x_t,\qquad\nabla_wv_w(S_t)=x_t
+$$
+
+### 终止与截断
+
+真正终止的尾值为零。记录窗口结束不一定是终止；若任务仍继续，尾部应保留 bootstrap。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -10022,34 +10971,6 @@ $w$ 是本段冻结的预测参数，$T$ 是真实终点，$G_t^\lambda$ 是本�
 
 - GTD2/TDC/TDRC：以辅助误差预测和梯度迹连接指定投影目标，目标、曲率与正则路径需各自检查。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 价值预测
-
-固定策略的价值 $v_\pi(s)$ 是未来回报的条件期望。网络 $v_w$ 只是估计。以下先讨论固定策略的预测问题。
-
-### TD 误差
-
-一步奖励与下一状态预测形成目标，再减去当前预测。两次预测使用同一组更新前参数。
-
-$$
-\delta_t=R_{t+1}+\gamma v_w(S_{t+1})-v_w(S_t)
-$$
-
-### 线性逼近
-
-固定特征 $x_t$ 与权重 $w$ 的内积构成预测。对权重的梯度是 $x_t$；学习特征的情况需要额外求导。
-
-$$
-v_w(S_t)=w^\top x_t,\qquad\nabla_wv_w(S_t)=x_t
-$$
-
-### 终止与截断
-
-真正终止的尾值为零。记录窗口结束不一定是终止；若任务仍继续，尾部应保留 bootstrap。
 
 <a id="lesson-setting"></a>
 
@@ -10415,13 +11336,23 @@ python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4
 
 ## SwiftTD：信用长度、坐标步长与有效更新率必须分别控制
 
-SwiftTD（RLC 2024）连接了三个问题：线性 true-online 信用、逐坐标步长适应，以及过大的有效更新率。它不是给 TD(λ) 换一个固定 learning rate。作者提供稠密、稀疏二值和稀疏实值三种线性实现；没有据此证明任意学习中的神经表示稳定。
+前面的 true-online 方法处理过去预测应得到多少信用。另一个问题是，给定这些信用，这次更新究竟改变预测多少？若每个权重都有自己的步长，仅检查每一个步长是否很小并不够。先暂时去掉旧迹与自举，考虑线性预测 $v=w^\top x$ 和本次固定的标签 y。
 
 $$
-\alpha_i=e^{\beta_i},\qquad \tau=\sum_i\alpha_i x_i^2,\qquad a_i=\min\{1,\eta/\tau\}\alpha_i x_i,\qquad \sum_i a_i x_i=\min\{\tau,\eta\}
+\delta=y-w^\top x,\qquad \Delta w_i=\alpha_i\delta x_i\quad\Longrightarrow\quad v^+-v=\delta\sum_i\alpha_i x_i^2=\tau\delta.
 $$
 
-这是作者实现中限制新资格增量尺度的部分。τ=0 时取不缩放分支。η 约束当前特征方向上的有效增量，不是简单逐个裁剪参数；完整算法还有荷兰迹、预测差修正及元敏感度。
+τ 是这一次更新消去当前误差的比例，所以新误差为 (1−τ)δ。τ=1 时恰好达到固定标签，τ>1 时越过标签。它是预测空间中的有效率，不是任意一个参数的名义步长。
+
+例如 $x=(1,10)$，两个步长都为 .01，却有 $\tau=.01+.01\times100=1.01$。当前误差为一时，预测增加1.01。把第二坐标的输入单位扩大十倍会把其贡献扩大百倍；即使名义步长不变，学习幅度也已改变。
+
+$$
+\alpha_i=e^{\beta_i},\qquad c=\min\{1,\eta/\tau\},\qquad a_i=c\alpha_i x_i,\qquad \sum_i a_i x_i=\min\{\tau,\eta\}.
+$$
+
+β 是对数步长，η>0 是规定的有效率上限；τ=0 时取 c=1。共同缩放保留各坐标相对步长。上例取 η=.2，使用 δa 的当前预测改变量就为 .2，而不是1.01。
+
+现在放回时间信用。旧资格已经保存了过去输入，新向量 a 只决定当前输入怎样加入资格。因而上述上限不是整个带迹更新的上限。SwiftTD（RLC 2024）把这种尺度控制与线性 true-online 信用、步长适应结合起来。理解这三个环节后，才能看清下面的源码时序。
 
 $$
 b=z^\top x,\qquad z\leftarrow z+a(1-b)
@@ -10429,13 +11360,15 @@ $$
 
 这里 z 已先按 γλ 衰减，a 含坐标步长和上述共同缩放。这是源码中的资格构造顺序；只抄这一行并加普通 TD 误差，不构成完整 SwiftTD。
 
+因子 1−b 扣除了旧资格已经沿当前特征保留的部分，接回前面 Dutch trace 的构造。完整方法还需校正新旧预测差，并跟踪步长对过去权重更新的影响。后者是元敏感度：它回答改变学习规则会造成什么后果，与资格迹回答的时间信用问题不同。
+
 | 代码中的变量 | 为什么不能省略 | 检查方式 |
 | --- | --- | --- |
 | `beta`、`h`、`p`、`z_bar` | 当前步长的历史影响需要敏感度与元信用 | 冻结元步长，与完整适应版比较 |
 | `v_old`、`v_delta`、`z_delta` | 区分旧预测和此前更新造成的预测变化 | 重复特征、非零初始化时逐前缀核对 |
 | `tau`、`eta`、`decay` | 限制新资格尺度，超界时衰减相关步长并调整敏感度 | 放大输入特征，记录有效率而非只记名义 α |
 
-作者仓库 src/cpp/SwiftTD.cpp 的 Step 接口先接收当前特征和刚收到的奖励，再完成上一预测的更新。因此不能把它当成完全相同参数时序的 update(s,r,s′) 而重复推进两次。终止和变折扣接口也要按库实际支持范围核对。教学神经 TD(λ) 便于观察梯度漂移，但不是 SwiftTD 的替代复现。
+作者仓库提供稠密、稀疏二值和稀疏实值的线性实现。src/cpp/SwiftTD.cpp 的 Step 先接收当前特征和刚收到的奖励，再完成上一预测的更新；不能把它当成相同时序的 update(s,r,s′) 而重复推进两次。终止和变折扣接口也要按库实际支持范围核对。教学神经 TD(λ) 用于观察梯度漂移，并非这些线性规则的替代复现。
 
 一个研究对照应固定特征、目标和轨迹，分别关闭元步长、有效率上界和衰减。之后再学习表示。如果同时换成深网、改初始化并加入归一化，已无法从结果判断哪一项产生收益。
 
@@ -10715,6 +11648,34 @@ $$
 actor使用下一状态的V-trace目标构造动作回报。它不等于直接使用$v_t^{VT}-V_t$。实践中策略梯度比率上限还可以单独设置；本文小程序令它与ρmax一致。
 
 IMPALA作者代码先计算行为与目标动作log-prob的差，再用反向scan形成窗口目标，最后stop_gradient。它保存短轨迹并进行批量训练。反向scan在数组上从后向前计算，不等于严格流式后向资格迹；前者依赖已保存的窗口，后者在新误差到达时更新一条压缩迹。
+
+<a id="research-openmind-control-variates"></a>
+
+## 多步控制变量：期望备份为何还需要真实路径
+
+Q(σ)选择采样与期望的混合程度；De Asis 与 Sutton 的另一篇 2018 年工作问：已经采到长回报，能否减去其中可由当前价值解释的波动？答案是逐决策加入条件均值为零的控制变量。
+
+$$
+\rho_{t+1}=\frac{\pi(A_{t+1}\mid S_{t+1})}{\mu(A_{t+1}\mid S_{t+1})},\quad \bar Q_{t+1}=\sum_a\pi(a\mid S_{t+1})Q(S_{t+1},a),\qquad G_{t:t+n}=R_{t+1}+\gamma\left[\bar Q_{t+1}+\rho_{t+1}(G_{t+1:t+n}-Q_{t+1})\right]
+$$
+
+对应原文式 (21) 的重排，边界 $G_{t+n:t+n}=Q_{t+n}$。冻结 $Q$、策略且满足覆盖时，$\mathbb E_\mu[\bar Q-\rho Q\mid S]=0$，所以相对逐决策重要性采样目标不新增偏差；有限步 bootstrap 原有的估计偏差仍在。
+
+手算：两动作行为概率均为 0.5，目标概率为 $(0.9,0.1)$，$Q=(1,3)$。比率是 $(1.8,0.2)$，直接校正的尾值取 1.8 或 0.6，均值 1.2、方差 0.36。一步边界上 $G=Q$，修正后总为 $\bar Q=1.2$；多步时仍保留 $\rho(G-Q)$，因此新的奖励信息没有被全部替换为期望值。
+
+若采到目标策略绝不会选择的动作，ρ 为零，递推回到目标动作期望；若 ρ 很大，被放大的是回报相对预测的残差。预测与回报相关时这有助于减小波动；价值估计很差时，选择系数 −1 并非普遍最优，不能承诺方差总是下降。
+
+| 方法 | 应分开观察的变化 |
+| --- | --- |
+| Q(σ) | 一步目标的采样／期望混合，以及匹配的多步传播。 |
+| 逐决策控制变量 | 添加零均值校正，将可预测的部分与真实回报残差分开。 |
+| Retrace | 使用 Expected Sarsa 误差，再限制多步传播比率；其原作者并非 De Asis。 |
+| Replay | 改变数据保存和重复使用；本身不定义上述回报估计器。 |
+
+原文连接到 Expected Sarsa、Tree-backup 与 Retrace，但不能把这些方法的全部理论相互移植。冻结前向回报恒等式、表格算子稳定性、变参神经网络实验是不同层次。固定 n 样本窗口可具有有界内存，但仍保存历史样本；不等于本教材不保留样本的严格流式协议，需匹配相应后向递推。
+
+- 思考：动作价值的控制变量在 on-policy 情况下还存在，而状态价值形式中的 (1−ρ)V 消失，原因是什么？
+- 反例练习：保持多步尾回报或固定终端目标 G=(1,3)，采用反向排序的差估计 Q=(3,1)，使 G 与 Q 不再是同一个一步边界量。原 ρG=(1.8,0.6)，均值 1.2、方差 0.36；加控制变量后，目标期望 Q̄=2.8，Q̄+ρ(G−Q)=(−0.8,3.2)，均值仍为 1.2，方差却增至 4。枚举验证，并解释“无新增偏差”为何不蕴含“方差降低”。
 
 <a id="lesson-state-lambda"></a>
 
@@ -11189,7 +12150,7 @@ python3 examples/credit_assignment_lab.py test
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
@@ -11211,6 +12172,7 @@ python3 examples/credit_assignment_lab.py test
 - [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
 - [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+- [Per-decision Multi-step Temporal Difference Learning with Control Variates](https://yingwen.io/zh/continual-rl/research/#recent-openmind-control-variates)
 
 #### 流式协议下的稳定更新
 
@@ -11674,6 +12636,36 @@ masked MuJoCo仍落后批量PPO。固定参数精确RTRL不代表在线变参敏
 
 - [2026年v2原文](https://arxiv.org/html/2605.24709v2)：方法、5-seed实验、masked MuJoCo负边界与staleness诊断。
 
+### Per-decision Multi-step Temporal Difference Learning with Control Variates
+
+Kristopher De Asis, Richard S. Sutton
+
+UAI 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+怎样保留长路径中的新奖励信息，同时减去已经可预测的采样波动？
+
+#### 关键机制
+
+在逐决策重要性采样回报中加入条件均值为零的控制变量。期望动作价值承担可预测部分，重要性比率仍作用于真实回报相对当前预测的残差。
+
+#### 证据
+
+原文统一讨论动作和状态价值的多步目标，并连接 Expected Sarsa、Tree-backup 与 Retrace。教材枚举一个两动作例子的期望和方差。
+
+#### 条件与限制
+
+无新增偏差不代表没有 bootstrap 误差，也不保证任意差预测都降低方差。此为研究者加入 Openmind 前的工作。
+
+#### 阅读与实验
+
+保持采样策略、价值函数与路径长度不变，分别计算控制变量前后的均值和方差；随后再讨论神经网络参数变化。
+
+#### 原文与相关入口
+
+- [原论文](https://arxiv.org/html/1807.01830v1)：重点读动作价值回报、条件均值与 λ-return 的关系。
+
 
 <a id="chapter-code"></a>
 
@@ -11751,6 +12743,10 @@ python3 examples/credit_assignment_lab.py all
 
 - [Stream-X · 作者固定版本](https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b)：2026版，先读optimizer.py、稀疏初始化及agent更新时序；代码许可证与教程原创代码不同。
 
+- [De Asis & Sutton · Per-decision Multi-step TD with Control Variates · UAI 2018](https://arxiv.org/html/1807.01830v1)：式 (21)、(23)、(24) 给动作／状态回报及 λ-return 关系。
+
+- [De Asis et al. · Multi-step Reinforcement Learning: A Unifying Algorithm · AAAI 2018](https://arxiv.org/abs/1703.01327)：Q(σ) 原文；2017 是预印本年份，正式会议为 2018。与控制变量论文互补，不重复计算为同一项成果。
+
 
 ---
 
@@ -11763,6 +12759,22 @@ python3 examples/credit_assignment_lab.py all
 - 明确流式数据权限、单步计算与持久内存预算，区分流式协议、持续任务和不可重置生命期。
 - 在流式协议中实现 TD(λ)，检查痕迹与终止时序；将时间信用分配与更新稳定性分开分析。
 - 推导并比较 ObGD、StreamingOptimizer 与 Intentional Updates 的尺度机制、保证范围和失败条件。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 价值函数
+
+$v(s)$ 预测从状态 $s$ 出发按固定策略累积的折扣奖励。学习器根据不断到来的经验修正这个预测。
+
+### 半梯度 TD
+
+误差 $\delta=r+\gamma v(s')-v(s)$ 中的两个预测使用同一份旧参数；更新方向只对当前预测求导。
+
+### 资格迹
+
+与参数同维的向量，积累过去预测对参数的敏感性。它保存信用分配所需的统计量，而不保存原始样本。
 
 <a id="problem-definition"></a>
 
@@ -11842,22 +12854,6 @@ $\xi_t$ 是刚收到的经验，$M_t$ 是全部持久学习状态，$U$ 是更�
 - Intentional Updates：按局部输出变化选尺度，含预条件、迹和在线平均近似。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 价值函数
-
-$v(s)$ 预测从状态 $s$ 出发按固定策略累积的折扣奖励。学习器根据不断到来的经验修正这个预测。
-
-### 半梯度 TD
-
-误差 $\delta=r+\gamma v(s')-v(s)$ 中的两个预测使用同一份旧参数；更新方向只对当前预测求导。
-
-### 资格迹
-
-与参数同维的向量，积累过去预测对参数的敏感性。它保存信用分配所需的统计量，而不保存原始样本。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 流式学习的数据与计算约束
@@ -11875,7 +12871,75 @@ $v(s)$ 预测从状态 $s$ 出发按固定策略累积的折扣奖励。学习�
 | 实时计算预算 | 一次或固定少数次前后向 | 限制每步计算与历史回溯 |
 | 学习评价 | 实际每步延迟、内存、累计奖励 | GPU 吞吐量不能单独代表实时控制能力 |
 
-把 DQN 的 replay capacity 改成 1 是可用的诊断基线，却未必保留 DQN 的稳定性。原方法依靠的样本混合、target network 和批平均同时改变了。研究问题应是“哪些机制能在这个协议下工作”，而不是只换一个 buffer 参数。
+把 DQN 的 replay capacity 改成 1 是可用的诊断基线，却未必保留 DQN 的稳定性。它移除了跨经验的样本混合，也使从这个 buffer 抽出的批次只包含同一条经验；但不会自动移除 target network。若同一转移仍被重复更新，也不符合本章严格的一次使用协议。比较时应分别说明回放、更新次数、目标副本和批大小怎样改变。研究问题应是“哪些机制能在这个协议下工作”，而不是只换一个 buffer 参数。
+
+<a id="course-streaming-tracking-floor"></a>
+
+## 持续更新不等于持续学会：噪声、遗忘与追踪的最小计算
+
+流式协议允许每步更新，但不保证更新还来得及追踪目标，也不保证网络保有学习能力。先去掉 TD、自举和神经网络，只研究一个标量预测。这个小问题已包含持续学习中的两个相反要求：平均更多数据能减少噪声，给旧数据较小权重才能及时适应。
+
+$$
+y_t=m_t+\epsilon_t,\qquad w_t=(1-\alpha)w_{t-1}+\alpha y_t,\qquad 0<\alpha\leq1.
+$$
+
+$m_t$ 是此刻要预测的均值；噪声独立、零均值且方差为 $\sigma^2$。$w_t$ 是读取当前样本后的预测。这个固定步长更新只需要一个数的持久存储。
+
+$$
+w_t=(1-\alpha)^t w_0+\alpha\sum_{k=1}^{t}(1-\alpha)^{t-k}y_k.
+$$
+
+旧样本的权重随年龄几何衰减。没有保存原始数据，不等于不受历史影响；这里的历史保存在统计量中。固定步长也不是完全遗忘：过去信号仍以递减权重参与。
+
+$$
+m_t=m:\quad \lim_{t\to\infty}\operatorname{Var}(w_t-m)=\frac{\alpha\sigma^2}{2-\alpha};\qquad m_t=m_0+vt:\quad \lim_{t\to\infty}\mathbb E[w_t-m_t]=-\frac{1-\alpha}{\alpha}v.
+$$
+
+左式由误差方差递推求固定点；右式由均值误差递推求固定点。前者说明小步长降低稳态噪声，后者说明小步长增加持续线性漂移下的滞后。漂移例是局部追踪诊断，不是有界奖励的无限时域控制模型。
+
+取 σ²=1、每步均值漂移 v=0.01。α=0.1 时，稳态方差约 0.0526、均值滞后 −0.09；α=0.01 时，方差降至约 0.00503，滞后却变为 −0.99。把目标漂移阶段的误差全部称为随机噪声，并继续减小步长，会使问题更严重。
+
+这个更新始终有非零灵敏度：对新样本的导数为 α。因此它的追踪失败可以来自步长与时间尺度失配，而不是可塑性丧失。神经网络则多出梯度通路、特征退化和优化器统计等困难。必须先分开“仍能改变但改变太慢”与“相同训练协议下越来越难学到新目标”。
+
+| 要区分的困难 | 先固定什么 | 比较什么 |
+| --- | --- | --- |
+| 采样噪声 | 固定均值与数据生成过程 | 不同步长的估计方差 |
+| 目标漂移 | 相同漂移轨迹与输入尺度 | 滞后、变化后的累计误差 |
+| 表示或优化器老化 | 同一 probe 数据、容量和训练预算 | 已有网络与匹配的新网络学习能力 |
+| 控制造成的数据变化 | 相同控制权限，另设固定数据诊断 | 新状态覆盖与同数据学习表现 |
+
+接回 CRL，同一个 GVF 会因目标策略或问题函数改变而需要追踪；option 模型会因技能改善而改变；价值又受模型规划与 actor 更新影响。即使外部世界固定，这些内部目标仍可能移动。多个学习器都“使用常数步长”不是完整答案：各自的噪声、变化速度和资源成本不同，且它们的更新会影响彼此。
+
+思考：若减小 critic 步长使 TD loss 更平稳，却降低变化后的收益，怎样检验是目标追踪太慢、探索减少还是表示退化？先在共同固定的数据流上定位学习问题，再回到各自产生经验的闭环实验。两类实验回答不同问题，不能互相替代。
+
+<a id="research-openmind-time-discretization"></a>
+
+## 学得及时，还要说明奖励发生在何时
+
+逐转移更新并不自动统一物理时间。若一个机器人每 10 毫秒控制一次，另一个每 100 毫秒一次，相同的每步折扣会定义不同的未来尺度。De Asis 与 Sutton（RLC 2024）进一步指出：奖励在区间末端到达，却把第一条奖励视为无需折扣，也会改变连续时间回报的离散近似。
+
+$$
+\widetilde G(t)=\int_t^T e^{-\kappa(u-t)}r(u)\,\mathrm du,\qquad G_t^{\rm RP}=\sum_{k=t}^{T-1}e^{-\kappa\sum_{i=t}^{k}\Delta_{i+1}}r_{k+1}\Delta_{k+1}
+$$
+
+这是原文式 (7) 的右端点形式，将每单位时间折扣写成 $e^{-\kappa}$。$\Delta_{i+1}>0$ 是真实区间时长，$r_{k+1}$ 是区间末采样的奖励率；若环境已经返回区间积分奖励，不能未经检查再乘时长。
+
+传统离散回报的第一条奖励权重为一；右端点近似则同时将奖励和折扣放在区间末端。固定 Δ 时，两种回报只差一个共同正比例，策略排序不因此改变。若 Δ 随时间、动作或计算耗时变化，该比例就不再能从整个和式中提出。
+
+$$
+G_t^{\rm RP}=e^{-\kappa\Delta_{t+1}}\left(r_{t+1}\Delta_{t+1}+G_{t+1}^{\rm RP}\right)
+$$
+
+这是上述目标直接给出的递推。相应 TD target 也应同时折扣本区间奖励率近似与后继价值；先确定传感器奖励的时间语义，才能选择这个公式。
+
+手算积分检查：奖励率恒为 1，每单位时间折扣 0.9，取两段时长 1 和 2。右端点近似是 $0.9+2\times0.9^3=2.358$；若折扣取左端点、奖励取右端点，则是 $1+2\times0.9=2.8$。二者都只是积分近似；在这个例子中准确积分为 $(1-0.9^3)/(-\log0.9)\approx2.572$。
+
+论文研究的是给定奖励采样语义下的目标离散化，不是关于所有控制问题的万能修正。它既不消除低采样频率漏失事件，也不解决动作延迟、探索风险或表示学习。奖励已在高频内部正确积分的 SMDP／option 接口，需要按其实际定义处理。
+
+与本章更新尺度控制的关联在于：Intentional Updates 约束每次学习产生的局部变化；真实时间目标决定这些次数及奖励延迟意味着什么。Kris 的 Design for Learning 立场文章进一步讨论硬件可恢复性与学习算法共同设计，但该文章本身不是持续机器人性能实验。
+
+- 思考：固定 Δ 的共同比例虽不改最优排序，为什么仍会改变学习率、奖励尺度与数值难度？
+- 实验设计：固定每秒目标，记录真实时间戳，在相同物理时长下改变控制周期及其抖动；分别报告回报积分误差、每秒更新数、决策延迟和实际控制收益。
 
 <a id="lesson-derive"></a>
 
@@ -12041,6 +13105,8 @@ $$
 $$
 
 观测按各坐标中心化并缩放；奖励只缩放，不减均值。奖励迹使用已到来的奖励，是未来 return 尺度的因果代理。2026 实现先更新统计并缩放当前奖励，再在 episode 边界清零奖励迹；累计均值和方差保留。
+
+固定正数缩放全部奖励会按同一比例改变回报，保留原来的策略排序；随经验变化的缩放没有这条直接保证。比如两个行为的两步奖励分别为 (2,0) 与 (0,3)，未折扣总分原来偏好后者，若第二步统一缩小为原来的十分之一，排序便反转。在线尺度处理首先是更新机制的一部分，应保留原始奖励作评价，并检查它与 critic、actor、终止及温度的共同作用。
 
 LayerNorm 在单个观测的一层预激活上计算均值和方差，因而不需要 batch。稀疏初始化则改变参数更新对不同输入的共享程度。二者不相同：前者控制层内尺度，后者改变初始连接。2024 的逐层固定稀疏率在低输入维度下可能将一层全部置零；2026 的 layer-aware 初始化分配全网非零连接预算，复现时应连同 sparse_init.py 一起使用。
 
@@ -12403,7 +13469,7 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
@@ -12431,6 +13497,15 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
 - [Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-upgd-utility-protection)
+- [An Idiosyncrasy of Time-discretization in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-openmind-time-discretization)
+
+#### 持续控制、平均奖励与重置
+
+当学习、行动和恢复占用同一条时间轴时，应优化什么，又怎样探索？
+
+平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
+
+- [Extending Differential Temporal Difference Methods for Episodic Problems](https://yingwen.io/zh/continual-rl/research/#recent-openmind-episodic-differential)
 
 #### 新学习能力、知识保留与负迁移
 
@@ -12449,6 +13524,7 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 - [Step-size Optimization for Continual Learning](https://yingwen.io/zh/continual-rl/research/#recent-step-size-optimization)
 - [Learning from experience instead of curated datasets](https://yingwen.io/zh/continual-rl/research/#recent-oak-network-idbd)
 - [Intentional Updates for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-intentional-updates)
+- [MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters](https://yingwen.io/zh/continual-rl/research/#recent-openmind-metaoptimize)
 
 #### 持续问题与可比较实验
 
@@ -12457,6 +13533,8 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。
 
 - [Revisiting Adam for Streaming Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-revisiting-streaming-adam)
+- [Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots](https://yingwen.io/zh/continual-rl/research/#recent-openmind-physical-atari)
+- [The Open Ant: A Robot Platform for Reinforcement Learning Research](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ant-platform)
 
 ### Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks
 
@@ -12794,6 +13872,177 @@ masked MuJoCo仍落后批量PPO。固定参数精确RTRL不代表在线变参敏
 
 - [2026年v2原文](https://arxiv.org/html/2605.24709v2)：方法、5-seed实验、masked MuJoCo负边界与staleness诊断。
 
+### MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters
+
+Arsalan Sharifnassab, Saber Salehkaleybar, Richard S. Sutton
+
+ICML 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+怎样根据后来真正发生的损失，评价过去采用的步长，而不预知未来？
+
+#### 关键机制
+
+先写未来损失的元目标，再以历史敏感度建立因果后向更新。优化器状态也进入递推。完整联合敏感度、分块尺度及 Hessian-free 近似承担不同计算代价。
+
+#### 证据
+
+正式论文包含静态图像、语言建模与非平稳 CIFAR100 实验；部分近似可接近精心选择的学习率计划。分块步长不在所有实验中优于标量版本。
+
+#### 条件与限制
+
+这些实验主要检验优化与监督学习，不能自动推出持续 actor–critic 的回报改善。元优化器仍有步长和结构选择；元目标折扣也不是环境回报折扣。
+
+#### 阅读与实验
+
+先在元学习章手算一次步长对后续误差的影响，再对照作者代码辨认内层状态、元状态和被删去的导数路径。
+
+#### 原文与相关入口
+
+- [ICML 正式论文](https://proceedings.mlr.press/v267/sharifnassab25a.html)：正式年份为 2025；2024 是早期预印本年份。
+- [定稿推导与实验](https://arxiv.org/html/2402.02342v6)：未来元目标、后向代理及多种计算近似。
+
+#### 作者代码
+
+[正式论文链接的作者仓库。](https://github.com/sabersalehk/MetaOptimize)
+
+原作者提供的优化器组合与实验实现；不同配置不是同一条更新规则。
+
+### Extending Differential Temporal Difference Methods for Episodic Problems
+
+Kris De Asis, Mohamed Elsayed, J. He
+
+RLC 2026 / RLJ · 2026 · 支持方法与理论
+
+#### 研究问题
+
+中心化怎样加速回合任务的学习，又不因为回合长度不同而改变目标？
+
+#### 关键机制
+
+处理终止边界的中心化尾项，再用共享价值偏置重参数化。区分奖励单位的中心与价值单位的偏置，使最终终止的无折扣回合也能使用适当形式。
+
+#### 证据
+
+论文分别研究固定中心化的策略不变性、在线偏置学习的线性 TD 分析，以及流式深度实验。教材给出遗漏终止补偿导致排序翻转的两动作反例。
+
+#### 条件与限制
+
+这里沿用原回合目标，不是把目标改成长期平均奖励。线性预测条件不保证非线性控制全局收敛；采样截断也不是自然终止。
+
+#### 阅读与实验
+
+计算立即终止和延迟终止两条路径的原始、错误中心化、正确补偿回报。再辨认代码里的偏置、终止分支和更新前 TD 误差。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：问题、保证与实验分别阅读。
+- [原文](https://arxiv.org/html/2605.04368v1)：终止补偿、共享偏置与回合式扩展。
+
+### An Idiosyncrasy of Time-discretization in Reinforcement Learning
+
+Kris De Asis, Richard S. Sutton
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同样的物理奖励流，为什么会因奖励和折扣放在区间的不同位置而得到不同目标？
+
+#### 关键机制
+
+从连续时间回报的右端点近似出发，让区间奖励与后继价值按到达时间共同折扣。固定间隔时只差一个比例，不等间隔时这个比例一般无法提出求和。
+
+#### 证据
+
+原文给出时间离散化分析与实验。教材用恒定奖励率的两段时间计算，比较左右端点近似与精确积分。
+
+#### 条件与限制
+
+奖励率采样与已经积分的区间奖励不同。该修正不能消除动作延迟或低采样率遗漏事件，也不是任意 SMDP 接口都应照搬的公式。
+
+#### 阅读与实验
+
+固定每秒的目标而非每步折扣，再改变采样周期及抖动。报告积分误差、每秒更新次数和控制收益。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式出版入口。
+- [原文推导](https://arxiv.org/html/2406.14951v2)：式 7 与不均匀时间步的回报定义。
+
+### Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots
+
+Khurram Javed, Joseph Modayil, Gloria Kennickell, Richard S. Sutton, John Carmack
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+在真实延迟、视觉观测与不同身体下，经典游戏任务能提供怎样的控制学习证据？
+
+#### 关键机制
+
+机器人实际操纵手柄，摄像头读取运行中的 Atari 游戏。先发动作后学习的调度，分离了身体响应、观测和更新的时间。
+
+#### 证据
+
+平台论文报告六个游戏中多次试验的累计运行与跨身体性能变化；作者公开硬件及学习工程。
+
+#### 条件与限制
+
+累计运行时间不是单条终生学习轨迹。作者学习器仍有经验回放和目标网络；平台可靠性与长期知识增长是不同主张。
+
+#### 阅读与实验
+
+同时比较环境步数和物理小时下的学习曲线，并记录动作延迟、身体差异与人工干预。
+
+#### 原文与相关入口
+
+- [作者项目与论文](https://keenagi.com/research/physical-atari/)：项目已从旧 GitHub Pages 地址迁移到 Keen 官方域名。
+
+#### 作者代码
+
+[作者团队发布的完整工程。](https://github.com/Keen-Technologies/physical-atari-rlc)
+
+身体搭建、传感控制、智能体和实验脚本。运行需实物设备。
+
+### The Open Ant: A Robot Platform for Reinforcement Learning Research
+
+Elena Sorina Lupu, Patrick Spieler, Khurram Javed, Kris De Asis, John D. Martin, Martha Steenstrup, Joseph Modayil
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+能否在有限场地中直接从身体经验学习，并明确比较仿真、实机和维护条件？
+
+#### 关键机制
+
+开放硬件四足平台配合模拟器、传感接口和学习器。越界后切换目标方向，使任务无需每走到边界就结束回合。
+
+#### 证据
+
+论文比较 SARSA(λ) 与 SAC 的实机学习，给出模拟—实机对照。公开工程包含身体设计、组装演示和运行入口。
+
+#### 条件与限制
+
+缆线仍可能需要人工解缠。两学习器的动作及经验协议不同；真机运行、无回合任务与无人维护的持续学习不能混称。
+
+#### 阅读与实验
+
+先列状态与动作权限，再核对时间戳、奖励方向和恢复记录。用同一真实时间预算检验新增预测或规划是否值得其计算成本。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/abs/2607.18488)：平台、任务、实机实验与局限。
+
+#### 作者代码
+
+[Openmind 官方工程仓库。](https://github.com/Openmind-Research-Institute/open-ant)
+
+硬件、MuJoCo 模拟、SARSA/SAC 与主控制入口。
+
 
 <a id="chapter-code"></a>
 
@@ -12821,7 +14070,7 @@ python examples/lifelong_algorithms_lab.py streaming
 
 - [Intentional-AC 作者 actor–critic 主循环](https://github.com/sharifnassab/Intentional_RL/blob/e86e26fd8613ac212e9a52c3fed8a01d0a31f685/intentional_ac.py#L79)：update_params 用旧 critic 构造 TD 误差；actor 熵项乘该误差的符号，随后将合成梯度送入独立的 policy 优化器。
 
-- [Sutton & Barto · Reinforcement Learning, Chapter 12](http://incompleteideas.net/book/the-book-2nd.html)：前向 λ-return、资格迹与控制中的 trace 语义；本页已给出所需核心推导。
+- [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
 
 - [van Seijen & Sutton · True Online TD Learning](https://proceedings.mlr.press/v32/seijen14.html)：线性在线前向/后向精确等价的适用范围，区别于普通 accumulating traces。
 
@@ -12834,6 +14083,14 @@ python examples/lifelong_algorithms_lab.py streaming
 - [Stream-X · 2026 作者实现](https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b)：依次阅读 obs_reward_transforms.py、sparse_init.py、optimizer.py 和相应 agent；代码采用 CC BY-NC 4.0 许可证。
 
 - [Welford · Note on a Method for Calculating Corrected Sums of Squares and Products](https://doi.org/10.1080/00401706.1962.10490022)：在线均值与方差递推的原始统计方法。
+
+- [Dohare et al. — Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7)：将持续追踪困难与长期可塑性问题分开；标量追踪例不用于解释全部深网老化机制。
+
+- [De Asis & Sutton · An Idiosyncrasy of Time-discretization in RL · RLC 2024](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式 RLJ/RLC 条目，区分连续奖励率采样与已经积分的区间奖励。
+
+- [Time-discretization · 原文式 (7)](https://arxiv.org/html/2406.14951v2)：更早折扣、时长缩放与不等间隔的右端点回报；固定间隔仅差共同比例。
+
+- [Kris De Asis · Design for Learning · 2025](https://kris.pengy.ca/designforlearning)：作者关于硬件与学习共同设计的立场文章；与实证论文分开。
 
 
 ---
@@ -12848,6 +14105,26 @@ python examples/lifelong_algorithms_lab.py streaming
 - 从多步参数更新推导精确敏感度；说明 IDBD/TIDBD、截断元梯度和一阶 MAML 丢掉了哪些项。
 - 完整理解 MAML、RL²、PEARL、meta-gradient RL 与 learned update rules 的训练/测试循环及 reset 边界。
 - 用可运行的有限差分、手算与机制反例验证代码，并设计适用于持续交互而非仅任务重置的评测。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 两种时间尺度
+
+内层变量随当前经验适应；外层变量决定内层怎样适应，并由后续表现训练。“外层”不必在另一台机器，也不必慢到离线。
+
+### 梯度与 Hessian
+
+梯度描述损失随参数的一阶变化；Hessian 描述梯度本身如何改变。对一次梯度下降再求导，自然会出现 Hessian，而不是额外加的技巧。
+
+$$
+\frac{\partial (w-\alpha\nabla L(w))}{\partial w}=I-\alpha\nabla^2L(w)
+$$
+
+### 固定数据条件下求导
+
+可微优化循环通常先把采样轨迹当常量。RL 的策略变化还会改变轨迹分布；是否估计这条路径必须另行说明。
 
 <a id="problem-definition"></a>
 
@@ -12925,31 +14202,11 @@ $\eta$ 为元参数，$F_\eta$ 为更新规则，$K$ 为适应长度，$M$ 为�
 - RL²/PEARL与learned rules：前者主要适应活动/context，后者学习更新信号，参数和reset边界不同。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 两种时间尺度
-
-内层变量随当前经验适应；外层变量决定内层怎样适应，并由后续表现训练。“外层”不必在另一台机器，也不必慢到离线。
-
-### 梯度与 Hessian
-
-梯度描述损失随参数的一阶变化；Hessian 描述梯度本身如何改变。对一次梯度下降再求导，自然会出现 Hessian，而不是额外加的技巧。
-
-$$
-\frac{\partial (w-\alpha\nabla L(w))}{\partial w}=I-\alpha\nabla^2L(w)
-$$
-
-### 固定数据条件下求导
-
-可微优化循环通常先把采样轨迹当常量。RL 的策略变化还会改变轨迹分布；是否估计这条路径必须另行说明。
-
 <a id="lesson-setting"></a>
 
 ## 1. 问题设定：哪些变量在适应，适应后的表现如何评价
 
-环境变化可以要求不同形式的适应。例如，地面摩擦系数改变后，机器人可以更新控制参数、推断新的动力学情境，或改变参数学习的速度。三种方法分别改变模型参数、活动状态和学习规则，所依赖的数据与评价目标也不同。
+前面的学习器用经验改变价值或策略参数，但步长、预测时间尺度和更新规则通常由设计者给定。一个长时间运行的系统可能在不同阶段需要不同的学习速度：估计稳定时应减少噪声，已有知识失效时又要及时修正。我们因此进一步问，经验能否帮助选择怎样学习？例如摩擦系数改变后，机器人可以更新控制参数、推断当前情境，也可以调整参数学习的速度。这三条适应路径改变不同对象，必须分别定义和评价。
 
 本章有两种主要数据设定。在线元梯度可在一个持续运行的问题上工作：权重不断学习，步长或学习目标也根据后续误差调整，不要求出现一组可重置的任务。跨任务 meta-RL 则先规定任务分布与任务内适应过程，用训练任务中的经历训练初始化、推断器或更新规则，再检验新任务适应。两者都涉及学习过程，但评价单位与信息权限不同。
 
@@ -13119,6 +14376,89 @@ python3 implementations/continual/idbd.py --steps 1200 --seeds 0 1 2 3 4 --out r
 **继续实验。** 先补记每个坐标的步长和敏感度。再加入无关特征，并让相关特征的变化速度不同。预先固定任务族和调参预算，检验“区分特征”与“统一增大学习率”两种解释。
 
 [源码](../implementations/continual/idbd.py) · [逐种子记录](https://yingwen.io/crl-code/results/idbd/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/idbd/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/idbd/curves.json)
+
+<a id="rlss-idbd-salience"></a>
+
+## 步长塑造泛化，但步长不等于特征价值
+
+IDBD 的学习对象是“这类参数变化今后应当多快”，不是“这个输入在语义上是否重要”。区分二者，才能把逐特征步长接到持续表示学习，而不把稳定知识误当成无用知识删除。先从监督线性预测开始：输入与目标外生给定，预测为 wᵀx，误差为 y−wᵀx。
+
+$$
+\Delta w=D_\alpha\delta x,\qquad \Delta\widehat y(u)=\delta\,x(u)^\top D_\alpha x,\qquad D_\alpha=\operatorname{diag}(\alpha_1,\ldots,\alpha_d).
+$$
+
+逐坐标步长改变一次更新怎样传播到其他输入。它是一种学习偏置。若特征坐标乘 c、权重除 c，为保持相同预测变化，相应步长还需除以 c²。跨不同尺度直接比较 α 的大小，没有不变的效用含义。
+
+IDBD 用 βᵢ=log αᵢ 保证步长为正，并根据后来的预测误差调整 β。推导中的主要近似不是指数变换，而是怎样保存步长对已有权重的历史影响。令 Hⱼᵢ=∂wⱼ/∂βᵢ。即使每个 β 直接只控制一个权重，误差共享也会让它间接影响其他权重。
+
+$$
+H^+=(I-D_\alpha xx^\top)H+\operatorname{diag}(\alpha\odot\delta x).
+$$
+
+这条精确敏感度递推针对整个数据前缀使用固定 β 的 LMS，输入和目标不依赖 β。它需要保存 d×d 矩阵。第一项中非对角元素通常不为零，所以只跟踪 Hᵢᵢ 是近似，而不是线性预测自然消除了所有交叉路径。
+
+$$
+-\frac{\partial(\delta^2/2)}{\partial\beta_i}=\delta\sum_jx_jH_{ji}\ \approx\ \delta x_i h_i.
+$$
+
+保留对角敏感度 hᵢ 后，得到逐参数元更新。β 本身在线变化时，还使用了局部、缓变的敏感度近似。不能将这一 O(d) 规则称为完整跨全部学习历史的精确元梯度。
+
+$$
+\begin{aligned}\beta_i^+&=\beta_i+\theta\delta x_i h_i,\quad \alpha_i^+=e^{\beta_i^+},\\ w_i^+&=w_i+\alpha_i^+\delta x_i,\\ h_i^+&=h_i\max(1-\alpha_i^+x_i^2,0)+\alpha_i^+\delta x_i.\end{aligned}
+$$
+
+这是原始 IDBD 的更新顺序：δ 和 h 来自旧参数，先更新 β，再用新 α 更新 w 与 h。正部截断是稳定化设计，不是未修改的敏感度链式法则。
+
+正的 δxᵢhᵢ 表示近期沿这一坐标的变化，与当前误差给出的更新方向一致；它提供“先前可能应该更快”的证据。负值可能意味着过度修正，也可能来自噪声或相关特征的相互补偿。它不是一个逐样本正确的“相关／无关输入”分类器。
+
+| 观察 | 至少两种可能原因 | 不能立即采取的行动 |
+| --- | --- | --- |
+| α 很小 | 无关噪声；有用但已稳定的预测；输入很少出现 | 直接删除该特征 |
+| 输出权重很大 | 贡献显著；输入单位很小；与其他特征抵消 | 把权重绝对值当作通用效用 |
+| 新特征降低本步误差 | 捕捉可重复结构；拟合不可预测噪声 | 立即宣称获得了可迁移表示 |
+| 元梯度几乎为零 | 误差已小；特征不激活；敏感度衰减 | 宣称永远无需再学习 |
+
+原始实验使用 20 个独立标准正态输入，只有 5 个参与目标，每个相关系数为 ±1；定期翻转一个相关系数，使这些输入始终需要追踪。这个设计有意把“相关”与“需要快速更新”联系起来。它不证明在任意环境中 α 都等于重要性。把系数固定后，一个已经学准的关键输入可能需要很小步长，却仍不应被删除。
+
+逐步 IDBD 教学实现：先对照更新时序，再做敏感度有限差分
+
+```python
+def idbd_step(weights, beta, history, features, target, meta_rate=0.01):
+    """Linear supervised IDBD, with diagonal sensitivity and positive clipping."""
+    error = target - sum(w * x for w, x in zip(weights, features))
+    new_beta = [b + meta_rate * error * x * h
+                for b, x, h in zip(beta, features, history)]
+    alpha = [math.exp(b) for b in new_beta]
+    new_weights = [w + a * error * x
+                   for w, a, x in zip(weights, alpha, features)]
+    new_history = [h * max(0.0, 1.0 - a * x * x) + a * error * x
+                   for h, a, x in zip(history, alpha, features)]
+    return new_weights, new_beta, new_history, error
+```
+
+**算法：将数学正确性与特征效用实验分开**
+
+1. 固定一段二维、相关输入的监督数据，并冻结 β。
+1. 分别用完整 H 递推与 β 的中心有限差分计算最终权重敏感度。
+1. 先验证两者一致，再对照只保留对角的近似。
+1. 恢复在线 β 后，单独记录更新前误差、步长、敏感度与数值范围。
+1. 先复现相关输入持续漂移，再加入“有用但稳定”和“稀有但关键”的输入。
+1. 只有比较删除前后的未来损失及下游影响，才讨论特征淘汰。
+
+Expand-and-Add 进一步把当前观测、动作和旧状态送入非线性特征生成器，再用快速线性读出来学习预测。递归可以使线性读出依赖较长历史，但没有免费保存全部历史：状态容量、更新成本、时间信用与特征维护仍是约束。错误较大时 imprint 新特征，也可能只记住噪声。
+
+生成与检验至少需要成熟期、真实未来样本上的预测检验，以及特征依赖关系。一个特征对当前读出贡献不大，却可能是另一个有用特征的输入。沿依赖链传播效用并加衰减是一种架构设计选择；不是 IDBD 自动提供的性质。共享 GVF、option 与模型以后，删除特征还可能改变问题函数，须维护这些对象的语义。
+
+到 TD 或 actor–critic，误差里的后继预测和实际数据流也依赖学习过程。TIDBD、Metatrace 与不同元梯度方法保留的路径不相同。先分清所求导的目标、丢弃的依赖与固定的数据假设，再比较其数值和实验结果，不能仅因都有一个 h 或 trace 就互换公式。
+
+| 机制 | 所表达的问题 | 改变后须重新检查什么 |
+| --- | --- | --- |
+| Interest i | 哪些预测处境值得分配近似资源 | 评价目标是否也被改动 |
+| Emphasis M | 这些预测经自举又依赖哪些处境 | 强调分布、重要性比方差、稳定性条件 |
+| 资格迹 e | 当前误差应更新哪些过去参与的参数 | 目标策略、λ、旧梯度与当前表示的一致性 |
+| 逐参数步长 α | 沿各参数方向多快改变 | 更新几何、元目标、输入尺度和交叉敏感度 |
+
+这四个量都能放大或缩小一次更新，却不能因此互换。给当前 TD 更新乘较大的 α，并不等于正确传播先前状态的 interest。反过来，emphasis 的大值可能来自罕见的重要性比乘积，不意味着该特征应永久拥有较大学习率。联合自适应时，应先冻结三项只改变一项，再检验耦合；不能把每个模块各自的固定条件定理拼成整个自适应系统的保证。
 
 <a id="lesson-tidbd"></a>
 
@@ -13296,6 +14636,42 @@ python3 implementations/extended_adaptation/metatrace.py --steps 1200 --seeds 0 
 **继续实验。** 先增加随机策略价值与样本累计奖励指标，再考虑更长延迟或奖励尺度变化。若只换一个更困难任务而不保留同骨干对照，仍无法判断元历史是不是收益来源。
 
 [源码](../implementations/extended_adaptation/metatrace.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-metatrace/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-metatrace/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-metatrace/curves.json)
+
+<a id="research-openmind-metaoptimize"></a>
+
+## MetaOptimize：今天的误差如何评价过去的步长
+
+调节学习率需要一个评价标准。梯度幅度可以用于归一化，却不能单独说明过去的步长是否改善了后续学习。Sharifnassab、Salehkaleybar 与 Sutton 的 MetaOptimize（ICML 2025）将这个问题写成未来损失的折扣和，再构造只使用已到达数据的元更新。
+
+$$
+F_t^{\gamma_m}=(1-\gamma_m)\sum_{\tau>t}\gamma_m^{\tau-t-1}f_\tau(w_\tau),\qquad x_{t+1}=\operatorname{Alg}_{\rm base}(x_t,\nabla f_t(w_t),\beta_t)
+$$
+
+这里将原文的元目标折扣 $\gamma$ 改记 $\gamma_m\in[0,1)$，与环境回报折扣分开。$x$ 包含权重及优化器内部状态；$\beta$ 可通过 $\alpha_i=\exp\beta_i$ 决定各参数块的步长。
+
+直接在时刻 t 对未来目标求导需要尚未发生的数据。后向视角让每个损失在真正出现时，评价此前各次元参数选择的影响。交换项的到达时间解决因果可计算性，但元参数在此期间也会变化，所以有限元步长下不能声称与预知未来的算法轨迹完全相同。
+
+$$
+\mathcal H_\tau=(1-\gamma_m)\sum_{t<\tau}\gamma_m^{\tau-t-1}\frac{\mathrm d w_\tau}{\mathrm d\beta_t},\qquad \widehat\nabla_\beta F_\tau=\mathcal H_\tau^\top\nabla f_\tau(w_\tau)
+$$
+
+这是原文式 (6)–(7) 的因果代理。它汇集不同历史时刻的敏感度，不等于把所有 $\beta_t$ 当成同一个固定参数。前后向更新的接近性需小元步长等条件。
+
+手算一个独立的局部例子：$w_0=0$，训练损失为 $(w-1)^2/2$，$\alpha=e^\beta=0.1$，于是 $w_1=0.1$、$\partial w_1/\partial\beta=0.1$。后来仍预测目标 1 时，评价梯度为 $-0.9$，对旧 $\beta$ 的导数为 $-0.09$；若后来目标变为 $-1$，导数则为 $0.11$。同样的旧梯度幅度，因后续目标不同而获得相反的步长评价。这个单次链式法则示例不是完整 MetaOptimize 轨迹。
+
+| 原文中的计算选择 | 省略或保留的路径 |
+| --- | --- |
+| 完整框架 | 联合追踪内层状态、元优化器状态和元敏感度的动态。 |
+| 2×2 近似 | 删除敏感度状态自身相关的 Jacobian 行列块。 |
+| L 近似 | 进一步删除内层状态对元更新的部分反馈。 |
+| Hessian-free 变体 | 对指定优化器及导数路径作简化；不能把所有变体都称作精确二阶元梯度。 |
+
+论文包含非平稳 CIFAR100：十个顺序任务、每样本一次、batch size 为一、切换不通知优化器且不重置权重；同时含图像与语言建模实验。它为在线步长适应提供证据，但不是 actor–critic 控制回报证据。ImageNet 中分块步长未优于标量版，也应保留。作者实现见 sabersalehk/MetaOptimize；读取具体 optimizer 类与配置，不将框架名当成唯一算法。
+
+与本章 IDBD、Metatrace 对照时，先比较所评价的损失、敏感度路径与更新时序；与 Intentional Updates 对照时，再比较“学习全局尺度”与“按本次输出变化反解尺度”。二者可组合，但组合后的收益需要单独验证。
+
+- 思考：若元折扣变小，哪些过去步长的影响更快退出评价？这与缩短环境回报目标有什么不同？
+- 研究练习：固定数据和内层更新，分别消融敏感度反馈、分块尺度和元目标时域；记录累计损失、元状态内存、每步耗时与任务变化后的恢复。
 
 <a id="lesson-meta-rl"></a>
 
@@ -13817,6 +15193,7 @@ IDBD 适应步长，MAML 学初始化，context-based meta-RL 推断任务；内
 - [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-trac-online-regularization)
 - [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
 - [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
+- [MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters](https://yingwen.io/zh/continual-rl/research/#recent-openmind-metaoptimize)
 
 #### 持续问题与可比较实验
 
@@ -14169,6 +15546,43 @@ arXiv预印本 · 2016 · 支持方法与理论
 
 - [作者原文](https://arxiv.org/html/1607.00446)：局部目标、状态λ、均值／二阶矩预测与完整算法。
 
+### MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters
+
+Arsalan Sharifnassab, Saber Salehkaleybar, Richard S. Sutton
+
+ICML 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+怎样根据后来真正发生的损失，评价过去采用的步长，而不预知未来？
+
+#### 关键机制
+
+先写未来损失的元目标，再以历史敏感度建立因果后向更新。优化器状态也进入递推。完整联合敏感度、分块尺度及 Hessian-free 近似承担不同计算代价。
+
+#### 证据
+
+正式论文包含静态图像、语言建模与非平稳 CIFAR100 实验；部分近似可接近精心选择的学习率计划。分块步长不在所有实验中优于标量版本。
+
+#### 条件与限制
+
+这些实验主要检验优化与监督学习，不能自动推出持续 actor–critic 的回报改善。元优化器仍有步长和结构选择；元目标折扣也不是环境回报折扣。
+
+#### 阅读与实验
+
+先在元学习章手算一次步长对后续误差的影响，再对照作者代码辨认内层状态、元状态和被删去的导数路径。
+
+#### 原文与相关入口
+
+- [ICML 正式论文](https://proceedings.mlr.press/v267/sharifnassab25a.html)：正式年份为 2025；2024 是早期预印本年份。
+- [定稿推导与实验](https://arxiv.org/html/2402.02342v6)：未来元目标、后向代理及多种计算近似。
+
+#### 作者代码
+
+[正式论文链接的作者仓库。](https://github.com/sabersalehk/MetaOptimize)
+
+原作者提供的优化器组合与实验实现；不同配置不是同一条更新规则。
+
 
 <a id="chapter-code"></a>
 
@@ -14190,7 +15604,7 @@ python3 examples/state_meta_lab.py meta
 
 - [配套章节：流式学习](../textbook/streaming.md#lesson-output-steps)：数据与计算协议、Stream-X 和 Intentional 的完整尺度推导、实现与对照。
 
-- [Sutton：Adapting Bias by Gradient Descent（IDBD）](https://cdn.aaai.org/AAAI/1992/AAAI92-027.pdf)：原始 IDBD：对数步长、逐特征适应与敏感度历史。
+- [Sutton · Adapting Bias by Gradient Descent: An Incremental Version of Delta-Bar-Delta](https://cdn.aaai.org/AAAI/1992/AAAI92-027.pdf)：原始 IDBD、逐参数学习率和漂移目标实验。其对角敏感度近似与现代完整元梯度需要区分。
 
 - [Kearney 等：TIDBD 2018 版本](https://arxiv.org/abs/1804.03334)：本页代码具体对应 Algorithm 1 的 semi-gradient、累积迹版本。
 
@@ -14240,12 +15654,20 @@ python3 examples/state_meta_lab.py meta
 
 - [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_218.pdf)：比较对象、元训练/测试与多维成本。
 
+- [Sharifnassab, Salehkaleybar & Sutton · MetaOptimize · ICML 2025](https://proceedings.mlr.press/v267/sharifnassab25a.html)：正式会议记录；原文第 2–6 节定义因果元目标、联合敏感度与计算近似，第 7 节区分静态及非平稳监督实验。
+
+- [MetaOptimize · 2025 定稿原文](https://arxiv.org/html/2402.02342v6)：采用 v6 而非仍只含早期实验的 2024 版本；元目标折扣不能与环境折扣混用。
+
+- [MetaOptimize · 作者实现](https://github.com/sabersalehk/MetaOptimize)：各 base/meta optimizer 组合对应不同实现；仍有元步长和配置选择。
+
+- [Sutton & Barto · Reinforcement Learning: An Introduction, 2nd edition](http://incompleteideas.net/book/the-book-2nd.html)：第 9 章的表示与泛化、第 11 章的离策略目标，为逐坐标步长与 TD 元学习提供基础。
+
 
 ---
 
 # 目标与子任务：条件控制、经验重用与技能设计
 
-机器人学会到达一个充电站以后，怎样学习一族目标、利用未成功的尝试，并提出对未来控制有用的子任务？
+怎样让同一套控制器应对不同目标、从未成功的尝试中学习，并选择对未来控制有用的子任务？
 
 ## 本章内容
 
@@ -14253,6 +15675,30 @@ python3 examples/state_meta_lab.py meta
 - 独立写出 goal-conditioned Q-learning 与 HER 的数据循环，知道何时必须重算 reward 和 terminal。
 - 推导带 stopping value 的子任务 target，区分 STOMP 原文约定与普通 option 后续价值。
 - 用真实任务收益与规划收益评价子任务，而非只看目标到达率。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 状态、动作、目标
+
+$s$ 是此刻用于决策的信息，$a$ 是可执行动作，$g$ 是希望达到的结果规格。目标可以用坐标、特征、图像或奖励参数表达；表示之外，还需要明确成功条件或奖励函数。
+
+### Q-learning 的含义
+
+$Q(s,a,g)$ 估计先做动作 $a$、随后尽力完成目标 $g$ 的累计回报。一次真实转移提供当前奖励和下一状态；最大值对应后续选择价值最高的动作。
+
+$$
+Q(s,a,g)\leftarrow Q(s,a,g)+\alpha\left[r_g+\gamma(1-d_g)\max_{a'}Q(s',a',g)-Q(s,a,g)\right]
+$$
+
+### Bootstrap 与半梯度
+
+用自己对未来的估计构造当前标签叫 bootstrap。神经网络训练时通常对 target 停止梯度，只对当前 Q 的输出求导；target network 可减缓标签与拟合器同时变化。
+
+### Option 与子任务不是同一物
+
+子任务规定评价某种行为的标准；option 是一种可执行的解，由内部策略 π 与停止概率 β（以及允许启动的位置）组成。一个子任务可能有多个解，也可能始终解不好。
 
 <a id="problem-definition"></a>
 
@@ -14330,30 +15776,6 @@ $p_G$ 是声明的目标评价分布，$r_g$ 为该目标奖励，$T_g$ 为按�
 - 课程/STOMP：课程选择经验分配；STOMP提出有沿途收益与停止价值的技能子任务。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 状态、动作、目标
-
-$s$ 是此刻用于决策的信息，$a$ 是可执行动作，$g$ 是希望达到的结果规格。目标可以用坐标、特征、图像或奖励参数表达；表示之外，还需要明确成功条件或奖励函数。
-
-### Q-learning 的含义
-
-$Q(s,a,g)$ 估计先做动作 $a$、随后尽力完成目标 $g$ 的累计回报。一次真实转移提供当前奖励和下一状态；最大值对应后续选择价值最高的动作。
-
-$$
-Q(s,a,g)\leftarrow Q(s,a,g)+\alpha\left[r_g+\gamma(1-d_g)\max_{a'}Q(s',a',g)-Q(s,a,g)\right]
-$$
-
-### Bootstrap 与半梯度
-
-用自己对未来的估计构造当前标签叫 bootstrap。神经网络训练时通常对 target 停止梯度，只对当前 Q 的输出求导；target network 可减缓标签与拟合器同时变化。
-
-### Option 与子任务不是同一物
-
-子任务规定评价某种行为的标准；option 是一种可执行的解，由内部策略 π 与停止概率 β（以及允许启动的位置）组成。一个子任务可能有多个解，也可能始终解不好。
-
 <a id="lesson-setting"></a>
 
 ## 1. 目标如何进入一个强化学习问题
@@ -14405,13 +15827,14 @@ HER 再增加一个数据操作：先真实执行原目标 g，保留轨迹；�
 1. 收集一段 ($s_t,a_t,s_{t+1}$，$\mathrm{achieved}_{t+1}$，`physical_done`，`info`)
 1. 对抽到的时刻 t：
   1. 以一定概率保留原目标 g；否则从未来 $\mathrm{achieved}_{t+1:T}$ 采样 g′
+  1. 若当前状态在新任务下已经终止，跳过这条动作转移
   1. 不改 $s_t,a_t,s_{t+1}$
   1. 重算 $r_{g^{\prime}}(s_t,a_t,s_{t+1})$
   1. 按所定义任务重算 $d_{g^{\prime}}$，物理终止仍保留
   1. 构造目标 y；更新 Q（以及连续动作时的 actor）
 1. 独立评估：只用预先规定的真实目标，不用 hindsight 标签
 
-在确定性且目标无关的环境中，原转移仍是新目标下同一个状态—动作对的有效结果。随机环境里，按后来实际发生的结果选择新目标，可能条件化转移噪声：例如偶然成功的随机结果，被过度表示为可稳定达成的目标。此时标准 HER 不普遍给出无偏 Bellman 样本。课程分布还会改变训练目标的权重，因此重标记后的训练误差与原目标分布上的成功率需要分别评价。
+在确定性且目标无关的环境中，只要当前状态在新任务下仍可行动，原转移就是同一状态—动作对的有效结果。成功即终止的任务不能使用“从新目标状态继续离开”的转移；若重标记完整轨迹或多步片段，还要在该片段的首次新成功或物理终止处截断，不把之后的动作拼进同一回报。独立单步样本则只需检查它自己的起点与终点语义，不能因记录中更早曾到达该目标而一律删除。随机环境里，按后来实际发生的结果选择新目标，可能条件化转移噪声：例如偶然成功的随机结果，被过度表示为可稳定达成的目标。此时标准 HER 不普遍给出无偏 Bellman 样本。课程分布还会改变训练目标的权重，因此重标记后的训练误差与原目标分布上的成功率需要分别评价。
 
 <a id="experiment-her_replay"></a>
 
@@ -14581,6 +16004,10 @@ def relabel_goal(next_position: int, goal: int, physical_terminal: bool = False)
 
 def goal_q_update(q, state, action, next_state, goal, alpha=0.5, gamma=0.9,
                   physical_terminal=False):
+    # A successful state is terminal in THIS task. Its zero continuation value
+    # is not an action value to train using a transition out of that state.
+    if state == goal:
+        raise ValueError("A terminal goal state has no outgoing task transition")
     reward, terminal = relabel_goal(next_state, goal, physical_terminal)
     next_value = 0.0 if terminal else max(q.get((next_state, a, goal), 0.0)
                                           for a in (-1, 1))
@@ -14597,13 +16024,22 @@ def future_her(trajectory, original_goal, rng):
     Outputs (s,a,s_next,goal,physical_terminal), preserving physical termination
     for both original and hindsight goals. Goal success must never erase it.
     Dynamics are deterministic and goal independent in this teaching example.
+    These are independent one-step replay samples, not a relabeled rollout.
+    Skip a hindsight goal equal to s: this task terminates as soon as it succeeds.
+    A valid one-step sample may still exist after an earlier visit to its new goal;
+    relabeling a whole multi-step rollout would instead truncate at first success.
     """
     replay = []
     for t, (s, a, sn, physical_terminal) in enumerate(trajectory):
+        if s == original_goal:
+            raise ValueError("Recorded episode acts from its terminal goal")
+        if t + 1 < len(trajectory) and (physical_terminal or sn == original_goal):
+            raise ValueError("Recorded episode continues after termination")
         replay.append((s, a, sn, original_goal, physical_terminal))
         future_index = rng.randrange(t, len(trajectory))
         hindsight_goal = trajectory[future_index][2]
-        replay.append((s, a, sn, hindsight_goal, physical_terminal))
+        if s != hindsight_goal:
+            replay.append((s, a, sn, hindsight_goal, physical_terminal))
     return replay
 
 
@@ -14665,6 +16101,32 @@ OpenAI Baselines 的 her_sampler.py 展示了“选未来 achieved goal → 替�
 
 HIQL（NeurIPS 2023）使用一个目标条件状态价值 $V(s,g)$，然后提取两个策略：高层 $\pi_h(z|s,g)$ 预测中间状态的潜在表示，低层 $\pi_\ell(a|s,z)$ 产生到达这个中间目标的动作。这里的高层动作不是环境按钮，而是数据中未来状态的表示；低层才承担可执行控制。
 
+先说明价值如何学习。离线数据没有覆盖的动作，不能靠实际尝试来检验；直接在所有动作上取最大估值，可能选中估计错误的动作。标准 IQL 对数据中的动作价值 $Q(s,a)$ 做不对称平方回归，偏重估值较高的动作；$Q$ 的学习先对动作后果的随机性取期望。HIQL 在此采用不需要动作标签的版本，直接从 $(s,s')$ 和抽样目标 $g$ 构造一步价值目标。这个改变省去了动作输入，也引入了后面要讨论的随机性歧义。下面先用单个价值头说明原理。
+
+$$
+\begin{aligned}d_g(s)&=\mathbf1[s=g],\qquad r_g(s)=d_g(s)-1,\\y&=r_g(s)+\gamma(1-d_g(s))\bar V(s',g),\\u&=y-V_\theta(s,g),\\L_V(\theta)&=\mathbb E_{\mathcal D,g}\!\left[\ell_\xi(u)\right],\qquad \ell_\xi(u)=|\xi-\mathbf1[u<0]|u^2,\quad \tfrac12\leq\xi<1.\end{aligned}
+$$
+
+$\bar V$ 是求本次梯度时固定的目标网络；$\xi$ 是 expectile 参数，不是折扣。本节按原方法以当前状态是否为目标定义奖励：目标处为 0 且不自举，其他状态为 −1。这与前文按到达状态给奖励的例子有一步计时差别，不能直接混用数值。实际数据采样器用当前样本索引与目标索引是否相同生成成功标记；轨迹结束标记另用于限制子目标采样。
+
+当目标高于当前预测时，平方误差权重为 $\xi$；目标低于预测时，权重为 $1-\xi$。固定一批目标 $y$ 后，对标量预测 $v$ 求导，极小点满足加权残差均值为零。$\xi=1/2$ 恢复普通均方拟合；增大 $\xi$ 则更重视低估的后果。这里选择的是数据支持内的较好后果，并没有评价所有可能动作。
+
+$$
+0=\mathbb E\!\left[\bigl(\xi\mathbf1[y\geq v]+(1-\xi)\mathbf1[y<v]\bigr)(y-v)\right].
+$$
+
+例如两个等频目标为 −3 和 −1，取 $\xi=0.7$。在二者之间解 $0.3(-3-v)+0.7(-1-v)=0$，得 $v=-1.6$，高于均值 −2，但仍小于最大值 −1。这个手算只解释一次固定目标回归；带自举的整体学习还改变下一轮目标。
+
+这也暴露了动作缺失的局限。如果两种后果来自两个可选的确定性动作，偏重好后果有控制意义；如果它们来自同一个动作的随机结果，就不能通过选动作让好运更常发生。相同的状态对数据，可能对应这两种不同控制问题。因此无动作版本在随机动力学下可能把噪声当成可控性；增加网络容量并不能消除这种信息歧义。
+
+作者实现进一步用两个价值头。它以目标头的较小下一价值计算公共残差 $a^-$，据其符号确定权重；每个在线头则拟合各自目标头产生的 $y_i$。这不是把单头公式简单乘二，复现时应保留以下分工：
+
+$$
+\begin{aligned}y_i&=r_g+\gamma(1-d_g)\bar V_i(s',g),\qquad i=1,2,\\a^-&=r_g+\gamma(1-d_g)\min_i\bar V_i(s',g)-\tfrac12\sum_i\bar V_i(s,g),\\\kappa&=\operatorname{sg}\!\left[\xi\mathbf1[a^-\geq0]+(1-\xi)\mathbf1[a^-<0]\right],\\L_V^{\rm impl}&=\mathbb E\!\left[\sum_{i=1}^2\kappa\bigl(\operatorname{sg}[y_i]-V_i(s,g)\bigr)^2\right].\end{aligned}
+$$
+
+对应作者代码 compute_value_loss。接下来的 actor 权重使用两个在线价值头的平均，而不是这里用于确定权重的最小目标值。这样，价值如何训练、策略如何利用它，就可以分别检查。
+
 $$
 \begin{aligned}\omega_j&=\operatorname{sg}\!\left[\min\{\exp(\eta_j A_j),100\}\right],\qquad j\in\{\ell,h\},\\ z_{\rm target}&=\operatorname{sg}\!\left[\phi(s_{t+k})\right],\\ J_\ell&=\mathbb E_{\mathcal D}\left[\omega_\ell\log\pi_\ell(a_t\mid s_t,\phi(g_\ell))\right],\\ J_h&=\mathbb E_{\mathcal D}\left[\omega_h\log\pi_h(z_{\rm target}\mid s_t,g)\right].\end{aligned}
 $$
@@ -14705,7 +16167,7 @@ $$
 
 这种方法与 STOMP 的差别在奖励来源：STOMP 保留环境沿途奖励并改变停止价值，MaestroMotif 则依据语言偏好学习技能奖励，还借助人类规格和预训练语言知识。其下游组合无需重新训练某个任务的低层策略，不意味着技能本身没有经过 RL 训练，也不意味着技能规格已经由智能体自主发现。
 
-作者仓库可按三个目录阅读：preference 对应偏好与奖励学习，code_generation 对应规则及组合程序，rl_baseline 与 sample_factory 对应技能执行训练。一个有辨识力的实验是固定技能策略，分别改变奖励模型、训练调度和下游组合程序：技能失败究竟来自语义评价、访问不到适合学习的状态，还是高层组合不当？这比只比较最终任务得分更能定位改进方向。
+作者仓库可按三个目录阅读：preference 对应偏好与奖励学习，code_generation 对应规则及组合程序，rl_baseline 与 sample_factory 对应技能执行训练。辨析失败原因时，先在匹配交互与调参预算下分别改变奖励模型、训练调度，并重新训练低层技能；这检验语义评价和训练访问分布的作用。随后固定同一组技能、启动与终止规则，只改变下游组合程序，检验高层控制。若低层已冻结，且部署过程不读取训练奖励，单独替换奖励模型不会改变执行行为，不能据此检验它对技能形成的贡献。奖励模型本身还可在固定观察对上独立检验语义判断。
 
 <a id="lesson-check"></a>
 
@@ -14750,7 +16212,7 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
 
@@ -14758,7 +16220,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
@@ -14772,7 +16234,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [General Agents Contain World Models](https://yingwen.io/zh/continual-rl/research/#recent-general-agents-world-models)
@@ -14799,7 +16261,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [General Agents Contain World Models](https://yingwen.io/zh/continual-rl/research/#recent-general-agents-world-models)
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
@@ -14821,15 +16283,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -15215,6 +16677,8 @@ python3 examples/knowledge_algorithms_lab.py goals
 
 - [HIQL 作者实现](https://github.com/seohongpark/HIQL)：比较目标采样、价值学习、低层优势和高层跨步优势；way_steps 对应中间目标间隔。
 
+- [HIQL 目标采样 — src/gc_dataset.py](https://github.com/seohongpark/HIQL/blob/master/src/gc_dataset.py)：GCSDataset.sample 的成功标签来自当前样本索引与目标索引相等；终止索引限制轨迹内子目标抽样。价值更新再把成功标签转成奖励和 bootstrap mask。
+
 - [HIQL 核心文件 — src/agents/hiql.py](https://github.com/seohongpark/HIQL/blob/master/src/agents/hiql.py)：compute_actor_loss 与 compute_high_actor_loss 分别构造一步和跨步价值差；compute_value_loss 做 expectile 更新；pretrain_update 组合三项损失。
 
 - [OGBench · ICLR 2025](https://arxiv.org/abs/2410.20092)：离线目标条件 RL 的任务和数据设计；把长时域、拼接、观测和随机性等困难分开。
@@ -15240,6 +16704,30 @@ python3 examples/knowledge_algorithms_lab.py goals
 - 理解 SMDP、intra-option 和 Option-Critic 各自学习什么，并核对动作与终止梯度。
 - 沿同一经验流连接技能学习、模型更新与高层规划，识别版本失配和技能塌缩。
 - 按覆盖、可区分性、可预测性、主任务价值区分发现技能的算法线。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### Primitive action 与 option
+
+primitive action 是环境接收的一步指令。option $o=(I_o,\pi_o,\beta_o)$ 包含三个部分：$I_o$ 规定允许启动的状态；$\pi_o(a|s)$ 选择当前动作；$\beta_o(s')$ 给出到达下一状态后停止的概率。停止 option 不等于结束环境。
+
+### Call-and-return 执行
+
+高层策略 $\mu(o|s)$ 选择一个 option；低层反复按 $\pi_o$ 行动，直到按 $\beta_o$ 停止；随后高层重新选择。高层决策之间可能间隔一个或多个原始时间步。
+
+### 价值与动作优势
+
+$Q(s,o)$ 是从 $s$ 启动 $o$ 然后按高层策略继续的价值；$V(s)=\sum_o\mu(o|s)Q(s,o)$。给定高层策略的评价使用这个加权平均；高层最优控制才使用合法 options 上的最大值。
+
+### Log-derivative
+
+策略概率对参数的导数可写成概率乘 log 概率的导数，因此能用采样动作估计求和。优势 baseline 不依赖当前动作时，可减少方差而不改变局部期望。
+
+$$
+\nabla_\theta\pi_\theta(a|s)=\pi_\theta(a|s)\nabla_\theta\log\pi_\theta(a|s)
+$$
 
 <a id="problem-definition"></a>
 
@@ -15316,30 +16804,6 @@ $\mathcal O(s)$ 为在状态 $s$ 可启动的固定技能集合，$\gamma$ 按�
 
 - Option-Critic/发现方法：前者用主任务梯度学策略与停止；谱/互信息等发现采用另外的准则。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### Primitive action 与 option
-
-primitive action 是环境接收的一步指令。option $o=(I_o,\pi_o,\beta_o)$ 包含三个部分：$I_o$ 规定允许启动的状态；$\pi_o(a|s)$ 选择当前动作；$\beta_o(s')$ 给出到达下一状态后停止的概率。停止 option 不等于结束环境。
-
-### Call-and-return 执行
-
-高层策略 $\mu(o|s)$ 选择一个 option；低层反复按 $\pi_o$ 行动，直到按 $\beta_o$ 停止；随后高层重新选择。高层决策之间可能间隔一个或多个原始时间步。
-
-### 价值与动作优势
-
-$Q(s,o)$ 是从 $s$ 启动 $o$ 然后按高层策略继续的价值；$V(s)=\sum_o\mu(o|s)Q(s,o)$。给定高层策略的评价使用这个加权平均；高层最优控制才使用合法 options 上的最大值。
-
-### Log-derivative
-
-策略概率对参数的导数可写成概率乘 log 概率的导数，因此能用采样动作估计求和。优势 baseline 不依赖当前动作时，可减少方差而不改变局部期望。
-
-$$
-\nabla_\theta\pi_\theta(a|s)=\pi_\theta(a|s)\nabla_\theta\log\pi_\theta(a|s)
-$$
 
 <a id="lesson-setting"></a>
 
@@ -15418,6 +16882,41 @@ $d_g$ 表示子任务真正终止，包括到门口或已经定义的失败终�
 
 读到这里应能区分三个事件：不在启动集合，所以现在不能开始；当前技能主动停止，所以高层重新决策；环境真正终止，所以整个任务回报不再延伸。技能超时也不等于技能成功。成功率应单独记录，而不是将所有停止事件都计作成功。
 
+<a id="rlss-options-outcome-values"></a>
+
+## 子目标不是只给一个地点：终点价值决定技能的代价取舍
+
+先区分行为对象与评价问题。Option 定义怎样行动、何时停止，以及允许从哪里启动。它本身不规定这个行为值得做。随机走动也可以是一个 option。只有再指定主奖励或某个子问题，才能讨论其价值。因此同一个 option 可以有不同的 $q_i(s,o)$；下标 i 标识评价问题，而不是第 i 个 option。把“option”直接译解为“已学会的有用技能”，会把本来需要学习和检验的有效性写进定义。
+
+“去某个位置”还没完整定义学习问题。技能要付出时间和沿途代价。到达后的价值必须与这些代价放在同一个回报表达式中。否则最短路径、最高成功率和最高主任务收益可能对应三个不同的策略。
+
+$$
+J_o(s;z)=\mathbb E_o\!\left[\sum_{j=1}^{K}\gamma^{j-1}R_{t+j}+\gamma^Kz(S_{t+K})\mid S_t=s\right].
+$$
+
+这里 z 是到达后才领取的终点价值，因此乘 γᴷ；如果把终点奖金并入最后一步奖励，折扣次数会不同，必须另行定义。所有比较必须沿用同一种时序规范。
+
+两条确定路线通向同一特征。快路两步，每步代价 −4；慢路三步，每步代价 −1。取 $\gamma=.95$、到达价值 $z=12$。快路价值为 $-4-.95\times4+.95^2\times12=3.03$；慢路为 $-1-.95-.95^2+.95^3\times12=7.436$。保留真实代价时慢路更好；把所有代价改成统一步罚，才会偏好快路。
+
+$$
+J_{\rm slow}-J_{\rm fast}=4.9475-.045125z.
+$$
+
+同一个终点价值增加后，较早拿到奖金的优势增大；本例约在 z=109.640 时两路相等。这个阈值属于该小图，不是技能发现的一般单调性定理。
+
+奖励尊重的子问题保留主奖励，再定义特征到达的额外价值；它不承诺每个生成的技能都有用。一个特征可以容易达到，却没有缩短有意义的规划，也可能与已有技能冗余。还要评价获得技能和模型的成本、下游使用频率及替换后的适应代价。
+
+模型重用有一个容易忽略的限制：固定技能策略和停止规则时，环境奖励模型及折扣终点模型可与多个下游价值函数组合。若改变终点价值并重新训练技能，技能本身的行为分布变了，旧模型不能继续冒充新技能的后果模型。应记录问题版本、策略版本和模型版本。
+
+即使内部策略不变，新任务也可能使旧模型过度承诺。设原技能从 A 穿过 B 到达 C，模型只保存到达 C 的后果。新子问题却规定在 B 必须停止并获得 −1。继续用旧模型规划“穿过 B 去领取 C 的 +10”，便忽略了新问题的停止边界。原 options 论文把这种情况列为跨子目标迁移的困难，不把技能模型视为无条件可复用。
+
+| 新问题的变化 | 旧模型能否直接使用 | 需要检查或修改 |
+| --- | --- | --- |
+| 仅修改停止后评价 z；技能及环境奖励不变 | 可把同一终点模型与新的 z 组合 | 确认新 z 不改变技能执行 |
+| 途中新增强制停止事件 | 一般不可以 | 学习到新停止边界的模型，或使经过该事件的旧模型失效 |
+| 主奖励或技能策略改变 | 奖励模型或全部后果模型可能失效 | 按改变对象重估，并记录模型版本 |
+| 只能保证模型不夸大后果价值 | 可能构造保守规划机制 | 明确相对哪个下游价值函数成立，不把局部误差界当普遍安全保证 |
+
 <a id="lesson-derive"></a>
 
 ## 2. SMDP：由原始回报推导跨多步更新
@@ -15431,10 +16930,10 @@ $$
 第二行对第一行取条件期望。R̂_o 是本次 option 内的折扣奖励和，不是平均奖励，也不是子任务内在奖励，除非你明确改变了目标。
 
 $$
-Q(s,o)\leftarrow Q(s,o)+\alpha\left[\widehat R_o+\gamma^\tau\max_{o'\in I(s')}Q(s',o')-Q(s,o)\right]
+Q(s,o)\leftarrow Q(s,o)+\alpha\left[\widehat R_o+\gamma^\tau\max_{o'\in\mathcal O(s')}Q(s',o')-Q(s,o)\right]
 $$
 
-这是给定 options 时的 SMDP Q-learning。I(s′) 表示在 s′ 可启动的 options。真实环境终止时后项为 0；仅 option 结束时后项仍存在。
+这是给定 options 时的 SMDP Q-learning。$\mathcal O(s')$ 表示在 $s'$ 可启动的 options；它与单个 option 的启动状态集合 $I_o$ 是不同的集合。真实环境终止时后项为 0；仅 option 结束时后项仍存在。
 
 继续门口例子。机器人用两步到门口，每步真实成本都为 $-1$，$\gamma=0.9$。门口之后仍有递送工作；假定按后续高层策略行动的价值为 $V(g)=10$。那么本次外部累计奖励为 $-1-0.9=-1.9$，高层 target 为 $-1.9+0.9^2\times10=6.2$。若整个任务在这一步真正结束，才删除 $8.1$ 的后续项。
 
@@ -15516,6 +17015,8 @@ $$
 $$
 
 在本节折扣设定和至少一步执行的条件下，精确 option 规划算子仍是收缩映射。这个结论针对固定、准确的模型；学习模型的误差、移动技能和非线性近似不自动继承同样保证。γ=0 时公式同样成立。
+
+这里的最优性始终相对于可用行为集合。若每个状态都保留全部合法原始动作的一步 option，那么原问题的最优策略仍可表示，精确高层最优值与原 MDP 相同。若只允许几个长技能，高层求得的是这个受限集合内的最优值，可能低于原问题。调用期间强制执行到停止的承诺也属于限制；允许中断则是在改变可用策略类。
 
 门口例中，如果两步后确定停在 $g$ 且环境没有结束，模型为 $r_o(s)=-1.9$、$p_o(s,g)=0.81$，其余终点分量为零。规划器代入 $V(g)=10$，仍得到 $6.2$。若用未折扣的“到门口概率 1”代替该核，会错误得到 $8.1$。若把内部到门口 critic 的 $0.94$ 当成真实段内奖励，也会解错问题。
 
@@ -15652,6 +17153,63 @@ python3 implementations/extended_knowledge/option_critic.py --steps 1200 --seeds
 **继续实验。** 增加一个必须连续执行多步才有回报的中间区域，先固定内部策略、只学β，再反过来固定β、只学内部策略。不要同时改变所有组件后将收益归给终止学习。
 
 [源码](../implementations/extended_knowledge/option_critic.py) · [逐种子记录](https://yingwen.io/crl-code/results/option_critic/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/option_critic/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/option_critic/curves.json)
+
+<a id="course-options-interruption"></a>
+
+## 规划跨度不等于执行承诺：为什么可以中断一个 option
+
+Call-and-return 是一种执行协议：选中 option 后，按其内部策略行动，直到其停止规则交回控制。它不是使用时间抽象的唯一方式。还可以用完整 option 的后果模型做长时标规划，却在每个原始步重新检查是否继续。课程的 Planning and Action Selection in Options-based Agents 强调这一分工；这不应被读成“原始 options 定义不允许承诺执行”。
+
+先固定高层策略 $\mu$ 与全部 options，并假设有准确的 $Q^\mu$。到达 $s'$ 后，继续当前 option 的价值为 $Q^\mu(s',o)$；立即结束并按 $\mu$ 重选的价值为 $V^\mu(s')$。原停止规则给出的 arrival value 是两者按 $\beta_o(s')$ 的加权平均。
+
+$$
+U^\mu(s',o)=(1-\beta_o(s'))Q^\mu(s',o)+\beta_o(s')V^\mu(s').
+$$
+
+Q 中的“继续”至少包含下一原始步。立即重选必须在当前合法启动集合内进行；如果重新选择有成本或耗时，需要把这些量放入比较。
+
+$$
+\widetilde\beta_o(s')=\begin{cases}1,&V^\mu(s')>Q^\mu(s',o),\\\beta_o(s'),&\text{otherwise},\end{cases}\qquad \Delta U=(1-\beta_o(s'))[V^\mu(s')-Q^\mu(s',o)]\geq0
+$$
+
+最后的差值只针对触发新增中断的状态。对有限折扣问题，准确估值下的这个局部改善可以结合策略改善论证得到不差的价值。这是受条件约束的 interruption 结果，不是噪声 critic 下逐步重选总能改善的保证。
+
+手算：继续的价值为 4，立即交回高层为 7，原停止概率为 0.2。原 arrival value 为 4.6，强制停止后为 7，提高 2.4。这里没有改变任何真实奖励，也没有声称原 option 突然学得更好；改变的是何时让高层取得控制权。
+
+| 层次 | 建模的对象 | 真实执行时做什么 |
+| --- | --- | --- |
+| Option 模型 | 如果按该策略直到所定义的停止，会发生什么 | 保留完整的奖励/终点/时长条件 |
+| Call-and-return | 依照当前 option 直到停止 | 到达后抽样 β |
+| 带价值中断 | 模型仍描述原 option，可额外学修改版模型 | 到达后比较继续与重选 |
+| 每步 activation | 每步选择当前看起来最好的 option，再取其首个动作 | 下一步重新决策，未承诺执行到模型终点 |
+
+最容易写错的地方在模型样本。若声明的模型预测“完整执行到原停止规则”，一次外部中断不是该规则下的终点。不能把中断位置当成成功完成的终点更新原模型。可另建中断后行为的模型，或使用覆盖充分的原始转移进行明确目标策略下的 intra-option 学习；只把截断片段送入完整后果的 Monte Carlo 更新，会悄悄改掉模型的语义。
+
+近似估值使选择更困难。若两个 option 的估计差比误差还小，每步切换可能产生抖动；随机内部策略、隐藏状态和物理切换成本又会加剧这一问题。迟滞阈值、切换成本、最短承诺时间都是可研究的机制，但它们改变执行规则，应单独报告。具有长期承诺的探索也可能比逐步贪心更容易产生有效经验。
+
+一个对照实验应固定技能、模型和主奖励，只比较三种执行规则：原停止、准确模型估值下的中断、学习 critic 下的中断。记录收益、切换数、模型样本有效性和真实原始步成本。先检验准确值的改善结论，再加入估计误差，才能区分理论条件与工程失败。
+
+<a id="rlss-option-activation-hierarchy"></a>
+
+## 长时知识与逐步反应：activation 的递归必须有终点
+
+Sutton 的 2025 讲座主张：为规划保留完整 option 后果，但每个原始步重新选择当前较好的 option，并只执行它此刻给出的动作。它是一种架构主张。前面的终止改善结论需要准确价值与相应条件，不能替这套近似系统提供无条件性能保证。
+
+若一个 option 的策略又选择另一个 option，当前动作需要沿层次继续解析，直到某层给出原始动作。该过程是同一真实时间步内的内部计算，不是环境已经向前走了多步。每层的选择和成本都应有记录。
+
+**算法：带解析边界的 activation 调度；不是新收敛定理**
+
+1. 在当前 agent state 上选主问题的候选 option。
+1. 令 active_path 为空；逐层解析所选策略：
+  1. 若输出原始动作，执行且结束本次内部解析。
+  1. 若输出子 option，记录依赖边并继续解析。
+  1. 检查循环、不可启动对象与内部计算预算。
+  1. 无法合法解析时，回退到预先定义的合法原始动作策略。
+1. 获得真实后继后，再更新预测、模型和选择依据。
+
+若高层选择低层、低层又选择高层，就可能在没有真实动作的情况下无限递归。限定无环依赖、显式最大深度或能证明终止的类型规则，都是可以检验的设计选择。即便解析会结束，层数也影响动作延迟；不能只报告环境步数。
+
+长时探索还需要另一种解释。每步根据略有波动的近似值重选，可能破坏 coherent exploration；承诺执行或引入意图状态能改善连续性，却改变策略类。讲座提出的“学习进展内在奖励”与多 option 意图模式是研究方向，不是由 activation 自动得到的完成算法。权重变化大小也受特征尺度、步长和噪声影响，不宜未经校准就当作有用知识增加量。
 
 <a id="lesson-option-loop"></a>
 
@@ -16011,8 +17569,7 @@ $$
 第一式是可解释的内在继续价值阈值规则。接近零的状态只需很小估计误差就可能翻转停止决策。神经网络更新还会同时改变多个状态的阈值判断，所以停止边界的误差不同于一般的小均方值误差。
 
 $$
-\Delta U\big|_{Q,V\ {
-m fixed}}=\Delta\beta\,(V-Q_o)
+\Delta U\big|_{Q,V\ \mathrm{fixed}}=\Delta\beta\,(V-Q_o)
 $$
 
 这是保持 critic 不变时的局部代数变化。若两种延续价值相差很大，微小终止概率误差也会明显改变 target。更完整的行为变化还会影响时长、状态访问和以后奖励，不能只由该局部式估计。
@@ -16182,7 +17739,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Proper Laplacian Representation Learning](https://yingwen.io/zh/continual-rl/research/#recent-proper-laplacian-representations)
@@ -16198,7 +17755,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
@@ -16207,7 +17764,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
 - [Constructing an Optimal Behavior Basis for the Option Keyboard](https://yingwen.io/zh/continual-rl/research/#recent-option-keyboard-basis)
@@ -16228,15 +17785,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -16575,7 +18132,7 @@ python3 examples/knowledge_algorithms_lab.py options
 
 ## 参考文献与实现
 
-- [Sutton, Precup & Singh — Between MDPs and semi-MDPs](https://doi.org/10.1016/S0004-3702(99)00052-1)：原始 options 框架。重点是 SMDP 最优方程、intra-option learning 与 option models，而不只读三元组定义。
+- [Sutton, Precup & Singh · Between MDPs and semi-MDPs](https://doi.org/10.1016/S0004-3702(99)00052-1)：1999 正式论文。Options、模型、终止改善与依赖终点价值的子问题；本节快慢路数值为独立教学例。
 
 - [Bacon, Harb & Precup — The Option-Critic Architecture](https://arxiv.org/html/1609.05140)：原文式(1)–(3)、内部策略梯度及终止梯度。对照 arrival 状态与动作采样状态，区分理论占用权重和在线实现。
 
@@ -16617,6 +18174,8 @@ python3 examples/knowledge_algorithms_lab.py options
 
 - [Google Research — DADS 作者代码](https://github.com/google-research/dads)：原工程含技能学习与技能空间 MPC；入口 unsupervised_skill_learning/dads_off.py，按其配置区分训练与评估。
 
+- [Richard Sutton — The OaK Architecture](https://oaklab.ai/posts/the-oak-architecture)：架构研究纲领与原讲座入口；特征生成、效用维护和稳定深度持续学习仍是需要具体求解的环节。
+
 - [Kotamreddy & Machado · A Study of Value-Aware Eigenoptions](https://arxiv.org/html/2507.09127v1)：RLC2025 workshop；第4节在线发现反馈，第5.2节非线性停止困难，附录VACE/DVAEO伪代码。
 
 - [Value-Aware Eigenoptions · workshop接收记录](https://sites.google.com/view/ibrl-workshop/accepted-papers)：正式记录其workshop身份，不将其写成RLC主会论文。
@@ -16631,18 +18190,36 @@ python3 examples/knowledge_algorithms_lab.py options
 
 - [Option Keyboard 的经典桥梁](https://proceedings.neurips.cc/paper/2019/file/251c5ffd6b62cc21c446c963c76cf214-Paper.pdf)：cumulant 组合、GPE/GPI 与技能接口。
 
+- [Sutton et al. · Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://arxiv.org/abs/2202.03466)：保留主奖励的特征到达子问题及其规划用途。Sutton 2025 activation 的教学说明另据课程所附原始讲座 slides，不将其视为此论文的新定理。
+
 
 ---
 
 # Dyna：模型学习与规划
 
-直接学习只使用真实发生的一步；模型学会了后果以后，可以从旧状态重新思考。Dyna 的关键是把真实学习、模型学习、规划分开再连接。
+直接学习从真实经验更新价值或策略；模型学习估计行动后果；规划用这些估计进行额外计算。Dyna 将三者连接，使已有经验可以通过模型继续影响决策。
 
 ## 本章内容
 
 - 能区别 transition model、Q 函数与规划更新。
 - 实现表格 Dyna-Q，并解释规划步数为何不是免费样本。
 - 理解模型陈旧、分布选择与优先规划的失效方式。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 一条经验
+
+在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
+
+### 折扣与终止
+
+$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
+
+### 表格与函数逼近
+
+表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
 
 <a id="problem-definition"></a>
 
@@ -16719,22 +18296,6 @@ $\hat r$ 是奖励模型，$\hat P$ 是转移模型，$\gamma<1$ 是折扣，$Q$
 
 - Prioritized sweeping/Dyna-Q+：前者调度计算传播，后者鼓励真实再尝试陈旧行为，解决不同不足。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 一条经验
-
-在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
-
-### 折扣与终止
-
-$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
-
-### 表格与函数逼近
-
-表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
 
 <a id="lesson-setting"></a>
 
@@ -17006,6 +18567,30 @@ python3 examples/foundations_detail_lab.py test
 - 知道期望模型为何在线性价值下足够，以及对非线性价值为什么会失败。
 - 独立实现 SF 的向量 TD 与 GPI，并理解它们和 option/世界模型的边界。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 条件模型
+
+模型回答“从这个状态，假如做这个动作/遵循这个技能，会发生什么”。它必须包含条件行为；把经验中的平均下一状态当作所有动作共同的预测，无法比较行动。
+
+### Option
+
+一个可执行技能包含内部策略 $π_o$ 和停止概率 $β_o$。τ 是至少为 1 的原始步数。模型预测这个已指定行为的后果；改变其策略或停止函数，就是改变被建模的对象。
+
+### 期望与采样
+
+分布模型描述全部可能后果，样本模型随机生成一个后果，期望模型只输出某些统计量。平均值足够与否由下游计算决定，不由模型名字决定。
+
+### 线性价值
+
+φ(s) 是固定特征，w 是权重。线性指价值对特征线性；φ 本身可以是非线性编码。若编码也在学习，关于固定模型/表示的推导要重新检查。
+
+$$
+V_w(s)=w^\top\phi(s)
+$$
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -17082,35 +18667,11 @@ $\mathcal V$ 为声明的下游价值类，$\gamma$ 为折扣。模型充分性�
 - Successor features：预测固定策略的累计特征，用于奖励重加权，不等于技能终点模型。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 条件模型
-
-模型回答“从这个状态，假如做这个动作/遵循这个技能，会发生什么”。它必须包含条件行为；把经验中的平均下一状态当作所有动作共同的预测，无法比较行动。
-
-### Option
-
-一个可执行技能包含内部策略 $π_o$ 和停止概率 $β_o$。τ 是至少为 1 的原始步数。模型预测这个已指定行为的后果；改变其策略或停止函数，就是改变被建模的对象。
-
-### 期望与采样
-
-分布模型描述全部可能后果，样本模型随机生成一个后果，期望模型只输出某些统计量。平均值足够与否由下游计算决定，不由模型名字决定。
-
-### 线性价值
-
-φ(s) 是固定特征，w 是权重。线性指价值对特征线性；φ 本身可以是非线性编码。若编码也在学习，关于固定模型/表示的推导要重新检查。
-
-$$
-V_w(s)=w^\top\phi(s)
-$$
-
 <a id="lesson-setting"></a>
 
 ## 1. 模型要预测什么，取决于怎样使用它
 
-“模型好不好”必须相对用途回答。预测下一张画面很准，可能仍错过决定动作的稀有碰撞；平均位移很准，可能把绕障碍的左右两条安全路径平均成穿墙。反过来，一个无法还原像素的模型，只要准确预测所需奖励和后续价值，也可能支持有效控制。先明确下游要计算哪个量，才能选择训练标签。
+价值预测把未来压缩成一个给定行为条件下的回报；规划还需要比较不同动作和不同后续决策。我们于是要保留可以重新组合的后果知识。需要保留多少，取决于后续计算：平均位移可能把绕障碍的左右两条路径平均成穿墙；只预测所需奖励和后续特征，却可能已经足够支持某类价值备份。先明确规划要计算哪个量，才能判断模型输出是否充分，并选择训练标签。
 
 | 对象 | 模型的输出 | 直接用途 |
 | --- | --- | --- |
@@ -17123,7 +18684,7 @@ $$
 
 先假设环境是固定 MDP，状态或固定特征可观察，奖励有界，技能 $\pi_o,\beta_o$ 固定，且 $0\le\gamma<1$。本页的终点模型假设技能停止或真实终止几乎必然在有限时间发生，所以终点随机变量有定义。训练数据可以来自实际执行技能的轨迹，也可以来自支持其动作的其他行为策略。若同时改变环境、技能和表示，模型的预测目标也会漂移，除了静态收敛，还需要分析跟踪误差。
 
-以 option 为例，模型接收 $(s,o)$，输出内部奖励 $r_o(s)$ 与折扣终点分布 $p_o^\gamma(\cdot|s)$；规划器用当前价值 $V$ 计算 $r_o+p_o^\gamma V$。这个分工允许价值改变时复用同一个后果模型。直接预测某个固定策略的完整回报也有用，但那是价值预测，不能替代面向不同后续价值的后果接口。
+以 option 为例，模型接收 $(s,o)$，输出执行期间的外部奖励模型 $r_o(s)$ 与折扣终点核 $p_o^\gamma(\cdot|s)$；规划器用当前价值 $V$ 计算 $r_o+p_o^\gamma V$。这里的“执行期间”限制累计的时间段，不是指技能训练用的内部奖励。固定动力学、奖励定义和 option 后，这个分工允许后续价值改变时复用同一个后果模型。直接预测某个固定高层策略的完整回报也有用，但不能替代面向不同后续价值的后果接口。
 
 <a id="lesson-derive"></a>
 
@@ -17224,11 +18785,79 @@ m 的 TD 递推只需把 one-hot 终点替换为特征，并沿用真实终止�
 
 随机时间与终点也可能相关。假设一半概率走一步到价值 $10$ 的 A，另一半概率走三步到价值 $0$ 的 B，$\gamma=0.9$。正确贡献是 $0.5\times0.9\times10=4.5$；若把 $\mathbb E[\gamma^\tau]=0.8145$ 与平均终点价值 $5$ 相乘，得到 $4.0725$。用平均时长 $2$ 得到的 $\gamma^2\times5=4.05$ 也不同。需要保存的是时间与终点的联合折扣后果。
 
+<a id="course-model-fit-versus-query"></a>
+
+## 线性模型的两种分布：经验决定学到什么，规划决定先算什么
+
+期望模型在线性价值下足以计算一次期望备份，并不意味着任意学到的模型都正确。Linear Dyna 还有一个容易混淆的结论：固定线性模型后，充分覆盖的规划起点分布可以不改变其固定点。这个结论不表示训练模型时的数据分布无关。下面把两层分布拆开。
+
+冻结策略和特征，令 $x=\phi(s)\in\mathbb R^d$，模型为 $\widehat x'=Fx$、$\widehat r=b^\top x$，价值为 $v_w=w^\top x$。从固定数据集 $\mathcal D=\{(x_k,r_k,x'_k)\}$ 分别最小二乘拟合下一特征与奖励。设 $C_{\mathcal D}=\sum_kx_kx_k^\top$ 可逆。
+
+$$
+D_{\mathcal D}=\sum_kx_k{x'_k}^\top,\quad z_{\mathcal D}=\sum_kx_kr_k,\quad F^\top=C_{\mathcal D}^{-1}D_{\mathcal D},\quad b=C_{\mathcal D}^{-1}z_{\mathcal D}.
+$$
+
+这是普通最小二乘的正规方程。F 是下一特征的线性投影，并不要求真实下一特征一定由线性动力学生成。输入分布改变时，投影一般也改变。
+
+$$
+\delta_{\rm model}(x)=b^\top x+\gamma w^\top Fx-w^\top x,\qquad \mathbb E_{x\sim\mu}[\delta_{\rm model}(x)x]=C_\mu[b+\gamma F^\top w-w].
+$$
+
+$\mu$ 是规划时自行选择的起点分布，$C_\mu=\mathbb E_\mu[xx^\top]$。若它满秩，且 $I-\gamma F^\top$ 可逆，零期望更新的候选解是 $w=(I-\gamma F^\top)^{-1}b$，不依赖 $\mu$。
+
+$$
+(C_{\mathcal D}-\gamma D_{\mathcal D})w=z_{\mathcal D}.
+$$
+
+将最小二乘模型代回候选解，恰好得到同一固定数据集的 LSTD 方程。这就是模型学习与 TD 固定点的联系。数据集换了，三个经验矩阵会改变，所得价值也可以改变。
+
+一维手算：模型训练数据只有两条，均为 x=1、r=1，而下一特征分别为 0 与 1。因此 F=1/2、b=1。取 γ=0.8，固定点 w=1/(1−0.4)=5/3。规划只查询 x=1，或以相同概率查询 x=−2 与 x=2，都会给出同一候选固定点；后者的二阶矩是前者四倍，更新速度与稳定步长却不同。若模型训练数据改为下一特征恒为 1，F 变为 1，固定点变为 5。
+
+固定点存在、迭代收敛、预测真实未来，是三个命题。原论文对线性 TD 规划给出了模型稳定性与采样/步长条件；不能只检查矩阵可逆就宣称 TD 迭代稳定。例如一维 F=2、γ=0.9、b=1 有代数解 w=−1.25，但 TD 的平均增量为 α(1+0.8w)，会把偏离该解的误差继续放大。
+
+深度模型通常既非全局线性，也不让所有规划查询共享一个可精确满足的残差为零方程。此时查询分布改变可能改变近似固定点，模型拟合分布外的查询还可能产生错误后果。表示更新会同时改变模型输入、模型输出和价值坐标；增加规划次数可能只是更快解出一个过时模型的问题。
+
+因此规划实验至少拆成两项。第一项冻结同一个模型，只改变查询分布，检查数值收敛和计算效率。第二项固定查询规则，只改变模型训练数据或遗忘率，检查模型偏差与适应。把两项同时改变后只画收益曲线，无法判断改进来自更好知识还是更好的计算分配。
+
+<a id="rlss-linear-planning-stability"></a>
+
+## 同一个线性模型，TD 规划与残差下降为何不同
+
+冻结策略及模型，令下一特征为 $Fx$、奖励为 $b^\top x$，值为 $w^\top x$。模型残差 $\delta(x)=b^\top x+\gamma w^\top Fx-w^\top x$ 对参数是线性的。TD 只沿当前特征更新，残差下降则同时对当前值与下一值求导。二者有相同的可精确满足方程，但没有相同的稳定性条件。
+
+$$
+\Delta w_{\rm TD}=\alpha\delta(x)x,\qquad
+\Delta w_{\rm RG}=\alpha\delta(x)(x-\gamma Fx).
+$$
+
+第二式是最小化固定模型残差平方的一步梯度下降。这里 Fx 是模型提供的确定期望，不需要从同一随机转移复制两个独立样本；它与直接对环境单样本 TD-error 平方求梯度的问题不同。
+
+$$
+A=I-\gamma F^\top,\quad C=\mathbb E[xx^\top]\succ0,\quad
+L(w)=\tfrac12(b-Aw)^\top C(b-Aw),\quad \nabla^2L=A^\top CA.
+$$
+
+若 A 可逆，Hessian 正定，残差目标有唯一极小点 A⁻¹b。确定全梯度下降还要选择合适步长；随机迭代还要样本和步长条件。存在唯一极小点不等于任意常数步长都会收敛。
+
+一维取 $F=2,\gamma=.9,b=1,x=1$。代数解为 $w^*=-1.25$。TD 的误差满足 $e^+=(1+.8\alpha)e$，对正步长会放大。残差下降为 $e^+=(1-.64\alpha)e$，在 $0<\alpha<3.125$ 时收缩。但这个代数解并不是“不稳定模型中无限奖励和”的证明：模型本身的长期语义仍需单独检验。
+
+还要避免把谱半径、矩阵范数与二次型混成一个条件。原线性 Dyna 收敛论文使用其明确的数值半径和随机逼近假设。课件中的口头化标题不能替代原定理。仅检查特征值位于单位圆内，不能保证对任意规划起点协方差都稳定。
+
+$$
+F=\begin{pmatrix}0&3\\0&0\end{pmatrix},\quad
+\rho(F)=0,\qquad
+\max_{\|x\|_2=1}x^\top Fx=\tfrac32.
+$$
+
+F 的两步幂已为零，但一个方向上的瞬时二次型可以大于一。这是区分两种矩阵量的反例，不是单凭它就宣布每个采样分布下 TD 都发散。
+
+接回持续学习，固定模型定理只是内层参照。模型学习、策略改善和表示变化会让 F、b、C 同时移动。分别冻结这三者做测试，才能区分求解器不稳定、模型不正确和表示已过期。增加规划次数可能放大其中任何一个问题。
+
 <a id="lesson-successors"></a>
 
 ## 4. Successor features 与 GPI：不重学动力学地换奖励
 
-另一个复用问题是：环境和行为策略不变，奖励的偏好改变。比如同一路线会产生“耗时、电量、采到的资源”三个信号；早上偏好快，晚上偏好省电。如果奖励是这些信号的线性组合，就能先预测整段未来信号，再乘新的偏好权重。这是 SF 的基本分解，不是预测“下一状态均值”。
+另一个复用问题是：环境动力学和被评价的目标策略不变，奖励的偏好改变。采集经验的行为策略可以不同，但估计仍需满足相应覆盖和校正条件。比如同一路线会产生“耗时、电量、采到的资源”三个信号；早上偏好快，晚上偏好省电。如果奖励是这些信号的线性组合，就能先预测整段未来信号，再乘新的偏好权重。这是 SF 的基本分解，不是预测“下一状态均值”。
 
 $$
 \begin{aligned}r_w(s,a,s')&=\phi(s,a,s')^\top w\\ \psi^\pi(s,a)&=\mathbb E_\pi\!\left[\sum_{k=0}^\infty\gamma^k\phi(S_{t+k},A_{t+k},S_{t+k+1})\mid S_t=s,A_t=a\right]\\ Q_w^\pi(s,a)&=\psi^\pi(s,a)^\top w\end{aligned}
@@ -17425,7 +19054,7 @@ python3 examples/knowledge_algorithms_lab.py test
 
 SR 和 Laplacian 表示主要刻画在某种默认行为下哪些状态容易互相到达，但相同的图结构可以对应完全不同的实际代价。两条通道几何长度相同，一条却持续消耗大量资源：仅根据连通性构造的技能仍可能偏爱这条通道。Reward-Aware Proto-Representations（NeurIPS 2025）研究如何让用于技能与奖励塑形的结构表示反映沿途奖励。
 
-理解 Default Representation（DR）要先限定控制问题。设非终止状态集合为 $N$、终止集合为 $T$，默认策略诱导转移 $P^{\pi_d}$，非终止奖励 $r(s)<0$。在线性可解控制中，控制器改变下一状态分布，同时为偏离默认分布付出 KL 代价，温度 $\lambda>0$ 控制偏离的价格。它不是任意标准动作 MDP 都自动具备的结构。
+理解 Default Representation（DR）要先限定控制问题。设有限的非终止状态集合为 $N$、有限的终止集合为 $T$，默认策略诱导转移 $P^{\pi_d}$，每个非终止奖励 $r(s)$ 都是有限的负数，终止奖励也有限。在线性可解控制中，控制器改变下一状态分布，同时为偏离默认分布付出 KL 代价，温度 $\lambda>0$ 控制偏离的价格。它不是任意标准动作 MDP 都自动具备的结构。
 
 $$
 v^*(s)=r(s)+\lambda\log\sum_{s'}P^{\pi_d}(s'|s)\exp\!\left(v^*(s')/\lambda\right)
@@ -17439,7 +19068,9 @@ $$
 \begin{aligned}D_r&=\operatorname{diag}\!\left(\exp(r_N/\lambda)\right)\\ z_N&=D_r\left(P_{NN}^{\pi_d}z_N+P_{NT}^{\pi_d}z_T\right)\\ Z_{NN}&=\left[D_r^{-1}-P_{NN}^{\pi_d}\right]^{-1}\\ z_N&=Z_{NN}P_{NT}^{\pi_d}z_T,\qquad z_T=\exp(r_T/\lambda)\end{aligned}
 $$
 
-Z 把内部动力学与沿途代价编码在一起；固定这两项而改变终点收益时，可以重用 Z。负的非终止奖励使 $D_r$ 的对角元素小于 1，有助于保证所需逆和递推收敛。终点收益并未混进内部模型。
+$Z$ 把内部动力学与沿途代价编码在一起；固定这两项而改变终点收益时，可以重用 $Z$。有限状态和严格负奖励给出 $q=\max_{s\in N}e^{r(s)/\lambda}<1$。由于 $P_{NN}^{\pi_d}$ 的行和不超过 1，$\|D_rP_{NN}^{\pi_d}\|_\infty\le q$；线性递推因而收缩，逆矩阵存在。终点收益并未混进内部模型。
+
+矩阵可逆还不等于每个状态都有有限控制价值。由非负矩阵级数 $z_N=\sum_{k\ge0}(D_rP_{NN}^{\pi_d})^kD_rP_{NT}^{\pi_d}z_T$ 可见，要使 $z(s)>0$，还需从 $s$ 出发存在默认转移支持的有限路径到终点。若每个非终止状态都满足这项可达性，才可由 $v^*(s)=\lambda\log z(s)$ 得到处处有限的值。反例是只有自环、无法离开的状态：令 $r=-\lambda\log2$，则 $Z=(2-1)^{-1}=1$ 完全有限，但没有终点入口，$z=0$、$v^*=-\infty$。控制器不能通过一个默认概率为零的出口逃离。
 
 DR 与 SR 的联系可直接算出。若所有非终止状态的奖励都等于 $\lambda\log\gamma$，则 $D_r=\gamma I$，因而 $Z_{NN}=\gamma(I-\gamma P_{NN}^{\pi_d})^{-1}$，即 SR 的常数倍。奖励不均匀时，每经过一个状态都受到不同的指数权重，表示便能区分低代价和高代价区域。
 
@@ -17517,6 +19148,43 @@ python3 implementations/integrated_agents/integrated_cumulative_model.py --steps
 **继续实验。** 先冻结技能并用同一日志训练两种模型，单独测奖励与时长误差。再恢复闭环行动。比较这两阶段，区分模型记忆机制与它改变数据分布后的反馈。
 
 [源码](../implementations/integrated_agents/integrated_cumulative_model.py) · [逐种子记录](https://yingwen.io/crl-code/results/integrated_cumulative_model/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/integrated_cumulative_model/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/integrated_cumulative_model/curves.json)
+
+<a id="rlss-one-step-and-jump-models"></a>
+
+## 单步模型与跳跃模型：误差、数据和规划成本一起比较
+
+单步模型可以反复组合，但每次使用都把前一步的预测作为下一步输入。跨多步直接预测后果的模型减少这种组合次数。它并不免费：更长的后果通常更晚才可观察，也依赖内部策略、停止规则以及访问覆盖。比较二者时应同时计算建模数据、估计误差和规划预算。
+
+$$
+\widehat F^k-F^k=\sum_{j=0}^{k-1}\widehat F^{k-1-j}(\widehat F-F)F^j.
+$$
+
+固定线性模型的望远镜恒等式；不要求两个矩阵可交换。每一项表示一个局部模型误差在其前后动力学中的传播。
+
+$$
+\|\widehat F^k-F^k\|\leq kL^{k-1}\varepsilon,\qquad
+\|F\|,\|\widehat F\|\leq L,\quad\|\widehat F-F\|\leq\varepsilon.
+$$
+
+这是相容矩阵范数下的上界。收缩动力学可能抑制误差，扩张动力学可能放大误差。直接学 k 步模型 G 的误差 ε_k 必须由数据估计，不能假设它与单步 ε 相同后宣称普遍更优。
+
+对 option，模型不只预测一个远端状态。它还要给出累计奖励、停止后状态或特征，以及用于主目标的时间权重。内部策略或停止规则一变，所预测的随机变量也变。更复杂的模型、更多规划次数都不能修复旧模型的语义已经失效这一事实。
+
+$$
+\|\widehat V-V\|_\infty\leq\frac{\|\widehat T V-TV\|_\infty}{1-\kappa},\qquad 0\leq\kappa<1.
+$$
+
+假设学习模型的规划算子为 κ 压缩，V 是真实算子的固定点，V̂ 是学习算子的固定点。加入并减去 T̂V，再用压缩性即可得到。更多 backup 只减小到 V̂ 的数值误差；模型偏差项仍然存在。
+
+| 对照 | 固定什么 | 它能够回答什么 |
+| --- | --- | --- |
+| 精确原始模型 vs 精确 option 模型 | 真实奖励与技能，计入每种 backup 成本 | 时间抽象是否减少求解所需计算 |
+| 同数据学习单步与多步模型 | 数据来源、真实步、拟合与内存预算 | 直接后果估计是否值得其统计成本 |
+| 技能变化，模型不变 vs 模型跟踪 | 同一变化与执行权限 | 规划错误来自数值收敛还是后果过期 |
+
+例如，在四房间中预先提供最短路径 options，再比较价值传播速度，可以检验技能怎样帮助规划，但不能证明技能能够自行发现。同样，若人为指定单步与多步模型的误差，再比较误差传播，得到的是算子诊断；要比较模型学习能力，还需匹配训练数据、拟合计算和查询分布。
+
+持续任务中的关键问题不是“模型越准越好”一句话，而是哪种后果值得持续校准。未再执行的 option 缺少新证据；依靠离策略更新又需要覆盖与明确的问题定义。主动验证技能、检测模型过期与规划查询分配因此互相耦合。
 
 <a id="research-model-query-equivalence"></a>
 
@@ -17620,7 +19288,7 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
 - [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
@@ -17629,7 +19297,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Reward-Aware Proto-Representations in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-reward-aware-proto-representations)
@@ -17641,7 +19309,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
@@ -17675,7 +19343,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [General Agents Contain World Models](https://yingwen.io/zh/continual-rl/research/#recent-general-agents-world-models)
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
@@ -17699,15 +19367,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -18281,6 +19949,8 @@ python3 examples/knowledge_algorithms_lab.py models
 
 - [Schrittwieser et al. — MuZero](https://arxiv.org/abs/1911.08265)：原文。预测 reward、policy、value 的潜在模型与决策时树搜索；不以观测重建作为必要接口。
 
+- [Sutton et al. — Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping（UAI 2008）](https://arxiv.org/abs/1206.3285)：§3.1 固定模型下的规划分布与稳定条件；§3.2 定理 3.3 说明最小二乘模型的固定点等于同一数据的 LSTD 解。arXiv 上传年份不是发表年份。
+
 - [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
 
 - [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
@@ -18313,6 +19983,12 @@ python3 examples/knowledge_algorithms_lab.py models
 
 - [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。
 
+- [Richard Sutton · The OaK Architecture](https://oaklab.ai/posts/the-oak-architecture)：公开架构讲座入口。差分子问题依据 RLSS 收录的 OaK/NeurIPS 讲义第 24 页；学习的四种作用、消费者信用和增量规划讨论依据 OaK thinker 讲义。本文的成本记账、删除诊断和缓存反例用于澄清机制，不是作者已完成的通用算法。
+
+- [Sutton · Toward a New Approach to Model-based Reinforcement Learning](https://www.incompleteideas.net/papers/MBRL2.pdf)：课程指定阅读 Introduction 与 §1：近似 agent state、特征对当前表现与未来学习的用途、学习与规划的耦合。
+
+- [Sutton et al. · Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping](https://proceedings.mlr.press/r6/sutton08a.html)：UAI 2008 原文。固定模型的 TD/残差迭代、收敛条件，以及从状态前驱到特征前驱的优先扫描。
+
 
 ---
 
@@ -18326,6 +20002,30 @@ python3 examples/knowledge_algorithms_lab.py models
 - 理解 prioritized sweeping 如何沿前驱传播变化，并与 prioritized replay 区分。
 - 把 option model 变成正确 backup，推导收缩和模型误差放大。
 - 解释 MPC、MCTS/MuZero 与 Dreamer 在何时计算、更新对象、误差来源上的差异。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 规划的操作性定义
+
+用模型得到的后果，而非新发生的一次真实转移，改善价值、策略或当前动作选择。模型可以是已知模拟器，也可以是从经验学来的；“有网络”不意味着“有模型”。
+
+### Bellman backup
+
+把即时 reward 与下一状态的估计价值合成当前标签。一次 backup 可以是赋值（value iteration）或小步拟合（TD）。
+
+$$
+y=r+\gamma(1-d)\max_{a'}Q(s',a'),\qquad Q(s,a)\leftarrow Q(s,a)+\alpha[y-Q(s,a)]
+$$
+
+### 模型接口
+
+一步模型给 $(r,s',d)$ 的样本或分布；option 模型给技能内折扣奖励 $r_o$ 和已经含 $\gamma^\tau$ 的折扣终点权重 $p_o^\gamma$。后者做 backup 时不应再乘一次 $\gamma$。
+
+### 真实数据预算与计算预算
+
+一次真实动作和一次模型 rollout 不是同一成本。比较规划方法时应同时计入环境步数、模型调用次数、更新次数、内存和决策延迟。
 
 <a id="problem-definition"></a>
 
@@ -18405,35 +20105,11 @@ $\hat P,\hat r$ 为当前模型，$H$ 为规划时域，$\hat V$ 为尾值，$\g
 - 想象训练actor：模型计算摊销进策略，部署快但可能固化模型偏差。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 规划的操作性定义
-
-用模型得到的后果，而非新发生的一次真实转移，改善价值、策略或当前动作选择。模型可以是已知模拟器，也可以是从经验学来的；“有网络”不意味着“有模型”。
-
-### Bellman backup
-
-把即时 reward 与下一状态的估计价值合成当前标签。一次 backup 可以是赋值（value iteration）或小步拟合（TD）。
-
-$$
-y=r+\gamma(1-d)\max_{a'}Q(s',a'),\qquad Q(s,a)\leftarrow Q(s,a)+\alpha[y-Q(s,a)]
-$$
-
-### 模型接口
-
-一步模型给 $(r,s',d)$ 的样本或分布；option 模型给技能内折扣奖励 $r_o$ 和已经含 $\gamma^\tau$ 的折扣终点权重 $p_o^\gamma$。后者做 backup 时不应再乘一次 $\gamma$。
-
-### 真实数据预算与计算预算
-
-一次真实动作和一次模型 rollout 不是同一成本。比较规划方法时应同时计入环境步数、模型调用次数、更新次数、内存和决策延迟。
-
 <a id="lesson-setting"></a>
 
 ## 1. 用已有的后果知识改善决策
 
-一条走廊尽头的奖励由 1 变成 10。直接 TD 必须再次走过前面的状态，才能逐步把价值变化向前传播；若已学会哪些动作通向哪里，就能在不额外消耗机器人电量的情况下，把新 reward 沿模型反向传播。规划的价值是把已有知识转成新决策。它没有创造新的环境证据：如果门已经关上但模型仍说门开着，更多想象只会更加确信一条错误路线。
+一条走廊尽头的奖励由 1 变成 10。只做一步表格 TD、没有资格迹或经验重放时，前面状态通常要等再次访问才获得新价值的影响。资格迹可以更新近期经历过的状态；已学模型则还允许查询未在近期经历的前驱。规划的价值是利用已有后果知识重新计算决策。它没有创造新的环境证据：如果门已经关上但模型仍说门开着，更多想象仍在求解错误的路线。
 
 | 算法线 | 模型用于什么 | 主要修改对象 |
 | --- | --- | --- |
@@ -18536,6 +20212,41 @@ $$
 
 Prioritized replay 按训练样本的 TD error 调整采样机会；prioritized sweeping 还利用模型找到受影响的前驱并传播变化。两者可以结合，但使用的信息和计算过程不同，比较时需要分别记录模型知识、样本访问与 backup 预算。
 
+<a id="rlss-feature-priorities"></a>
+
+## 从前驱状态到前驱特征：优先扫描到底沿哪条边反传
+
+对固定线性模型 $Fx$，可以选择单位基向量 $e_j$ 作为内部规划查询。它不必对应某个真实可访问状态；这是线性模型允许的计算查询，不是新环境经验。该查询只更新第 j 个价值权重。
+
+$$
+\delta_j=b_j+\gamma(F^\top w)_j-w_j
+=b_j+\gamma\sum_iF_{ij}w_i-w_j,\qquad
+w_j\leftarrow w_j+\alpha\delta_j.
+$$
+
+F 的第 j 列表示当前特征 j 对未来各特征的预测影响。若未来特征 i 的价值权重变化，所有 Fᵢⱼ 非零的 j 都可能需要更新。把行列弄反会让优先级沿错误方向传播。
+
+$$
+\Delta\delta_j=\gamma F_{ij}\Delta w_i\quad(j\ne i),\qquad
+p_j\ \text{可用}\ |\gamma F_{ij}\Delta w_i|\ \text{作为待检查优先级}.
+$$
+
+j=i 时还要计入 −Δwᵢ。这里给出单次权重变化造成的精确残差变化；以其绝对值排序是一种局部调度启发式，不是对真实控制收益的精确预测。
+
+例如只有 F₂₁=0.8 非零，γ=0.9，第 2 个权重增加 0.5。第 1 个查询的模型目标增加 0.36。应重新检查特征 1，而不是只重复更新刚变化的特征 2。真正实现还要删除过时队列项、限制重复入队，并把模型 F 自身变化带来的新残差加入维护。
+
+**算法：特征级优先扫描的实现规程；队列阈值与覆盖调度须显式给定**
+
+1. 真实转移：更新价值，同时拟合奖励与特征模型。
+1. 把本次显著变化的价值维度加入优先队列。
+1. 在内部计算预算内：
+  1. 弹出一项，依据当前模型重算相关前驱的残差。
+  1. 对被选前驱单位向量做线性模型 backup。
+  1. 将新产生的权重变化传播到它的前驱。
+1. 定期补充覆盖查询，避免只关注已有优先级而永久遗漏某些方向。
+
+当特征由神经网络在线生成时，矩阵元素已经不再代表固定的关系。新特征的前驱未知，旧队列的高优先级也可能只因尺度变化而大。此时要先说明特征版本、模型校准和队列重建，再比较规划收益。原始线性实验的固定表示与此不同。
+
 <a id="lesson-options"></a>
 
 ## 4. Option planning 与收缩：粗时间尺度为什么能加速
@@ -18555,6 +20266,8 @@ $$
 第一步使用 τ≥1，第二步使用两个 max 的差不大于候选值的最大差，最后把最大值差提出求和。固定精确模型、相同 option 集合下，反复 value iteration 收敛到唯一固定点。
 
 长 options 的折扣行和可能更小；若集合里仍有一步动作，统一收缩率上界 $\kappa$ 却仍可能等于 $\gamma$。此外，技能后果的学习成本、候选数量和与任务的相关性都会影响实际速度。因此，收缩率解释了某一种传播优势，但系统效率还要计入其余成本。
+
+这些式子把终止状态留在模型里并令其后续价值为零。也可只存可继续决策的状态，并将真实环境终止的终点核置零；此时核的行和是折扣后的非终止质量，上面的收缩上界仍成立。两种约定不能交叉使用。有限预算还要求决定哪些后果值得建模：在不影响备份的像素上更精确，可能增加计算而不改变任何动作。模型的用途应从规划所需的量反向确定。
 
 $$
 \begin{aligned}\|\hat V^*-V^*\|_\infty&\leq\kappa\|\hat V^*-V^*\|_\infty+\|(\hat T-T)V^*\|_\infty\\ \|\hat V^*-V^*\|_\infty&\leq\frac{\varepsilon_r+\varepsilon_p\|V^*\|_\infty}{1-\kappa}\end{aligned}
@@ -18910,6 +20623,51 @@ Dyna 的五状态小链会学到贪心状态值 $[0.729,0.81,0.9,1,0]$。训练�
 
 研究上更有辨识力的问题是：“每步有限 B 次计算，应优先验证哪个模型、更新哪个技能模型、还是改进哪个价值？”这连接了变化检测、价值相关模型误差、元学习计算分配与长期知识维护。把所有预算都放进更大模型，并不能自动解决这一调度问题。
 
+<a id="rlss-incremental-planning-budget"></a>
+
+## 把规划拆成有成本的循环：状态选择、技能比较与增量最大化
+
+一次 Bellman backup 看似只有一个式子，却包含几种不同的计算。先选在哪个状态规划；再比较这个状态下的可用行动或 options；对每个候选，还可能要估计随机后继的期望。最后才更新价值或策略。若世界继续运行，这些计算必须与当前行动共用时间预算。
+
+| 计算层次 | 需要决定什么 | 计算不足带来的误差 |
+| --- | --- | --- |
+| 外层：状态与重复次数 | 当前状态、想象状态或前驱状态；哪个值得再次更新 | 重要状态长时间没有传播新价值 |
+| 中层：行动或 option | 比较全部候选，还是先检查少量可能有用的候选 | 错过尚未检查的高价值行为 |
+| 内层：后果期望 | 使用精确期望、学习的期望模型或有限样本 | 模型偏差与 Monte Carlo 波动 |
+| 写回与维护 | 更新多少参数，怎样维护优先级、缓存与模型版本 | 旧估计继续参与后续比较 |
+
+$$
+C\approx N_s\!\left[N_o(C_{\rm model}+N_zC_v)+C_{\rm update}\right].
+$$
+
+一个均匀成本的记账例子：更新 N_s 个状态，每个比较 N_o 个技能，每个后果期望使用 N_z 个样本。C_model 是每个技能生成这一批后果的总成本，C_v 是单个后继的价值计算成本。选择状态、维护缓存等额外成本尚未计入。真实实现应测量各项，而不是只报 backup 次数。
+
+例如更新 8 个状态，每个比较 6 个技能，每个技能采样 4 个后继，仅后继价值计算就有 192 次。若技能之间的后果复杂度不同，“每步做 8 次规划”无法说明实际资源。线性价值配合期望特征模型可以消去一层采样，但这依赖模型所预测的量与价值表达式匹配；非线性价值通常不能把期望直接移入网络。
+
+增量最大化只检查部分候选。固定当前状态与模型、价值的同一快照，记候选 o 的精确 backup 值为 $q_o$，已检查集合为 $E_k$。若集合只增不减，已检查候选的最大值会单调增加。这个结论属于同一次固定问题的搜索，不是智能体真实回报的单调提升定理。
+
+$$
+E_k\subseteq E_{k+1}\quad\Longrightarrow\quad
+ \max_{o\in E_k}q_o\leq\max_{o\in E_{k+1}}q_o\leq\max_{o\in\mathcal O}q_o.
+$$
+
+只对同一组固定、精确的 q 成立。候选尚未检查时，best-so-far 只是已知集合中的最好结果。
+
+持续学习破坏了这个固定快照。三个技能的旧分数是 5、4、1，当前分数已经变成 0、4、8。若只重算第二个，并继续使用另外两个旧缓存，系统仍选择第一个。问题不是最大化公式有错，而是它把三个不同时间的问题答案当成了同一时刻的值。重新检查、版本失效、误差界或保守的缓存策略都需要额外计算。
+
+$$
+L_o\leq q_o\leq U_o\quad\text{for every }o,\qquad
+ L_j\geq\max_{o\ne j}U_o\quad\Longrightarrow\quad j\in\arg\max_o q_o.
+$$
+
+若全部候选都有当前有效的上下界，可提前证明 j 不差于任何其他候选。学习模型的置信区间不自动满足这个条件：覆盖不足、表示改变与模型偏差都可能使界失效。缺少有效界时，提前停止只是有预算的近似决策。
+
+在固定、正确的表格折扣模型中，适当覆盖所有状态的异步价值迭代可利用压缩性分析。在同时改变表示、模型和技能的系统中，不能直接搬用同一个收敛结论。应分开测量：有限规划预算留下的数值误差、模型失真、旧缓存失效，以及实际行动延迟。
+
+OaK 讲义的 SuperDyna 内循环草案把交互、预测与策略学习、特征和技能的增删、剩余时间内的规划放在一起。它明确留下了状态更新、特征构造、技能筛选和规划查询选择等待定项。这说明需要哪些接口，不等于给出了完整可复现算法。流式更新方法可以实现部分学习接口，但不会自动解决查询调度或结构发现。
+
+可先在固定的四房间模型中比较均匀枚举、优先状态更新和增量技能检查。统一真实交互时长、规划墙钟预算与模型权限。再单独引入技能后果漂移，比较无版本缓存、定期重查与变化触发重查。记录每层实际调用数、错过最优候选的差距、行为延迟和累计奖励。第二阶段测试的是缓存与调度的适应性，不是完整架构的有效性。
+
 <a id="research-planning-allocation-and-error"></a>
 
 ## 规划预算应分给可靠且会改变决策的查询
@@ -19017,7 +20775,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
@@ -19027,7 +20785,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
@@ -19042,7 +20800,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
 - [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
@@ -19063,15 +20821,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -19410,11 +21168,11 @@ python3 examples/knowledge_algorithms_lab.py planning
 
 ## 参考文献与实现
 
-- [Sutton & Barto — Reinforcement Learning，第 8 章](http://incompleteideas.net/book/the-book-2nd.html)：Dyna、变化环境和 prioritized sweeping 的系统教材入口；本页用独立小链把各循环展开。
+- [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：第 7、8、12、13 章；期望备份、资格迹、策略梯度与算法条件。
 
 - [Moore & Atkeson — Prioritized Sweeping](https://doi.org/10.1007/BF00993104)：原论文。关键在模型前驱与优先调度，不能与只提高旧样本抽样频率的 prioritized replay 混为一谈。
 
-- [Sutton et al. — Linear Dyna and Prioritized Sweeping](https://proceedings.mlr.press/r6/sutton08a.html)：原文。展示从前驱状态到前驱特征的扩展；收敛结论有明确线性模型/策略评估条件。
+- [Sutton et al. · Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping](https://proceedings.mlr.press/r6/sutton08a.html)：UAI 2008 原文。固定模型的 TD/残差迭代、收敛条件，以及从状态前驱到特征前驱的优先扫描。
 
 - [Sutton et al. — Reward-Respecting Subtasks](https://arxiv.org/html/2202.03466v3)：第 5 节以 learned option models 做规划；模型和发现成本应与规划收益一起评价。
 
@@ -19466,6 +21224,10 @@ python3 examples/knowledge_algorithms_lab.py planning
 
 - [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。
 
+- [Richard Sutton · The OaK Architecture](https://oaklab.ai/posts/the-oak-architecture)：公开架构讲座入口。差分子问题依据 RLSS 收录的 OaK/NeurIPS 讲义第 24 页；学习的四种作用、消费者信用和增量规划讨论依据 OaK thinker 讲义。本文的成本记账、删除诊断和缓存反例用于澄清机制，不是作者已完成的通用算法。
+
+- [Sutton · Toward a New Approach to Model-based Reinforcement Learning](https://www.incompleteideas.net/papers/MBRL2.pdf)：课程指定阅读 Introduction 与 §1：近似 agent state、特征对当前表现与未来学习的用途、学习与规划的耦合。
+
 
 ---
 
@@ -19478,6 +21240,22 @@ python3 examples/knowledge_algorithms_lab.py planning
 - 区分任务再次出现时的遗忘、分布改变后的必要适应，以及网络失去学习能力。
 - 从目标函数推导 replay、EWC、策略蒸馏与 CLEAR，并把算法落实为完整存储/采样/更新流程。
 - 用固定内存、相同数据与计算预算设计保留—适应对照，而不让“存得更多”掩盖算法贡献。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 训练分布与评价分布
+
+当前数据分布由环境和行为策略共同产生；评价可以关注当前环境、历史环境混合或整个生命期收益，需要事先指定。
+
+### KL 与策略蒸馏
+
+$D_{\rm KL}(p\Vert q)=\sum_a p(a)\log[p(a)/q(a)]$。蒸馏在指定状态上保持教师分布 $p$，学生参数仍可改变。
+
+### 二阶近似
+
+在旧解附近，用曲率加权的二次函数近似旧损失；该近似描述局部敏感性。
 
 <a id="problem-definition"></a>
 
@@ -19555,27 +21333,11 @@ $\theta$ 为当前参数，$\theta_{\rm ref}$ 是历史参考，$L_{\rm now}$ �
 - 蒸馏/CLEAR：保留指定状态上的功能输出，并可用RL项继续改进，强约束也会保存错误。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 训练分布与评价分布
-
-当前数据分布由环境和行为策略共同产生；评价可以关注当前环境、历史环境混合或整个生命期收益，需要事先指定。
-
-### KL 与策略蒸馏
-
-$D_{\rm KL}(p\Vert q)=\sum_a p(a)\log[p(a)/q(a)]$。蒸馏在指定状态上保持教师分布 $p$，学生参数仍可改变。
-
-### 二阶近似
-
-在旧解附近，用曲率加权的二次函数近似旧损失；该近似描述局部敏感性。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 保留的对象与评价目标
 
-一个导航智能体曾学会走左门。门的开关暂时改变，之后可能恢复原状。若新训练破坏了左门技能，回来时重新学习很慢，这是知识保留问题；若门永久封死，强迫新策略继续走左门反而有害。持续学习不是无条件保留一切，而是明确未来会如何使用历史知识。
+共享参数让新经验影响许多状态，也可能改变很久没有访问的状态上的行为。考虑一个曾学会走左门的导航智能体。门的开关暂时改变，之后又恢复；若新训练破坏了旧技能，回来时就要重新付出学习代价。知识保留关心怎样减少这种代价。但若门永久封死，保留旧动作偏好反而妨碍适应。因此首先要说明历史知识以后在哪些条件下仍有用，再选择保留的数据、参数约束或模型。
 
 用 A→B→A 的重复环境可以观察保留，但它只是一个研究协议：是否给任务 ID、是否外部 reset、每段多长、是否重新初始化优化器，都影响解释。真实 single-life 不能随时回 A 测试；可以用独立评测副本诊断，但副本不能向在线 agent 提供额外训练数据或重置其主状态。
 
@@ -19610,7 +21372,7 @@ Replay 使已经不再出现的状态继续影响梯度。FIFO buffer 强调近�
     1. 若 $j<M$，以新样本替换 buffer 的第 $j$ 项
 1. 训练时按指定的新旧样本比例采样并更新
 
-当 $t>M$ 时，新样本被接收的概率为 $M/t$。任一旧样本此前被保留的概率为 $M/(t-1)$，本步被替换的条件概率为 $1/t$；于是存活概率为 $[M/(t-1)](https://yingwen.io/zh/continual-rl/download/1-1/t)=M/t$。均匀的是时间索引，并不意味着每个任务、状态或稀有事件等权。
+当 $t>M$ 时，新样本被接收的概率为 $M/t$。任一旧样本此前被保留的概率为 $M/(t-1)$，本步被替换的条件概率为 $1/t$；于是存活概率为 $[M/(t-1)](https://yingwen.io/zh/continual-rl/download/1-1/t)=M/t$。均匀的是时间索引，并不意味着每个任务、状态或稀有事件等权。固定的是样本槽位数；无限运行时精确计数 $t$ 的位数仍会增长。严格固定字节协议须给出最大寿命或有限精度与溢出规则，不能把这两个资源声明混为一谈。
 
 $$
 \mathbb E[\widehat g]= (1-\omega)\mathbb E_{d_t}[\nabla\ell]+\omega\mathbb E_{d_B}[\nabla\ell]
@@ -19964,7 +21726,7 @@ $$
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Knowledge Retention in Continual Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-drago-model-retention)
 
@@ -20029,11 +21791,11 @@ Continual Backpropagation 在梯度学习之外持续生成并测试特征。它
 
 #### 条件与限制
 
-有限序列上的学习保持不保证无限生命中的任意适应。替换率、效用定义与成熟度条件仍需选择；新任务学习速度和旧能力保留必须分开测量。
+原文明确说明，其效用主要考虑当前数据，CBP 并不解决遗忘。对新数据持续学得动与旧功能仍被保留是不同结果；有限长序列也不保证无限生命中的任意适应。替换率、效用和成熟度仍需选择。
 
 #### 阅读与实验
 
-逐项消融“成熟度筛选”“效用筛选”“随机替换”。比较相同替换预算，检验收益究竟来自定向回收还是一般参数扰动。
+在同一替换预算下消融成熟度、效用与随机替换，先检验新目标学习。随后让旧情境返回，测被回收功能的损失；若再用旧功能代价约束回收，应作为新增机制检验，不能把收益归给原始 CBP。
 
 #### 原文与相关入口
 
@@ -20405,6 +22167,22 @@ python examples/lifelong_algorithms_lab.py retention
 - 从梯度通路推导 dormant-unit 机制，具体实现 ReDo 与 CBP 的选择、替换、成熟期和优化器状态处理。
 - 理解 CReLU、正则化、网络重置、plasticity injection 等分支的不同作用及保留代价。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 梯度链式法则
+
+网络输出对某个权重的梯度由下游权重、激活导数与输入相乘；任一环节接近零都可能使参数难以变化。
+
+### ReLU
+
+$\operatorname{ReLU}(z)=\max(0,z)$；$z<0$ 时导数为零。一个单元在当前数据上不激活，并不意味着它在所有未来状态上都无用。
+
+### 优化器状态
+
+Adam 保存一阶矩、二阶矩及时间计数；只重置参数而不处理这些状态，可能让新参数继承旧方向和尺度。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -20413,8 +22191,8 @@ python examples/lifelong_algorithms_lab.py retention
 
 ### 给定条件与符号
 
-- 同容量aged/fresh学习器、匹配新目标、数据顺序和优化预算。
-- 固定probe评价、优化器与归一化协议，以及允许的单元替换/参数扰动预算。
+- 同容量的新学习器与已长期训练的学习器、匹配的新目标、数据顺序和优化预算。
+- 固定探针评价、优化规则与归一化协议，以及允许的单元替换和参数扰动预算。优化器与统计状态属于各自历史，不默认清零。
 
 ### 需要求解的对象
 
@@ -20425,10 +22203,10 @@ python examples/lifelong_algorithms_lab.py retention
 probe数据对各条件一致且不向主在线学习器提供额外世界经验；重置参数、优化器和环境是不同干预。
 
 $$
-\mathcal P_K(\theta;\mathcal D)=L_{\mathcal D}(\theta)-L_{\mathcal D}(U^K(\theta;\mathcal D))
+\mathcal P_K(M;\mathcal D_{\rm train},\mathcal D_{\rm eval})=L_{\mathcal D_{\rm eval}}(M)-L_{\mathcal D_{\rm eval}}\!\left(U^K(M;\mathcal D_{\rm train})\right)
 $$
 
-$\theta$ 为probe起点参数，$U$ 指定优化器与训练序列，$K$ 为更新预算，$L_{\mathcal D}$ 为固定独立且匹配的probe损失。比较改进量需控制初始损失；此诊断不是在线回报目标，机制还要回到真实控制评价。
+$M$ 包括参数、优化器及运行统计。$U$ 只使用训练数据执行 K 次更新；更新前后均在同一独立评价集上只读评价 M 内的预测器，不更新参数或统计。比较改进量需控制初始损失；此诊断不是在线回报目标，机制还要回到真实控制评价。
 
 ### 成立条件与解的含义
 
@@ -20483,35 +22261,21 @@ $\theta$ 为probe起点参数，$U$ 指定优化器与训练序列，$K$ 为更�
 - 优化器重置/参数重置：分别干预历史尺度与表示，matched对照可定位原因而代价不同。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 梯度链式法则
-
-网络输出对某个权重的梯度由下游权重、激活导数与输入相乘；任一环节接近零都可能使参数难以变化。
-
-### ReLU
-
-$\operatorname{ReLU}(z)=\max(0,z)$；$z<0$ 时导数为零。一个单元在当前数据上不激活，并不意味着它在所有未来状态上都无用。
-
-### 优化器状态
-
-Adam 保存一阶矩、二阶矩及时间计数；只重置参数而不处理这些状态，可能让新参数继承旧方向和尺度。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 可塑性的操作性定义
 
-设两个同样结构的网络接收到完全相同的新目标和训练数据：一个已经训练很久，另一个刚初始化。若前者在相同学习预算下改进更慢，便有可塑性下降的证据。反之，仅看到在线 reward 下降，还不能排除探索不足、环境更难、价值估计错误或任务本身无解。
+函数逼近使有限参数可以服务许多状态，也使学习的历史改变了以后的梯度通路与更新尺度。一次训练得到低误差，还不能说明同一网络在很久以后仍容易学习。要研究这种能力，先让两个同样结构的网络接收匹配的新目标和数据：一个已经训练很久，另一个刚初始化。控制起始误差和学习预算后，若前者改进更慢，就得到可塑性下降的证据。单独的在线回报下降还混入探索、任务难度与估值误差，因而不足以完成这个诊断。
 
 $$
-\mathcal P_K(\theta;\mathcal D)=L_{\mathcal D}(\theta)-L_{\mathcal D}(U^K(\theta;\mathcal D))
+\mathcal P_K(M;\mathcal D_{\rm train},\mathcal D_{\rm eval})=L_{\mathcal D_{\rm eval}}(M)-L_{\mathcal D_{\rm eval}}\!\left(U^K(M;\mathcal D_{\rm train})\right)
 $$
 
-这是一种可操作的 $K$ 步改进量：$U$ 指定优化器、步长、训练序列和统计更新。评价采用独立但匹配的 probe 数据，并控制初始损失；仅比较不同起点的绝对改进量会混入任务难度差异。
+这是一个 $K$ 步改进量。$M$ 包含参数、优化器与归一化统计，$U$ 指定完整更新；$L_{\mathcal D}(M)$ 是用该状态中的预测器在数据 $\mathcal D$ 上只读评价的损失，不更新参数或统计量。训练只使用 $\mathcal D_{\rm train}$，两次评价使用同一份独立且匹配的 $\mathcal D_{\rm eval}$。还应控制初始损失，避免把更少的可改进空间误判为较差学习能力。
 
-完整 aged/fresh 对照至少固定网络容量、目标难度、数据顺序、更新数、优化器和归一化。为了拆解原因，还应增加“只重置优化器”“只重置部分权重”“保留 replay 但重置网络”等条件。若 fresh 用额外探索或外部 task reset，就不再是同一学习能力测试。
+为什么把优化器也放进 $M$？令 $L(w)=(w-1)^2/2$、$w=0$，采用 $m^+=0.9m+\nabla L(w)$、$w^+=w-0.1m^+$。若旧动量为 $m=-1$，新参数为 $0.19$，损失下降；若旧动量为 $m=2$，新参数为 $-0.08$，损失反而上升。网络参数与当前损失完全相同，下一步学习能力仍可不同。比较“只重置优化器”的条件，就是为了区分这类影响与表示退化。
+
+完整 aged/fresh 对照至少固定网络容量、目标难度、数据顺序、更新数、优化规则和归一化协议。已有优化器状态与运行统计是待比较学习历史的一部分，不能在主对照中不加说明地清零。为了拆解原因，还应增加“只重置优化器”“只重置部分权重”“保留 replay 但重置网络”等条件。若 fresh 用额外探索或外部 task reset，就不再是同一学习能力测试。
 
 | 诊断量 | 能提示什么 | 不能单独证明什么 |
 | --- | --- | --- |
@@ -20664,6 +22428,57 @@ python3 implementations/extended_adaptation/continual_backprop.py --steps 1200 -
 **继续实验。** 固定总替换次数，再比较最低效用、随机选择与去掉成熟期。将目标改为多次同难度变化，同时加入 fresh 探针；把“选择规则有效”和“随机重生即可”分开检验。
 
 [源码](../implementations/extended_adaptation/continual_backprop.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-continual_backprop/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-continual_backprop/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-continual_backprop/curves.json)
+
+<a id="rlss-renewal-consumer-contract"></a>
+
+## 替换神经元改变了什么：删除扰动、成熟期与局部学习目标
+
+Continual Backpropagation 将常规梯度学习与少量单元更新结合。它先估计单元在当前数据上的贡献，再在足够成熟的单元中选择低效用对象。重新初始化其输入连接，并把输出连接置零。后一步只保证新随机特征暂时不贡献输出，不保证删除旧单元时网络函数不变。
+
+$$
+y(x)=\sum_i v_i h_i(x),\qquad
+v_j^+=0\quad\Longrightarrow\quad y^+(x)-y(x)=-v_jh_j(x).
+$$
+
+其余参数暂不改变。旧贡献只有本来为零，替换才对当前输出无影响。例如旧输出权重 0.3、激活为 1 与 0.7，两个输入的输出分别改变 −0.3 与 −0.21。
+
+$$
+u_i\leftarrow\eta u_i+(1-\eta)|h_i|\sum_k|v_{ik}|,\qquad
+a_i\leftarrow a_i+1,\qquad E=\{i:a_i>m\}.
+$$
+
+这是原研究使用的 contribution utility 形式；a 是年龄，m 是成熟阈值。偏差校正及层间实现应按对应作者版本核对。效用是对当前分布的启发式估计，不是未来一切任务的重要性。
+
+$$
+B\leftarrow B+\rho|E|,\qquad
+k=\min(\lfloor B\rfloor,|E|),\qquad B\leftarrow B-k.
+$$
+
+一种明确的批量小数预算实现：在本步合格集合中替换 k 个最低效用单元。原论文算法在小替换率下逐个处理；推广为批量时须写清合格集与预算的时序，不能把 ρ 的含义悄悄改成全层比例。
+
+例如 512 个单元始终合格，替换率为十万分之一，10000 步积累 51.2 次请求，整数机制实现 51 次，余下 0.2 留待后续。实际训练中新生单元不合格，所以实际数量通常更少。若每步直接取整，则这个例子一次也不会替换。年龄不是装饰性统计，它决定测试窗口与实际探索速度。
+
+删除和引入还具有不对称性。新单元输出权重为零时，其输入权重从主损失获得的梯度通常为零；输出权重仍可学习。新特征若长期不激活，或从未与主误差相关，就可能尚未获得使用机会便再次被淘汰。成熟期延缓淘汰，却不保证候选能得到有效训练信号。
+
+$$
+y=v\,\sigma(u^\top x),\qquad
+\nabla_u L=\frac{\partial L}{\partial y}\,v\,\sigma'(u^\top x)x,\qquad
+\frac{\partial L}{\partial v}=\frac{\partial L}{\partial y}\,\sigma(u^\top x).
+$$
+
+v=0 时，输入端主任务梯度为零，输出端梯度未必为零。这个代数事实说明候选学习的入口；它不证明必须采用某一种局部目标。
+
+Sutton 的 Decentralized Neural Networks 讲义讨论另一条研究思路：保留已有效工作的主干，让边缘候选通过局部目标、连接建立和效用传播参与结构搜索。此处 DNNs 指“去中心化神经网络”，不是深度神经网络的通称。讲义把结构、权重和步长视为不同适应层，并明确尚无完整实证系统。
+
+| 过程 | 局部反馈 | 与总体目标的关系 |
+| --- | --- | --- |
+| 权重学习 | 预测或控制损失的梯度 | 直接优化当前代理目标，仍受采样与自举限制 |
+| 步长适应 | 参数变化对后续误差的影响 | 调节现有学习通路，不自动产生新特征 |
+| 结构搜索 | 候选激活、被使用程度、贡献与年龄 | 需检验局部目标是否确实改善主任务或未来学习 |
+
+“经常激活”不能替代“有助于学习”。恒为一的重复单元容易达到活跃目标，却可能没有新信息；“输出权重增大”也依赖参数单位。要检验局部目标，可在固定候选生成器下比较主任务学习速度、旧功能扰动与跨目标迁移，而不是只报告候选自身的分数。
+
+接入多预测 CRL 时，一个单元可能同时服务奖励价值、GVF、option 停止判断和模型。删除它前，需要确定哪些消费者有权保护它；替换后则要维护相应的优化器统计、资格迹和模型坐标。仅在单一监督头上降低误差，没有证明这条依赖链已经闭合。
 
 <a id="lesson-normalization"></a>
 
@@ -20968,7 +22783,7 @@ $$
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Plasticity as the Mirror of Empowerment](https://yingwen.io/zh/continual-rl/research/#recent-plasticity-mirror-empowerment)
 
@@ -21059,11 +22874,11 @@ Continual Backpropagation 在梯度学习之外持续生成并测试特征。它
 
 #### 条件与限制
 
-有限序列上的学习保持不保证无限生命中的任意适应。替换率、效用定义与成熟度条件仍需选择；新任务学习速度和旧能力保留必须分开测量。
+原文明确说明，其效用主要考虑当前数据，CBP 并不解决遗忘。对新数据持续学得动与旧功能仍被保留是不同结果；有限长序列也不保证无限生命中的任意适应。替换率、效用和成熟度仍需选择。
 
 #### 阅读与实验
 
-逐项消融“成熟度筛选”“效用筛选”“随机替换”。比较相同替换预算，检验收益究竟来自定向回收还是一般参数扰动。
+在同一替换预算下消融成熟度、效用与随机替换，先检验新目标学习。随后让旧情境返回，测被回收功能的损失；若再用旧功能代价约束回收，应作为新增机制检验，不能把收益归给原始 CBP。
 
 #### 原文与相关入口
 
@@ -21492,9 +23307,9 @@ python examples/lifelong_algorithms_lab.py plasticity
 
 - [ReDo 作者实现 · Google Dopamine](https://github.com/google/dopamine/tree/master/dopamine/labs/redo)：作者发布的 Dopamine 版本；核心文件为 weight_recyclers.py 及各 recycled agent。
 
-- [Dohare et al. · Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7)：长期可塑性与 continual backpropagation 的研究。
+- [Dohare et al. · Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7)：Methods 的 CBP 更新、成熟期与替换规则；Extended Discussion 区分可塑性、保持与未来迁移。
 
-- [CBP 作者代码 · loss-of-plasticity](https://github.com/shibhansh/loss-of-plasticity)：lop/algos/gnt.py 与 lop/utils/AdamGnT.py；效用变体、成熟期、预算和 optimizer 状态均须按配置核对。
+- [Loss of plasticity · 作者实现](https://github.com/shibhansh/loss-of-plasticity)：使用对应任务的原配置，检查输入连接、输出连接及 optimizer 状态的重置。
 
 - [Lyle et al. · Understanding Plasticity in Neural Networks](https://proceedings.mlr.press/v202/lyle23b.html)：强调曲率等机制，避免将全部 plasticity loss 简化为 dead ReLU。
 
@@ -21538,6 +23353,22 @@ python examples/lifelong_algorithms_lab.py plasticity
 - 从计数不确定性和预测误差分别推导 count bonus 与 RND，明确 reward 在更新前还是更新后计算。
 - 区分新奇、信息增益、学习进展、技能多样性和自动课程这些不同目标。
 - 将探索放回无免费 reset 的世界：记录恢复成本、可达性与真实外部收益，而不是只累计 intrinsic reward。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 外部奖励与内部奖励
+
+外部奖励是任务学习器接收的评价信号；内部奖励由系统构造，用于引导数据获取。外部奖励是否表达设计者意图，仍是奖励设计问题。提高内部奖励不自动意味着外部任务表现更好。
+
+### 认识不确定性与随机性
+
+认识不确定性可通过更多数据减少；环境固有随机性可能不能减少。单次预测误差往往混合两者。
+
+### 目标条件策略
+
+$\pi(a\mid s,g)$ 把目标 $g$ 当作输入；课程决定练习的目标，控制器决定到达方法。课程调度与底层策略学习处于不同层次。
 
 <a id="problem-definition"></a>
 
@@ -21615,22 +23446,6 @@ $L$ 是完整探索与学习过程，$T$ 为寿命，$\beta_t$ 为内部信号�
 - 进展课程/恢复策略：前者分配可学习目标，后者处理真实可达性和失败成本。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 外部奖励与内部奖励
-
-外部奖励定义任务成功；内部奖励由学习器构造，引导获得数据。提高内部奖励不自动意味着外部目标更好。
-
-### 认识不确定性与随机性
-
-认识不确定性可通过更多数据减少；环境固有随机性可能不能减少。单次预测误差往往混合两者。
-
-### 目标条件策略
-
-$\pi(a\mid s,g)$ 把目标 $g$ 当作输入；课程决定练习的目标，控制器决定到达方法。课程调度与底层策略学习处于不同层次。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 探索的数据获取目标
@@ -21651,7 +23466,7 @@ $$
 | 不同技能 | 状态对 latent skill 的可识别性 | 多样但不一定对任务有用 |
 | 可恢复性 | 返回安全集的概率/成本 | 估计乐观却进入不可逆失败 |
 
-计数估计覆盖程度，RND 估计随机函数的熟悉程度，课程选择练习目标，恢复机制限制可接受风险。这些方法作用于不同决策层次；组合时需分别定义其目标、更新数据和资源预算。
+计数估计覆盖程度，RND 估计随机函数的熟悉程度，课程选择练习目标，恢复机制限制可接受风险。探索的最终价值来自它怎样改变以后可用的知识和行为。用这些代理信号取代无法直接计算的信息价值，是算法设计选择；代理变大本身不是收益改善的证明。组合时需分别定义它们的目标、更新数据和资源预算。
 
 <a id="lesson-derive"></a>
 
@@ -22088,7 +23903,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Proper Laplacian Representation Learning](https://yingwen.io/zh/continual-rl/research/#recent-proper-laplacian-representations)
 - [Reward-Aware Proto-Representations in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-reward-aware-proto-representations)
@@ -22100,7 +23915,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Knowledge Retention in Continual Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-drago-model-retention)
 - [Reset-free Reinforcement Learning with World Models](https://yingwen.io/zh/continual-rl/research/#recent-morefree-reset-free-models)
@@ -22134,7 +23949,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Plasticity as the Mirror of Empowerment](https://yingwen.io/zh/continual-rl/research/#recent-plasticity-mirror-empowerment)
 
@@ -22480,6 +24295,22 @@ python examples/lifelong_algorithms_lab.py exploration
 - 追踪同一条 experience 如何服务控制、GVF 与模型学习，明确每个目标和概率的参数版本。
 - 在固定预算下集成 agent，分析表示漂移、模型偏差与各模块的作用。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### Agent state
+
+智能体从历史递推得到的决策输入 $z_t$；不必等于环境真实状态，但必须保留任务需要的信息。
+
+### Prediction / control / model
+
+预测回答指定策略下未来会怎样；控制选择外部收益高的行为；模型预测行为后果以便模拟计算。三者具有不同目标。
+
+### Planning
+
+使用模型产生的预测进行价值或策略计算，不直接增加真实环境经验；算力和模型错误须计入评价。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -22556,27 +24387,11 @@ $U$ 是包含全部模块调度的更新，$b$ 是行为规则，$T$ 为预定�
 - 共享深度模块：减少部分重复表示，却引入梯度冲突、表示漂移和版本一致性问题。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### Agent state
-
-智能体从历史递推得到的决策输入 $z_t$；不必等于环境真实状态，但必须保留任务需要的信息。
-
-### Prediction / control / model
-
-预测回答指定策略下未来会怎样；控制选择外部收益高的行为；模型预测行为后果以便模拟计算。三者具有不同目标。
-
-### Planning
-
-使用模型产生的预测进行价值或策略计算，不直接增加真实环境经验；算力和模型错误须计入评价。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 持续学习模块的相互依赖
 
-设一个机器人要持续感知、工作、学习新技能并适应磨损。它需要用历史判断当前情况，对多种未来结果形成预测，选择当前行为，形成可重复使用的技能，再用模型推演这些技能。若每个模块都依赖其他模块已经正确，整个系统就会在启动时陷入循环。架构工作的核心，是指定这些尚不准确的模块怎样共同成长。
+前面分别研究了状态、预测、控制、技能和规划。把它们放进同一个机器人后，每个局部问题的条件都可能由另一个尚在学习的模块提供：价值函数读取正在改变的表示，规划器查询尚不准确的模型，模型又预测正在改进的技能。各自的学习结果因而不能直接相加成系统保证。架构工作的起点是说明这些依赖，以及一次新经验到来时每个模块读取和修改什么；随后才能判断有限计算应当分给谁。
 
 先学习一个六状态骨架中同一条经验的更新顺序，再进入七状态闭环：由真实经验学习两个给定子目标的内部策略，预测技能的外部奖励、时长和终点，并用这些模型进行平均奖励规划。前者隔离更新调度，后者检验模块之间的依赖。两个实验都明确限制范围，不假定自动状态构造、目标发现和跨模块元学习已经解决。
 
@@ -22590,6 +24405,34 @@ $U$ 是包含全部模块调度的更新，$b$ 是行为规则，$T$ 为预定�
 | Meta / resource allocation | 误差、后续验证信号、成本 | 步长、特征、问题及规划预算 | 后续数据只在发生后用于更新 |
 
 说“同一条 experience 多种用途”不等于所有模块共享一个 loss。它们可以共享表示，但各自预测什么、控制什么、何时 detach 都必须明确。否则一个有用的辅助任务可能被误当成外部目标，或者目标策略概率被错误地从更新后的 actor 读取。
+
+<a id="rlss-common-model-dimensions"></a>
+
+## Common Model：四类知识、两类改进过程与问题维度
+
+Common Model 将智能体内部常见知识区分为状态、策略、价值与模型。它们是功能角色，不要求四个互不共享的神经网络，也不是已证明唯一的智能架构。状态概括经验；策略提出行动；价值评价后果；模型预测行动可能带来的后果。一个共同 encoder 可以被多个角色使用，但依赖也因此更强。
+
+| 区分 | 前者 | 后者 | 避免混淆 |
+| --- | --- | --- | --- |
+| 知识与过程 | 状态、策略、价值、模型是被保存的对象 | 学习和规划是改变或使用对象的过程 | 规划不是与模型同一种组件 |
+| 预测与控制 | 固定所预测行为，估计后果 | 改变行为以改善目标 | 一个预测很准确，不等于已经选择好行动 |
+| 世界信息与学习权限 | 完全或部分可观测 | online、batch、replay、是否可重置 | 部分可观测并不规定必须怎样训练 |
+| 表示与目标 | 表格、线性、神经或递归表示 | 折扣、平均或有限生命期目标 | 神经网络不要求折扣目标；平均奖励也不要求表格 |
+| 知识内容与获取方式 | 奖励、GVF 或 option 后果 | on-policy、off-policy、直接经验或模型计算 | 多种知识可以由同一流学习，却有不同覆盖条件 |
+
+“补全方格”是一种研究方法：既然两个设计维度不同，就检查其四种组合，而不是先把某种组合当成禁区。例如固定/变化目标与固定/变化表示构成四格；每一格再清楚规定数据权限。但逻辑上可区分的维度，在性能上完全可以相互作用。
+
+$$
+\Delta_{\rm interaction}=(J_{11}-J_{10})-(J_{01}-J_{00}).
+$$
+
+给每个设计选择编码零或一。在同一问题与预算上测四个组合；这个差分比较第一个选择的作用是否随第二个选择变化。应报告不确定性，不能凭一个合成表格给算法交互下结论。
+
+原讲义提出从问题出发、从智能体视角出发、让知识可以用经验检验，以及分别研究正交维度。它们是研究原则，不是性能保证。例如可以测量奖励，并不表示当前传感信息足以实现高奖励；可以检验一个预测，也不表示该预测值得花资源学习。
+
+最小反例：公平隐藏位决定正确动作，观察始终相同。任意无额外信息的动作选择，其正确概率至多二分之一；即使事后奖励完全可观察，也无法提前知道这次隐藏位。若把奖励改成“总选动作一”，学习器能达到新指标满分，却没有提高原任务正确率。可测量、可辨识、可实现和符合目标，是四种不同要求。
+
+同样，直接预测决策所需后果可以节省容量，但不能由此否定生成模型。若未来查询不断变化，广泛建模也可能有价值。比较应固定查询集合、表示容量、经验预算与使用方式。架构的研究愿景需要分解为这些可以形式化、实现和反驳的具体问题。
 
 <a id="lesson-derive"></a>
 
@@ -22649,6 +24492,30 @@ $$
 
 如果 GVF 数量 K、技能数 O 或网络规模持续增长，每步成本也可能增长。一个终生系统需要给新对象分配预算并淘汰低价值对象：例如只更新部分预测问题、限制模型缓存、分配固定 planning calls。自动增长不等于固定预算下的持续学习。
 
+<a id="research-openmind-physical-time"></a>
+
+## 身体不会等待更新：用真实平台检验架构调度
+
+把一次梯度更新插入控制循环以后，机器人仍在运动，摄像头仍有延迟，电机也可能继续发热。架构因此不只是一张模块图，还必须说明动作何时发出、学习何时执行、观测对应哪个时刻，以及反射保护能否打断已选动作。更多预测或规划若拖慢响应，就改变了智能体真正面对的控制问题。
+
+Physical Atari（RLC 2026，Javed、Modayil 等）用机器人驱动真实手柄，以摄像头读取持续运行的 Atari 画面及奖励标记。论文采用先发动作、再执行学习的 reactive 调度，并报告约 165 ms 的平台响应延迟；该数值尚未包含神经网络选动作的时间。其学习器保留目标网络与经验回放，所以“真实时间在线学习”与“无回放流式学习”必须分别说明。
+
+它在六个游戏的重复运行中累计约 145 小时，无需人工干预；同样制造的另一个机器人身体却会降低已学策略表现。这支持把个体硬件差异纳入部署适应研究，也支持平台的可靠性主张。它仍是受控的机械操作任务，并不由此证明任意机器人能无限运行、自动修复或长期保持可塑性。
+
+Open Ant（RLC 2026，Lupu、Spieler、Javed、De Asis、Martin、Steenstrup、Modayil）把问题移到行走身体：在有限场地内，根据越界条件改变运动奖励方向，使机器人来回行走。奖励取位移在目标方向的投影，减少走到场地边缘就必须回合重置的需求。控制命令、观测与 MuJoCo 配套模拟共同构成可修改的研究接口。
+
+$$
+R_t=(p_t-p_{t-1})^\top u_t,\qquad \widehat r_t=\frac1N\sum_{k=t-N+1}^{t}\frac{R_k}{\Delta t}
+$$
+
+p 是平面位置，u 是当时奖励方向，固定步长下的后式衡量单位物理时间的进展。原论文的 24 维观测包含目标方向相对身体朝向的二维单位向量；目标不是完全隐藏的。复现须保留这一权限，并另行说明是否增加了切换标记、世界坐标等信息。
+
+Open Ant 报告 SARSA(λ) 与 SAC 可在约一小时内从身体经验学会行走，但两者的动作抽象、更新与回放协议不同。主实验各做五次 80 分钟试验；电源与通信缆线缠绕时仍由人暂停、解缠并放回起始配置。仿真中策略的性能排序还会在真机上改变。因此，非回合任务设计、少干预的工程能力与完全无人干预的持续学习是需要分别验证的主张。
+
+对本章的集成架构，可提出一个尚待实施的检验：固定同一身体与真实时间预算，逐渐增加 GVF 数量或规划次数，同时记录观测至动作的延迟分布、遗漏更新、奖励率、人工干预与保护反射。再比较同步更新和固定截止时间的调度。若收益只在暂停世界的模拟器中增加，而在同一小时真机经验中降低，新增模块的计算代价已经改变了结论。
+
+思考：保护反射替换了高层选定的动作以后，离策略学习器应记录提议动作还是实际执行动作？若机械修复需要二十分钟，生命期评价是否计时？这些约定应在实验前写明，因为它们决定了知识、行为与真实经验之间是否保持一致。
+
 <a id="lesson-construction"></a>
 
 ## 4 · 从 Dyna 扩展到 subtask → option → model → planning
@@ -22664,6 +24531,298 @@ $$
 例如学习“到门口”为了形成可复用 option，终止奖励可用于驱动这个 subtask；但主任务可能是递送物品，门口本身没有外部奖励。Planner 必须知道此技能真实消耗多少步、沿路得到什么外部收益、到达哪里，才能判断其价值。STOMP 的研究价值在于把这个链路作为可连接的学习问题，而不是在图中简单把 option 画成一条箭头。
 
 Successor features 提供另一种可复用接口：若外部奖励近似 $r=φ(s,a,s^{\prime})^Tw$，则策略的 successor feature 预测折扣特征累积，价值近似 $ψ_π^Tw$。它方便奖励改变时快速重算价值，但已知特征线性分解、固定策略及动力学变化都是重要边界；并非等价于任意世界模型。
+
+<a id="rlss-oak-acquisition-maintenance"></a>
+
+## OaK 的八个过程：一个子问题从哪里来，何时值得保留
+
+OaK 提出从特征产生子问题，从子问题学习 option，再学习其后果模型，用模型改善主任务行为。每条连接都需要可观察的输入、被优化的量与成本。OaK 是一项研究架构；特征生成和长期效用维护尤其不是已经确定的通用算法。
+
+| 过程 | 本次产生或改变什么 | 必须追踪的后果 |
+| --- | --- | --- |
+| 主任务学习 | 策略、价值与奖励率估计 | 改变访问分布，也改变其他模块收到的数据 |
+| 生成特征 | 候选状态分量 | 表示容量、计算成本与现有知识坐标 |
+| 排列特征 | 当前与未来效用的估计 | 排序依赖使用机会、尺度与成熟期 |
+| 建立子任务 | 所重视的特征、终端偏好与停止问题 | 目标是否仍尊重主任务的奖励与价值 |
+| 学习 options 与子价值 | 内部动作策略与停止行为 | 后果模型的目标随技能学习而改变 |
+| 学习模型 | 累计奖励、终点与时长后果 | 数据权限、覆盖与模型过期 |
+| 规划 | 用模型更新价值或选择行动 | 错误模型与计算分配可能放大偏差 |
+| 筛选与维护 | 保留、修改或退役整条对象链 | 删除成本、重新学习和长期收益 |
+
+先冻结当前主策略 $\mu$ 及其奖励率估计 $\widehat g^\mu$、差分价值估计 $\widehat v^\mu$。给定特征 $\phi_i$ 与奖金强度 $\kappa$，子问题选择内部策略 $\pi_o$ 与停止规则 $\beta_o$。令 T 为停止时刻，得到 OaK/NeurIPS 讲义第 24 页的差分目标；这里把主策略和 option 策略的符号明确分开。
+
+$$
+\max_{\pi_o,\beta_o}J_i(\pi_o,\beta_o;s),\qquad
+ J_i=\mathbb E_{\pi_o,\beta_o}\!\left[\sum_{k=t+1}^{T}(R_k-\widehat g^\mu)
+ +\widehat v^\mu(S_T)+\kappa\phi_i(S_T)\mid S_t=s\right].
+$$
+
+从时刻 t 出发，首先收到 $R_{t+1}$。到达 $S_T$ 的奖励 $R_T$ 仍计入沿途和式，然后终端价值与特征奖金各计一次。T 是 option 停止而非世界终止；主任务在之后继续。
+
+参考奖励率来自主策略，不是待学习 option 自身的平均奖励。减去它相当于按 $T-t$ 个等时长原始步计算时间的机会成本；$\widehat v^\mu(S_T)$ 再估计回到主策略后的相对后果。若每步经过的物理时间不同，就需要按实际时长扣除对应奖励率，不能仍把每次决策当成一个相同单位。
+
+手算：技能执行两步后停止，奖励依次为 2、4，参考奖励率为 1，终点主差分价值为 3，特征值为 2，$\kappa=0.5$。这次样本的子回报是 $(2-1)+(4-1)+3+0.5\times2=8$。终点的奖励 4 没有被丢弃，终点价值也没有沿途每步重复计入。
+
+这个式子不是“无论代价都尽快到达一个坐标”。沿途外部奖励仍然计入，终点仍由主价值衡量，特征奖金只是改变某些后果的偏好。若允许永不停止，而且存在高于参考奖励率的循环，子问题可能没有有限最优值。教学实现应先限定有限窗口或 proper stopping 类，再研究解除该约束的平均奖励子问题。
+
+折扣的到达目标小实验可以解释终端奖金怎样改变停走决策，但它和上面的差分目标不是同一个数学问题。若进一步省略主任务终端价值，则又改变了子目标。把这些简化写清楚，才能知道一个学习曲线检验了哪一条接口。
+
+$$
+C_{\rm build}+N C_{\rm use}<N C_{\rm primitive}
+\quad\Longleftrightarrow\quad
+N>\frac{C_{\rm build}}{C_{\rm primitive}-C_{\rm use}},\quad
+C_{\rm primitive}>C_{\rm use}.
+$$
+
+这是固定单次使用成本的简单收支模型：构建费用包括探索、技能训练和模型拟合。它只计算资源回收门槛，不是策略收益定理。持续世界还要加上维护、失效与行为机会成本。
+
+给定 waypoint 后，可以依次学习内部策略、拟合技能后果，再用模型规划；也可以让有限候选竞争或改变动力学。这样的实验能检验若干接口，但候选集合、停止规则和主任务模型仍可能由设计者提供。它不是完整的 OaK 自主构造，也没有单独验证特征发现。
+
+一个可检验的下一步是先固定特征和子问题，只研究 option 改变后模型如何跟踪；再固定这条接口，比较手工候选、随机候选与效用选择。每步记录主任务累计收益、技能获取成本、模型校准、实际 backup 数与对象退役。先知道哪个过程带来收益，再增加自主构造范围。
+
+<a id="rlss-oak-executable-chain"></a>
+
+## 可运行算例：子问题改变后，旧模型为何使主任务选错
+
+下面把四个环节接起来：冻结主策略的奖励率与差分价值；求解包含停止选择的子问题；拟合该技能的后果；用后果做一次主任务规划。环境只有五个状态，每一步都能手算。这是原创机制诊断，不是作者 benchmark，也不是完整 OaK。状态、特征、两步时限和主策略由实验者给定；技能用精确动态规划求解，后果模型再由完整执行样本估计。
+
+| 当前状态 | 动作 → 下一状态 | 期望外部奖励 | 主策略 μ | 终端特征 φ |
+| --- | --- | --- | --- | --- |
+| H：共同起点 | advance → J | 0 | 选择 advance | 0 |
+| J：路口 | usual → A | 3 | 选择 usual | 1 |
+| J：路口 | deferred → B | 0 | 不选 | 1 |
+| J：路口 | feature → C | 0 | 不选 | 1 |
+| A：常规分支终点 | return → H | 0 | 选择 return | 0 |
+| B：延后收益分支终点 | return → H | 4 | 选择 return | 0 |
+| C：高特征分支终点 | return → H | 0 | 选择 return | 2 |
+
+表中的奖励是期望。实际采样时，每一步再独立加上等概率的 +1 或 −1。转移本身确定，每步耗时一个单位，世界没有终止状态。主策略沿 H→J→A→H 循环，三步的期望总奖励为 3。B 和 C 虽然不在主循环上，从它们出发仍按主策略返回 H。
+
+$$
+g^\mu=1,\qquad g^\mu+h^\mu(s)=r(s,\mu(s))+h^\mu(s'),\qquad
+ h^\mu(H)=0,\quad (h^\mu(H),h^\mu(J),h^\mu(A),h^\mu(B),h^\mu(C))=(0,1,-1,3,-1).
+$$
+
+固定 h(H)=0 消除差分价值的加法常数。比如 h(B)=4−1+h(H)=3，而 h(C)=0−1+h(H)=−1。代码直接解这些线性方程，并检查每个状态的残差。
+
+这个主循环有周期。这里采用 Poisson 方程和再生定义：从给定状态按 μ 走到 H，计算沿途奖励减去平均奖励率的期望和，并规定 h(H)=0。不需要把周期链上可能不收敛的普通无穷和当作数值答案。
+
+option 只能在 H 启动，至少执行一步，最多执行两步。到达 J 后，它可以立即停止，也可以执行 usual、deferred、feature 中的一个动作，到达对应终点后停止。两步时限是设计约束，防止把未解决的无限时域停止问题藏在实现里。J 上的停走选择则确实由子问题求解，不是预先指定到某个终点。
+
+$$
+\begin{gathered}Z_\kappa(s)=h^\mu(s)+\kappa\phi(s),\qquad F_0(s)=Z_\kappa(s),\\
+ F_\ell(s)=\max\!\left\{Z_\kappa(s),\ \max_a\mathbb E[R-g^\mu+F_{\ell-1}(S')\mid s,a]\right\}.\end{gathered}
+$$
+
+F 表示还剩 ℓ 步时，允许现在停止的子问题价值。初始 H 不允许停止，必须先执行 advance，再使用 F₁(J)。停止达到最大值时 β=1；否则 β=0，内部策略选取最大化的动作。相等时约定优先停止。这里求的是精确有限时域解，不是声称用 TD 从样本学会了该解。
+
+从 H 出发只有四条可能的停止路径。因此无需相信实现，也能独立列出完整答案。所有式子先计入沿途奖励减去每步的主奖励率，最后只加入一次终端价值与奖金。
+
+| 完整 option 路径 | 时长 | 子问题期望回报 Jκ | 主任务偏离值，不含奖金 |
+| --- | --- | --- | --- |
+| H→J，立即停止 | 1 | κ | 0 |
+| H→J→A，停止 | 2 | 0 | 0 |
+| H→J→B，停止 | 2 | 1 | 1 |
+| H→J→C，停止 | 2 | −3+2κ | −3 |
+
+例如 B 路径的回报是 $(0-1)+(0-1)+3=1$。到 B 的那一刻还没有收到返回 H 时的奖励 4；该未来后果由 $h^\mu(B)=3$ 表示。若在 κ=0 时删掉终端主价值，四条路径的值变成 −1、1、−2、−2，算法改选即时奖励为 3 的 A 路径。它解决的是另一个问题，不再评价回到主策略后的后果。
+
+![四条停止路径的子回报随特征奖金改变，最优上包络依次选择 B、J、C。](https://yingwen.io/crl-code/diagnostics/rlss-oak/subproblem-options.svg)
+
+由精确枚举与动态规划独立得到。κ<1 时选 B；1≤κ≤3 时在 J 停止；κ>3 时选 C。边界相等时优先停止。图不是训练曲线。
+
+κ=0、2、4 分别产生“走到 B”“在 J 停止”“走到 C”三个 option。这同时展示了内部策略与停止规则的来源。不同 κ 定义不同目标，不能把不同曲线上的数值增大称为跨目标的学习进步。尤其在 κ=4 这个固定子问题中，C 路径的值 5 高于 B 路径的 1，却可能更差地服务主任务。
+
+精确求解内部策略和停止规则。递归状态包含剩余时长；初始不准停止，终端值只计算一次。execute 返回完整 option 样本。
+
+```python
+@dataclass
+class Option:
+    kappa: float
+    with_terminal_bias: bool
+    value: float
+    decisions: dict
+
+
+def solve_option(kappa, with_terminal_bias=True):
+    """Exact finite-horizon DP over (state, remaining time).
+
+    Stop is allowed after the first action. At the horizon it is compulsory.
+    A stop adds h_mu(s) + kappa*phi(s) ONCE. A continuation adds only R-g_mu.
+    The stop action wins ties. This yields beta in {0,1}; it is not sampled TD.
+    """
+    if kappa < 0 or not math.isfinite(kappa):
+        raise ValueError("kappa must be finite and nonnegative")
+    decisions = {}
+
+    def terminal(state):
+        return (BIAS[state] if with_terminal_bias else 0.0) + kappa * PHI[state]
+
+    @lru_cache(None)
+    def value(state, remaining, may_stop):
+        if remaining == 0:
+            decisions[state, remaining, may_stop] = "stop"
+            return terminal(state)
+        best = terminal(state) if may_stop else -math.inf
+        choice = "stop" if may_stop else None
+        for action, (successor, reward) in WORLD[state].items():
+            candidate = reward - GAIN + value(successor, remaining - 1, True)
+            if candidate > best + 1e-12:
+                best, choice = candidate, action
+        decisions[state, remaining, may_stop] = choice
+        return best
+
+    optimum = value("H", HORIZON, False)
+    return Option(kappa, with_terminal_bias, optimum, decisions)
+
+
+def execute(option, rng=None):
+    """A complete option execution. RNG=None gives the exact mean trajectory.
+
+    The world never terminates. The return transition from the endpoint is NOT
+    included in this sample: it is represented by the frozen terminal bias.
+    """
+    state, remaining, total, duration = "H", HORIZON, 0.0, 0
+    while True:
+        action = option.decisions[state, remaining, duration > 0]
+        if action == "stop":
+            return total, duration, state
+        state, reward = WORLD[state][action]
+        if rng is not None:
+            reward += 1.0 if rng.random() < 0.5 else -1.0
+        total += reward
+        duration += 1
+        remaining -= 1
+```
+
+接着只预测技能的外部后果：累计外部奖励、持续时间与终点分布。κφ 是为了构建技能加入的偏好，不属于主环境奖励；不能混进主任务模型。主规划器比较两种选择：在 H 按 μ 做一个原始步，或先执行当前 option，然后恢复 μ。
+
+$$
+B^\mu_o(H)=\bar R_o(H)-g^\mu\bar\tau_o(H)+\sum_s P_o(s\mid H)h^\mu(s),\qquad
+ B^\mu_{\rm primitive}(H)=0-1+h^\mu(J)=0.
+$$
+
+因为 h(H)=0，B 也等于相对冻结 μ 的一次偏离优势。它不是反复执行这个选择后的平均奖励率，更不是全局最优收益。高层相等时回退到原始 μ 动作。
+
+| 技能版本 | 后果模型：奖励、时长、终点 | 主备份 B | 每次到 H 都执行它的真实 gain |
+| --- | --- | --- | --- |
+| κ=0 | 0，2，B | 1 | 4/3 |
+| κ=2 | 0，1，J | 0 | 1 |
+| κ=4 | 0，2，C | −3 | 0 |
+
+最后一列另算：每次到 H 采用表中的 option，停止后跟随 μ 直到再次回到 H。B 的再生回路三步获得期望奖励 4；C 的回路三步获得 0；在 J 停止则回到 μ 的三步奖励 3。代码既计算回路总奖励除以总时长，也另解所形成原始策略的奖励率方程，二者一致。这是独立的执行评价，不是把主备份 1 或 −3 直接读成长期收益。
+
+现在在同一个 option 槽里把 κ 从 0 改为 4。环境没有改变，但技能由 B 路径变成了 C 路径。冻结旧模型仍报 B=1，规划器因此选中当前技能；实际执行的却是主备份 −3 的 C 路径。重估当前模型后，它报 B=−3，规划器回退 μ。恢复的是选择的正确性，奖励率由 0 回到 1；这没有让新技能变好，更没有超过旧技能的 4/3。若要保留旧能力，应另研究保存旧版本而非原地覆盖的机制。
+
+后果样本均值与主任务规划。模型不储存子目标奖金；规划偏离值和重复调用的真实奖励率由不同函数计算。
+
+```python
+@dataclass
+class OutcomeModel:
+    """MC sufficient statistics: E[external reward], E[duration], P(endpoint).
+
+    Kappa, feature bonuses, and terminal value NEVER enter the reward field.
+    A model version is part of the protocol; changing an option changes targets.
+    """
+    count: int = 0
+    reward_sum: float = 0.0
+    duration_sum: float = 0.0
+    endpoints: dict = field(default_factory=lambda: {s: 0 for s in STATES})
+
+    def observe(self, sample):
+        reward, duration, endpoint = sample
+        if duration < 1 or endpoint not in self.endpoints:
+            raise ValueError("only complete positive-duration option samples")
+        self.count += 1
+        self.reward_sum += reward
+        self.duration_sum += duration
+        self.endpoints[endpoint] += 1
+
+    def target(self):
+        """One option then return to mu: Rbar - g_mu*tau_bar + Pbar*h_mu.
+
+        h_mu(H)=0, so this also equals its deviation advantage at H.
+        This scalar is NOT the new policy's long-run reward rate.
+        """
+        if not self.count:
+            raise ValueError("unobserved model: fall back to the primitive policy")
+        return (self.reward_sum - GAIN * self.duration_sum
+                + sum(self.endpoints[s] * BIAS[s] for s in STATES)) / self.count
+
+    def record(self):
+        if not self.count:
+            raise ValueError("no moments without data")
+        return {"count": self.count, "external_reward": self.reward_sum / self.count,
+                "duration": self.duration_sum / self.count,
+                "endpoint_probabilities": {s: self.endpoints[s] / self.count for s in STATES},
+                "main_backup": self.target()}
+
+
+def exact_model(option):
+    result = OutcomeModel()
+    result.observe(execute(option))
+    return result
+
+
+def repeated_policy_gain(option):
+    """Independently evaluate a repeated high-level choice by a regenerative cycle.
+
+    At H execute this option (or one mu action if None); thereafter follow mu
+    until H. Repeat. Sum expected external reward / elapsed primitive time.
+    Neither the kappa bonus nor any bias term belongs to this true gain.
+    """
+    if option is None:
+        state, total = WORLD["H"][MU["H"]]
+        duration = 1
+    else:
+        total, duration, state = execute(option)
+    while state != "H":
+        state, reward = WORLD[state][MU[state]]
+        total += reward
+        duration += 1
+    return total / duration
+
+
+def planned_gain(model, current_option):
+    # Compare the option with the one-step mu backup at H, exactly zero here.
+    # Ties favor the primitive baseline. Evaluator, not agent, knows the true gain.
+    return repeated_policy_gain(current_option if model.target() > 0.0 else None)
+```
+
+采样对照先执行旧技能 64 次。切换后，比较冻结旧模型、继续混合新旧样本、清空旧统计后只估计新版本。每个种子最多再执行新技能 256 次；两个更新方案共享同一批新样本。共有 64 个随机种子。每次探测从 H 重新开始，一个完整样本耗费两个原始步：旧版本 128 步，新版本最多 512 步。探测重启是一项明确的数据权限，不是严格 single-life 实验。
+
+$$
+\mathbb E[\widehat B_{\rm pooled}(n)]=-3+4\frac{64}{64+n}.
+$$
+
+旧技能终点 B 的差分价值为 3，新技能终点 C 为 −1。混合样本的期望备份因此逐渐从 1 走向 −3。奖励噪声均值为零；样本数量是固定的。这个式子不表示每条随机样本路径都单调。
+
+![旧模型保持正的主备份，混合样本缓慢转负，分版本模型围绕新技能的真实值负三波动。](https://yingwen.io/crl-code/diagnostics/rlss-oak/model-backup-refresh.svg)
+
+实际运行的 64 种子均值；阴影为均值上下 1 个标准误，不是置信区间。灰线给出当前技能的精确备份与混合模型的解析期望。每个种子的值保存在原始 JSON。横轴是新版本样本数，每个样本两个真实步。
+
+| 新样本数 | 混合模型：均值 ± 标准误 | 分版本模型：均值 ± 标准误 |
+| --- | --- | --- |
+| 1 | 0.9144 ± 0.0235 | −3.4063 ± 0.1846 |
+| 24 | −0.1044 ± 0.0221 | −3.0013 ± 0.0422 |
+| 256 | −2.2096 ± 0.0094 | −3.0074 ± 0.0104 |
+
+![旧模型使高层重复选择奖励率为零的新技能；分版本重估选择奖励率为一的主策略；混合模型逐步改正。](https://yingwen.io/crl-code/diagnostics/rlss-oak/selection-gain.svg)
+
+纵轴是模型选出的再生策略经真实环境解析评价后的奖励率，再对 64 个种子取均值；阴影为上下 1 个标准误，不是置信区间。这不是训练期间的累计回报。探测成本已另报，但未从此率中扣除。
+
+分版本方案一个样本就能选对，是这个诊断特意保留的简单性质：新技能的两步噪声总和最多为 2，故其单样本备份至多为 −1，已低于原始动作的 0。这不证明一般问题只需一个样本。分版本的优势来自避免错误目标混合，而不是更复杂的估计器；在不知道版本变化、终点也随机或价值同时变化时，还需要另外的实验。
+
+本算例没有从采样学习 option，没有自主构造特征，也没有求解不断改变表示的完整架构。它把一个可独立定位的困难讲清楚：子目标、技能实现和后果模型不是同一个对象。子目标可以尊重外部奖励而仍牺牲主任务收益；主规划器必须用外部后果重新评价它，且评价使用的模型必须对应当前实际执行的技能。
+
+下载后可直接运行。只需 Python 3.10+ 标准库；test 检查方程、121 个 κ 的独立枚举和模型接口，run 重建全部图表数据。
+
+```bash
+python3 examples/rlss_oak_diagnostics.py test
+python3 examples/rlss_oak_diagnostics.py run --output results.json
+```
+
+[完整代码（MIT）](../examples/rlss_oak_diagnostics.py) · [实际运行的全部结果 JSON](https://yingwen.io/crl-code/diagnostics/rlss-oak/results.json)。可以先把 κ 固定，再去掉终端主价值；也可以保留旧版本为单独技能。每次只改变一条接口，比较子问题解、主备份和真实 gain 是否出现不同变化。
 
 <a id="lesson-definition-answer-use"></a>
 
@@ -22691,7 +24850,9 @@ $$
 
 左侧回答怎样执行子任务，右侧回答它对主任务是否值得调用。二者通过实际执行的策略连接，不是把两个奖励直接相加。若采用 Option-Critic，低层策略与终止也可以直接由主任务回报训练；这是另一条明确的设计路线。
 
-构造型的共同检查顺序是：先找定义的来源，再检查学习目标，最后找到读取结果的那一行控制代码。关闭这个读取路径后，如果行为完全不变，就不能宣称该预测已改善决策；但它仍可能通过共享参数间接改变表示。实验必须分别控制直接读取与梯度共享这两条路径。
+构造型的共同检查顺序是：先找定义的来源，再检查学习目标，最后找到读取结果的控制过程。直接读取与共享参数是两条不同的作用路径：预测可以作为 actor 输入，也可以仅通过辅助梯度改变表示。检验前者时固定参数、比较是否读取答案；检验后者时重新训练有无辅助更新的系统，并匹配预算。只在部署时移除一个预测头，不能排除它在训练时已经形成的作用。
+
+Sutton 与 Barto §17.5 将增量函数逼近、帮助未来学习的表示、学得模型上的规划、自主选择问题、行为与学习的相互作用列为研究议题，并另外讨论实际交互的安全性。这些议题帮助我们检查完整架构缺了什么，却不提供把模块相连就会成功的定理。一个组合方案应说明目前哪些对象给定、哪些已经学习、哪些仍是假设，并分别展示局部正确性和系统收益的证据。
 
 <a id="lesson-drift"></a>
 
@@ -22708,6 +24869,79 @@ $$
 | 联合一致性训练 | 共享或约束 representation/model/value | 损失冲突、梯度泄漏和新优化问题 |
 
 处理网络单元回收也类似：如果一个隐藏特征被替换，依赖它的预测头、模型输入输出、eligibility trace 以及元梯度敏感性是否仍有旧语义？应明确哪些状态清零、哪些变换、哪些保留。把一个塑性机制接到架构里，影响不只发生在该层权重。
+
+<a id="course-architecture-coordinate-maintenance"></a>
+
+## 更换一个特征，为什么必须维护整条依赖链？
+
+特征的生成、检验与淘汰把固定网络变成了持续构造过程。OaK 将特征、子问题、options、模型和规划连接起来，但并未使它们的参数自动保持一致。先研究一个最有利的情况：新特征只是旧特征的可逆线性换坐标。连这种不丢信息的变化都需要维护多个对象。真正生成或删除特征只会更困难。
+
+$$
+\widetilde x=Ax,\qquad \widetilde w=A^{-\top}w,\qquad \widetilde F=AFA^{-1},\qquad \widetilde b=A^{-\top}b.
+$$
+
+A 固定且可逆；原价值为 $w^\top x$，模型为 $Fx$ 与 $b^\top x$。逐项代入可验证新坐标下价值、奖励预测和下一特征预测描述相同对象。仅改 encoder 而保留旧 w、F、b，则不再是同一个预测系统。
+
+模型输出也要变换，因为它预测的是特征。递归状态更新相应变为 $\widetilde f(\widetilde x,u)=Af(A^{-1}\widetilde x,u)$。若线性资格迹满足 $e_t=\Gamma_t\lambda e_{t-1}+x_t$，对整个历史一致换坐标后应有 $\widetilde e_t=Ae_t$。旧 trace 的数组槽位并不自带语义。
+
+$$
+\Delta\widetilde w_{\rm same}=A^{-\top}\alpha\delta e,\qquad \Delta\widetilde w_{\rm plain}=\alpha\delta\widetilde e=\alpha\delta Ae.
+$$
+
+保持旧预测只解决了当前功能等价。若仍使用相同标量步长，下一次普通梯度更新通常不等价。需要相应的预条件矩阵，或接受更新几何改变；只有特定坐标变化可保留原更新。
+
+一维手算：令新特征为旧特征的两倍，读出权重减半，当前价值完全不变。但若仍用相同步长做 TD(0)，权重更新是原来的两倍，对价值造成的改变是原来的四倍。把步长改为原来的四分之一，才恢复这项线性更新的等价性。这也是“预测没变，所以优化器不用改”不成立的最小反例。
+
+新生成的特征通常不是可逆换坐标。此时没有一个 A 能完整迁移所有旧知识。删除一维可能使与它有关的子目标无法定义，也可能让一个旧 option 的停止检测失去依据。重置依赖对象是一种明确但有损的处理；保留、迁移与重新校准则需要新的证据，不能默认为无成本。
+
+| 发生变化的对象 | 必须追踪的依赖 | 保守处理的代价 |
+| --- | --- | --- |
+| 状态特征坐标 | 读出头、递归状态、模型输入与输出、trace | 重新适应期间的预测损失 |
+| 特征定义被删除 | 引用它的 cumulant、终点奖金与终止规则 | 相关问题或技能可能必须退役 |
+| 内部策略或停止规则 | option 的奖励/终点/时长模型、主任务估值 | 旧执行数据不再直接对应新对象 |
+| 参数槽位被复用 | 梯度迹、动量、二阶矩、元梯度敏感度 | 清零避免旧语义泄漏，但丢失统计经验 |
+
+输出权重大小也不是普适的特征效用。把特征乘 100、读出权重除 100，不改变任何预测，却会使基于权重幅度的排序改变。课程的 Online Representation Search 在特定 LTU 表示与在线监督设定中研究生成与测试；推广到可变尺度的神经表示时，须明确归一化、特征频率、成熟期和任务相关性。
+
+**算法：资源有界的对象维护规程；不是完整 OaK 算法或性能保证**
+
+1. 为每个特征和技能分配稳定标识，而不是仅使用数组位置。
+1. 提交一次替换前，列出受影响的预测、子问题、模型、trace 与优化器状态。
+1. 若是可验证的可逆坐标变换：迁移对象，并检查迁移前后预测。
+1. 若是新语义：重置或标记受影响对象，禁止把旧模型当作已校准模型。
+1. 保留合法的原始动作接口，执行下一真实步。
+1. 记录替换、重新学习及计算开销；所有开销计入同一生命期预算。
+
+检验应分两阶段。先在无新信息的纯换坐标实验中验证功能等价与更新等价；再真正替换特征，衡量学习恢复、被删除知识的损失和下游模型错误。只证明新特征能降低一个监督损失，还不足以证明整个持续智能体受益。
+
+<a id="rlss-consumer-credit"></a>
+
+## 谁在使用这个抽象：从梯度信用到知识的保留与改变
+
+一个特征可以被多个价值预测器使用，也可以定义某个技能的到达目标。技能又被后果模型和规划器使用。正向信息流因此形成依赖链。OaK 提出的反向消费者信用询问：哪些下游模块依赖这个对象，愿意为它的保留和稳定性付出多少资源？它与一次 TD 误差沿资格迹分配参数梯度，不是同一个问题。
+
+| 对象 | 消费者 | 消费者可能需要的稳定性 |
+| --- | --- | --- |
+| 状态特征 | 奖励价值、辅助预测、子问题定义 | 输入含义不突然改变；必要变化有迁移或重学安排 |
+| option | 执行策略、后果预测器 | 内部策略和停止规则改变后，旧后果不能继续冒充当前模型 |
+| 后果模型 | 规划器与行为选择 | 常用查询的误差、时长语义和有效范围可追踪 |
+
+“有人使用”只是保留对象的一个理由，不是永久保护权。下游可能依赖了错误预测，也可能存在更便宜的替代。反之，当前没有被使用的技能，可能只是在访问分布中暂时没有机会。消费者信用必须在即时依赖、未来用途、维护成本与改变风险之间作出选择。
+
+$$
+U_{i\to j}^{\rm probe}=\mathbb E_{x\sim d_{\rm probe}}\!\left[
+ L_j^{\setminus i}(x)-L_j(x)\right].
+$$
+
+一种可检查的诊断定义：固定其他参数与探测分布，移除对象 i 后观察消费者 j 的损失变化。正值表示这次删除使 j 变差。它测当前依赖，不是 OaK 已确定的效用算法，也不估计未来重新学习后的最优用途。
+
+设目标为 x，两个完全相同的特征都等于 x，输出权重均为 1/2。原平方误差为零。固定其余权重，删掉一个特征后，误差变为 $x^2/4$；但若允许剩下的权重重新学到 1，误差又可为零。相同删除动作，在“立即不动其他参数”和“允许重新适应”两个问题下有不同代价。
+
+不同消费者的损失也未必同量纲。概率预测、物理量预测与主奖励价值的误差不能直接相加。需要规定比较尺度、优先级与资源预算，并检验这些局部指标是否改善主任务或未来学习。把各头损失都降低，仍不证明其预测值得长期维护。
+
+一个有用的实验把“能否删除”与“怎样迁移”分开。先冻结消费者，测即时功能扰动；再给相同再学习预算，测恢复成本；最后放入自然经验流，测长期收益和遗忘。探测数据不应偷偷进入训练。对于罕见但重要的能力，还要明确探测机会和保存探测记录的成本。
+
+可塑性机制负责让候选有机会进入。消费者反馈则约束它们何时可以改变或退出。前者单独使用可能不断破坏依赖，后者单独使用可能把现有表示锁死。成熟期、有限保护预算、依赖版本和逐步迁移都是可研究的机制；没有一个局部启发式自动保证整条发现循环改善长期回报。
 
 <a id="lesson-example"></a>
 
@@ -22864,6 +25098,35 @@ $$
 | 小单元替换有帮助 | 整个智能体无限期保持可塑性 | 更长多次变化，记录替换频率、饱和、保持与安全代价 |
 
 作者公开 stream-rl-robotics 工程，适合沿预训练检查点、突变配置、optimizer、单元替换和冻结评估五条路径阅读。先复现一个变化条件，再做多个连续变化；不要把单次恢复图解释成完整终身智能体证据。教材的小链实验与这个工程作用互补：前者检查公式与接口，后者研究这些机制在更复杂动力学中能否共同工作。
+
+<a id="rlss-learning-development-tests"></a>
+
+## 积累、准备、开放与结构：持续学习的四种不同主张
+
+一个智能体始终更新权重，不表示它积累了可复用知识；保留旧知识，也不表示它更善于学习未来任务。OaK 讲义用 accretive、preparatory、open-ended、structural 描述学习的不同作用。把这些词转成不同的实验问题，才能避免由一条回报曲线推出过多结论。
+
+| 作用 | 具体问题 | 怎样检验 | 不能替代它的指标 |
+| --- | --- | --- | --- |
+| 知识积累 accretive | 过去经验是否形成以后仍可使用的能力？ | 在相同资源内，检验旧能力保持和跨情境复用 | 参数、技能或数据库条目数量增加 |
+| 为未来学习做准备 preparatory | 现在的经验是否降低之后获取新能力的成本？ | 新目标出现后允许同等学习，比较达到指定水平的经验与计算，并计入准备成本 | 新目标到来前的即时回报 |
+| 开放式构造 open-ended | 可学习的问题和解法能否超出预设有限目录？ | 与固定候选库比较，检验新组合在未知情境中的用途 | 在一个固定菜单上切换更多任务 |
+| 结构变化 structural | 经验是否改变知识的组织、连接或模块？ | 允许与禁止结构变化，在匹配资源下比较保持、学习速度与成本 | 仅记录权重改变，或仅展示结构增大 |
+
+例如，智能体先在一个地图上完成若干到达任务。它可能保留门口位置的预测、到达门口的技能以及技能的后果模型。以后目标换到另一房间，旧技能可以直接帮助行动；即使不能立即使用，已有模型也可能加快新路线学习。前者主要检验复用，后者主要检验准备。若门口由实验者标好，则两者都没有证明自主发现子问题。
+
+公平比较需要把准备期算进去。一种方法把全部生命周期累计奖励作为主指标，再把新目标出现后的学习曲线作为解释性指标。另一种方法明确询问给定准备预算能否降低后续样本需求。二者回答的问题不同，不能只截取适应最快的一小段并忽略前期支出。
+
+$$
+C_{\rm life}=C_{\rm prepare}+\sum_{j=1}^{M}C_{\rm adapt}^{(j)}+C_{\rm maintain}.
+$$
+
+这是成本分解，不是收益定理。各项必须用一致单位计算，或分别报告真实经验、计算与内存；不应把三种资源随意加成一个数字。
+
+有限内存下的积累不要求对象数永久增长。压缩、重组和有选择地遗忘，也可能保留更多有用能力。开放式构造同样不要求无限保留对象；它要求生成和组合规则不只是对固定目录做索引。另一方面，结构不断改变本身也不是进步：错误的删除可能使旧技能失效，过度保护则可能阻碍新学习。
+
+这里的开放性描述可构造的知识与子问题。多智能体章节中的开放式种群学习则关注怎样不断产生新的对手、伙伴和训练目标。二者处在不同层次，也可以在同一系统中结合；不应只凭 open-ended 这个共同名称把它们当成同一个实验问题。
+
+这四个维度可以组合，也可以彼此分离。固定结构的网络可以改善未来学习；动态增添模块的系统也可能只记住新任务而没有迁移。应分别问“保留了什么”“为谁做了准备”“能构造什么新对象”“改变了哪些依赖”，再把答案连接到主任务的长期收益。
 
 <a id="lesson-integrated-setting"></a>
 
@@ -23059,6 +25322,23 @@ Alberta Plan 与 OaK 将状态、预测、控制、规划、时间抽象和元�
 
 “架构 A 比 B 好”很容易混入更多计算、更多先验、更多模型查询或更丰富目标。更有解释力的问题是：“在相同真实步数、固定模型容量和固定每步更新预算下，自动 option model 比原子模型减少多少规划误差或适应延迟？”先给出可测量接口，才有可积累的结论。
 
+<a id="rlss-alberta-roadmap"></a>
+
+## Alberta Plan 的研究顺序与组成部分之间的依赖
+
+课程借 Alberta Plan 说明为什么要返回基础算法。固定特征下的持续监督学习，已经需要同时处理噪声、追踪和未知步长；在此基础上才逐渐加入预测、控制和模型。后面的完整智能体也会反过来揭示前面模块遗漏的条件，因此路线不是必须逐级通关的单链。
+
+| 原计划阶段 | 提出的问题 | 在本书中的落点 |
+| --- | --- | --- |
+| 1–2：给定特征的持续监督学习、监督特征发现 | 怎样持续学习；哪些特征值得保留 | 函数逼近、元步长、可塑性与表征搜索 |
+| 3–6：持续 GVF、actor–critic、平均奖励 GVF、持续控制 | 单一流怎样支持多个预测和行为改进 | 预测知识、平均奖励与完整学习器评价 |
+| 7–9：平均奖励规划、单步模型的持续逼近原型、搜索控制与探索 | 模型如何支持规划；计算和经验投向何处 | 模型规划、规划预算与探索 |
+| 10–12：STOMP、OaK、智能增强原型 | 子任务如何产生抽象；完整系统如何帮助另一智能体 | 目标构造、options、系统依赖和人机协作 |
+
+第 12 步的 intelligence amplification 不是“把所有模块拼完”的别名。它研究学习系统如何增强另一智能体的行动、感知和认知。原计划还明确把其他智能体放进环境。这与用一个主要智能体的经验流定义问题并不矛盾。
+
+任何依赖图都要接受反向检验：新特征是否帮助实际预测？新 option 是否带来值得其训练成本的规划收益？更准的模型是否改善行为？单个小实验回答其中一问，不能替整条闭环回答全部问题。课程中的方法论立场也不等于普遍定理或技术发展时间表。
+
 <a id="research-architecture-knowledge-contracts"></a>
 
 ## 用查询规格连接预测、技能与规划
@@ -23098,6 +25378,8 @@ OaK 与 Alberta Plan 提出经验产生预测、子任务、options、模型与�
 ## 从预训练能力到有限预算下的持续知识维护
 
 预训练模型降低在线学习的起点成本，持续架构还需要决定学什么、何时补齐、何时淘汰。OKB 的行为基补齐、GVF 问题发现、generate-and-test 的特征维护针对不同对象，可以共享“未来是否有用”的评价思想，但不能把它们直接视为同一个算法。特别是低预测误差可能仅说明问题太容易，高误差也可能来自不可约噪声。
+
+Pilarski 的 Creating an Exocerebellum 讲座提供了一个具体接口：机器先预测动作后果，再通过振动等反馈帮助使用者协调动作。这里有三个不同的学习问题：怎样学准给定预测，怎样选择值得预测的问题，怎样选择向使用者传达的信息及其时机。讲义第 60 页明确指出，预测单元与下游传达方式仍需人为选择和设计。因此，扩大 GVF 数量不等于自动学会有用的交流；“外部小脑”是研究构想与功能类比，不是神经机制的等价证明。
 
 $$
 U_j(W)=\underbrace{J_W(\text{with }K_j)-J_W(\text{without }K_j)}_{\text{同协议下的未来收益差}}-\lambda_C\Delta C_j-\lambda_M\Delta M_j,\qquad \sum_jM_j\leq M_{\max},\quad \sum_jC_{j,t}\leq C_{\max}
@@ -23165,9 +25447,10 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
+- [Artifacts as Memory Beyond the Agent Boundary](https://yingwen.io/zh/continual-rl/research/#recent-openmind-artifacts-memory)
 
 #### 时间信用分配与离策略多步学习
 
@@ -23181,7 +25464,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [MaestroMotif: Skill Design from Artificial Intelligence Feedback](https://yingwen.io/zh/continual-rl/research/#recent-maestromotif-semantic-skills)
@@ -23191,7 +25474,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
@@ -23237,12 +25520,14 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 - [The Cell Must Go On: Agar.io for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-agarcl)
 - [Simple Recipe Works: Vision-Language-Action Models are Natural Continual Learners with Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-continual-vla-simple-recipe)
 - [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
+- [Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots](https://yingwen.io/zh/continual-rl/research/#recent-openmind-physical-atari)
+- [The Open Ant: A Robot Platform for Reinforcement Learning Research](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ant-platform)
 
 #### 完整智能体与研究基础
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Rethinking the Foundations for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rethinking-crl-foundations)
 - [Plasticity as the Mirror of Empowerment](https://yingwen.io/zh/continual-rl/research/#recent-plasticity-mirror-empowerment)
@@ -23297,15 +25582,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -23369,11 +25654,11 @@ Continual Backpropagation 在梯度学习之外持续生成并测试特征。它
 
 #### 条件与限制
 
-有限序列上的学习保持不保证无限生命中的任意适应。替换率、效用定义与成熟度条件仍需选择；新任务学习速度和旧能力保留必须分开测量。
+原文明确说明，其效用主要考虑当前数据，CBP 并不解决遗忘。对新数据持续学得动与旧功能仍被保留是不同结果；有限长序列也不保证无限生命中的任意适应。替换率、效用和成熟度仍需选择。
 
 #### 阅读与实验
 
-逐项消融“成熟度筛选”“效用筛选”“随机替换”。比较相同替换预算，检验收益究竟来自定向回收还是一般参数扰动。
+在同一替换预算下消融成熟度、效用与随机替换，先检验新目标学习。随后让旧情境返回，测被回收功能的损失；若再用旧功能代价约束回收，应作为新增机制检验，不能把收益归给原始 CBP。
 
 #### 原文与相关入口
 
@@ -23935,6 +26220,109 @@ V-JEPA 2 先学被遮蔽视频的潜在特征预测；V-JEPA 2-AC 冻结编码�
 
 官方视频表征与动作条件模型；数据、机器人部署条件与检查点分别核验。
 
+### Artifacts as Memory Beyond the Agent Boundary
+
+John D. Martin, Fraser Mince, Esra’a Saleh, Amy Pajak
+
+arXiv 预印本 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+完成任务所需的内部记忆，是否也取决于世界能替我们保存哪些历史信息？
+
+#### 关键机制
+
+把对过去观测提供确定信息的当前观测定义为 artifact。在特定条件下分析历史缩减，并通过环境中的地标与痕迹研究外部记忆效应。
+
+#### 证据
+
+论文给出关于下一观测信息的形式化结果，以及不同价值函数参数容量的实验。外部痕迹能影响完成任务所需的表示容量。
+
+#### 条件与限制
+
+关于观测信息的结论不是任意策略的控制充分性定理。参数数量不等于全部工作内存；论文对回放的计费与严格流式协议不同。
+
+#### 阅读与实验
+
+比较历史痕迹、直接动作提示和随机标记；另提出写读有成本的任务，记录内部状态、环境存储和移动时间。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/html/2604.08756v1)：定义、信息结果、表示容量实验与限制。
+- [John Martin 发表目录](https://jdmartin86.github.io/research/)：连接其规划、奖励与智能体边界的个人研究脉络。
+
+### Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots
+
+Khurram Javed, Joseph Modayil, Gloria Kennickell, Richard S. Sutton, John Carmack
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+在真实延迟、视觉观测与不同身体下，经典游戏任务能提供怎样的控制学习证据？
+
+#### 关键机制
+
+机器人实际操纵手柄，摄像头读取运行中的 Atari 游戏。先发动作后学习的调度，分离了身体响应、观测和更新的时间。
+
+#### 证据
+
+平台论文报告六个游戏中多次试验的累计运行与跨身体性能变化；作者公开硬件及学习工程。
+
+#### 条件与限制
+
+累计运行时间不是单条终生学习轨迹。作者学习器仍有经验回放和目标网络；平台可靠性与长期知识增长是不同主张。
+
+#### 阅读与实验
+
+同时比较环境步数和物理小时下的学习曲线，并记录动作延迟、身体差异与人工干预。
+
+#### 原文与相关入口
+
+- [作者项目与论文](https://keenagi.com/research/physical-atari/)：项目已从旧 GitHub Pages 地址迁移到 Keen 官方域名。
+
+#### 作者代码
+
+[作者团队发布的完整工程。](https://github.com/Keen-Technologies/physical-atari-rlc)
+
+身体搭建、传感控制、智能体和实验脚本。运行需实物设备。
+
+### The Open Ant: A Robot Platform for Reinforcement Learning Research
+
+Elena Sorina Lupu, Patrick Spieler, Khurram Javed, Kris De Asis, John D. Martin, Martha Steenstrup, Joseph Modayil
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+能否在有限场地中直接从身体经验学习，并明确比较仿真、实机和维护条件？
+
+#### 关键机制
+
+开放硬件四足平台配合模拟器、传感接口和学习器。越界后切换目标方向，使任务无需每走到边界就结束回合。
+
+#### 证据
+
+论文比较 SARSA(λ) 与 SAC 的实机学习，给出模拟—实机对照。公开工程包含身体设计、组装演示和运行入口。
+
+#### 条件与限制
+
+缆线仍可能需要人工解缠。两学习器的动作及经验协议不同；真机运行、无回合任务与无人维护的持续学习不能混称。
+
+#### 阅读与实验
+
+先列状态与动作权限，再核对时间戳、奖励方向和恢复记录。用同一真实时间预算检验新增预测或规划是否值得其计算成本。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/abs/2607.18488)：平台、任务、实机实验与局限。
+
+#### 作者代码
+
+[Openmind 官方工程仓库。](https://github.com/Openmind-Research-Institute/open-ant)
+
+硬件、MuJoCo 模拟、SARSA/SAC 与主控制入口。
+
 
 <a id="chapter-code"></a>
 
@@ -23952,15 +26340,17 @@ python examples/lifelong_algorithms_lab.py architectures
 
 ## 参考文献与实现
 
+- [Sutton & Barto · §17.1–17.5](http://incompleteideas.net/book/the-book-2nd.html)：预测、时间抽象、状态构造和奖励设计之间的接口，以及增量逼近、问题选择和学习模型规划等开放研究问题。
+
 - [Sutton · Dyna, an integrated architecture for learning, planning, and reacting](https://doi.org/10.1145/122344.122377)：模型学习、直接学习与模拟规划的经典接口；本页骨架受此启发，并明确另外加入平均奖励与 GVF。
 
-- [Sutton, Bowling & Pilarski · The Alberta Plan for AI Research](https://arxiv.org/abs/2208.11173)：状态、预测、时间抽象与规划的研究纲领，不是完成全闭环的报告。
+- [Sutton、Bowling、Pilarski · The Alberta Plan for AI Research](https://arxiv.org/abs/2208.11173)：组件接口、有限资源与研究路线；Common Model 的角色划分是一种架构观点。
 
-- [Reward-Respecting Subtasks · 作者预印本](https://arxiv.org/abs/2202.03466)：对照停止收益、option模型和规划实验，不能混用不同gamma时间约定。
+- [Sutton et al. · Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://arxiv.org/abs/2202.03466)：子任务、option、后果模型与规划的原论文。本文写出的平均奖励差分形式来自后续 OaK 讲义，不与原论文的折扣实验混为同一设定。
 
 - [Barreto et al. · Successor Features for Transfer in Reinforcement Learning](https://arxiv.org/abs/1606.05312)：有限奖励特征、固定策略 SF 与 GPI 的经典机制桥梁。
 
-- [Oak Lab · The OaK Architecture](https://oaklab.ai/posts/the-oak-architecture)：Richard Sutton 的架构研究纲领与讲座入口。
+- [Richard Sutton · The OaK Architecture](https://oaklab.ai/posts/the-oak-architecture)：公开架构讲座入口。差分子问题依据 RLSS 收录的 OaK/NeurIPS 讲义第 24 页；学习的四种作用、消费者信用和增量规划讨论依据 OaK thinker 讲义。本文的成本记账、删除诊断和缓存反例用于澄清机制，不是作者已完成的通用算法。
 
 - [作者代码 · average-reward-methods](https://github.com/abhisheknaik96/average-reward-methods)：control_agents.py 中的直接学习与 planning_update，适合比较奖励率更新调度。
 
@@ -23971,6 +26361,8 @@ python examples/lifelong_algorithms_lab.py architectures
 - [AgarCL 作者环境](https://github.com/machado-research/AgarCL)：C++ 仿真与 Python 接口；局部重生、观测和混合动作需按环境配置理解。
 
 - [AgarCL 作者基线 · PPO 混合动作实现](https://github.com/machado-research/AgarCL-benchmark/blob/main/PPO_multi_heads_full_action.py)：同仓库包含 DQN_full_action_set.py、SAC_full_action_set.py 及 recurrent 版本；完整游戏实验需匹配动作、参数搜索与运行预算。
+
+- [Mahmood & Sutton — Online Representation Search and Its Interactions with Unsupervised Learning](https://www.eng.uwaterloo.ca/~jbergstr/files/nips_dl_2012/Paper%2019.pdf)：原始在线监督表示搜索，研究生成器与测试器；其设定不等于一般深度流式 RL。坐标变换与更新几何的推导为本节教学分析。
 
 - [Sutton et al. · Reward-Respecting Subtasks · Artificial Intelligence 2023](https://doi.org/10.1016/j.artint.2023.104001)：子任务、技能、模型和规划的接口；最初预印本2022，AAAI2024条目为摘要重印。
 
@@ -23996,6 +26388,18 @@ python examples/lifelong_algorithms_lab.py architectures
 
 - [Touati & Ollivier · Learning One Representation to Optimize All Rewards](https://arxiv.org/abs/2103.07945)：FB 表示的理论出发点；探索/经验覆盖、近似误差及奖励查询约定。
 
+- [Pilarski · Creating an Exocerebellum（2024 讲座）](https://pilarski.github.io/talk/creating-an-exocerebellum/)：第 28–29 页区分控制与反馈通路；第 60 页明确预测问题选择及下游通信尚需人工设计。作为知识效用与智能放大的具体问题，不作为完整自主架构的证据。
+
+- [Javed et al. — Physical Atari（RLC 2026）](https://keen-technologies.github.io/keen-website/research/physical-atari/static/physical_atari.pdf)：平台工程与真实学习论文；含延迟测量、先行动后学习、回放、跨身体迁移和可靠性记录。
+
+- [Keen Technologies — Physical Atari 作者硬件与代码](https://github.com/Keen-Technologies/physical-atari-rlc)：硬件搭建、配置、智能体实现与实验脚本。
+
+- [Lupu et al. — The Open Ant（RLC 2026）](https://arxiv.org/html/2607.18488v1)：非回合行走、SARSA 与 SAC、真机干预、模拟到真实排序差异；主体为平台贡献。
+
+- [Openmind Research Institute — Open Ant 作者硬件与代码](https://github.com/Openmind-Research-Institute/open-ant)：硬件设计、维护说明、模拟器与 SARSA/SAC 入口；平台可用性不等于算法终生保证。
+
+- [Sutton · Toward a New Approach to Model-based Reinforcement Learning](https://www.incompleteideas.net/papers/MBRL2.pdf)：课程指定阅读 Introduction 与 §1：近似 agent state、特征对当前表现与未来学习的用途、学习与规划的耦合。
+
 
 ---
 
@@ -24008,6 +26412,22 @@ python examples/lifelong_algorithms_lab.py architectures
 - 明确估计对象、独立随机单位、信息权限与资源预算。
 - 完成开发选择、独立测试、整次运行配对 bootstrap 的可执行实验。
 - 分别解释在线收益、冻结诊断、恢复、失败和跨任务推广。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 随机变量与样本均值
+
+相同算法多次运行会产生不同收益。单次结果为 $X_i$，总体期望为 $\mu=\mathbb E[X]$，样本均值为 $\bar X=n^{-1}\sum_iX_i$。
+
+### 在线学习
+
+动作依据当前可得历史产生。环境反馈发生后，学习器才更新参数。测试一个持续学习算法时，学习本身通常仍然开启。
+
+### 实验控制器
+
+它管理随机分配、预算、记录与评价。环境提供反馈，学习器只接收协议允许的信息。统计分析可以读取真实变化时间，但不能将其回传给学习器。
 
 <a id="problem-definition"></a>
 
@@ -24044,7 +26464,7 @@ $A,B$ 为完整算法，$h_A,h_B$ 为开发后封存的配置，$\xi$ 为运行�
 ### 适用边界
 
 - 测试通过不是算法长期有效或回报优势的证据。
-- 开发集最高分和tiny有符号差不能直接称为已证优势。
+- 开发集最高分不能代替独立评价；未分析不确定性的微小分数差不能直接证明优势。
 
 ### 与其他问题的关系
 
@@ -24084,22 +26504,6 @@ $A,B$ 为完整算法，$h_A,h_B$ 为开发后封存的配置，$\xi$ 为运行�
 
 - 独立寿命比较：估计封存算法的在线差值及不确定性，推广需追加未见条件。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 随机变量与样本均值
-
-相同算法多次运行会产生不同收益。单次结果为 $X_i$，总体期望为 $\mu=\mathbb E[X]$，样本均值为 $\bar X=n^{-1}\sum_iX_i$。
-
-### 在线学习
-
-动作依据当前可得历史产生。环境反馈发生后，学习器才更新参数。测试一个持续学习算法时，学习本身通常仍然开启。
-
-### 实验控制器
-
-它管理随机分配、预算、记录与评价。环境提供反馈，学习器只接收协议允许的信息。统计分析可以读取真实变化时间，但不能将其回传给学习器。
 
 <a id="lesson-setting"></a>
 
@@ -24591,7 +26995,7 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
@@ -24656,12 +27060,14 @@ $$
 - [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
 - [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
 - [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+- [Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots](https://yingwen.io/zh/continual-rl/research/#recent-openmind-physical-atari)
+- [The Open Ant: A Robot Platform for Reinforcement Learning Research](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ant-platform)
 
 #### 完整智能体与研究基础
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Rethinking the Foundations for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rethinking-crl-foundations)
 
@@ -25193,6 +27599,78 @@ Forward–Backward 表示联合学习行为条件的未来占用与奖励读出�
 [论文作者团队仓库；归档工程，依赖和旧环境需单独核验。](https://github.com/facebookresearch/controllable_agent)
 
 FB 与 SF 的训练、固定数据实验及奖励查询示例。
+
+### Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots
+
+Khurram Javed, Joseph Modayil, Gloria Kennickell, Richard S. Sutton, John Carmack
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+在真实延迟、视觉观测与不同身体下，经典游戏任务能提供怎样的控制学习证据？
+
+#### 关键机制
+
+机器人实际操纵手柄，摄像头读取运行中的 Atari 游戏。先发动作后学习的调度，分离了身体响应、观测和更新的时间。
+
+#### 证据
+
+平台论文报告六个游戏中多次试验的累计运行与跨身体性能变化；作者公开硬件及学习工程。
+
+#### 条件与限制
+
+累计运行时间不是单条终生学习轨迹。作者学习器仍有经验回放和目标网络；平台可靠性与长期知识增长是不同主张。
+
+#### 阅读与实验
+
+同时比较环境步数和物理小时下的学习曲线，并记录动作延迟、身体差异与人工干预。
+
+#### 原文与相关入口
+
+- [作者项目与论文](https://keenagi.com/research/physical-atari/)：项目已从旧 GitHub Pages 地址迁移到 Keen 官方域名。
+
+#### 作者代码
+
+[作者团队发布的完整工程。](https://github.com/Keen-Technologies/physical-atari-rlc)
+
+身体搭建、传感控制、智能体和实验脚本。运行需实物设备。
+
+### The Open Ant: A Robot Platform for Reinforcement Learning Research
+
+Elena Sorina Lupu, Patrick Spieler, Khurram Javed, Kris De Asis, John D. Martin, Martha Steenstrup, Joseph Modayil
+
+RLC 2026 · 2026 · 评价与实验协议
+
+#### 研究问题
+
+能否在有限场地中直接从身体经验学习，并明确比较仿真、实机和维护条件？
+
+#### 关键机制
+
+开放硬件四足平台配合模拟器、传感接口和学习器。越界后切换目标方向，使任务无需每走到边界就结束回合。
+
+#### 证据
+
+论文比较 SARSA(λ) 与 SAC 的实机学习，给出模拟—实机对照。公开工程包含身体设计、组装演示和运行入口。
+
+#### 条件与限制
+
+缆线仍可能需要人工解缠。两学习器的动作及经验协议不同；真机运行、无回合任务与无人维护的持续学习不能混称。
+
+#### 阅读与实验
+
+先列状态与动作权限，再核对时间戳、奖励方向和恢复记录。用同一真实时间预算检验新增预测或规划是否值得其计算成本。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/abs/2607.18488)：平台、任务、实机实验与局限。
+
+#### 作者代码
+
+[Openmind 官方工程仓库。](https://github.com/Openmind-Research-Institute/open-ant)
+
+硬件、MuJoCo 模拟、SARSA/SAC 与主控制入口。
 
 
 <a id="chapter-code"></a>

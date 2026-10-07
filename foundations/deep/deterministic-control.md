@@ -8,6 +8,22 @@
 - 推导确定性 actor 的链式梯度。
 - 写出 TD3 双 critic、延迟更新与平滑目标的完整次序。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### Bellman 递推
+
+当前价值等于即时奖励加折扣后的后继价值；预测目标与最优控制目标不同。
+
+### 函数与梯度
+
+神经网络把参数和输入映射为输出。链式法则必须指明哪些量参与求导，哪些量作为固定目标。
+
+### 经验分布
+
+on-policy 数据由当前策略产生；off-policy 数据可来自旧策略，但能否正确复用取决于算法目标和数据覆盖。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -80,22 +96,6 @@ actor 会主动寻找 critic 估计高的位置，因此可能利用 critic 的�
 - 行为探索噪声 / target smoothing：前者改变真实采样，后者改变 critic 的训练目标。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### Bellman 递推
-
-当前价值等于即时奖励加折扣后的后继价值；预测目标与最优控制目标不同。
-
-### 函数与梯度
-
-神经网络把参数和输入映射为输出。链式法则必须指明哪些量参与求导，哪些量作为固定目标。
-
-### 经验分布
-
-on-policy 数据由当前策略产生；off-policy 数据可来自旧策略，但能否正确复用取决于算法目标和数据覆盖。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 用 actor 近似连续动作的最大化
@@ -109,20 +109,47 @@ on-policy 数据由当前策略产生；off-policy 数据可来自旧策略，�
 ## 2 · 确定性策略梯度与实际 replay 目标
 
 $$
-\nabla_\theta J\ \propto\ \mathbb E_{s\sim d_\mu}\left[\nabla_\theta\mu_\theta(s)\,\nabla_a Q^\mu(s,a)\big|_{a=\mu_\theta(s)}\right]
+\nabla_\theta J=\frac1{1-\gamma}\mathbb E_{s\sim d_\mu}\left[D_\theta\mu_\theta(s)^\top\nabla_aQ^\mu(s,a)\big|_{a=\mu_\theta(s)}\right],\quad d_\mu(s)=(1-\gamma)\sum_{t\ge0}\gamma^t\Pr_\mu(S_t=s)
 $$
 
-精确确定性策略梯度定理使用相应策略占据分布和真实 Q；正的归一化常数由占据分布定义决定。
+这里 J 是固定初始分布的折扣回报；采用归一化占据分布后，常数明确为 1/(1−γ)。动作 Jacobian 的形状为动作维度×参数维度，因此转置后得到参数梯度。精确定理仍要求可微性、可积性等条件。
+
+为什么不需要显式对状态分布求导？对策略评价的 Bellman 方程求导，得到 $\nabla_\theta V^\mu=g+\gamma P_\mu\nabla_\theta V^\mu$，其中 $g(s)=D_\theta\mu(s)^\top\nabla_aQ^\mu(s,\mu(s))$。反复代入得到 $\sum_{t\ge0}\gamma^tP_\mu^t g$；对初始状态取期望就是上面的占据分布。后续状态的影响没有被忽略，而是由这个递推收集起来。
 
 实践中既不知道真实 $Q^\mu$，也不直接采样精确的 $d_\mu$。DDPG 用 replay 状态和近似 critic 构造 $L_\mu=-\mathbb E_{s\sim\mathcal D}Q_\phi(s,\mu_\theta(s))$。这是实际优化的 surrogate，不应不加条件地称为原始起点回报的无偏梯度。
 
 $$
-\nabla_\theta L_\mu=-\mathbb E_{\mathcal D}\left[\nabla_a Q_\phi(s,a)\big|_{a=\mu_\theta(s)}\nabla_\theta\mu_\theta(s)\right]
+\nabla_\theta L_\mu=-\mathbb E_{\mathcal D}\left[D_\theta\mu_\theta(s)^\top\nabla_a Q_\phi(s,a)\big|_{a=\mu_\theta(s)}\right]
 $$
 
-actor 更新时固定 critic 参数，但保留 Q 对动作的导数。对整个 Q 前向使用 no_grad 会把所需的梯度一起删除。
+沿用上面的列向量梯度与动作 Jacobian 约定。actor 更新时固定 critic 参数，但保留 Q 对动作的导数。对整个 Q 前向使用 no_grad 会把所需的梯度一起删除。
 
 例如 $Q(a)=-(a-0.8)^2$，$\mu_\theta=\theta$。在 $\theta=0$ 处，价值的上升方向为 $-2(0-0.8)=1.6$。这个方向来自 critic 的动作斜率。若 critic 在未见动作上虚构一座高峰，actor 也会向那座高峰移动。
+
+<a id="course-critic-slope"></a>
+
+## 2.1 · 价值拟合得准，为什么动作梯度仍然可能错误
+
+确定性 actor 使用的是 $\nabla_aQ_\phi(s,a)$，而 critic 的回归损失主要约束采样动作上的数值。函数值接近，不自动意味着导数接近。要看清这个区别，暂时去掉采样与自举，只研究一个已知的一维价值函数。
+
+$$
+Q(a)=-a^2,\qquad \widehat Q(a)=-a^2+\varepsilon\sin(\omega a),
+\qquad |\widehat Q(a)-Q(a)|\le\varepsilon
+$$
+
+近似价值在所有动作上与真值相差至多 ε。这个误差界本身不限制振荡频率。
+
+$$
+Q'(0)=0,\qquad \widehat Q'(0)=\varepsilon\omega
+$$
+
+取 ε=0.01、ω=100，最大价值误差只有 0.01，动作零处的梯度误差却为一。真实动作零已经最优，critic 仍可能把 actor 推离它。
+
+TD3 的目标动作平滑可以降低对狭窄价值峰的敏感性，但它也改变了所用目标，效果取决于平滑尺度与真实价值几何。双 critic 的最小值约束目标数值，不是一个动作导数正确性的证书。两网络若共享相似数据与误差，错误方向仍可一致。
+
+实际诊断应在 actor 常访问与准备访问的动作邻域检查局部价值排序。可在可重置的小任务中，用额外受控试验估计邻近动作的实际收益，并单独计入诊断预算；不可重置的 CRL 世界不一定允许这种反事实检查。动作平滑、保守更新与主动探索因此都有信息与资源代价。
+
+持续任务还会同时改变 critic 的表示、访问分布和目标策略。仅让 critic 比 actor 多更新几次，没有保证它已经跟上变化。可固定 replay 测估计器，再固定估计器测 actor 更新，最后测闭环耦合；三步可以区分“没有学准”与“学准了当前 surrogate 但它不是当前任务”。
 
 <a id="lesson-target"></a>
 
@@ -357,11 +384,24 @@ python3 examples/deep_textbook_lab.py test
 
 - [Spinning Up · ddpg.py](https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/ddpg/ddpg.py)：官方教学实现，包含完整采样与 replay 循环。
 
+- [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：§9–11：函数逼近与离策略；§12：资格迹；§13.1 的短走廊与 §13.2–13.5 的策略梯度。对照各结论采用的策略类、采样分布与函数表示。
+
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
 
 本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+### 一次策略更新，为什么能改善未来？
+
+精确策略改善使用旧策略的真实价值；策略梯度使用与目标匹配的访问分布。值函数近似或梯度估计误差会破坏这些推理的前提。
+
+函数逼近与深度方法：PPO 的动作概率比不等于新策略的状态访问比。连续动作 actor 还会追逐 critic 的误差。限制局部更新尺度与证明实际回报单调提高是不同要求。
+
+持续学习中的研究问题：动作不仅改变世界，也改变未来数据与学习。比较冻结策略不等于比较持续更新的智能体；什么时候应付出当前回报去获得长期有用的经验？
+
+[精确策略改善](../tabular/dynamic-programming.md) → [策略梯度定理](../approximation/policy-gradient.md) → [TRPO 与 PPO 的近似](trust-region.md) → [持续控制的比较器](../../textbook/control.md)
+
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 

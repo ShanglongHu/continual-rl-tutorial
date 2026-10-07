@@ -8,6 +8,30 @@
 - 独立推导 Bellman 方程、线性 TD、资格迹、GTD2/TDC、GTD($\lambda$) 与 Emphatic TD 的更新。
 - 逐行运行多问题共享经验的学习循环，检查解析解、off-policy 发散反例与实现时序。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 价值函数与条件期望
+
+$v_\pi(s)$ 是在状态 s 出发、以后按 $\pi$ 行动时，一个指定未来累计量的条件期望。改变后续行为或累计信号，就改变了问题，即使物理状态相同。
+
+### Bootstrap 与半梯度
+
+用当前预测的下一状态值构造训练目标叫 bootstrap。更新当前预测时，把这个目标暂时当常数叫半梯度；不是把整条 Bellman 残差对全部参数求导。
+
+### 固定特征与线性逼近
+
+x(s) 是给定的 d 维特征，w 是学习的 d 维参数。one-hot 特征让每个状态有自己的参数，退化为表格；一般特征会让不同状态的更新相互影响。
+
+$$
+\hat v_w(s)=w^\top x(s)
+$$
+
+### 行为策略与目标策略
+
+b 实际选动作并产生数据；$\pi$ 是问题中假想后续采用的策略。预测“若一直向右”的后果，不要求真实机器人永远向右，但需要相应经验覆盖。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -35,7 +59,7 @@ $C$ 是由信号规则 $c$ 生成的累计信号，$\gamma$ 为转移延续因�
 
 ### 成立条件与解的含义
 
-- 分析期间环境、目标策略与表示固定，状态Markov且累计量存在；延续矩阵谱半径小于1提供唯一解条件。
+- 分析期间环境、目标策略与表示固定，状态满足马尔可夫条件，累计量可积。期望的存在不自动保证贝尔曼方程解唯一；有限问题中延续矩阵谱半径小于1提供唯一性条件。
 - 离策略需要覆盖；GTD/ETD稳定性须满足相应线性、遍历和步长条件，不推广为任意深网定理。
 
 判断准则：有限题目直接解线性Bellman系统核对预测与单位；在离策略反例上分开测价值误差、发散和重要性比方差。
@@ -86,30 +110,6 @@ $C$ 是由信号规则 $c$ 生成的累计信号，$\gamma$ 为转移延续因�
 - Emphatic TD：调整历史和状态强调权重，目标权重及方差与GTD不同。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 价值函数与条件期望
-
-$v_\pi(s)$ 是在状态 s 出发、以后按 $\pi$ 行动时，一个指定未来累计量的条件期望。改变后续行为或累计信号，就改变了问题，即使物理状态相同。
-
-### Bootstrap 与半梯度
-
-用当前预测的下一状态值构造训练目标叫 bootstrap。更新当前预测时，把这个目标暂时当常数叫半梯度；不是把整条 Bellman 残差对全部参数求导。
-
-### 固定特征与线性逼近
-
-x(s) 是给定的 d 维特征，w 是学习的 d 维参数。one-hot 特征让每个状态有自己的参数，退化为表格；一般特征会让不同状态的更新相互影响。
-
-$$
-\hat v_w(s)=w^\top x(s)
-$$
-
-### 行为策略与目标策略
-
-b 实际选动作并产生数据；$\pi$ 是问题中假想后续采用的策略。预测“若一直向右”的后果，不要求真实机器人永远向右，但需要相应经验覆盖。
-
 <a id="gvf-reward-versus-knowledge"></a>
 
 ## 先分开两个问题：什么值得做，什么会发生？
@@ -129,7 +129,7 @@ $D_{t+1}$ 是本步交付指示，$E_{t+1}\geq0$ 是本步消耗的电能。这�
 | 送货 critic | 外部任务奖励 R = 10D − E | 本例持续折扣 0.9，不因充电而终止 | 按送货策略 μ 的任务回报；策略改善围绕它展开 |
 | 能耗 GVF | 正的耗电量 E | 沿指定策略 π，累计至下一次到达充电点 | 预期需要多少电；预测值大表示耗电多，不表示行为好 |
 | 步数 GVF | 每次转移的信号 1 | 沿同一 π，累计至下一次到达充电点 | 期望所需步数；要求期望到达时间有限 |
-| 到达 GVF | 到充电点的指示 A | 首次到达后不再累计这个问题 | 从当前条件出发的到达概率；不是本步得到的主任务奖励 |
+| 到达 GVF | 到充电点的指示 $I^{\rm chg}$ | 首次到达后不再累计这个问题 | 从当前条件出发的到达概率；不是本步得到的主任务奖励 |
 
 $$
 \delta_t^R=R_{t+1}+\gamma_R V_R(S_{t+1})-V_R(S_t),\qquad
@@ -180,7 +180,7 @@ General Value Function（通用价值函数）把通常只问“未来有多少�
 | 延续因子 $\gamma_{t+1}\in[0,1]$ | 到达后是否继续累计，或者如何折扣 | 到充电点为 0，其他地方为 1 |
 | 答案 v(s) | 给定上述规格，未来累计量的期望 | 到下次充电点的期望总耗电 |
 
-本章先假定状态 s 是 Markov 的，环境、目标策略和特征在分析期间固定，且累计量存在。Markov 指给定当前状态和动作后，预测下一步不再需要完整历史。若只输入不充分的摄像头画面，不能直接沿用后面的精确 Bellman 方程或线性收敛结论。我们最后再讨论表示和预测问题本身不断变化的 CRL 情形。
+本章先假定状态 s 是 Markov 的，环境、目标策略和特征在分析期间固定。预测值的定义要求回报可积；由 Bellman 方程唯一求出这个值，还需要延续过程的条件。二者将在第 3 节分别检查。Markov 指给定当前状态和动作后，预测下一步不再需要完整历史；这里还要求 cumulant 和 continuation 的生成规则所需的信息已包含在状态与本次转移中。若只输入不充分的摄像头画面，不能直接沿用后面的精确 Bellman 方程或线性收敛结论。
 
 数据接口是一条条 $(S_t,A_t,S_{t+1})$、传感器信号和行为概率 $b(A_t\mid S_t)$。一个 question 函数把每条真实经验变成自己的 $(C_{t+1},\gamma_{t+1},\pi(A_t\mid S_t))$。真实奖励可以是传感器信号之一，但不必是这个 GVF 的 cumulant。
 
@@ -258,12 +258,12 @@ continuation 首先是“后面的量还计多少”的系数。到达事件使�
 固定 γ = 0.9 在这里表示指数折扣。也可以另行构造一个每步以概率 0.9 继续的随机停止过程，使其未折扣期望累计量与折扣累计量相同。这是一种数学解释，不是说机器人有 90% 的物理存活率，也不是说到达概率为 90%。只有把这个随机停止过程也纳入问题时，“到达前未被停止”的概率才与相应折扣到达量一致。
 
 $$
-\tau=\inf\{k\geq1:A_{t+k}=1\},\qquad
+\tau=\inf\{k\geq1:I^{\rm chg}_{t+k}=1\},\qquad
 v_{\rm hit}(s)=\Pr_\pi(\tau<\infty\mid S_t=s),\qquad
 v_{\rm hit,\beta}(s)=\mathbb E_\pi[\beta^{\tau-1}\mathbf1\{\tau<\infty\}\mid S_t=s]
 $$
 
-前一个问题在非到达步用 γ = 1；后一个用 γ = β，$0<\beta<1$。它们到达时都置 γ = 0，且当前到达信号为 1。后者偏重较早到达，一般不是最终到达概率。到达概率可以存在，即使期望到达步数无穷大；不能把步数 GVF 的有限期望条件省略。
+$I^{\rm chg}_{t+k}$ 是第 $k$ 次转移到达充电点的事件指示，不是动作 $A_{t+k}$；没有到达时取 $\tau=\infty$，折扣到达量按 0 计。前一个问题在非到达步用 γ = 1；后一个用 γ = β，$0<\beta<1$。它们到达时都置 γ = 0，且当前到达信号为 1。后者偏重较早到达，一般不是最终到达概率。到达概率可以存在，即使期望到达步数无穷大；不能把步数 GVF 的有限期望条件省略。
 
 如果要问“十步内是否到达”，还要记录从提问起已过去几步，并在窗口末端停止。固定折扣没有一个硬截止点。为这种有限窗口增加计时状态，或使用相应预测结构，是问题定义的一部分，不是换一个较大的网络就自动获得的语义。
 
@@ -291,13 +291,35 @@ $$
 
 配套练习：把本章到达指示改成两个互斥终点的指示，保留真正终止；先验证 γ=1 时两个命中概率之和，再改 γ<1 并解释和为何改变。无需重写 TD 算法，改变的是问题规格。
 
+<a id="research-openmind-grounded-knowledge"></a>
+
+## 从 Horde 到 nexting：预测何时成为可用的经验知识
+
+一个预测头标着“电量”并不能保证它学的是电量，几千个预测也不保证形成了有用的世界知识。需要沿着传感器、问题规格、学习更新和使用者逐段核对。Horde 与 nexting 提供了在真实机器人上检查这条链路的早期实例。
+
+Horde（AAMAS 2011）把一条身体经验交给多个独立的学习器。各学习器指定自己的策略、累计信号与终止语义，并用适合离策略学习的 TD 方法更新。它的架构贡献是把多种知识写成可同时回答的问题；固定学习器集合时，单步时间和存储不随生命长度增加，但仍随问题数与特征数增加。问题本身不是由并行运行自动发现的。
+
+Multi-timescale Nexting（Adaptive Behavior 2014；早期预印本 2011）进一步检验许多近未来预测能否实时形成。论文报告用线性 TD(λ) 在笔记本上以超过 10 Hz 更新约两千个预测，每个预测依赖约六千个状态特征，预测尺度覆盖 0.1 至 8 秒。这个结果建立了多尺度传感器预测的可行性；它没有同时证明这些预测能改善任意控制任务，也不等于已学得完整动作条件的世界模型。
+
+$$
+v^{(j)}(h_t)=\mathbb E_\pi\!\left[\sum_{k\geq0}\gamma_j^k C_{t+k+1}\mid h_t\right],\qquad \tau_j\approx\frac{\Delta t}{1-\gamma_j}
+$$
+
+固定折扣下，τ 是一种近似有效时间尺度，不是“恰好未来 τ 秒”的硬窗口。相同信号配不同 γ 提出不同问题；改变采样周期时也要重审它们在物理时间中的含义。
+
+本章后面的 Nibbler 将关注点推进到“哪些预测值得构建、给它们哪些局部输入、怎样把学到的特征交给主任务”。这与 Horde 的多问题调度、nexting 的多尺度预测分别处于不同层次。再往前还存在感知接地：cumulant 所用的“接触”“物体”或“充电点”从哪个观测识别出来？Ungrounded Alignment 研究在未知感知编码中利用固定关系知识辨认概念，能够帮助定位这个接口，但它本身不是 GVF 学习器。
+
+一个教学实验可以让送货机器人的同一能耗预测分别使用真实电表、校准后的估计电表和被置换的传感器通道。记录信号识别误差、条件回报误差和控制收益；再只切断控制器读取预测的路径。这个设计分别检验接地、预测和使用，避免把“TD loss 降低”当作三者一起成功。
+
+思考：将所有传感器索引随机置换以后，哪些知识只需换名字，哪些学习器必须重新发现输入结构？如果奖励相关事件识别错了，但对应 GVF 对错误信号预测得很准，应该修改问题定义、感知模块，还是 TD 更新？
+
 <a id="gvf-hand-calculation"></a>
 
 ## 手算同一条轨迹：奖励为负，耗电信号为什么为正？
 
 沿一条确定的路线，机器人从仓库经过走廊，到达充电点，再送达货物。此处令送货策略与三个辅助问题的目标策略都走这条路线，先排除离策略修正。电能单位固定；到达充电点那一步仍然消耗 1 单位电。充电提供的电量不是此处的“驱动耗电”信号。
 
-| 真实转移 | 耗电 E | 交付 D | 到充电点 A | 外部奖励 R = 10D − E | 充电相关问题的 γ |
+| 真实转移 | 耗电 E | 交付 D | 到充电点 $I^{\rm chg}$ | 外部奖励 R = 10D − E | 充电相关问题的 γ |
 | --- | --- | --- | --- | --- | --- |
 | 仓库 s0 → 走廊 s1 | 2 | 0 | 0 | −2 | 1 |
 | 走廊 s1 → 充电点 s2 | 1 | 0 | 1 | −1 | 0 |
@@ -345,6 +367,10 @@ $$
 
 M 是已经含延续权重的转移矩阵，不一定每行和为 1。若谱半径小于 1，逆矩阵存在。统一 $\gamma\le\gamma_{\max}<1$ 是一个充分条件；事件终止时可通过转移结构满足该条件，不要求每个 $\gamma$ 都小于 1。
 
+回报存在不等于这个逆一定存在。仍以首次到达为例：从 $s$ 下一步有一半概率到达充电点，另一半进入永远离不开的 $f$；在 $f$ 中信号恒为 0、延续恒为 1。真实到达概率是 $v(s)=1/2,v(f)=0$，但 Bellman 方程只有 $v(s)=1/2+v(f)/2$ 与 $v(f)=v(f)$，不能排除其他答案。即使把预测限制在 $[0,1]$，解仍不唯一。对这个非负到达问题，从零开始的有限步递推趋向最小非负解；一般 TD 初始化不能代替所需边界条件。
+
+有限状态、时齐的延续过程若从每个相关状态都几乎必然结束，则 $M^n\to0$，从而谱半径小于 1，期望延续时长也有限。超出这一设定时，几乎必然结束本身未必保证有限期望时长；对一般有正有负的信号还要检查可积性。后面的解析小实验满足所需条件。GTD 或 ETD 的稳定性结果也各有假设，不能只凭“这是一个 GVF”便一并引用。
+
 “解方程”适用于已知模型。本章用它给小实验提供独立正确答案。机器人通常不知道 M 和 $r_c$，因此需要从经验估计固定点。TD 的意义正是每收到一条转移就改进一次答案，而不等模型和完整回报都准备好。
 
 $$
@@ -352,6 +378,108 @@ q(s,a)=\mathbb E[C_{t+1}+\gamma_{t+1}\sum_{a'}\pi(a'\mid S_{t+1})q(S_{t+1},a')\m
 $$
 
 如果问题还条件于“第一步选 a”，就得到 action-value 形式；下一步仍对指定 $\pi$ 求期望。把这个期望换成 max，会把固定行为的预测问题变成控制问题。
+
+<a id="course-gvf-terminal-outcome"></a>
+
+## 四个问题函数与一个答案：终端结果怎样接到 TD 更新
+
+常用实现把 GVF 写成目标策略 $\pi$、累积信号 $C$ 和延续系数 $\Gamma$。课程还单列了停止时读取的结果 $Z$，从而写成四个问题函数。两种接口并不矛盾。终端结果可以吸收到累积信号中；关键是明确结果在哪一步加入、是否另有时间折扣。
+
+先考虑最清楚的随机停止版本。每一步先得到 $C_{t+1}$ 和新状态；随后以 $\beta(S_{t+1})$ 停止。停止时再加 $Z(S_{t+1})$。在本节中，$\Gamma=1-\beta$ 只表示继续概率，没有额外的折扣因子。假定停止时间 $T>t$ 几乎必然有限，且下面的回报可积。
+
+$$
+v_{\pi,\beta,C,Z}(s)=\mathbb E\!\left[\sum_{k=t+1}^{T}C_k+Z(S_T)\mid S_t=s,\pi,\beta\right].
+$$
+
+$C$ 回答沿途累计什么，$Z$ 回答结束时读取什么，$\pi$ 规定怎样行动，$\beta$ 规定何时结束这项预测。环境可以继续运行；停止的只是这个问题的预测范围。
+
+$$
+v(s)=\mathbb E_\pi\!\left[C_{t+1}+\beta(S_{t+1})Z(S_{t+1})+(1-\beta(S_{t+1}))v(S_{t+1})\mid S_t=s\right].
+$$
+
+先加入本步累计量，再对“停止并读取结果”与“继续预测”两个互斥分支求期望。不能既加入终端结果，又在同一个停止分支继续 bootstrap。
+
+$$
+\widetilde C_{t+1}=C_{t+1}+\beta(S_{t+1})Z(S_{t+1}),\qquad \Gamma_{t+1}=1-\beta(S_{t+1}),\qquad \delta_t=\widetilde C_{t+1}+\Gamma_{t+1}\widehat v(S_{t+1})-\widehat v(S_t).
+$$
+
+这就还原到本章的三函数 TD 接口。将停止抽样平均掉是一个期望目标；另一实现可采样一次停止事件，停止时使用 C+Z，否则使用 C+v。二者的条件均值相同，但方差不同。
+
+手算：$C=2,\beta=1/4,Z=10,\widehat v(s')=4$。停止分支的目标为 12，继续分支为 6；平均为 $12/4+3\times6/4=7.5$。吸收结果后的信号是 $\widetilde C=4.5$，延续项是 $0.75\times4=3$，仍得到 7.5。若把 $Z=10$ 每步无条件相加，得到的是另一个问题。
+
+| 所问的问题 | 沿途 C | 停止结果 Z | 额外前提 |
+| --- | --- | --- | --- |
+| 执行该行为直到停下，一共耗时多少 | 每步 1 | 0 | 期望停止时间有限 |
+| 停下时某个特征有多大 | 0 | 该终点特征 | 特征坐标与停止规则固定 |
+| 该行为沿途获得多少真实奖励 | 真实 R | 0 | 不把人为子任务奖金混入 |
+| 追求某个终点特征的子任务 | 例如真实 R 或中心化 R | 主任务后续价值加特征奖金 | 允许优化策略/停止时，已由预测进入控制 |
+
+若另外规定每步时间折扣 $\bar\gamma$，必须从回报重新推导。例如终端项按 $\bar\gamma^{T-t}Z(S_T)$ 计权时，单步目标为 $C+\bar\gamma\beta Z+\bar\gamma(1-\beta)v'$。另一些文献把终端结果计在最后一个累积信号的时刻，指数少一位。符号看起来相同，边界约定却不同；比较论文或代码时应先用“一步即停止”验证。
+
+学习答案时四个问题函数固定，TD 更新答案参数。学习问题时，算法还会改变其中一个或多个函数；此时监督对象本身在移动。学会耗时与终点后果，并不自动改进主任务策略。控制器必须明确使用这些预测来比较候选行为，或者通过共享表示受到它们影响。无论哪条路径，都需要保留关闭使用路径的对照。
+
+这也限制了“知识就是 GVF”的用法。GVF 提供一类有经验检验方式的问题语言；有限个准确 GVF 不等于掌握所有未来问题。未被问题集区分的历史、缺乏行为覆盖的策略、已经改变的停止规则，都可能让下游决策失效。
+
+<a id="rlss-gvf-question-existence"></a>
+
+## 问句必须先有有限答案：停止、尺度和兴趣权重
+
+把四个函数写出来，还不能保证问题存在有限答案。考虑每步累计一、永不停止的问句。它完全符合“指定策略、累计信号和延续规则”的接口，但答案是无穷。学习器输出有限数字，不会使原问题变成有穷。
+
+$$
+v(s)=\mathbb E_s\!\left[\sum_{k=1}^{\tau}C_k+Z_\tau\right],\qquad
+|C_k|\leq C_{\max},\ |Z_\tau|\leq Z_{\max},\ \mathbb E_s[\tau]<\infty
+\ \Longrightarrow\ |v(s)|\leq C_{\max}\mathbb E_s[\tau]+Z_{\max}.
+$$
+
+这是充分条件，不是必要条件。仅有“几乎必然最终停止”还不保证有限期望停止时间。若采用累计折扣而非显式随机停止，类似条件是绝对加权回报可积。
+
+常数延续概率 $\gamma<1$、到达后决定是否继续、至少经历一步的约定给 $\mathbb E[\tau]=1/(1-\gamma)$。取 $C=1,Z=0$，答案正是这个数，而不是某个事件发生概率。用事件指示反复累计，得到的是折扣事件计数；只在首次事件停止并设置相应终端信号，才得到另一个“首次到达”问题。单位和停止顺序决定解释。
+
+| 对象 | 它改变什么 | 若改变，原答案还有效吗 |
+| --- | --- | --- |
+| 策略 π、cumulant C、延续 Γ、终端信号 Z | 问句及其真实数值答案 | 一般不再对应同一问句 |
+| Interest i | 哪些起始状态或更新更受重视 | 表格精确目标不因此改写；逼近所得投影可能改变 |
+| λ、步长、优化器 | 怎样从经验估计答案 | 不应偷偷重新定义 cumulant 或停止 |
+| 特征与容量 | 哪些答案能够表示、更新如何共享 | 可能改变逼近误差和稳定性 |
+| 主任务奖励 R | 控制器最终偏好的行为 | 辅助问句不应未经说明替代它 |
+
+因此，interest 不能拿来替换 GVF 四函数中的终端信号。问题定义和答案算法应分开存储。修改 interest 可能通过函数逼近权重改变误差分配，但这与修改世界中要预测的量不同。修改 λ 则改变多步估计方式，不意味着智能体突然要预测另一种感官后果。
+
+一个实用检查是先给每个问句写单位、取值范围和一条可手算轨迹。例如“等待事件的步数”有步数单位；“事件前能量消耗”有能量单位；“截至首次事件的成功指示”介于零与一。范围错误往往能先于学习曲线发现重复计数、终端值双加或多乘一次折扣。
+
+<a id="rlss-gvf-question-variables"></a>
+
+## 从预测到控制：先说明四个问题函数中哪些固定，哪些待求
+
+同一个 GVF 表达式可以描述预测，也可以定义控制子问题。区别不在算法名称，而在未知量。预测把行为和停止规则作为问题的一部分，学习它们的后果。控制则把某些行为或停止选择留作待求变量。构造新问题还要决定哪些后果值得问。三者不可用一个“学习 GVF”概括。
+
+| 问题层次 | 先固定什么 | 待求对象 | 怎样判断正确或有用 |
+| --- | --- | --- | --- |
+| 预测一个问句 | π、Γ、C、Z 与输入语义 | 答案 v 或 q 的参数 | 对给定行为与停止规则检验预测误差 |
+| 求解一个控制子问题 | C、Z 和固定停止规则 | 策略 π 及其价值 | 同一个子问题下比较真实回报 |
+| 同时学习行为和停止 | C、Z、可行策略与停止类 | π 与停止规则 | 包含沿途代价的最优停止/控制目标 |
+| 构造和保留问题 | 主问题及计算、存储预算 | 候选 C、Z、行为类、停止类及其分配 | 预测的下游作用减去取得和维护成本 |
+
+例如固定 $C=-1,Z=0$，只在到达目标 g 时停止，再优化 π，得到期望到达步数最小化。这里仍需存在能以有限期望时间到达 g 的策略。若目标不可达，得到的不是一个应该靠较大步长解决的有限预测问题。若只问当前固定 π 多久到达 g，则是评价，不是求最短路。
+
+特征到达子问题还允许选择何时停止。取 $Z_i(s)=\widehat v_0(s)+\kappa\phi_i(s)$，保留真实奖励作 C。为看清停止的作用，先用无额外折扣的有限停止版本，并固定 $\widehat v_0$ 与特征。若允许在当前状态立即停止，下面是相应最优停止 Bellman 方程。
+
+$$
+W_i(s)=\max\!\left\{Z_i(s),\ \max_a\mathbb E[R_{t+1}+W_i(S_{t+1})\mid s,a]\right\}.
+$$
+
+第一项是不再行动、读取当前终点值。第二项是至少再行动一步。该式需适当的有限价值和停止条件；可无限积累正奖励的循环可能使无折扣问题无界。课程使用的 option 问句通常要求启动后至少行动一步，因而其初始 q 使用继续分支，不能把立即停止的 W 直接冒充同一个 q。
+
+持续平均奖励版本还需重新定义沿途的中心化奖励及基准奖励率。不能仅把上式的折扣符号删掉，就宣布得到平均奖励最优控制。这里的最大化是定义子问题；用什么离策略算法学 π、怎样保证停止，以及表示不断改变时怎样跟踪，仍是分别需要设计的学习环节。
+
+$$
+\widetilde C_{t+1}=C_{t+1}+(1-\Gamma_{t+1})Z(S_{t+1}),\qquad \left.\frac{\partial\widetilde C_{t+1}}{\partial\Gamma_{t+1}}\right|_{C,Z}=-Z(S_{t+1}).
+$$
+
+对固定停止规则，终端值可以折入 cumulant，得到前面三函数 TD 接口。但当 Γ 是待优化变量时，折入后的 cumulant 也随 Γ 改变。若只改 bootstrap 系数而冻结这个合并信号，就已经换了原来的最优停止问题。额外时间折扣存在时，还要保留相应乘子。
+
+因此，学习器应能分别回答三件事：当前问题是什么，当前答案在跟踪哪个问题，当前行为在优化哪个问题。生成一个更容易预测的问句，不等于产生了更有用的知识；把终点奖金设得更大，也不构成主任务性能改善。
 
 <a id="gvf-td"></a>
 
@@ -485,6 +613,40 @@ $m_R^{\rm total}$ 预测未折扣的实际外部奖励之和。时间问题取 c
   1. 5. 汇总所有共享参数方向，再执行参数写入；不要先更新 head 1 的 trunk，再用它计算 head 2 的旧 target。
   1. 6. 若有已完成的 option，更新其模型；规划只查询已记录的行为版本。
   1. 7. 下一动作使用新的参数；若改变问题或 option 规格，显式处理旧答案及其消费者。
+
+<a id="rlss-gvf-model-coordinates"></a>
+
+## d+1 个答案怎样构成模型，为什么问句也必须留在智能体内
+
+固定一个 option o 的内部策略与停止规则，停止时间为 T，状态特征为 $\phi(S)\in\mathbb R^d$。先不另加时间折扣。用 d 个终点问句预测停止时各个特征，再用一个沿途问句预测累计真实奖励。
+
+$$
+m_i^o(s)=\mathbb E_o[\phi_i(S_T)\mid S_t=s],\quad i=1,\ldots,d,\qquad r^o(s)=\mathbb E_o\!\left[\sum_{k=t+1}^{T}R_k\mid S_t=s\right].
+$$
+
+每个 mᵢ 用 C=0、Z=φᵢ，奖励问句用 C=R、Z=0。它们共享同一个 π 和停止规则。d+1 指一个 option 模型的输出数，不是整个 agent 只需要 d+1 个参数或学习器。回报存在有限期望是前提。
+
+$$
+\widehat v_w(s)=w^\top\phi(s)\quad\Longrightarrow\quad \mathbb E_o\!\left[\sum_{k=t+1}^{T}R_k+\widehat v_w(S_T)\mid s\right]=r^o(s)+w^\top m^o(s).
+$$
+
+先预测后果，再用当前 w 对预测后果评分。这个等式不要求奖励与终点独立，也不要求模型对输入是线性的；它要求后续价值对同一组输出特征线性。若用神经网络价值，通常 E[v(φ)]≠v(E[φ])。
+
+若目标带额外时间折扣 $\bar\gamma$，应预测 $r_{\bar\gamma}^o=\mathbb E[\sum_{j=1}^{T-t}\bar\gamma^{j-1}R_{t+j}]$ 和 $m_{\bar\gamma}^o=\mathbb E[\bar\gamma^{T-t}\phi(S_T)]$，不能把未折扣的 m 直接乘同一个固定常数。随机 option 时长必须留在每条样本内计权。已有 GVF→option 模型接口给出了对应的单步学习信号。
+
+手算：两个等概率后果的累计奖励分别为 1、3，终点特征为 (1,0)、(0,2)。于是 $r=2,m=(.5,1)$。取 $w=(4,-1)$，模型 backup 为 $2+4\times.5-1=3$；直接平均两条后果的 $1+4=5$ 和 $3-2=1$，同样得到 3。平均特征不必是任何真实状态，它仍能作为线性价值的期望查询。
+
+| 必须保存的对象 | 为什么仅保存答案权重不够 |
+| --- | --- |
+| 问题函数或其可执行描述：π、Γ、C、Z | 同一个数值可对应完全不同的经验问题 |
+| 问题版本与 option 策略/停止版本 | 问题改变后，旧答案是旧问题的估计，不是新知识 |
+| 终点特征坐标及其版本 | m 的第 i 维与下游 w 的第 i 维必须说同一件事 |
+| 目标策略概率和实际行为概率 | 共享流的离策略校正依赖这两个分布 |
+| 该答案的使用者与取得/维护预算 | 判断是否值得保留，不能只看答案容易学或数值很大 |
+
+固定问题时，算法代码可以隐含保存问句；所有实现都不必复制一套昂贵的描述语言。但若智能体自行更换问题，运行期就必须有可区分的新问句及其语义。一个 head 编号本身不够。只有明确该编号引用哪些信号、策略、停止和特征，学习更新与模型消费者才知道该怎样使用它。
+
+FOAK 的联系由此清楚：从已有答案的使用情况选择候选特征；把“如何到达该特征”写成控制子问题；用得到的 option 提出后果预测；再将预测用于规划。这里的语义接口可以写清，特征选择的长期效用和整个闭环的稳定性却不随之自动解决。下一层架构章节讨论这些并行过程的维护与评价。
 
 <a id="gvf-reward-contract"></a>
 
@@ -768,6 +930,38 @@ $$
 
 本章 $\lambda$ 为常数。若使用状态相关 $\lambda$，下一状态 continuation 中的 $\lambda$ 下标也要按该算法原定义重新核对，不同下标约定对应不同的前向回报与资格迹。GTD 系列牺牲了额外向量与步长调节成本，以处理特定离策略函数逼近问题；它并不总是在有限样本上最快。
 
+<a id="rlss-horde-gq"></a>
+
+## 回到 Horde 的原始更新：GQ 学动作值，不要混同状态值 TDC
+
+原 Horde 为每个问句近似 $q(s,a)=\theta^\top\phi(s,a)$。当前动作已经作为条件给定，只有后继动作按目标策略取期望。因此需要 $\bar\phi_{t+1}=\sum_a\pi(a|S_{t+1})\phi(S_{t+1},a)$。这与本章前面的状态值 TDC 更新不同：状态值预测需要校正当前动作；动作值问句则从给定动作出发。
+
+$$
+\rho_t=\frac{\pi(A_t|S_t)}{b(A_t|S_t)},\quad
+\delta_t=C_{t+1}+(1-\Gamma_{t+1})Z_{t+1}+\Gamma_{t+1}\theta_t^\top\bar\phi_{t+1}-\theta_t^\top\phi_t,\qquad
+e_t=\phi_t+\Gamma_t\lambda_t\rho_t e_{t-1}.
+$$
+
+原论文的 GQ(λ) 把当前动作比率放在旧迹延续项，不把整个新迹乘 ρ。若 ρ=0，旧迹被切断，当前 φ 仍留下；条件动作值仍可从这次 (s,a) 的真实后果学习。
+
+$$
+\theta_{t+1}=\theta_t+\alpha\left[\delta_te_t-\Gamma_{t+1}(1-\lambda_{t+1})(h_t^\top e_t)\bar\phi_{t+1}\right],\qquad
+h_{t+1}=h_t+\eta\left[\delta_te_t-(h_t^\top\phi_t)\phi_t\right].
+$$
+
+两条更新都使用旧 θ、旧 h 和刚计算的 e。h 是梯度校正的辅助向量。Γ 与 λ 的当前/后继索引不可互换。停止时本步累计量与终端值仍保留，下一价值消失。
+
+固定目标策略、固定线性特征、充分覆盖及算法步长等条件是稳定性分析的一部分。把目标策略每步改成自己的贪心策略，形成控制 demon，是另一个问题；不能直接把固定策略预测定理称为完整 Greedy-GQ 控制保证。多个问句也可以引用彼此的输出，但这会进一步引入移动目标。
+
+**算法：Horde 原动作值问句的 GQ 调度。状态值 TDC 使用本章另外给出的递推，不能仅把算法标签改成 GQ。**
+
+1. 1. 保存同一真实转移与行为动作概率 b(a|s)。
+1. 2. 对每个 demon 读取自己的 π、C、Γ、Z、λ。
+1. 3. 枚举后继动作，计算目标策略下的平均后继特征。
+1. 4. 用旧答案和旧辅助权重算 δ 与新迹 e。
+1. 5. 先保存 Δθ、Δh，再同时应用两条更新。
+1. 6. 世界只前进一步；demon 的伪终止不重置世界。
+
 <a id="gvf-etd"></a>
 
 ## 10 · Emphatic TD 与状态加权
@@ -982,6 +1176,24 @@ python3 -m unittest discover -s tests -p test_streaming_composition.py
 
 实验可逐步放宽假设：先固定表示与问题，再分别改变策略覆盖、噪声、预测时域或特征混叠，最后考虑表示与控制的联合学习。预测精度衡量回答问题的能力；后续控制任务的样本需求衡量这些预测的用途。两类指标应分别报告。
 
+<a id="rlss-horde-evidence"></a>
+
+## Horde 原实验回答了什么，尚未回答什么
+
+Horde 的实质不是给一个网络增加许多输出头。它让多个具备不同问句与目标策略的学习器，使用同一条行为经验流。原论文以固定稀疏特征和梯度 TD 类算法处理离策略学习。问句是否有经验意义、是否获得行为覆盖、更新是否稳定、答案是否帮助控制，仍是四个不同问题。
+
+| 原论文实验 | 学习和检验的安排 | 可以支持的结论 |
+| --- | --- | --- |
+| 碰撞时间与停止时间预测 | 指定策略，步数 cumulant，事件停止；停止时间实验先后改变接触表面 | 同一语义的预测可从传感器数据学习并适应后果变化 |
+| 八个传感器目标的控制 demons | 同一随机旋转行为流训练；另行接管控制评估各 demon | 无需逐个执行其目标策略，也能从覆盖相关动作的流中学习不同控制行为 |
+| 追光控制 | 保存约 8.5 小时行为数据，离线两遍训练，再运行目标策略评估 | 离策略经验可以产生不同于行为策略的能力；这项具体实验不是严格单遍流式训练 |
+
+论文中的“每步时间与内存固定”是相对于已固定的特征数、demon 数和动作集合而言，不是说增加问句没有成本。一个答案向量、一个辅助校正向量和一个资格迹已需要多份参数规模的内存；动作期望还要支付动作枚举成本。固定总计算下，问句的数量、跨度和稳定化机制必须共同预算。
+
+原论文没有完成一般问题发现，也没有证明任意共享非线性表征下所有 demons 都稳定。共享同一个固定特征输入，不等于共享一套会被全部损失共同修改的神经编码器。后者引入目标干扰、梯度陈旧和多个问题的采样权重；需要另作消融。
+
+先把实验拆开：在表格环形世界上验证不同 π 确实得到不同答案；在 Baird 型线性反例上验证更新稳定性；再让多个头共享可变表示；最后把预测接入控制器并测原始奖励与额外资源。前两项成功不能替代后两项。已有环形 nexting 教学实验只用于语义与时序诊断，不是原机器人的复现。
+
 <a id="lesson-branches"></a>
 
 ## 14 · 预测方法的关系
@@ -1148,13 +1360,14 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
 - [When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-self-prediction-auxiliary-tasks)
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
 - [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+- [The Ungrounded Alignment Problem](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ungrounded-alignment)
 
 #### 时间信用分配与离策略多步学习
 
@@ -1164,12 +1377,13 @@ $$
 
 - [Deep Reinforcement Learning with Gradient Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-deep-gradient-eligibility-traces)
 - [Expected Eligibility Traces](https://yingwen.io/zh/continual-rl/research/#recent-expected-eligibility-traces)
+- [Per-decision Multi-step Temporal Difference Learning with Control Variates](https://yingwen.io/zh/continual-rl/research/#recent-openmind-control-variates)
 
 #### 后果模型、知识保留与规划
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [The Value Equivalence Principle for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-value-equivalence-models)
 
@@ -1185,7 +1399,7 @@ $$
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
 - [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
@@ -1487,6 +1701,73 @@ Value equivalence 以策略集合和函数集合定义模型规格：模型对�
 - [NeurIPS 2020 原文](https://papers.nips.cc/paper/2020/hash/3bb585ea00014b0e3ebe4c6dd165a358-Abstract.html)：VE 依赖策略与函数集合。
 - [Proper Value Equivalence · NeurIPS 2021](https://proceedings.neurips.cc/paper/2021/hash/400e5e6a7ce0c754f281525fae75a873-Abstract.html)：多步算子、固定点与规划充分性；不是任意潜在网络的保证。
 
+### Per-decision Multi-step Temporal Difference Learning with Control Variates
+
+Kristopher De Asis, Richard S. Sutton
+
+UAI 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+怎样保留长路径中的新奖励信息，同时减去已经可预测的采样波动？
+
+#### 关键机制
+
+在逐决策重要性采样回报中加入条件均值为零的控制变量。期望动作价值承担可预测部分，重要性比率仍作用于真实回报相对当前预测的残差。
+
+#### 证据
+
+原文统一讨论动作和状态价值的多步目标，并连接 Expected Sarsa、Tree-backup 与 Retrace。教材枚举一个两动作例子的期望和方差。
+
+#### 条件与限制
+
+无新增偏差不代表没有 bootstrap 误差，也不保证任意差预测都降低方差。此为研究者加入 Openmind 前的工作。
+
+#### 阅读与实验
+
+保持采样策略、价值函数与路径长度不变，分别计算控制变量前后的均值和方差；随后再讨论神经网络参数变化。
+
+#### 原文与相关入口
+
+- [原论文](https://arxiv.org/html/1807.01830v1)：重点读动作价值回报、条件均值与 λ-return 的关系。
+
+### The Ungrounded Alignment Problem
+
+Marc Pickett, Aakash Kumar Nain, Joseph Modayil, Llion Jones
+
+ICDL 2025（预印本 2024） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+即使目标已经写明，智能体怎样知道其中的概念对应哪一段未知感知输入？
+
+#### 关键机制
+
+利用固定的字符转移关系知识，对未知图像编码进行无标签对齐。共享编码器与对比学习把感知模式连接到既有关系结构。
+
+#### 证据
+
+原文在置换像素的字符序列上检验触发词识别。这隔离了概念指代与感知编码的问题，而非直接训练一般 RL 控制器。
+
+#### 条件与限制
+
+预先给定的关系、重启训练与阈值选择是实验条件。受控接地任务的准确率不能当作通用价值对齐或单生命期适应的证据。
+
+#### 阅读与实验
+
+分别改变感知编码和事件关系，区分事件识别失败、预测失败与奖励偏好错误。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/html/2408.04242v1)：问题定义、关系传播与训练条件。
+- [机构发表目录](https://www.openmindresearch.org/research)：列为 ICDL 2025。
+
+#### 作者代码
+
+[原论文给出的作者仓库。](https://github.com/EmergenceAI/babybeaver)
+
+作者字符接地任务实现；不是流式 actor–critic 代码。
+
 
 <a id="chapter-code"></a>
 
@@ -1517,7 +1798,7 @@ python3 examples/gvf_lab.py test
 
 - [McLeod et al. · Continual Auxiliary Task Learning（NeurIPS 2021）](https://papers.nips.cc/paper/2021/hash/68331ff0427b551b68e911eebe35233b-Abstract.html)：研究行为策略与辅助预测共同学习时的非平稳性，以及 successor features 的作用。
 
-- [Modayil & Abbas · Towards model-free RL algorithms that scale well with unstructured data（2023）](https://arxiv.org/html/2311.02215v1)：Nibbler 的问题选择、局部输入选择与特征复用；算法 1–5 给出完整更新次序。
+- [Modayil & Abbas — Nibbler（2023）](https://arxiv.org/html/2311.02215v1)：选择 GVF 与局部输入，再将特征用于主任务；合成组合问题上的规模实验。
 
 - [Voelcker et al. · When does Self-Prediction Help?（RLC 2024）](https://openreview.net/forum?id=izAJ8sHF5q)：比较观测重构与潜在自预测在独立表示学习和辅助 TD 学习中的不同作用。
 
@@ -1529,7 +1810,7 @@ python3 examples/gvf_lab.py test
 
 - [Sutton, Mahmood & White · An Emphatic Approach (2016)](https://www.jmlr.org/papers/v17/14-488.html)：interest、follow-on、emphasis 与线性稳定性；随机收敛需相应附加条件。
 
-- [Sutton & Barto · 第 9、11、12 章](http://incompleteideas.net/book/the-book-2nd.html)：函数逼近、离策略预测、资格迹的完整教材背景。
+- [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：第 7、8、12、13 章；期望备份、资格迹、策略梯度与算法条件。
 
 - [RLPark · GTDLambda.java 固定版本](https://github.com/rlpark/rlpark/blob/2baf7389c75a31831e5b1a68539771c1947b7f09/rlpark.plugin.rltoys/jvsrc/rlpark/plugin/rltoys/algorithms/predictions/td/GTDLambda.java)：对照 update 中 $\gamma$t / $\gamma$t+1、$\rho$、correction 与旧辅助参数。Java 使用 v 为主权重、w 为辅助权重；本章使用 w、h。
 
@@ -1538,6 +1819,10 @@ python3 examples/gvf_lab.py test
 - [GVFN · 作者代码](https://github.com/mkschleg/GVFN)：问题参与递归状态之后，需要额外处理表示与预测依赖。
 
 - [GVFHordes.jl · 作者问题库](https://github.com/mkschleg/GVFHordes.jl)：按 cumulant / discount / policy 组织问题接口；可与本页 question 函数逐项对应。
+
+- [Sutton et al. — Horde（AAMAS 2011）](https://josephmodayil.com/papers/horde-final.pdf)：作者存档；多问题、共享经验、离策略实时学习。
+
+- [Sutton et al. — Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://arxiv.org/abs/2202.03466)：第 2–4 节，GVF 问题、option 解与模型后果。注意终端结果的折扣位置与本文随机停止规范的区别。
 
 - [Janjua et al. · GVFs in the Real World · Machine Learning](https://link.springer.com/article/10.1007/s10994-023-06413-x)：观测记忆、TD与n-step、离线初始化及按时间顺序的模拟部署；不是真实闭环工厂控制验证。
 
@@ -1558,3 +1843,9 @@ python3 examples/gvf_lab.py test
 - [Barreto et al. · Successor Features for Transfer in Reinforcement Learning](https://arxiv.org/abs/1606.05312)：有限奖励特征、固定策略 SF 与 GPI 的经典机制桥梁。
 
 - [Touati & Ollivier · Learning One Representation to Optimize All Rewards](https://arxiv.org/abs/2103.07945)：FB 表示的理论出发点；探索/经验覆盖、近似误差及奖励查询约定。
+
+- [Modayil, White & Sutton — Multi-timescale Nexting](https://arxiv.org/abs/1112.1133)：早期预印本 2011；期刊版 Adaptive Behavior 2014。多尺度传感器预测的真实机器人证据。
+
+- [Sutton et al. · Horde（AAMAS 2011）](https://www.ifaamas.org/Proceedings/aamas2011/papers/A6_R70.pdf)：§2–4 区分问句函数和答案函数；§5.1–5.3 明确预测、并行控制及两遍离线追光实验协议。
+
+- [Wan et al. · Planning with Expectation Models](https://www.ijcai.org/proceedings/2019/506)：期望模型与线性后续价值的配合条件。本文 d+1 问句接口还参考 Sutton 原始 GVF/GVF-EQ 课件，严格区分预测问句、控制子问题和问题构造。

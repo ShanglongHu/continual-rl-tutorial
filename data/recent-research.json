@@ -204,9 +204,9 @@
       ],
       "question": "学到一个能到达子目标的技能之后，为什么它仍可能不适合主任务规划？",
       "mechanism": "STOMP 把子任务、option、模型和规划连起来。子任务保留原任务的路径奖励，并用带有特征偏好的终止价值表达目标；学习得到策略和终止规则后，再预测该行为的累计奖励与折扣终点。这样，技能不会因为只追求到达子目标而忽略途中代价。",
-      "evidence": "论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。",
-      "limits": "终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。",
-      "lesson": "在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。",
+      "evidence": "论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。",
+      "limits": "这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。",
+      "lesson": "先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。",
       "relation": "enabling-method",
       "sources": [
         {
@@ -589,8 +589,8 @@
       "question": "一个长期训练的网络如何保留继续形成新特征的能力？",
       "mechanism": "Continual Backpropagation 在梯度学习之外持续生成并测试特征。它估计单元的效用和成熟度，少量替换低效用的成熟单元，并协调新单元的输入、输出和相关状态。维护新的可学习方向是一个持续过程，而不是等到任务切换后整体重启。",
       "evidence": "论文在长序列监督学习与强化学习问题中展示可塑性损失，并检验特征替换的作用。作者仓库包含 generate-and-test 与优化器状态处理。",
-      "limits": "有限序列上的学习保持不保证无限生命中的任意适应。替换率、效用定义与成熟度条件仍需选择；新任务学习速度和旧能力保留必须分开测量。",
-      "lesson": "逐项消融“成熟度筛选”“效用筛选”“随机替换”。比较相同替换预算，检验收益究竟来自定向回收还是一般参数扰动。",
+      "limits": "原文明确说明，其效用主要考虑当前数据，CBP 并不解决遗忘。对新数据持续学得动与旧功能仍被保留是不同结果；有限长序列也不保证无限生命中的任意适应。替换率、效用和成熟度仍需选择。",
+      "lesson": "在同一替换预算下消融成熟度、效用与随机替换，先检验新目标学习。随后让旧情境返回，测被回收功能的损失；若再用旧功能代价约束回收，应作为新增机制检验，不能把收益归给原始 CBP。",
       "relation": "direct-crl",
       "sources": [
         {
@@ -2326,6 +2326,291 @@
         "scope": "官方视频表征与动作条件模型；数据、机器人部署条件与检查点分别核验。",
         "provenance": "Meta FAIR 官方仓库；首稿模型与后续版本需按配置区分。"
       }
+    },
+    {
+      "id": "openmind-metaoptimize",
+      "title": "MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters",
+      "year": 2025,
+      "venue": "ICML 2025",
+      "authors": [
+        "Arsalan Sharifnassab",
+        "Saber Salehkaleybar",
+        "Richard S. Sutton"
+      ],
+      "chapterIds": [
+        "meta",
+        "streaming"
+      ],
+      "relation": "enabling-method",
+      "question": "怎样根据后来真正发生的损失，评价过去采用的步长，而不预知未来？",
+      "mechanism": "先写未来损失的元目标，再以历史敏感度建立因果后向更新。优化器状态也进入递推。完整联合敏感度、分块尺度及 Hessian-free 近似承担不同计算代价。",
+      "evidence": "正式论文包含静态图像、语言建模与非平稳 CIFAR100 实验；部分近似可接近精心选择的学习率计划。分块步长不在所有实验中优于标量版本。",
+      "limits": "这些实验主要检验优化与监督学习，不能自动推出持续 actor–critic 的回报改善。元优化器仍有步长和结构选择；元目标折扣也不是环境回报折扣。",
+      "lesson": "先在元学习章手算一次步长对后续误差的影响，再对照作者代码辨认内层状态、元状态和被删去的导数路径。",
+      "sources": [
+        {
+          "title": "ICML 正式论文",
+          "url": "https://proceedings.mlr.press/v267/sharifnassab25a.html",
+          "note": "正式年份为 2025；2024 是早期预印本年份。"
+        },
+        {
+          "title": "定稿推导与实验",
+          "url": "https://arxiv.org/html/2402.02342v6",
+          "note": "未来元目标、后向代理及多种计算近似。"
+        }
+      ],
+      "code": {
+        "url": "https://github.com/sabersalehk/MetaOptimize",
+        "scope": "原作者提供的优化器组合与实验实现；不同配置不是同一条更新规则。",
+        "provenance": "正式论文链接的作者仓库。"
+      }
+    },
+    {
+      "id": "openmind-episodic-differential",
+      "title": "Extending Differential Temporal Difference Methods for Episodic Problems",
+      "year": 2026,
+      "venue": "RLC 2026 / RLJ",
+      "authors": [
+        "Kris De Asis",
+        "Mohamed Elsayed",
+        "J. He"
+      ],
+      "chapterIds": [
+        "average",
+        "value",
+        "streaming"
+      ],
+      "relation": "enabling-method",
+      "question": "中心化怎样加速回合任务的学习，又不因为回合长度不同而改变目标？",
+      "mechanism": "处理终止边界的中心化尾项，再用共享价值偏置重参数化。区分奖励单位的中心与价值单位的偏置，使最终终止的无折扣回合也能使用适当形式。",
+      "evidence": "论文分别研究固定中心化的策略不变性、在线偏置学习的线性 TD 分析，以及流式深度实验。教材给出遗漏终止补偿导致排序翻转的两动作反例。",
+      "limits": "这里沿用原回合目标，不是把目标改成长期平均奖励。线性预测条件不保证非线性控制全局收敛；采样截断也不是自然终止。",
+      "lesson": "计算立即终止和延迟终止两条路径的原始、错误中心化、正确补偿回报。再辨认代码里的偏置、终止分支和更新前 TD 误差。",
+      "sources": [
+        {
+          "title": "RLC 正式记录",
+          "url": "https://rlj.cs.umass.edu/2026/papers/Paper33.html",
+          "note": "问题、保证与实验分别阅读。"
+        },
+        {
+          "title": "原文",
+          "url": "https://arxiv.org/html/2605.04368v1",
+          "note": "终止补偿、共享偏置与回合式扩展。"
+        }
+      ],
+      "code": null
+    },
+    {
+      "id": "openmind-time-discretization",
+      "title": "An Idiosyncrasy of Time-discretization in Reinforcement Learning",
+      "year": 2024,
+      "venue": "RLC 2024 / RLJ",
+      "authors": [
+        "Kris De Asis",
+        "Richard S. Sutton"
+      ],
+      "chapterIds": [
+        "streaming",
+        "objectives",
+        "average"
+      ],
+      "relation": "enabling-method",
+      "question": "同样的物理奖励流，为什么会因奖励和折扣放在区间的不同位置而得到不同目标？",
+      "mechanism": "从连续时间回报的右端点近似出发，让区间奖励与后继价值按到达时间共同折扣。固定间隔时只差一个比例，不等间隔时这个比例一般无法提出求和。",
+      "evidence": "原文给出时间离散化分析与实验。教材用恒定奖励率的两段时间计算，比较左右端点近似与精确积分。",
+      "limits": "奖励率采样与已经积分的区间奖励不同。该修正不能消除动作延迟或低采样率遗漏事件，也不是任意 SMDP 接口都应照搬的公式。",
+      "lesson": "固定每秒的目标而非每步折扣，再改变采样周期及抖动。报告积分误差、每秒更新次数和控制收益。",
+      "sources": [
+        {
+          "title": "RLC 正式记录",
+          "url": "https://rlj.cs.umass.edu/2024/papers/Paper164.html",
+          "note": "正式出版入口。"
+        },
+        {
+          "title": "原文推导",
+          "url": "https://arxiv.org/html/2406.14951v2",
+          "note": "式 7 与不均匀时间步的回报定义。"
+        }
+      ],
+      "code": null
+    },
+    {
+      "id": "openmind-control-variates",
+      "title": "Per-decision Multi-step Temporal Difference Learning with Control Variates",
+      "year": 2018,
+      "venue": "UAI 2018",
+      "authors": [
+        "Kristopher De Asis",
+        "Richard S. Sutton"
+      ],
+      "chapterIds": [
+        "credit",
+        "value",
+        "gvf"
+      ],
+      "relation": "enabling-method",
+      "question": "怎样保留长路径中的新奖励信息，同时减去已经可预测的采样波动？",
+      "mechanism": "在逐决策重要性采样回报中加入条件均值为零的控制变量。期望动作价值承担可预测部分，重要性比率仍作用于真实回报相对当前预测的残差。",
+      "evidence": "原文统一讨论动作和状态价值的多步目标，并连接 Expected Sarsa、Tree-backup 与 Retrace。教材枚举一个两动作例子的期望和方差。",
+      "limits": "无新增偏差不代表没有 bootstrap 误差，也不保证任意差预测都降低方差。此为研究者加入 Openmind 前的工作。",
+      "lesson": "保持采样策略、价值函数与路径长度不变，分别计算控制变量前后的均值和方差；随后再讨论神经网络参数变化。",
+      "sources": [
+        {
+          "title": "原论文",
+          "url": "https://arxiv.org/html/1807.01830v1",
+          "note": "重点读动作价值回报、条件均值与 λ-return 的关系。"
+        }
+      ],
+      "code": null
+    },
+    {
+      "id": "openmind-artifacts-memory",
+      "title": "Artifacts as Memory Beyond the Agent Boundary",
+      "year": 2026,
+      "venue": "arXiv 预印本",
+      "authors": [
+        "John D. Martin",
+        "Fraser Mince",
+        "Esra’a Saleh",
+        "Amy Pajak"
+      ],
+      "chapterIds": [
+        "state",
+        "architectures"
+      ],
+      "relation": "enabling-method",
+      "question": "完成任务所需的内部记忆，是否也取决于世界能替我们保存哪些历史信息？",
+      "mechanism": "把对过去观测提供确定信息的当前观测定义为 artifact。在特定条件下分析历史缩减，并通过环境中的地标与痕迹研究外部记忆效应。",
+      "evidence": "论文给出关于下一观测信息的形式化结果，以及不同价值函数参数容量的实验。外部痕迹能影响完成任务所需的表示容量。",
+      "limits": "关于观测信息的结论不是任意策略的控制充分性定理。参数数量不等于全部工作内存；论文对回放的计费与严格流式协议不同。",
+      "lesson": "比较历史痕迹、直接动作提示和随机标记；另提出写读有成本的任务，记录内部状态、环境存储和移动时间。",
+      "sources": [
+        {
+          "title": "作者预印本",
+          "url": "https://arxiv.org/html/2604.08756v1",
+          "note": "定义、信息结果、表示容量实验与限制。"
+        },
+        {
+          "title": "John Martin 发表目录",
+          "url": "https://jdmartin86.github.io/research/",
+          "note": "连接其规划、奖励与智能体边界的个人研究脉络。"
+        }
+      ],
+      "code": null
+    },
+    {
+      "id": "openmind-ungrounded-alignment",
+      "title": "The Ungrounded Alignment Problem",
+      "year": 2025,
+      "venue": "ICDL 2025（预印本 2024）",
+      "authors": [
+        "Marc Pickett",
+        "Aakash Kumar Nain",
+        "Joseph Modayil",
+        "Llion Jones"
+      ],
+      "chapterIds": [
+        "reward-design",
+        "gvf",
+        "state"
+      ],
+      "relation": "enabling-method",
+      "question": "即使目标已经写明，智能体怎样知道其中的概念对应哪一段未知感知输入？",
+      "mechanism": "利用固定的字符转移关系知识，对未知图像编码进行无标签对齐。共享编码器与对比学习把感知模式连接到既有关系结构。",
+      "evidence": "原文在置换像素的字符序列上检验触发词识别。这隔离了概念指代与感知编码的问题，而非直接训练一般 RL 控制器。",
+      "limits": "预先给定的关系、重启训练与阈值选择是实验条件。受控接地任务的准确率不能当作通用价值对齐或单生命期适应的证据。",
+      "lesson": "分别改变感知编码和事件关系，区分事件识别失败、预测失败与奖励偏好错误。",
+      "sources": [
+        {
+          "title": "原文",
+          "url": "https://arxiv.org/html/2408.04242v1",
+          "note": "问题定义、关系传播与训练条件。"
+        },
+        {
+          "title": "机构发表目录",
+          "url": "https://www.openmindresearch.org/research",
+          "note": "列为 ICDL 2025。"
+        }
+      ],
+      "code": {
+        "url": "https://github.com/EmergenceAI/babybeaver",
+        "scope": "作者字符接地任务实现；不是流式 actor–critic 代码。",
+        "provenance": "原论文给出的作者仓库。"
+      }
+    },
+    {
+      "id": "openmind-physical-atari",
+      "title": "Physical Atari: A Robust and Accessible Platform for Real-time Reinforcement Learning on Robots",
+      "year": 2026,
+      "venue": "RLC 2026",
+      "authors": [
+        "Khurram Javed",
+        "Joseph Modayil",
+        "Gloria Kennickell",
+        "Richard S. Sutton",
+        "John Carmack"
+      ],
+      "chapterIds": [
+        "architectures",
+        "streaming",
+        "experiments"
+      ],
+      "relation": "evaluation",
+      "question": "在真实延迟、视觉观测与不同身体下，经典游戏任务能提供怎样的控制学习证据？",
+      "mechanism": "机器人实际操纵手柄，摄像头读取运行中的 Atari 游戏。先发动作后学习的调度，分离了身体响应、观测和更新的时间。",
+      "evidence": "平台论文报告六个游戏中多次试验的累计运行与跨身体性能变化；作者公开硬件及学习工程。",
+      "limits": "累计运行时间不是单条终生学习轨迹。作者学习器仍有经验回放和目标网络；平台可靠性与长期知识增长是不同主张。",
+      "lesson": "同时比较环境步数和物理小时下的学习曲线，并记录动作延迟、身体差异与人工干预。",
+      "sources": [
+        {
+          "title": "作者项目与论文",
+          "url": "https://keenagi.com/research/physical-atari/",
+          "note": "项目已从旧 GitHub Pages 地址迁移到 Keen 官方域名。"
+        }
+      ],
+      "code": {
+        "url": "https://github.com/Keen-Technologies/physical-atari-rlc",
+        "scope": "身体搭建、传感控制、智能体和实验脚本。运行需实物设备。",
+        "provenance": "作者团队发布的完整工程。"
+      }
+    },
+    {
+      "id": "openmind-ant-platform",
+      "title": "The Open Ant: A Robot Platform for Reinforcement Learning Research",
+      "year": 2026,
+      "venue": "RLC 2026",
+      "authors": [
+        "Elena Sorina Lupu",
+        "Patrick Spieler",
+        "Khurram Javed",
+        "Kris De Asis",
+        "John D. Martin",
+        "Martha Steenstrup",
+        "Joseph Modayil"
+      ],
+      "chapterIds": [
+        "architectures",
+        "streaming",
+        "experiments"
+      ],
+      "relation": "evaluation",
+      "question": "能否在有限场地中直接从身体经验学习，并明确比较仿真、实机和维护条件？",
+      "mechanism": "开放硬件四足平台配合模拟器、传感接口和学习器。越界后切换目标方向，使任务无需每走到边界就结束回合。",
+      "evidence": "论文比较 SARSA(λ) 与 SAC 的实机学习，给出模拟—实机对照。公开工程包含身体设计、组装演示和运行入口。",
+      "limits": "缆线仍可能需要人工解缠。两学习器的动作及经验协议不同；真机运行、无回合任务与无人维护的持续学习不能混称。",
+      "lesson": "先列状态与动作权限，再核对时间戳、奖励方向和恢复记录。用同一真实时间预算检验新增预测或规划是否值得其计算成本。",
+      "sources": [
+        {
+          "title": "原文",
+          "url": "https://arxiv.org/abs/2607.18488",
+          "note": "平台、任务、实机实验与局限。"
+        }
+      ],
+      "code": {
+        "url": "https://github.com/Openmind-Research-Institute/open-ant",
+        "scope": "硬件、MuJoCo 模拟、SARSA/SAC 与主控制入口。",
+        "provenance": "Openmind 官方工程仓库。"
+      }
     }
   ],
   "researchBranches": [
@@ -2346,9 +2631,11 @@
         "memoroids-sequence-learning",
         "streaming-rtu-rtrl-2026",
         "zero-shot-forward-backward",
-        "successor-flow-features"
+        "successor-flow-features",
+        "openmind-artifacts-memory",
+        "openmind-ungrounded-alignment"
       ],
-      "distinction": "状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。"
+      "distinction": "给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。"
     },
     {
       "id": "temporal-credit-and-correction",
@@ -2370,7 +2657,8 @@
         "vtrace-impala",
         "lambda-greedy",
         "streaming-rtu-rtrl-2026",
-        "memoroids-sequence-learning"
+        "memoroids-sequence-learning",
+        "openmind-control-variates"
       ],
       "distinction": "前向回报定义目标，后向迹组织计算。离策略修正、条件期望迹、梯度目标和递归敏感度分别改变不同对象；需先固定参数时序与采样条件，再讨论深度及持续控制。"
     },
@@ -2397,7 +2685,7 @@
         "morefree-reset-free-models",
         "cpsrl-continuing-exploration"
       ],
-      "distinction": "Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。"
+      "distinction": "教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。"
     },
     {
       "id": "models-and-planning",
@@ -2422,7 +2710,7 @@
         "vjepa2-action-conditioned",
         "morefree-reset-free-models"
       ],
-      "distinction": "模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。"
+      "distinction": "给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。"
     },
     {
       "id": "streaming-learning-rules",
@@ -2441,7 +2729,8 @@
         "deep-gradient-eligibility-traces",
         "real-time-trace-units",
         "streaming-rtu-rtrl-2026",
-        "upgd-utility-protection"
+        "upgd-utility-protection",
+        "openmind-time-discretization"
       ],
       "distinction": "流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。"
     },
@@ -2461,7 +2750,8 @@
         "reward-centering-discounted",
         "continuing-task-deep-study",
         "cpsrl-continuing-exploration",
-        "morefree-reset-free-models"
+        "morefree-reset-free-models",
+        "openmind-episodic-differential"
       ],
       "distinction": "平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。"
     },
@@ -2506,7 +2796,8 @@
         "intentional-updates",
         "trac-online-regularization",
         "meta-algorithm-search-comparison",
-        "lambda-greedy"
+        "lambda-greedy",
+        "openmind-metaoptimize"
       ],
       "distinction": "在线步长元梯度、跨任务算法发现、知识整合与局部更新控制并非同一设定。逐项写清智能体内部的更新、设计者的预训练和调参，以及测试时仍能变化的量，才能判断真正的适应来自哪里。"
     },
@@ -2527,7 +2818,9 @@
         "revisiting-streaming-adam",
         "continuing-task-deep-study",
         "meta-algorithm-search-comparison",
-        "memoroids-sequence-learning"
+        "memoroids-sequence-learning",
+        "openmind-physical-atari",
+        "openmind-ant-platform"
       ],
       "distinction": "离线固定数据、已知任务序列、持续动态世界和预训练模型适配具有不同资源与信息。需要记录任务边界、未来信息、重置、预训练、数据访问和总计算，而不是把所有 benchmark 分数放进同一张排名表。"
     },
@@ -2552,7 +2845,7 @@
         "value-equivalence-models",
         "successor-flow-features"
       ],
-      "distinction": "形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。"
+      "distinction": "形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。"
     }
   ]
 }

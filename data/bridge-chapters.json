@@ -248,17 +248,30 @@
           "blocks": [
             {
               "kind": "p",
-              "text": "Farebrother 等人在 Stop Regressing（ICML 2024）中系统研究分类损失训练价值函数。Histogram Loss 的思想来自 Imani 与 White 的早期工作。这里的目标仍可是一维 TD 标量 y；变化的是网络输出与损失。"
+              "text": "假定本次 TD 标签 y 已经算好并被冻结。网络可以直接输出一个数，也可以输出若干有序区间的概率，再用这些概率读出一个数。两种表示可以服务同一价值问题，却让相同误差通过不同的输出坐标进入网络。现在只改变这一层，不改变行为策略或奖励目标。"
             },
             {
               "kind": "math",
-              "tex": "p_i(y)=\\frac{\\Phi((b_{i+1}-y)/\\sigma)-\\Phi((b_i-y)/\\sigma)}{\\Phi((b_m-y)/\\sigma)-\\Phi((b_0-y)/\\sigma)},\\quad \\widehat p_i=\\operatorname{softmax}(\\ell)_i,\\quad L=-\\sum_{i=0}^{m-1}p_i(y)\\log\\widehat p_i.",
-              "explain": "$b_0,\\ldots,b_m$ 是有限区间的边界，$\\Phi$ 是标准正态 CDF，$\\sigma$ 控制平滑。分母把区间内概率归一化。目标分布在这次更新中停止梯度。"
+              "tex": "b_0<\\cdots<b_m,\\qquad z_i=(b_i+b_{i+1})/2,\\qquad \\widehat p_i=\\operatorname{softmax}(\\ell)_i,\\qquad Q_\\theta(s,a)=\\sum_{i=0}^{m-1}z_i\\widehat p_i(s,a).",
+              "explain": "边界 b 划分有限区间，中心 z 是各类别读出的数值。softmax 保证预测质量非负且和为一，因此标量读出位于最小与最大中心之间。还需定义标量标签 y 应当变成什么类别标签。"
+            },
+            {
+              "kind": "p",
+              "text": "把全部质量交给包含 y 的一个区间，是最直接的编码。但在区间边界两侧，两个几乎相等的标签会突然变成不同的 one-hot 向量。Histogram Loss 让邻近标签共享邻近区间的质量；HL-Gauss 选择以 y 为中心、宽度由设计者规定的高斯核。"
             },
             {
               "kind": "math",
-              "tex": "Q_\\theta(s,a)=\\sum_{i=0}^{m-1}\\frac{b_i+b_{i+1}}2\\widehat p_i(s,a),\\qquad \\frac{\\partial L}{\\partial\\ell_i}=\\widehat p_i-p_i.",
-              "explain": "每个 logit 的损失导数被限制在 −1 与 1 之间。这不意味着整网梯度范数也被限制，因为还要乘网络 Jacobian。"
+              "tex": "p_i(y)=\\frac{\\displaystyle\\int_{b_i}^{b_{i+1}}\\exp[-(u-y)^2/(2\\sigma^2)]\\,\\mathrm du}{\\displaystyle\\int_{b_0}^{b_m}\\exp[-(u-y)^2/(2\\sigma^2)]\\,\\mathrm du}=\\frac{\\Phi((b_{i+1}-y)/\\sigma)-\\Phi((b_i-y)/\\sigma)}{\\Phi((b_m-y)/\\sigma)-\\Phi((b_0-y)/\\sigma)},\\qquad\\sigma>0.",
+              "explain": "先对每个区间积分，再按保留在整个有限区间内的质量归一化。Φ 是标准正态 CDF。σ 决定标签平滑，而不是从环境估计出的回报标准差；有限区间远离 y 时，还需处理分母很小造成的数值问题。"
+            },
+            {
+              "kind": "math",
+              "tex": "L(\\theta;y)=-\\sum_i p_i(y)\\log\\widehat p_i,\\qquad \\frac{\\partial L}{\\partial\\ell_i}=\\widehat p_i-p_i(y),\\qquad \\nabla_\\theta L=\\sum_i[\\widehat p_i-p_i(y)]\\nabla_\\theta\\ell_i.",
+              "explain": "当前反传固定标签概率 p(y)。交叉熵先在 logit 坐标上给出 −1 到 1 之间的误差信号，再乘网络 Jacobian；有界的是每个输出坐标的导数，而不是整个参数梯度。"
+            },
+            {
+              "kind": "p",
+              "text": "取区间边界 $(0,1,2)$、标签 $y=1$。对任意正的 σ，对称性给出标签概率 $(.5,.5)$，中心读出仍为1。即使环境结果完全确定，编码熵也等于 $\\log2$。若改成 $y=0$，两个中心仍为 .5 和1.5，任何概率组合的读出都至少为 .5；因此有限支撑和离散中心已经改变了能精确表示的标签范围。"
             },
             {
               "kind": "p",
@@ -266,7 +279,7 @@
             },
             {
               "kind": "p",
-              "text": "HL-Gauss 的平滑标签不是环境回报的真实条件分布。它与 C51 的分布 Bellman 目标不同，不能把输出熵直接当作回报风险或认知不确定性。有限支撑与离散化还会引入偏差；目标接近边界或远离支撑时尤其需要检查。"
+              "text": "Farebrother 等人的 Stop Regressing（ICML 2024）将这类标签编码用于价值学习，Histogram Loss 的思想来自 Imani 与 White 的早期工作。它与 C51 的区别在构造目标的那一步：这里先得到一个标量 y，再人为展开为平滑标签；C51 传播的是后续随机回报分布。两者都可用交叉熵，所预测的内容却不同。"
             },
             {
               "kind": "p",
@@ -341,9 +354,17 @@
               ]
             },
             {
+              "kind": "p",
+              "text": "先固定参数 w，并从行为策略的平稳分布 $d_b$ 抽取状态，再按行为策略和环境抽取一步转移。令 $\\phi=\\phi(S)$、$\\phi'=\\phi(S')$，且行为策略覆盖目标策略的动作。动作比率 $\\rho=\\pi(A\\mid S)/b(A\\mid S)$ 将下一步后果改为目标策略的条件分布，但当前状态仍按 $d_b$ 加权。由此得到平均更新场："
+            },
+            {
               "kind": "math",
-              "tex": "\\mathbb E[\\Delta w]/\\alpha=b-Aw,\\qquad A=\\Phi^\\top D_b(I-\\gamma P_\\pi)\\Phi.",
-              "explain": "在线性 TD 中可以直接检查这个期望动力系统。若某个方向的动力学不稳定，减小正步长可能只让增长变慢，而不是从根本上修复它。"
+              "tex": "h(w)=\\mathbb E_{d_b,b,P}\\!\\left[\\rho(R+\\gamma\\phi'^\\top w-\\phi^\\top w)\\phi\\right]=\\mathbf b-Aw,\\qquad \\mathbf b=\\Phi^\\top D_b r_\\pi,\\qquad A=\\Phi^\\top D_b(I-\\gamma P_\\pi)\\Phi.",
+              "explain": "$\\Phi$ 的行是固定状态特征，$D_b$ 是行为状态权重，粗体 $\\mathbf b$ 是奖励向量，不是行为策略。这里的期望始终把 w 当作固定输入；实际在线参数与当前状态可能相关，不能把它直接写成任意时刻的无条件期望等式。"
+            },
+            {
+              "kind": "p",
+              "text": "平均场把问题转成线性动力系统。若 w* 满足 Aw*=b，则冻结分布的期望迭代使误差变为 (I−αA)(w−w*)。A 若有负实部特征值，相应的离散更新模长在任意正 α 下都大于一。减小步长只减慢该方向的增长，不能改变其不稳定性。A 的特征值都具有正实部时，小步长下的这个平均迭代才稳定；随机在线收敛还需要另查采样和步长条件。"
             },
             {
               "kind": "p",
@@ -374,17 +395,39 @@
           "blocks": [
             {
               "kind": "p",
-              "text": "固定线性表示的梯度是固定特征 $x(s)$。非线性表示的梯度 $\\phi_\\theta(s)=\\nabla v_\\theta(s)$ 随参数改变。因此固定线性分析中的特征矩阵、投影空间和条件数，都可能随学习改变。仅把线性公式里的 $x$ 替换成网络梯度，不会自动继承原来的证明。"
+              "text": "前面的残差梯度为 Bellman 方程选择了一个可以下降的误差，但它一般需要双采样，而且选择的近似未必与 TD 相同。另一条路线是保留 TD 的零期望更新条件，再寻找对应的标量目标。固定线性特征时，这导向投影 Bellman 误差。网络的表示会改变，投影又应如何定义？"
+            },
+            {
+              "kind": "p",
+              "text": "继续固定策略、状态权重 $d$ 和一步后果分布，假定预测关于参数可两次连续微分。将全部状态预测排成向量 $v_\\theta$，令 $\\Phi_\\theta$ 的第 s 行为 $\\phi_\\theta(s)^\\top=\\nabla v_\\theta(s)^\\top$。小的参数变化只能产生 $\\Delta v\\approx\\Phi_\\theta\\Delta\\theta$ 这样的价值变化。这些一阶可实现的方向构成当前的切空间；它随参数移动，而固定线性特征的空间不动。"
             },
             {
               "kind": "math",
-              "tex": "b_\\theta=\\mathbb E[\\delta_\\theta\\phi_\\theta],\\quad C_\\theta=\\mathbb E[\\phi_\\theta\\phi_\\theta^\\top],\\quad J_{\\rm tangent}(\\theta)=\\tfrac12 b_\\theta^\\top C_\\theta^{-1}b_\\theta.",
-              "explain": "当梯度协方差可逆时，可以把 Bellman 残差投影到当前梯度张成的切空间。这个局部投影目标不是“直接把真实价值投影到整个神经网络函数族”。"
+              "tex": "e_\\theta=T_\\pi v_\\theta-v_\\theta,\\qquad u_\\theta=\\arg\\min_u\\tfrac12\\|e_\\theta-\\Phi_\\theta u\\|_D^2,\\qquad D=\\operatorname{diag}(d).",
+              "explain": "先固定 θ，问 Bellman 残差中哪一部分可以由当前的一阶价值变化表示。这里拟合的是残差向量，不是真实价值；u 是这项投影的系数，不是已经决定要执行的参数步长。"
             },
             {
               "kind": "math",
-              "tex": "u_\\theta=C_\\theta^{-1}b_\\theta,\\qquad -\\nabla J_{\\rm tangent}=\\mathbb E[(\\phi-\\gamma\\phi')\\phi^\\top u_\\theta-(\\delta-\\phi^\\top u_\\theta)\\nabla^2v_\\theta(S)u_\\theta].",
-              "explain": "对投影本身求导会出现 Hessian-vector product。固定线性特征的二阶导数为零，因此没有这一项。这里的期望使用与目标定义一致的固定采样分布及目标策略后果。"
+              "tex": "C_\\theta u_\\theta=b_\\theta,\\qquad C_\\theta=\\Phi_\\theta^\\top D\\Phi_\\theta=\\mathbb E[\\phi\\phi^\\top],\\qquad b_\\theta=\\Phi_\\theta^\\top De_\\theta=\\mathbb E[\\delta\\phi].",
+              "explain": "对投影的平方误差关于 u 求导，得到正规方程。δ 的条件均值就是相应状态的 Bellman 残差，所以最后一个期望可用一步后果估计。以下假定 C 在所讨论邻域内可逆。"
+            },
+            {
+              "kind": "math",
+              "tex": "J_{\\rm tangent}(\\theta)=\\tfrac12\\|\\Phi_\\theta u_\\theta\\|_D^2=\\tfrac12u_\\theta^\\top C_\\theta u_\\theta=\\tfrac12b_\\theta^\\top C_\\theta^{-1}b_\\theta.",
+              "explain": "目标是投影残差的长度，不是刚才用来寻找投影系数的拟合误差。它为零恰好意味着 b 为零，即普通 TD 的平均更新为零；尚未被表示的残差仍可能存在。"
+            },
+            {
+              "kind": "p",
+              "text": "现在才让 θ 改变。它既改变残差，也改变可实现的方向，因此 $b_\\theta$ 和 $C_\\theta$ 都要微分。由逆矩阵的微分公式得到 $\\mathrm dJ=u_\\theta^\\top\\mathrm db_\\theta-\\tfrac12u_\\theta^\\top(\\mathrm dC_\\theta)u_\\theta$。忽略第二项，会漏掉梯度特征内积随参数变化的贡献。"
+            },
+            {
+              "kind": "math",
+              "tex": "-\\nabla J_{\\rm tangent}=\\mathbb E[(\\phi-\\gamma\\phi')\\phi^\\top u_\\theta-(\\delta-\\phi^\\top u_\\theta)\\nabla^2v_\\theta(S)u_\\theta].",
+              "explain": "第一项来自 TD 残差对当前与后继预测的依赖。第二项合并了梯度特征和投影矩阵的变化，是 Hessian 与向量的乘积；φ′ 表示后继状态的预测梯度。固定线性特征时二阶导数为零，才退回线性表达。"
+            },
+            {
+              "kind": "p",
+              "text": "一个两状态算例可看见这项差别。按固定分布各以一半概率查询两状态，它们都自循环，$\\gamma=.5$，奖励分别为1和0，预测为 $v_\\theta=(\\theta,\\theta^2)$。在 $\\theta=1$ 时，$b=-.25,C=2.5,u=-.1$。完整负梯度为 −.155；若只保留第一项则为 −.125。两个方向在这里同号，数值却不是同一目标的导数。可对 $J=b^2/(2C)$ 作有限差分核验，而不需要训练一个大网络。"
             },
             {
               "kind": "p",
@@ -402,12 +445,25 @@
           "blocks": [
             {
               "kind": "p",
-              "text": "Gallici、Fellows、Ellis、Pou、Masmitja、Foerster 与 Martin 在 ICLR 2025 的 Simplifying Deep Temporal Difference Learning 中提出 PQN。先固定采样分布与评价策略，令期望 TD 更新为 F。这里的局部推导暂不让策略和采样分布随参数改变。"
+              "text": "目标副本可以暂时减慢自举反馈，但我们还可以直接问：当前预测发生一点扰动，后续 TD 更新会把它拉回，还是进一步放大？回答这个问题不必先找一个损失函数，可以检查平均更新对参数扰动的响应。先固定采样分布与评价策略，并假设网络在所分析邻域内二次可微。"
             },
             {
               "kind": "math",
               "tex": "F(\\theta)=\\mathbb E[\\delta_\\theta\\phi_\\theta],\\quad \\delta_\\theta=R+\\gamma Q_\\theta(S',A')-Q_\\theta(S,A),\\quad \\phi_\\theta=\\nabla_\\theta Q_\\theta(S,A).",
               "explain": "网络梯度充当局部特征。下一状态的梯度记作 φ′。这仍是半梯度 TD 的期望更新，不是均方 Bellman 残差的负梯度。"
+            },
+            {
+              "kind": "p",
+              "text": "设 $F(\\theta_*)=0$，小偏差为 $e=\\theta-\\theta_*$，记平均更新的 Jacobian 为 $J_*=\\nabla F(\\theta_*)$。一阶近似给出 $e^+\\approx(I+\\alpha J_*)e$。因此稳定性首先要看 J 怎样作用于偏差，而不是只看 TD 误差是否变小。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\|(I+\\alpha J_*)e\\|^2-\\|e\\|^2=2\\alpha e^\\top J_*e+\\alpha^2\\|J_*e\\|^2.",
+              "explain": "这是线性化递推的精确代数式。若 J 的对称部分负定，第一项使小偏差缩短，第二项说明步长不能任意大。结合邻域内的平滑条件，可得到冻结分布平均递推的局部稳定性；随机学习还要处理采样噪声。"
+            },
+            {
+              "kind": "p",
+              "text": "例如标量平均更新 $F(w)=-.2w$ 在 $0<\\alpha<10$ 时缩小偏差；若 $F(w)=+.8w$，任何正步长都放大非零偏差。两者都能把每次更新做得很小，但只有前者的反馈方向是恢复性的。下面把这项方向检查展开到神经 TD。"
             },
             {
               "kind": "math",
@@ -416,7 +472,7 @@
             },
             {
               "kind": "p",
-              "text": "论文分析特定缩放的 LayerNorm 网络与正则化更新。保证还依赖网络宽度、参数与奖励条件、采样假设及步长条件。它不是“给任意深度 Q 网络加 LayerNorm 就收敛”的定理。实际 PQN 的控制实验与受限理论模型也要分别理解。"
+              "text": "这个分解给出了两种可以检查的干预：限制当前与后继梯度的自举相关，以及限制残差乘曲率的影响。Gallici 等人的 Simplifying Deep Temporal Difference Learning（ICLR 2025）据此分析特定缩放的 LayerNorm 网络与正则化更新，并提出 PQN。理论还使用宽度、参数、奖励、采样和步长条件；实际控制又会改变策略与分布，应与这里冻结问题的分析分别考察。"
             },
             {
               "kind": "math",

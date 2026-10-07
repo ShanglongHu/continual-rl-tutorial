@@ -8,6 +8,22 @@
 - 区分新奇、信息增益、学习进展、技能多样性和自动课程这些不同目标。
 - 将探索放回无免费 reset 的世界：记录恢复成本、可达性与真实外部收益，而不是只累计 intrinsic reward。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 外部奖励与内部奖励
+
+外部奖励是任务学习器接收的评价信号；内部奖励由系统构造，用于引导数据获取。外部奖励是否表达设计者意图，仍是奖励设计问题。提高内部奖励不自动意味着外部任务表现更好。
+
+### 认识不确定性与随机性
+
+认识不确定性可通过更多数据减少；环境固有随机性可能不能减少。单次预测误差往往混合两者。
+
+### 目标条件策略
+
+$\pi(a\mid s,g)$ 把目标 $g$ 当作输入；课程决定练习的目标，控制器决定到达方法。课程调度与底层策略学习处于不同层次。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -84,22 +100,6 @@ $L$ 是完整探索与学习过程，$T$ 为寿命，$\beta_t$ 为内部信号�
 - 进展课程/恢复策略：前者分配可学习目标，后者处理真实可达性和失败成本。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 外部奖励与内部奖励
-
-外部奖励定义任务成功；内部奖励由学习器构造，引导获得数据。提高内部奖励不自动意味着外部目标更好。
-
-### 认识不确定性与随机性
-
-认识不确定性可通过更多数据减少；环境固有随机性可能不能减少。单次预测误差往往混合两者。
-
-### 目标条件策略
-
-$\pi(a\mid s,g)$ 把目标 $g$ 当作输入；课程决定练习的目标，控制器决定到达方法。课程调度与底层策略学习处于不同层次。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 探索的数据获取目标
@@ -120,7 +120,7 @@ $$
 | 不同技能 | 状态对 latent skill 的可识别性 | 多样但不一定对任务有用 |
 | 可恢复性 | 返回安全集的概率/成本 | 估计乐观却进入不可逆失败 |
 
-计数估计覆盖程度，RND 估计随机函数的熟悉程度，课程选择练习目标，恢复机制限制可接受风险。这些方法作用于不同决策层次；组合时需分别定义其目标、更新数据和资源预算。
+计数估计覆盖程度，RND 估计随机函数的熟悉程度，课程选择练习目标，恢复机制限制可接受风险。探索的最终价值来自它怎样改变以后可用的知识和行为。用这些代理信号取代无法直接计算的信息价值，是算法设计选择；代理变大本身不是收益改善的证明。组合时需分别定义它们的目标、更新数据和资源预算。
 
 <a id="lesson-derive"></a>
 
@@ -557,7 +557,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Proper Laplacian Representation Learning](https://yingwen.io/zh/continual-rl/research/#recent-proper-laplacian-representations)
 - [Reward-Aware Proto-Representations in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-reward-aware-proto-representations)
@@ -569,7 +569,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Knowledge Retention in Continual Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-drago-model-retention)
 - [Reset-free Reinforcement Learning with World Models](https://yingwen.io/zh/continual-rl/research/#recent-morefree-reset-free-models)
@@ -603,7 +603,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Plasticity as the Mirror of Empowerment](https://yingwen.io/zh/continual-rl/research/#recent-plasticity-mirror-empowerment)
 

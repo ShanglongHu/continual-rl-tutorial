@@ -1,6 +1,6 @@
 # 目标与子任务：条件控制、经验重用与技能设计
 
-机器人学会到达一个充电站以后，怎样学习一族目标、利用未成功的尝试，并提出对未来控制有用的子任务？
+怎样让同一套控制器应对不同目标、从未成功的尝试中学习，并选择对未来控制有用的子任务？
 
 ## 本章内容
 
@@ -8,6 +8,30 @@
 - 独立写出 goal-conditioned Q-learning 与 HER 的数据循环，知道何时必须重算 reward 和 terminal。
 - 推导带 stopping value 的子任务 target，区分 STOMP 原文约定与普通 option 后续价值。
 - 用真实任务收益与规划收益评价子任务，而非只看目标到达率。
+
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 状态、动作、目标
+
+$s$ 是此刻用于决策的信息，$a$ 是可执行动作，$g$ 是希望达到的结果规格。目标可以用坐标、特征、图像或奖励参数表达；表示之外，还需要明确成功条件或奖励函数。
+
+### Q-learning 的含义
+
+$Q(s,a,g)$ 估计先做动作 $a$、随后尽力完成目标 $g$ 的累计回报。一次真实转移提供当前奖励和下一状态；最大值对应后续选择价值最高的动作。
+
+$$
+Q(s,a,g)\leftarrow Q(s,a,g)+\alpha\left[r_g+\gamma(1-d_g)\max_{a'}Q(s',a',g)-Q(s,a,g)\right]
+$$
+
+### Bootstrap 与半梯度
+
+用自己对未来的估计构造当前标签叫 bootstrap。神经网络训练时通常对 target 停止梯度，只对当前 Q 的输出求导；target network 可减缓标签与拟合器同时变化。
+
+### Option 与子任务不是同一物
+
+子任务规定评价某种行为的标准；option 是一种可执行的解，由内部策略 π 与停止概率 β（以及允许启动的位置）组成。一个子任务可能有多个解，也可能始终解不好。
 
 <a id="problem-definition"></a>
 
@@ -85,30 +109,6 @@ $p_G$ 是声明的目标评价分布，$r_g$ 为该目标奖励，$T_g$ 为按�
 - 课程/STOMP：课程选择经验分配；STOMP提出有沿途收益与停止价值的技能子任务。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 状态、动作、目标
-
-$s$ 是此刻用于决策的信息，$a$ 是可执行动作，$g$ 是希望达到的结果规格。目标可以用坐标、特征、图像或奖励参数表达；表示之外，还需要明确成功条件或奖励函数。
-
-### Q-learning 的含义
-
-$Q(s,a,g)$ 估计先做动作 $a$、随后尽力完成目标 $g$ 的累计回报。一次真实转移提供当前奖励和下一状态；最大值对应后续选择价值最高的动作。
-
-$$
-Q(s,a,g)\leftarrow Q(s,a,g)+\alpha\left[r_g+\gamma(1-d_g)\max_{a'}Q(s',a',g)-Q(s,a,g)\right]
-$$
-
-### Bootstrap 与半梯度
-
-用自己对未来的估计构造当前标签叫 bootstrap。神经网络训练时通常对 target 停止梯度，只对当前 Q 的输出求导；target network 可减缓标签与拟合器同时变化。
-
-### Option 与子任务不是同一物
-
-子任务规定评价某种行为的标准；option 是一种可执行的解，由内部策略 π 与停止概率 β（以及允许启动的位置）组成。一个子任务可能有多个解，也可能始终解不好。
-
 <a id="lesson-setting"></a>
 
 ## 1. 目标如何进入一个强化学习问题
@@ -160,13 +160,14 @@ HER 再增加一个数据操作：先真实执行原目标 g，保留轨迹；�
 1. 收集一段 ($s_t,a_t,s_{t+1}$，$\mathrm{achieved}_{t+1}$，`physical_done`，`info`)
 1. 对抽到的时刻 t：
   1. 以一定概率保留原目标 g；否则从未来 $\mathrm{achieved}_{t+1:T}$ 采样 g′
+  1. 若当前状态在新任务下已经终止，跳过这条动作转移
   1. 不改 $s_t,a_t,s_{t+1}$
   1. 重算 $r_{g^{\prime}}(s_t,a_t,s_{t+1})$
   1. 按所定义任务重算 $d_{g^{\prime}}$，物理终止仍保留
   1. 构造目标 y；更新 Q（以及连续动作时的 actor）
 1. 独立评估：只用预先规定的真实目标，不用 hindsight 标签
 
-在确定性且目标无关的环境中，原转移仍是新目标下同一个状态—动作对的有效结果。随机环境里，按后来实际发生的结果选择新目标，可能条件化转移噪声：例如偶然成功的随机结果，被过度表示为可稳定达成的目标。此时标准 HER 不普遍给出无偏 Bellman 样本。课程分布还会改变训练目标的权重，因此重标记后的训练误差与原目标分布上的成功率需要分别评价。
+在确定性且目标无关的环境中，只要当前状态在新任务下仍可行动，原转移就是同一状态—动作对的有效结果。成功即终止的任务不能使用“从新目标状态继续离开”的转移；若重标记完整轨迹或多步片段，还要在该片段的首次新成功或物理终止处截断，不把之后的动作拼进同一回报。独立单步样本则只需检查它自己的起点与终点语义，不能因记录中更早曾到达该目标而一律删除。随机环境里，按后来实际发生的结果选择新目标，可能条件化转移噪声：例如偶然成功的随机结果，被过度表示为可稳定达成的目标。此时标准 HER 不普遍给出无偏 Bellman 样本。课程分布还会改变训练目标的权重，因此重标记后的训练误差与原目标分布上的成功率需要分别评价。
 
 <a id="experiment-her_replay"></a>
 
@@ -336,6 +337,10 @@ def relabel_goal(next_position: int, goal: int, physical_terminal: bool = False)
 
 def goal_q_update(q, state, action, next_state, goal, alpha=0.5, gamma=0.9,
                   physical_terminal=False):
+    # A successful state is terminal in THIS task. Its zero continuation value
+    # is not an action value to train using a transition out of that state.
+    if state == goal:
+        raise ValueError("A terminal goal state has no outgoing task transition")
     reward, terminal = relabel_goal(next_state, goal, physical_terminal)
     next_value = 0.0 if terminal else max(q.get((next_state, a, goal), 0.0)
                                           for a in (-1, 1))
@@ -352,13 +357,22 @@ def future_her(trajectory, original_goal, rng):
     Outputs (s,a,s_next,goal,physical_terminal), preserving physical termination
     for both original and hindsight goals. Goal success must never erase it.
     Dynamics are deterministic and goal independent in this teaching example.
+    These are independent one-step replay samples, not a relabeled rollout.
+    Skip a hindsight goal equal to s: this task terminates as soon as it succeeds.
+    A valid one-step sample may still exist after an earlier visit to its new goal;
+    relabeling a whole multi-step rollout would instead truncate at first success.
     """
     replay = []
     for t, (s, a, sn, physical_terminal) in enumerate(trajectory):
+        if s == original_goal:
+            raise ValueError("Recorded episode acts from its terminal goal")
+        if t + 1 < len(trajectory) and (physical_terminal or sn == original_goal):
+            raise ValueError("Recorded episode continues after termination")
         replay.append((s, a, sn, original_goal, physical_terminal))
         future_index = rng.randrange(t, len(trajectory))
         hindsight_goal = trajectory[future_index][2]
-        replay.append((s, a, sn, hindsight_goal, physical_terminal))
+        if s != hindsight_goal:
+            replay.append((s, a, sn, hindsight_goal, physical_terminal))
     return replay
 
 
@@ -420,6 +434,32 @@ OpenAI Baselines 的 her_sampler.py 展示了“选未来 achieved goal → 替�
 
 HIQL（NeurIPS 2023）使用一个目标条件状态价值 $V(s,g)$，然后提取两个策略：高层 $\pi_h(z|s,g)$ 预测中间状态的潜在表示，低层 $\pi_\ell(a|s,z)$ 产生到达这个中间目标的动作。这里的高层动作不是环境按钮，而是数据中未来状态的表示；低层才承担可执行控制。
 
+先说明价值如何学习。离线数据没有覆盖的动作，不能靠实际尝试来检验；直接在所有动作上取最大估值，可能选中估计错误的动作。标准 IQL 对数据中的动作价值 $Q(s,a)$ 做不对称平方回归，偏重估值较高的动作；$Q$ 的学习先对动作后果的随机性取期望。HIQL 在此采用不需要动作标签的版本，直接从 $(s,s')$ 和抽样目标 $g$ 构造一步价值目标。这个改变省去了动作输入，也引入了后面要讨论的随机性歧义。下面先用单个价值头说明原理。
+
+$$
+\begin{aligned}d_g(s)&=\mathbf1[s=g],\qquad r_g(s)=d_g(s)-1,\\y&=r_g(s)+\gamma(1-d_g(s))\bar V(s',g),\\u&=y-V_\theta(s,g),\\L_V(\theta)&=\mathbb E_{\mathcal D,g}\!\left[\ell_\xi(u)\right],\qquad \ell_\xi(u)=|\xi-\mathbf1[u<0]|u^2,\quad \tfrac12\leq\xi<1.\end{aligned}
+$$
+
+$\bar V$ 是求本次梯度时固定的目标网络；$\xi$ 是 expectile 参数，不是折扣。本节按原方法以当前状态是否为目标定义奖励：目标处为 0 且不自举，其他状态为 −1。这与前文按到达状态给奖励的例子有一步计时差别，不能直接混用数值。实际数据采样器用当前样本索引与目标索引是否相同生成成功标记；轨迹结束标记另用于限制子目标采样。
+
+当目标高于当前预测时，平方误差权重为 $\xi$；目标低于预测时，权重为 $1-\xi$。固定一批目标 $y$ 后，对标量预测 $v$ 求导，极小点满足加权残差均值为零。$\xi=1/2$ 恢复普通均方拟合；增大 $\xi$ 则更重视低估的后果。这里选择的是数据支持内的较好后果，并没有评价所有可能动作。
+
+$$
+0=\mathbb E\!\left[\bigl(\xi\mathbf1[y\geq v]+(1-\xi)\mathbf1[y<v]\bigr)(y-v)\right].
+$$
+
+例如两个等频目标为 −3 和 −1，取 $\xi=0.7$。在二者之间解 $0.3(-3-v)+0.7(-1-v)=0$，得 $v=-1.6$，高于均值 −2，但仍小于最大值 −1。这个手算只解释一次固定目标回归；带自举的整体学习还改变下一轮目标。
+
+这也暴露了动作缺失的局限。如果两种后果来自两个可选的确定性动作，偏重好后果有控制意义；如果它们来自同一个动作的随机结果，就不能通过选动作让好运更常发生。相同的状态对数据，可能对应这两种不同控制问题。因此无动作版本在随机动力学下可能把噪声当成可控性；增加网络容量并不能消除这种信息歧义。
+
+作者实现进一步用两个价值头。它以目标头的较小下一价值计算公共残差 $a^-$，据其符号确定权重；每个在线头则拟合各自目标头产生的 $y_i$。这不是把单头公式简单乘二，复现时应保留以下分工：
+
+$$
+\begin{aligned}y_i&=r_g+\gamma(1-d_g)\bar V_i(s',g),\qquad i=1,2,\\a^-&=r_g+\gamma(1-d_g)\min_i\bar V_i(s',g)-\tfrac12\sum_i\bar V_i(s,g),\\\kappa&=\operatorname{sg}\!\left[\xi\mathbf1[a^-\geq0]+(1-\xi)\mathbf1[a^-<0]\right],\\L_V^{\rm impl}&=\mathbb E\!\left[\sum_{i=1}^2\kappa\bigl(\operatorname{sg}[y_i]-V_i(s,g)\bigr)^2\right].\end{aligned}
+$$
+
+对应作者代码 compute_value_loss。接下来的 actor 权重使用两个在线价值头的平均，而不是这里用于确定权重的最小目标值。这样，价值如何训练、策略如何利用它，就可以分别检查。
+
 $$
 \begin{aligned}\omega_j&=\operatorname{sg}\!\left[\min\{\exp(\eta_j A_j),100\}\right],\qquad j\in\{\ell,h\},\\ z_{\rm target}&=\operatorname{sg}\!\left[\phi(s_{t+k})\right],\\ J_\ell&=\mathbb E_{\mathcal D}\left[\omega_\ell\log\pi_\ell(a_t\mid s_t,\phi(g_\ell))\right],\\ J_h&=\mathbb E_{\mathcal D}\left[\omega_h\log\pi_h(z_{\rm target}\mid s_t,g)\right].\end{aligned}
 $$
@@ -460,7 +500,7 @@ $$
 
 这种方法与 STOMP 的差别在奖励来源：STOMP 保留环境沿途奖励并改变停止价值，MaestroMotif 则依据语言偏好学习技能奖励，还借助人类规格和预训练语言知识。其下游组合无需重新训练某个任务的低层策略，不意味着技能本身没有经过 RL 训练，也不意味着技能规格已经由智能体自主发现。
 
-作者仓库可按三个目录阅读：preference 对应偏好与奖励学习，code_generation 对应规则及组合程序，rl_baseline 与 sample_factory 对应技能执行训练。一个有辨识力的实验是固定技能策略，分别改变奖励模型、训练调度和下游组合程序：技能失败究竟来自语义评价、访问不到适合学习的状态，还是高层组合不当？这比只比较最终任务得分更能定位改进方向。
+作者仓库可按三个目录阅读：preference 对应偏好与奖励学习，code_generation 对应规则及组合程序，rl_baseline 与 sample_factory 对应技能执行训练。辨析失败原因时，先在匹配交互与调参预算下分别改变奖励模型、训练调度，并重新训练低层技能；这检验语义评价和训练访问分布的作用。随后固定同一组技能、启动与终止规则，只改变下游组合程序，检验高层控制。若低层已冻结，且部署过程不读取训练奖励，单独替换奖励模型不会改变执行行为，不能据此检验它对技能形成的贡献。奖励模型本身还可在固定观察对上独立检验语义判断。
 
 <a id="lesson-check"></a>
 
@@ -505,7 +545,7 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
 
@@ -513,7 +553,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Laplacian Keyboard: Beyond the Linear Span](https://yingwen.io/zh/continual-rl/research/#recent-laplacian-keyboard)
@@ -527,7 +567,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [General Agents Contain World Models](https://yingwen.io/zh/continual-rl/research/#recent-general-agents-world-models)
@@ -554,7 +594,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [General Agents Contain World Models](https://yingwen.io/zh/continual-rl/research/#recent-general-agents-world-models)
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
@@ -576,15 +616,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -969,6 +1009,8 @@ python3 examples/knowledge_algorithms_lab.py goals
 - [Park et al. — HIQL · NeurIPS 2023](https://arxiv.org/abs/2307.11949)：从同一个目标价值提取高层子目标与低层动作，分析长期价值噪声对平坦和分层策略的影响。
 
 - [HIQL 作者实现](https://github.com/seohongpark/HIQL)：比较目标采样、价值学习、低层优势和高层跨步优势；way_steps 对应中间目标间隔。
+
+- [HIQL 目标采样 — src/gc_dataset.py](https://github.com/seohongpark/HIQL/blob/master/src/gc_dataset.py)：GCSDataset.sample 的成功标签来自当前样本索引与目标索引相等；终止索引限制轨迹内子目标抽样。价值更新再把成功标签转成奖励和 bootstrap mask。
 
 - [HIQL 核心文件 — src/agents/hiql.py](https://github.com/seohongpark/HIQL/blob/master/src/agents/hiql.py)：compute_actor_loss 与 compute_high_actor_loss 分别构造一步和跨步价值差；compute_value_loss 做 expectile 更新；pretrain_update 组合三项损失。
 

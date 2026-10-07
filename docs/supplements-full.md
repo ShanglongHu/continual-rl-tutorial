@@ -72,6 +72,24 @@
 
 预测误差提供一种解释：第二阶段的食物已被 A 预测，B 没有带来新的预测改进。注意理论则追问，动物是否减少了对冗余 B 的加工。两者可以在某些条件下产生相似结果。阻断不是某条更新规则的唯一指纹；还要改变意外发生的时刻、结果身份和测试情境。后面的多巴胺干预实验正是沿着这一思路增加约束。[Steinberg 等，2013](https://www.nature.com/articles/nn.3413)
 
+把预测误差解释写成一个可检查的模型。一次完整试次记为 $n$。线索 $i$ 在该试次出现时 $x_{i,n}=1$，否则为 $0$；$w_{i,n}$ 是该线索的预测权重。$u_n$ 表示本试次结果所支持的预测量级。它是模型的目标，不是动物已经采取某个动作的价值。Rescorla–Wagner 模型用同时出现的全部线索共同预测结果，再用同一个误差修改各个在场线索。以下把结果敏感性吸收到正步长 $\alpha_i$ 中。
+
+$$
+\widehat u_n=\sum_jw_{j,n}x_{j,n},\qquad \delta_n=u_n-\widehat u_n,\qquad w_{i,n+1}=w_{i,n}+\alpha_i\delta_n x_{i,n}.
+$$
+
+预测相加是模型假设；误差针对整个线索组合，不是每个线索各自与结果比较。它等于一个线性预测器的误差修正更新，但还没有规定预测量如何变成可观测的行为反应。
+
+取 $u_n=1$、$\alpha_A=\alpha_B=0.1$。若 A 的预训练已使 $w_{A,n}=1$，而 $w_{B,n}=0$，那么 A、B 同时出现时，预测仍为 1，两个权重都不再增加。若改成两者均未训练，第一次组合试次的误差为 1，两个权重各增加 0.1。差别来自学习史，而不是 B 是否与食物配对。若第二阶段把结果量级提高到 2，已有 A 不再充分预测结果，B 就能开始获得权重。这个算例检验模型的阻断解释，不是对所有动物实验的唯一机制认定。
+
+这个模型仍把一个完整试次压成一步，所以不能区分线索提前一秒还是十秒。TD 模型把时间切得更细，令状态表示包含当时仍可用的线索与历史；用下一时刻的预测补充当前反馈。由试次级误差到逐时刻 TD，不只是更换一个符号，而是改变模型中的时间单位和预测对象。
+
+$$
+\widehat v_w(s)=w^\top x(s),\qquad \delta_t=R_{t+1}+\gamma\widehat v_{w_t}(S_{t+1})-\widehat v_{w_t}(S_t),\qquad e_t=\gamma\lambda e_{t-1}+x(S_t),\qquad w_{t+1}=w_t+\alpha\delta_t e_t.
+$$
+
+这里 t 才是试次内外连续演进的时间步；R 是待预测的结果信号，不必都是愉快刺激。两个预测均使用更新前的 $w_t$。取 $0\le\gamma<1$、$0\le\lambda\le1$，并在学习开始时设 $e_{-1}=0$。δ 决定改动方向，e 保留哪些特征仍有资格获得信用；持续交互中不因人为划分试次而自动清迹。状态表示、时间离散化和迹衰减共同决定模型如何解释延迟。对应 Sutton 与 Barto §14.2.2–14.2.3。
+
 <a id="dopamine-evidence"></a>
 
 ## 3 · 从神经记录到因果作用
@@ -132,27 +150,31 @@ Engelhard 等在小鼠虚拟导航任务中进行单细胞钙成像，发现腹�
 
 ## 原始材料与阅读顺序
 
-1. [Rescorla（1968）· Probability of shock in the presence and absence of CS in fear conditioning](https://www.appstate.edu/~steelekm/classes/psy5300/Documents/Rescorla1968.pdf)
+1. [Sutton 与 Barto · Reinforcement Learning: An Introduction，§14.2.2–14.2.3、§15.6](https://mitpress.mit.edu/9780262039246/reinforcement-learning/)
+
+   出版社页面含作者网站与开放阅读入口。先核对试次级 Rescorla–Wagner 更新，再比较逐时刻 TD 与资格迹。学习规则、反应生成和神经实现是不同层次；本文的两线索算例独立编写。
+
+2. [Rescorla（1968）· Probability of shock in the presence and absence of CS in fear conditioning](https://www.appstate.edu/~steelekm/classes/psy5300/Documents/Rescorla1968.pdf)
 
    读实验 1 的随机组与条件组，再读实验 2 的概率对照。支持背景事件率影响条件作用；行为抑制不是对内部预测的直接测量。
 
-2. [Schultz、Dayan 与 Montague（1997）· A Neural Substrate of Prediction and Reward](https://web.math.princeton.edu/~sswang/fundamental-readings-for-Wang-lab-members/schultz_montague97_science.pdf)
+3. [Schultz、Dayan 与 Montague（1997）· A Neural Substrate of Prediction and Reward](https://web.math.princeton.edu/~sswang/fundamental-readings-for-Wang-lab-members/schultz_montague97_science.pdf)
 
    读奖励出现、预告与遗漏的响应图，以及时间差分解释。它是经典理论综合，不能当作神经信号与 TD 完全同一的证明。
 
-3. [Steinberg 等（2013）· A causal link between prediction errors, dopamine neurons and learning](https://www.nature.com/articles/nn.3413)
+4. [Steinberg 等（2013）· A causal link between prediction errors, dopamine neurons and learning](https://www.nature.com/articles/nn.3413)
 
    重点读图 1—2 的阻断程序和光遗传干预。支持特定时间的多巴胺活动能促进线索学习；不证明所有多巴胺活动都只是误差。
 
-4. [Yagishita 等（2014）· A critical time window for dopamine actions on the structural plasticity of dendritic spines](https://pubmed.ncbi.nlm.nih.gov/25258080/)
+5. [Yagishita 等（2014）· A critical time window for dopamine actions on the structural plasticity of dendritic spines](https://pubmed.ncbi.nlm.nih.gov/25258080/)
 
    从脑片中的输入时序与树突棘测量入手。时间窗口为资格迹思想提供细胞机制线索，不能直接推广为完整行为尺度的信用分配规则。
 
-5. [Sharpe 等（2017）· Dopamine transients are sufficient and necessary for acquisition of model-based associations](https://sharpelab.psych.ucla.edu/wp-content/uploads/sites/185/2018/09/Sharpe-et-al.-2017.-Nature-Neuroscience.pdf)
+6. [Sharpe 等（2017）· Dopamine transients are sufficient and necessary for acquisition of model-based associations](https://sharpelab.psych.ucla.edu/wp-content/uploads/sites/185/2018/09/Sharpe-et-al.-2017.-Nature-Neuroscience.pdf)
 
    读感觉预条件作用的三个阶段及时间控制。支持非奖励事件关系的学习作用；标题中的 model-based 不指定完整的规划算法。
 
-6. [Engelhard 等（2019）· Specialized coding of sensory, motor and cognitive variables in VTA dopamine neurons](https://www.nature.com/articles/s41586-019-1261-9)
+7. [Engelhard 等（2019）· Specialized coding of sensory, motor and cognitive variables in VTA dopamine neurons](https://www.nature.com/articles/s41586-019-1261-9)
 
    比较单细胞响应与群体汇总。支持多变量和细胞间异质性；编码分析本身不确立各变量的因果作用。
 
@@ -349,7 +371,9 @@ Keramati 与 Gutkin 将奖励定义为内部状态朝生理调节点改善的量
 
 ## 6. 一个区分保持与调用的思想实验
 
-让机器人依次经历规则相反的房间 A、B，再返回 A。首先冻结可学习参数，但允许内部状态更新与检索，测试旧规则能否立即恢复。然后仅更换房间线索，保持物理规则不变。最后允许参数更新，记录恢复所需交互。立即恢复、线索依赖和快速重学是不同的证据。
+让一个导航智能体依次经历规则相反的房间 A、B，再返回 A。首先冻结可学习参数，并禁止新增长期记忆、改写检索索引和更新归一化统计；保留事先规定的内部状态递推与只读检索，测试旧规则能否恢复。测试前给定相同的起始内部状态，并分别报告第一步表现与观察情境线索后的表现。否则，一个系统只是带着上一阶段的状态进入测试，也会改变比较结果。
+
+然后仅更换房间线索，保持物理规则不变。最后恢复各自的学习过程，记录恢复所需交互。这区分了旧知识的直接调用、先推断当前情境再调用，以及通过新经验重新学习。只冻结网络权重而继续写入外部记忆，不属于同一项冻结对照。
 
 若检索失败，旧知识未必消失；若允许更新后恢复，也不能据此宣称旧知识完整保留。比较方案还要固定记忆容量和计算预算。这使“遗忘多少”变成三个可检验的问题：保存了什么、何时能调用、调用后能否帮助当前控制。
 

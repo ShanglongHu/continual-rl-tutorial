@@ -478,7 +478,7 @@ Eligibility traces、RNN hidden state、replay buffer 都算记忆，为什么�
 - [RTU](https://github.com/esraaelelimy/rtus)
 - [SwiftTD / Average-Reward Methods](https://github.com/kjaved0/swifttd)
 - [A. Rupam Mahmood — Streaming Deep Reinforcement Learning](https://www.youtube.com/watch?v=QOfkOl9QrZY)
-- [Intentional Updates](https://arxiv.org/abs/2604.19033)
+- [Intentional Updates](https://proceedings.mlr.press/v306/sharifnassab26a.html)
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://arxiv.org/abs/2605.24709)
 - [Oak Lab：从经验学习，而非从整理好的数据集学习](https://oaklab.ai/posts/learning-from-experience-instead-of-curated-datasets)
 

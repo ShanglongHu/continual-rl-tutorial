@@ -9,6 +9,34 @@
 - 读懂 RNN、GRU、LSTM、预测状态、GVFN、RTU 分别改变了什么，运行能逐项检查的记忆实验。
 - 区分状态更新与参数学习，设计无任务边界、固定资源预算的 CRL 状态构造实验。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 条件概率
+
+对未观察到的变量保留分布；新证据到来后按似然重新加权并归一化。不是把观测当成真实状态。
+
+$$
+P(x\mid o)=\frac{P(o\mid x)P(x)}{\sum_{x'}P(o\mid x')P(x')}
+$$
+
+### 链式法则
+
+当前状态依赖旧状态，旧状态也依赖参数；求导必须同时包含当前直接影响和历史间接影响。
+
+$$
+\frac{d f_\theta(h_\theta)}{d\theta}=\frac{\partial f}{\partial\theta}+\frac{\partial f}{\partial h}\frac{dh_\theta}{d\theta}
+$$
+
+### TD 半梯度
+
+把 bootstrap target 暂时视为常数，沿当前预测的梯度更新；这不等于完整地对平方 Bellman 残差求导。
+
+$$
+\theta^+=\theta+\alpha\bigl(r+\gamma v_\theta(h')-v_\theta(h)\bigr)\nabla_\theta v_\theta(h)
+$$
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -36,7 +64,7 @@ $Y$ 是本任务指定的未来后果，$a$ 是当前干预动作，$z(h)$ 是�
 
 ### 成立条件与解的含义
 
-- 充分性必须相对后果、未来行为和时间尺度定义；任意多预测坐标不自动构成充分状态。
+- 充分性必须相对后果、未来行为和时间尺度定义。由一步推到多步的精确结论要求完整条件分布一致，以及固定且可递推的摘要；只匹配均值或少量预测不够。
 - RTRL固定参数全历史敏感度、在线参数变化和截断BPTT分别说明，不能共用精确梯度称谓。
 
 判断准则：在同观测但不同历史的别名反例上保持不同预测/动作；用匹配历史探针测预测误差，敏感度对固定参数有限差分吻合，并报告内存与每步时间。
@@ -85,39 +113,11 @@ $Y$ 是本任务指定的未来后果，$a$ 是当前干预动作，$z(h)$ 是�
 - 截断BPTT/UORO：分别丢弃长路径或随机压缩导数，产生不同偏差与方差。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 条件概率
-
-对未观察到的变量保留分布；新证据到来后按似然重新加权并归一化。不是把观测当成真实状态。
-
-$$
-P(x\mid o)=\frac{P(o\mid x)P(x)}{\sum_{x'}P(o\mid x')P(x')}
-$$
-
-### 链式法则
-
-当前状态依赖旧状态，旧状态也依赖参数；求导必须同时包含当前直接影响和历史间接影响。
-
-$$
-\frac{d f_\theta(h_\theta)}{d\theta}=\frac{\partial f}{\partial\theta}+\frac{\partial f}{\partial h}\frac{dh_\theta}{d\theta}
-$$
-
-### TD 半梯度
-
-把 bootstrap target 暂时视为常数，沿当前预测的梯度更新；这不等于完整地对平方 Bellman 残差求导。
-
-$$
-\theta^+=\theta+\alpha\bigl(r+\gamma v_\theta(h')-v_\theta(h)\bigr)\nabla_\theta v_\theta(h)
-$$
-
 <a id="lesson-setting"></a>
 
 ## 1. 问题设定：当前观测为什么不足以决定动作
 
-任务目标规定哪些结果更好。状态构造规定决策时保留哪些信息。本章固定任务目标，研究第二个问题。智能体状态是可递归更新的历史摘要。它不等于当前观测，也不等于控制器要追求的目标。
+前面的价值方程使用状态来描述未来：给定状态和动作，早先经历便不再改变后果的条件分布。机器人实际收到的却是传感器观测。若相同画面出现在不同情境中，价值函数需要的信息就还没有准备好。我们因此研究怎样从经历过的观测、动作和奖励构造一个可递归更新的摘要，再把它交给预测器与控制器。这是状态构造的问题；本章先固定任务目标。
 
 设想走廊入口闪一次红灯或蓝灯，随后四个时刻看到的都是同一面灰墙。走到岔路，红灯要求向左，蓝灯要求向右。只接收当前灰墙图像的策略没有任何变量能区分这两段经历；在两种提示等概率、奖励只取决于最终方向时，再大的前馈网络也不能把平均正确率提高到 50% 以上。增加训练步数不能恢复已经被输入接口丢掉的信息。
 
@@ -146,6 +146,10 @@ $$
 
 若条件对所有相关历史和动作成立，且摘要能由自身与新经验按固定规则递归更新，则可递推得到多步动作条件的观测与奖励预测。这里要求所有动作条件，而不只是当前行为策略常见的动作。
 
+这个充分性结论包含两个条件。一步预测必须给出完整的条件分布，而不只是下一观测的均值；状态更新还必须使相同摘要在收到相同动作和反馈后得到相同的新摘要。这样才能先算第一步结果的概率，再更新摘要、条件化第二步，并依次展开任意有限未来。状态维度固定或网络具有递归连接，单独都不保证这些条件。
+
+精确结论也不能直接改成“小的一步误差保证小的长期误差”。例如真实系统永远停留在正常状态，模型却在每一步赋予 $0.01$ 的概率进入吸收故障状态；其一步转移分布的总变差距离仅为 $0.01$。一百步内从未故障的概率，真实值为 1，模型值却为 $0.99^{100}\approx0.3660$。这个反例说明需要按所关心的时间尺度检查误差；它不说明长期预测必然无用，也不否认附加条件下可以建立误差界。
+
 $$
 \exists\,\bar\pi\quad\text{s.t.}\quad\pi^*(a\mid H)=\bar\pi(a\mid f(H))\quad\text{for all relevant }H,a
 $$
@@ -159,6 +163,43 @@ $$
 - 允许信息：过去与当前的观测、自己的动作、已经到达的奖励，以及事先声明的模型。
 - 不默认允许：环境隐藏状态、任务 ID、变化时刻、随意 reset、将未来奖励输入过去状态。
 - 优化目标：最终仍是长期控制表现；预测误差、记忆任务准确率和状态重构误差是诊断，不是同一个目标。
+
+<a id="course-state-updateability"></a>
+
+## 一步预测正确，为什么仍可能没有可用的状态？
+
+递归可更新性不是实现时才考虑的附加要求。它决定了一组预测能否成为逐步运行的状态。Sutton 的 Markov and Agent State 短文给出一个反例：一个摘要能在读取完整历史后准确预测下一观测，却不能仅凭旧摘要与新观测更新自己。下面把这个区别完整展开。
+
+考虑没有动作的过程，观测只有 1、2、3。刚观察到 1 或 2 时，下一观测以相同概率为 1、2、3。刚观察到 3 时，下一观测必定重复这个 3 之前的数字。于是历史以 13 结尾时，下一项必为 1；以 23 结尾时，下一项必为 2。这个过程可以由有限隐藏状态产生，不需要假设世界在变化。
+
+$$
+f(h1)=f(h2)=u,\qquad f(h13)=a,\qquad f(h23)=b.
+$$
+
+摘要 $u$ 表示下一观测为均匀分布；$a$ 表示下一观测必为 1；$b$ 表示下一观测必为 2。若每次允许重新读取完整历史，这个摘要的下一步预测完全正确。
+
+问题发生在新观测 3 到来时。旧摘要都是 $u$，新输入也都是 3，但新摘要一个应该是 $a$，另一个应该是 $b$。不存在一个确定的递归更新函数同时满足这两种要求。
+
+$$
+f(h1)=f(h2)\quad\text{but}\quad f(h13)\ne f(h23)\quad\Longrightarrow\quad \nexists U:\ f(ho)=U(f(h),o).
+$$
+
+矛盾来自相同函数输入要求产生不同输出。它不是预测器容量不足，也不是 SGD 尚未收敛。此前压缩已经删掉了下一次更新所需的信息。
+
+可行的递归状态需区分“当前为 1”“当前为 2”“当前为 3 且前一项为 1”“当前为 3 且前一项为 2”。前两种状态的即时预测虽然相同，仍不能合并。保留它们的意义不是改善眼下这一项预测，而是让将来的状态更新有依据。
+
+| 检查 | 读取完整历史的预测摘要 | 四种情况的递归摘要 |
+| --- | --- | --- |
+| 此刻预测下一观测 | 可以精确 | 可以精确 |
+| 只用旧摘要与新观测更新 | 不可以 | 可以 |
+| 每步存储不随历史长度增长 | 每次重读历史的实现不满足 | 四种状态即可 |
+| 变成神经网络后 | 大网络不能弥补输入丢失 | 仍需学会保留并更新对应信息 |
+
+这解释了为什么只给神经状态增加一步预测损失未必足够。训练时的 encoder 可能读取整段历史，而部署时只有上一步的压缩状态。二者不是同一信息协议。即便训练与部署都递归，一步损失也可能没有及时区分目前预测相同、将来却需区分的历史；长时标预测、动作条件预测与跨时间信用分配因此有各自作用。
+
+活动状态、学习参数与优化器统计仍应分开。活动状态解决这次经历中需要记住什么；参数决定如何写入与读取；资格迹和元梯度状态则保存哪些历史参数作用仍有待归因。完整学习器会使用三者，但不能以“参数也有记忆”为理由，省去对决策状态递归接口的检查。
+
+思考与检验：先列举上述四种情况的转移表，验证每行预测。再只训练“一步预测分布”作为瓶颈状态，检查 13 与 23 是否发生混叠。最后保留相同容量，加入一个跨过观测 3 的两步预测。若性能改善，继续检查收益究竟来自更好的历史区分，还是额外训练信号与计算。
 
 <a id="lesson-derive"></a>
 
@@ -476,6 +517,87 @@ $$
 
 如果只是把 GVF 头挂在一个自由隐藏层后面，那么隐藏状态本身不必等于预测：这是辅助任务结构。两种结构都值得比较，但不能混称。设计研究时还应设置坏问题对照：大量准确却与决策无关的预测，可能耗费预算而不改善控制。预测充分性、易学性和控制实用性需要分别测量。
 
+<a id="research-openmind-external-memory"></a>
+
+## 记忆可以留在环境中吗：Artifacts 与智能体边界
+
+回到入口提示与走廊岔路的例子。若机器人经过入口时留下一个可再次看见的标记，到岔路前绕回读取，它可以从当前观测恢复部分历史。于是“完成任务需要多少内部记忆”还取决于环境允许保存什么、观测通道允许读到什么。这个变化没有取消历史依赖，而是改变了历史信息的存放位置与访问方式。
+
+Martin、Mince、Saleh 与 Pajak 的 Artifacts as Memory Beyond the Agent Boundary（2026 预印本）把这一直觉写成严格但较窄的条件：某种当前观测能确定此前出现过另一种观测，便可充当后者的 artifact。文中的历史缩减定理在其条件下保留关于下一观测的互信息；它不是任意行动条件下的控制充分性定理，更没有说所有外部标记都能替代递归状态。
+
+$$
+\Pr(O_{t'}=o'\mid O_t=o)=1,\qquad 0<t'<t,\quad o'\ne o
+$$
+
+这个条件表示当前 artifact 对过去观测提供确定性信息。带噪声、可能被别人移动或逐渐褪色的标记，需要进一步分析可靠性；不能直接继承确定性条件下的保证。
+
+作者用空间路径与地标比较有无 artifact 时的学习表现，并改变价值函数的表示容量。这里的容量以可学习参数数目为操作性度量；DQN 的回放缓存被作为固定开销排除。因此，达到相近表现时所需参数较少，支持的是该设定中的外部记忆效应，不能直接换算成减少了多少字节的工作记忆。该论文也没有把参数记忆、递归活动与回放容量视作同一种资源。
+
+持续学习中的下一步问题是：读取过去是否值得当前付出的成本？下面是本教材提出的扩展实验，并非原论文已经验证的结论。让机器人选择直接前往岔路、回到标记处读取，或花一步写下新标记；统一计入移动时间、写读动作、错误决策以及被占用的存储。若允许环境保存的痕迹无界增长，即使网络内存固定，也不能宣称整个系统的存储预算固定。
+
+$$
+J_{\rm life}=\mathbb E\!\left[\sum_{t=0}^{T-1}\left(R_{t+1}-c_{\rm write}W_t-c_{\rm read}Q_t\right)\right]
+$$
+
+这是一个教学用的有成本任务定义，W、Q 分别记录写入和查询动作，成本须事先以任务奖励的单位给定。若原任务已经通过时间步成本计费，不应重复扣除同一代价；计费方式改变的是任务，不只是记录格式。
+
+可反驳的消融先保持身体、观测维数、参数预算和训练规则一致，只删除标记与过去事件之间的关系，例如随机置换标记内容；再分别改变擦除率、读取距离与写入成本。这样可以区分额外视觉结构、路径提示与历史信息的作用。还要保留内部记忆对照，检查外部标记不可达时是否仍能决策。原论文关于观测型 artifact 的结果，是这个研究问题的起点。
+
+思考：若一个预先画好的路标提高了回报，哪些证据能区分“它直接告诉我往哪走”与“它帮助我恢复以前发生过什么”？如果任务规则悄悄改变，谁负责判定标记已经过时，又应从哪个时间点计入纠正它的代价？
+
+<a id="rlss-predictive-state-coordinates"></a>
+
+## 预测能否成为状态：可更新性、可辨识性与一个完整算例
+
+预测性状态不是给隐藏状态换一个名称。它用可观测未来的概率描述历史。首先要问这些预测是否足以区分我们关心的未来；其次要问新观察到来后，能否只用当前预测和新输入得到下一组预测。对当前一个标签预测准确，不保证满足第二个条件。
+
+考虑一个无动作的二状态 HMM。隐藏位 $X_t\in\{0,1\}$ 以概率 p 保持，以概率 $1-p$ 翻转。传感器以概率 c 正确报告当前隐藏位。设 $b_t=\Pr(X_t=1\mid H_t)$，历史包含当前观察。我们改用下一次观察为一的概率 $q_t=\Pr(O_{t+1}=1\mid H_t)$ 作为状态。
+
+$$
+\bar b_{t+1}=(1-p)+(2p-1)b_t,\qquad
+q_t=(1-c)+(2c-1)\bar b_{t+1}.
+$$
+
+第一式先经过隐藏转移；第二式再经过传感器。这个例子的动力学与传感器已知，因此可精确推导。
+
+$$
+p=0.97,\ c=0.72:\qquad q_t=0.2932+0.4136b_t,\qquad
+b_t=\frac{q_t-0.2932}{0.4136}.
+$$
+
+在这个模型里，单个预测与完整 belief 一一对应。相同的信息可以使用不同坐标，并不必须解释为真实状态的名称或位置。
+
+$$
+b_{t+1}=\begin{cases}
+\dfrac{c\bar b_{t+1}}{c\bar b_{t+1}+(1-c)(1-\bar b_{t+1})},&O_{t+1}=1,\\[6pt]
+\dfrac{(1-c)\bar b_{t+1}}{(1-c)\bar b_{t+1}+c(1-\bar b_{t+1})},&O_{t+1}=0.
+\end{cases}
+$$
+
+把 q 反解为 b，做一次 Bayes 更新，再转回下一观察预测，就得到只依赖 q 与新观察的递归更新。这里构造的是精确坐标变换，不是从未知世界自动学习 PSR。
+
+若 $c=1/2$，传感器完全无信息，q 恒为 1/2。若 $p=1/2$，下一隐藏位与当前位无关，q 也恒为 1/2。此时不能反解旧 belief；但对这个无动作、只有该传感器的例子，旧 belief 对未来观察也不再有预测价值。不能反解隐藏状态，并不自动说明预测状态不充分。若另加依赖隐藏位的奖励或可揭示隐藏位的动作，就必须扩充问题集合。
+
+这也解释了 bit-to-bit 网格的对称性：旋转后的四个姿态可能对所有允许的行动产生相同的相对观察。绝对方向不可辨识，不等于未来行动后果不可预测。评价应检查控制相关的未来，而不是要求恢复实验设计者给隐藏变量起的全部名字。
+
+| 构造 | 信息从哪里来 | 尚未解决的部分 |
+| --- | --- | --- |
+| 已知模型的 Bayes filter | 设计者给出转移与观察模型 | 未知模型的学习、近似和资源限制 |
+| 有限历史窗口 | 保存最近若干行动与观察 | 窗口以外的依赖、组合稀疏与长度选择 |
+| 预测性状态 PSR | 行动条件下的一组未来检验 | 检验选择、可更新性、覆盖与估计稳定性 |
+| TD network | 预测节点依赖后继预测节点与观察 | 问题网络设计与答案网络共同学习的误差传播 |
+
+$$
+Y^{(1)}_t=O_{t+1},\qquad
+Y^{(h)}_t=\operatorname{sg}\bigl(q^{(h-1)}(S_{t+1})\bigr),\quad h>1.
+$$
+
+无动作、多步观察预测链的教学目标。第一个节点直接接地于观察，后续节点向前一个节点的后继答案自举。sg 表示本次回归不对标签求导；存在动作时还必须给出每个问题的行动条件或目标策略。
+
+问题网络指定“预测什么”，答案网络学习“如何由经验得到答案”。增添更多节点不保证状态充分，也不保证收敛；有偏的浅层答案会进入深层标签，共享表示又可能反过来改变浅层答案。若精确 belief 已作为输入提供，实验检验的是给定状态下的预测学习；只有进一步移除这个先验，才开始检验未知世界中的状态构造。
+
+可先做三组对照：已知模型的精确递推；相同问题但从数据估计答案；同时学习问题或状态。每一组记录未来检验误差、递归更新的一致性与主任务回报。第三组多出的不稳定性不能归咎于“部分可观测”一个笼统标签。
+
 <a id="lesson-rtu"></a>
 
 ## 7. RTU：通过递归结构降低敏感度计算成本
@@ -766,7 +888,7 @@ $$
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
@@ -776,6 +898,8 @@ $$
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
 - [Does Zero-Shot Reinforcement Learning Exist?](https://yingwen.io/zh/continual-rl/research/#recent-zero-shot-forward-backward)
 - [Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations](https://yingwen.io/zh/continual-rl/research/#recent-successor-flow-features)
+- [Artifacts as Memory Beyond the Agent Boundary](https://yingwen.io/zh/continual-rl/research/#recent-openmind-artifacts-memory)
+- [The Ungrounded Alignment Problem](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ungrounded-alignment)
 
 #### 时间信用分配与离策略多步学习
 
@@ -791,7 +915,7 @@ $$
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Proper Laplacian Representation Learning](https://yingwen.io/zh/continual-rl/research/#recent-proper-laplacian-representations)
 - [METRA: Scalable Unsupervised RL with Metric-Aware Abstraction](https://yingwen.io/zh/continual-rl/research/#recent-metra-skills)
@@ -802,7 +926,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Mastering diverse control tasks through world models](https://yingwen.io/zh/continual-rl/research/#recent-dreamerv3-world-models)
 - [DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning](https://yingwen.io/zh/continual-rl/research/#recent-dino-wm-feature-planning)
@@ -839,7 +963,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [The OaK Architecture: A Vision of SuperIntelligence from Experience](https://yingwen.io/zh/continual-rl/research/#recent-oak-architecture)
 - [Towards model-free RL algorithms that scale well with unstructured data](https://yingwen.io/zh/continual-rl/research/#recent-nibbler-predictive-features)
@@ -1540,6 +1664,74 @@ V-JEPA 2 先学被遮蔽视频的潜在特征预测；V-JEPA 2-AC 冻结编码�
 
 官方视频表征与动作条件模型；数据、机器人部署条件与检查点分别核验。
 
+### Artifacts as Memory Beyond the Agent Boundary
+
+John D. Martin, Fraser Mince, Esra’a Saleh, Amy Pajak
+
+arXiv 预印本 · 2026 · 支持方法与理论
+
+#### 研究问题
+
+完成任务所需的内部记忆，是否也取决于世界能替我们保存哪些历史信息？
+
+#### 关键机制
+
+把对过去观测提供确定信息的当前观测定义为 artifact。在特定条件下分析历史缩减，并通过环境中的地标与痕迹研究外部记忆效应。
+
+#### 证据
+
+论文给出关于下一观测信息的形式化结果，以及不同价值函数参数容量的实验。外部痕迹能影响完成任务所需的表示容量。
+
+#### 条件与限制
+
+关于观测信息的结论不是任意策略的控制充分性定理。参数数量不等于全部工作内存；论文对回放的计费与严格流式协议不同。
+
+#### 阅读与实验
+
+比较历史痕迹、直接动作提示和随机标记；另提出写读有成本的任务，记录内部状态、环境存储和移动时间。
+
+#### 原文与相关入口
+
+- [作者预印本](https://arxiv.org/html/2604.08756v1)：定义、信息结果、表示容量实验与限制。
+- [John Martin 发表目录](https://jdmartin86.github.io/research/)：连接其规划、奖励与智能体边界的个人研究脉络。
+
+### The Ungrounded Alignment Problem
+
+Marc Pickett, Aakash Kumar Nain, Joseph Modayil, Llion Jones
+
+ICDL 2025（预印本 2024） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+即使目标已经写明，智能体怎样知道其中的概念对应哪一段未知感知输入？
+
+#### 关键机制
+
+利用固定的字符转移关系知识，对未知图像编码进行无标签对齐。共享编码器与对比学习把感知模式连接到既有关系结构。
+
+#### 证据
+
+原文在置换像素的字符序列上检验触发词识别。这隔离了概念指代与感知编码的问题，而非直接训练一般 RL 控制器。
+
+#### 条件与限制
+
+预先给定的关系、重启训练与阈值选择是实验条件。受控接地任务的准确率不能当作通用价值对齐或单生命期适应的证据。
+
+#### 阅读与实验
+
+分别改变感知编码和事件关系，区分事件识别失败、预测失败与奖励偏好错误。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/html/2408.04242v1)：问题定义、关系传播与训练条件。
+- [机构发表目录](https://www.openmindresearch.org/research)：列为 ICDL 2025。
+
+#### 作者代码
+
+[原论文给出的作者仓库。](https://github.com/EmergenceAI/babybeaver)
+
+作者字符接地任务实现；不是流式 actor–critic 代码。
+
 
 <a id="chapter-code"></a>
 
@@ -1557,11 +1749,13 @@ python3 examples/state_meta_lab.py state
 
 ## 参考文献与实现
 
+- [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
+
 - [Williams & Zipser：RTRL 原始论文](https://doi.org/10.1162/neco.1989.1.2.270)：理解固定参数下的全历史敏感度；本页给出独立的标量推导与实现。
 
 - [Williams & Zipser：递归网络梯度与复杂度](https://web.stanford.edu/class/psych209a/ReadingsByDate/02_25/Williams%20Zipser95RecNets.pdf)：补读精确求导与持续在线权重变化之间的区别。
 
-- [Littman、Sutton、Singh：Predictive Representations of State](https://proceedings.neurips.cc/paper/2001/file/1e4d36177d71bbb3558e43af9577d70e-Paper.pdf)：原始 PSR 研究；关注 core tests 与条件更新，不把任意预测集合都称作充分状态。
+- [Littman、Sutton、Singh · Predictive Representations of State](https://proceedings.neurips.cc/paper/2001/file/1e4d36177d71bbb3558e43af9577d70e-Paper.pdf)：行动条件下的未来检验与预测状态；本节二状态 HMM 是可完整手算的教学实例。
 
 - [Abel、Hershkowitz、Littman：Near Optimal Behavior via Approximate State Abstraction](https://proceedings.mlr.press/v48/abel16.html)：按保留的价值、模型和行为性质区分抽象，分析近似抽象造成的控制损失。
 
@@ -1591,6 +1785,8 @@ python3 examples/state_meta_lab.py state
 
 - [Recurrent Reinforcement Learning with Memoroids · 作者实现](https://github.com/proroklab/memoroids)：memory 模型、buffer、losses 与 segment_dqn/tape_dqn 对照。 论文附录原链接 memory-monoids 对应作者 Prorok Lab 的现有 memoroids 仓库；README 标明论文。
 
+- [Sutton, Bowling & Pilarski — The Alberta Plan for AI Research](https://arxiv.org/abs/2208.11173)：状态构造与有限资源智能体的研究背景；本节的递归更新反例依据 Sutton 2019 年 Markov and Agent State 原始短文，不将讲义重构冒充口述。
+
 - [作者原文](https://arxiv.org/abs/2209.14935)：2022 首稿，ICLR 2023；比较奖励表示、SF 与 FB。
 
 - [作者研究平台](https://github.com/facebookresearch/controllable_agent)：README 直接关联两篇 FB 论文；该仓库已经归档。
@@ -1612,3 +1808,11 @@ python3 examples/state_meta_lab.py state
 - [2025 首稿](https://arxiv.org/abs/2506.09985v1)：action-free 预训练、2-AC 后训练、真实规划与第 4.3 节限制；此处不赋予未核实会议状态。
 
 - [Meta FAIR 官方实现](https://github.com/facebookresearch/vjepa2)：包含 V-JEPA 2、2-AC 和较新的 2.1；版本不能混用。
+
+- [Martin et al. — Artifacts as Memory Beyond the Agent Boundary（2026）](https://arxiv.org/html/2604.08756v1)：预印本；第 3 节定义与定理、第 4 节容量比较、第 5 节限制。外部写读成本消融是教材提出的后续实验。
+
+- [Martin — Artifacts as Memory，PRL Symposium（2026）](https://all.cs.umass.edu/PRL-Symposium/)：主办方提供讲座摘要及 slides；讲座用于概念引入，论证以论文为准。
+
+- [Sutton、Tanner · Temporal-Difference Networks](https://papers.neurips.cc/paper_files/paper/2004/file/9d28de8ff9bb6a3fa41fddfdc28f3bc1-Paper.pdf)：区分问题网络与答案网络；预测之间的自举关系不自动提供未知世界的充分状态。
+
+- [Sutton · Toward a New Approach to Model-based Reinforcement Learning](https://www.incompleteideas.net/papers/MBRL2.pdf)：课程指定阅读 Introduction 与 §1：近似 agent state、特征对当前表现与未来学习的用途、学习与规划的耦合。

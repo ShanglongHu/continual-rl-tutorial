@@ -8,6 +8,22 @@
 - 独立实现 MC 与 TD，解释为什么同一条轨迹给出的第一次更新不同。
 - 理解 $\lambda$ 在传播信用中做什么，以及为什么普通在线 TD($\lambda$) 与固定参数前向视图不能无条件画等号。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 一条经验
+
+在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
+
+### 折扣与终止
+
+$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
+
+### 表格与函数逼近
+
+表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -83,22 +99,6 @@ $\pi$ 是给定策略，$G_t$ 是随机回报，$\gamma_{t+1}$ 是当前转移�
 
 - TD与多步：用后继估计补足未来，改变目标偏差、方差与反馈延迟。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 一条经验
-
-在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
-
-### 折扣与终止
-
-$\gamma$ 控制未来相对权重；真实终止后的价值设为 0。本章记 $\gamma_{t+1}$=$\gamma$(1−terminated)。训练脚本的时间截断不一定是任务终止。
-
-### 表格与函数逼近
-
-表格每个状态或状态动作一组独立参数；函数逼近让不同输入共享参数。更新一个输入可能改变其他输入的预测。
 
 <a id="lesson-setting"></a>
 
@@ -193,10 +193,16 @@ $$
 终止时截到终点。n 小更依赖价值估计，n 大使用更多实际结果，也等待更久、通常有更大方差。具体的误差权衡取决于奖励噪声、价值估计和轨迹长度。
 
 $$
-G_t^\lambda=(1-\lambda)\sum_{n\ge1}\lambda^{n-1}G_t^{(n)},\qquad G_t^\lambda-V(S_t)=\sum_{k\ge0}(\gamma\lambda)^k\delta_{t+k}
+G_t^\lambda=(1-\lambda)\sum_{n\ge1}\lambda^{n-1}G_t^{(n)},\quad 0\le\lambda<1,\qquad G_t^\lambda-V(S_t)=\sum_{k\ge0}(\gamma\lambda)^k\delta_{t+k}
 $$
 
-在无限折扣轨迹、固定 V 下，展开 n-step，按相同奖励与 V 项收集，价值项逐项抵消，就得到右边的 TD error 加权和。有限终止轨迹的最后一项吸收剩余权重。
+在无限折扣轨迹、奖励和冻结 V 有界时，展开 n-step，按相同奖励与 V 项收集，价值项逐项抵消，就得到右边的 TD error 加权和。不能直接在左侧无限几何式中代入 λ=1。
+
+$$
+G_t^\lambda=(1-\lambda)\sum_{n=1}^{T-t-1}\lambda^{n-1}G_t^{(n)}+\lambda^{T-t-1}G_t,\quad 0\le\lambda\le1.
+$$
+
+有限终止轨迹的最后一项吸收全部剩余权重；T 是真正终点。λ=1 得完整回报，λ=0 得一步目标（最后一步的空和为零）。无限折扣情形的 λ=1 则按 λ↑1 的极限定义。
 
 $$
 e_t=\gamma\lambda e_{t-1}+x_t,\qquad w_{t+1}=w_t+\alpha\delta_t e_t
@@ -306,7 +312,23 @@ def prediction(method="td", episodes=200, alpha=0.1):
 | 平均奖励 TD | 去掉长期增长的奖励率，学习差分价值 | 奖励率与价值的联合估计 |
 | 神经网络 TD | 用共享非线性表示 | 自举、离策略、函数逼近的耦合 |
 
-常数步长不追求在静止问题里把噪声彻底平均掉，而是保留对新规律的响应。有效样本权重随年龄呈指数衰减；真正的变化检测、滑动窗口选择和历史情境复用则是进一步的问题，不是 TD 自动具备的功能。
+常数步长不追求在静止问题里把噪声彻底平均掉，而是保留对新规律的响应。标量均值更新 Q←Q+α(R−Q) 对历史奖励给出几何衰减权重；TD 还含自举与状态访问，不能直接套用同一权重解释。例如单状态每步奖励 r、回到自己，TD 为 V⁺=[1−α(1−γ)]V+αr。α=.1、γ=.9 时旧 V 的系数是 .99，不是 .9；共享参数下还会产生矩阵耦合。变化检测、滑动窗口选择和历史情境复用则是进一步的问题，不是 TD 自动具备的功能。
+
+<a id="rlss-pid-dynamics"></a>
+
+## 目标不变，求解动力学能否改变？
+
+固定时域预测改变所问的未来。PID 加速路线则尝试保留原 Bellman 固定点，改变接近它的动态过程。先看已知模型的固定策略评价：令 B(v)=Tπv−v。普通价值迭代就是 v 加上这个残差。
+
+$$
+z_{k+1}=\beta z_k+a_I B(v_k),\qquad v_{k+1}=v_k+k_PB(v_k)+k_Iz_{k+1}+k_D(v_k-v_{k-1}).
+$$
+
+这是 PID value iteration 的结构。P 使用当前 Bellman 残差，I 保存衰减的残差积累，D 使用价值迭代差。k 是内部迭代次数；z 不是资格迹，不负责把真实后果分配给过去特征。
+
+取 $k_P=1,k_I=k_D=0$ 恢复普通价值迭代。即使目标相同，参数也可能使递推失稳。最小例子是一个自循环状态，奖励一、折扣 0.9；正确价值为十。只有比例项时，误差递推为 $e_{k+1}=(1-0.1k_P)e_k$，因此需要 $0<k_P<20$ 才会收敛。目标正确不保证任意增益正确。
+
+PID Accelerated TD 进一步处理只能获得样本的情形，包括随机逼近和增益适应。它不是在任意深网 TD error 上随意加一项积分与差分。原论文的 D 项使用价值差；对噪声很大的连续 TD error 直接作差，已经是另一规则。这里给出机制与稳定性入口，完整随机理论与论文实验仍属进阶阅读。
 
 <a id="lesson-check"></a>
 
@@ -348,7 +370,7 @@ def prediction(method="td", episodes=200, alpha=0.1):
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [When does Self-Prediction help? Understanding Auxiliary Tasks in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-self-prediction-auxiliary-tasks)
 
@@ -363,6 +385,7 @@ def prediction(method="td", episodes=200, alpha=0.1):
 - [Convergent Tree Backup and Retrace with Function Approximation](https://yingwen.io/zh/continual-rl/research/#recent-convergent-tree-retrace)
 - [Multi-Step Reinforcement Learning: A Unifying Algorithm](https://yingwen.io/zh/continual-rl/research/#recent-q-sigma-backups)
 - [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
+- [Per-decision Multi-step Temporal Difference Learning with Control Variates](https://yingwen.io/zh/continual-rl/research/#recent-openmind-control-variates)
 
 #### 流式协议下的稳定更新
 
@@ -379,6 +402,7 @@ def prediction(method="td", episodes=200, alpha=0.1):
 平均奖励改变跨时间目标；中心化改变估计的参照；重置协议改变转移和控制权限；后验采样改变探索。它们可以组合，但不能由同一条改名的更新式替代。
 
 - [Reward Centering](https://yingwen.io/zh/continual-rl/research/#recent-reward-centering-discounted)
+- [Extending Differential Temporal Difference Methods for Episodic Problems](https://yingwen.io/zh/continual-rl/research/#recent-openmind-episodic-differential)
 
 #### 学习规则本身的适应
 
@@ -607,6 +631,67 @@ arXiv预印本 · 2016 · 支持方法与理论
 
 - [作者原文](https://arxiv.org/html/1607.00446)：局部目标、状态λ、均值／二阶矩预测与完整算法。
 
+### Extending Differential Temporal Difference Methods for Episodic Problems
+
+Kris De Asis, Mohamed Elsayed, J. He
+
+RLC 2026 / RLJ · 2026 · 支持方法与理论
+
+#### 研究问题
+
+中心化怎样加速回合任务的学习，又不因为回合长度不同而改变目标？
+
+#### 关键机制
+
+处理终止边界的中心化尾项，再用共享价值偏置重参数化。区分奖励单位的中心与价值单位的偏置，使最终终止的无折扣回合也能使用适当形式。
+
+#### 证据
+
+论文分别研究固定中心化的策略不变性、在线偏置学习的线性 TD 分析，以及流式深度实验。教材给出遗漏终止补偿导致排序翻转的两动作反例。
+
+#### 条件与限制
+
+这里沿用原回合目标，不是把目标改成长期平均奖励。线性预测条件不保证非线性控制全局收敛；采样截断也不是自然终止。
+
+#### 阅读与实验
+
+计算立即终止和延迟终止两条路径的原始、错误中心化、正确补偿回报。再辨认代码里的偏置、终止分支和更新前 TD 误差。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：问题、保证与实验分别阅读。
+- [原文](https://arxiv.org/html/2605.04368v1)：终止补偿、共享偏置与回合式扩展。
+
+### Per-decision Multi-step Temporal Difference Learning with Control Variates
+
+Kristopher De Asis, Richard S. Sutton
+
+UAI 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+怎样保留长路径中的新奖励信息，同时减去已经可预测的采样波动？
+
+#### 关键机制
+
+在逐决策重要性采样回报中加入条件均值为零的控制变量。期望动作价值承担可预测部分，重要性比率仍作用于真实回报相对当前预测的残差。
+
+#### 证据
+
+原文统一讨论动作和状态价值的多步目标，并连接 Expected Sarsa、Tree-backup 与 Retrace。教材枚举一个两动作例子的期望和方差。
+
+#### 条件与限制
+
+无新增偏差不代表没有 bootstrap 误差，也不保证任意差预测都降低方差。此为研究者加入 Openmind 前的工作。
+
+#### 阅读与实验
+
+保持采样策略、价值函数与路径长度不变，分别计算控制变量前后的均值和方差；随后再讨论神经网络参数变化。
+
+#### 原文与相关入口
+
+- [原论文](https://arxiv.org/html/1807.01830v1)：重点读动作价值回报、条件均值与 λ-return 的关系。
+
 
 <a id="chapter-code"></a>
 
@@ -630,3 +715,5 @@ python3 examples/foundations_detail_lab.py test
 - [Sutton · Learning to Predict by the Methods of Temporal Differences](https://doi.org/10.1007/BF00115009)：TD 的原始问题动机与多步预测。读“如何利用尚未结束的经验”，并理解其更新规则。
 
 - [van Seijen & Sutton · True Online TD($\lambda$)](https://proceedings.mlr.press/v32/seijen14.html)：检查在线前向视图、Dutch trace 与修正项；它解决的不是简单加大 $\lambda$。
+
+- [Bedaywi、Rakhsha、Farahmand · PID Accelerated Temporal Difference Algorithms](https://arxiv.org/abs/2407.08803)：§2.1 PID value iteration 与 §3 采样扩展；区分残差积分、价值差和资格迹。

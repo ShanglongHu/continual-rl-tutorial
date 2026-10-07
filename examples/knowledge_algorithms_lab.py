@@ -26,6 +26,10 @@ def relabel_goal(next_position: int, goal: int, physical_terminal: bool = False)
 
 def goal_q_update(q, state, action, next_state, goal, alpha=0.5, gamma=0.9,
                   physical_terminal=False):
+    # A successful state is terminal in THIS task. Its zero continuation value
+    # is not an action value to train using a transition out of that state.
+    if state == goal:
+        raise ValueError("A terminal goal state has no outgoing task transition")
     reward, terminal = relabel_goal(next_state, goal, physical_terminal)
     next_value = 0.0 if terminal else max(q.get((next_state, a, goal), 0.0)
                                           for a in (-1, 1))
@@ -42,13 +46,22 @@ def future_her(trajectory, original_goal, rng):
     Outputs (s,a,s_next,goal,physical_terminal), preserving physical termination
     for both original and hindsight goals. Goal success must never erase it.
     Dynamics are deterministic and goal independent in this teaching example.
+    These are independent one-step replay samples, not a relabeled rollout.
+    Skip a hindsight goal equal to s: this task terminates as soon as it succeeds.
+    A valid one-step sample may still exist after an earlier visit to its new goal;
+    relabeling a whole multi-step rollout would instead truncate at first success.
     """
     replay = []
     for t, (s, a, sn, physical_terminal) in enumerate(trajectory):
+        if s == original_goal:
+            raise ValueError("Recorded episode acts from its terminal goal")
+        if t + 1 < len(trajectory) and (physical_terminal or sn == original_goal):
+            raise ValueError("Recorded episode continues after termination")
         replay.append((s, a, sn, original_goal, physical_terminal))
         future_index = rng.randrange(t, len(trajectory))
         hindsight_goal = trajectory[future_index][2]
-        replay.append((s, a, sn, hindsight_goal, physical_terminal))
+        if s != hindsight_goal:
+            replay.append((s, a, sn, hindsight_goal, physical_terminal))
     return replay
 
 
@@ -429,6 +442,28 @@ class MechanismTests(unittest.TestCase):
                                          physical_terminal=physical_terminal))
         self.assertEqual(results[0],(-1.0,True,-1.0,-1.0))
         self.assertEqual(results[1],(0.0,True,0.0,0.0))
+
+    def test_future_her_skips_action_from_relabelled_terminal_state(self):
+        class LatestFuture:
+            def randrange(self, start, stop):
+                return stop - 1
+
+        trajectory = [(1, 1, 2, False), (2, -1, 1, False)]
+        replay = future_her(trajectory, 4, LatestFuture())
+        self.assertNotIn((1, 1, 2, 1, False), replay)
+        self.assertIn((2, -1, 1, 1, False), replay)
+        # Skipping an invalid relabel does not remove the original task sample.
+        self.assertIn((1, 1, 2, 4, False), replay)
+        with self.assertRaisesRegex(ValueError, "terminal goal state"):
+            goal_q_update({}, 1, 1, 2, 1)
+
+    def test_future_her_validates_original_episode_termination(self):
+        with self.assertRaisesRegex(ValueError, "continues after termination"):
+            future_her([(0, 1, 1, True), (1, 1, 2, False)], 4, random.Random(1))
+        with self.assertRaisesRegex(ValueError, "continues after termination"):
+            future_her([(0, 1, 1, False), (1, 1, 2, False)], 1, random.Random(1))
+        with self.assertRaisesRegex(ValueError, "acts from its terminal goal"):
+            future_her([(1, 1, 2, False)], 1, random.Random(1))
 
     def test_subtask_convention(self):
         v=[2.0,6.0]

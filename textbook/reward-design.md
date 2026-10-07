@@ -9,6 +9,26 @@
 - 推导势函数塑形、偏好学习和有限轨迹 MaxEnt IRL 的更新。
 - 设计可以区分目标错误、奖励模型错误与优化错误的实验。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 历史与策略
+
+历史包含已经发生的观测和动作。策略或完整学习器诱导历史上的概率分布。设计者也可能观察智能体看不到的变量。
+
+### 回报
+
+本章用有限时域折扣回报推导。平均奖励和风险准则会另行说明。
+
+$$
+G_T=\sum_{t=0}^{T-1}\gamma^t R_{t+1}
+$$
+
+### 概率模型与梯度
+
+知道条件概率、期望与链式法则即可。对数配分函数的梯度会在正文推导。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -84,26 +104,6 @@ $A,B$ 是结果历史的概率分布，$\succeq$ 是设计者偏好，$U$ 是其
 
 - 最优内部奖励：选择信号使受限学习器提高外部评价，一般无策略不变性保证。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 历史与策略
-
-历史包含已经发生的观测和动作。策略或完整学习器诱导历史上的概率分布。设计者也可能观察智能体看不到的变量。
-
-### 回报
-
-本章用有限时域折扣回报推导。平均奖励和风险准则会另行说明。
-
-$$
-G_T=\sum_{t=0}^{T-1}\gamma^t R_{t+1}
-$$
-
-### 概率模型与梯度
-
-知道条件概率、期望与链式法则即可。对数配分函数的梯度会在正文推导。
 
 <a id="lesson-setting"></a>
 
@@ -195,6 +195,32 @@ def ordered_goal(events):
 ```
 
 增加记忆修复的是这个信息缺失。它不证明任意偏好都有有限状态表示，也不自动修复彩票偏好违反独立性的问题。Abel 等人的 Markov 奖励表达能力研究应当放在这一层理解。
+
+<a id="research-openmind-ungrounded-alignment"></a>
+
+## 奖励里的“那个对象”是谁：未接地的目标与感知编码
+
+写出“拾起垃圾得 1 分”已经确定了一部分偏好，却还没有告诉系统哪段传感器数据表示垃圾。如果相机输入被置换、换了感知模态，或内部表示在学习中重排，奖励公式中的变量可能失去原来的指代。这里的问题先发生在概念与感知的对应关系上；一个优化完全正确的控制器也可能在错误事件上得到奖励。
+
+Pickett、Nain、Modayil 与 Jones 的 The Ungrounded Alignment Problem（2024 预印本，ICDL 2025）用一个刻意简化的问题隔离这层困难：系统预先知道要识别的字母序列，却不知道字母将以何种图像编码出现，训练时没有图像到字母的标签。作者固定英语字符的 bigram 关系表，让共享编码器输出的相邻字符分布与该表给出的关系相吻合。
+
+$$
+e_t=E_\theta(x_t),\qquad d_{t+1}(y)=\sum_{x\in\Sigma}B(y\mid x)e_t(x)
+$$
+
+这里用统一记号重写关系传播：E 把未知感知编码映成字母概率，B 是预先给定且冻结的字符转移知识，d 是由前一字符推得的下一字符分布。学习再用批内对比损失约束 d 与下一图像的编码；不是由奖励大小直接学习字母名称。
+
+原文在置换 EMNIST 字符序列上的触发词 fnord 检测达到 99.88%，但在 CIFAR26 编码上为 85.49% ± 1.59%。不能只用前者概括跨感知编码的结果。实验预先提供字符关系，进行 64 次随机重启以缓解局部最优，并用触发词出现概率设定阈值。它是一项接地问题的受控解法，不能据此宣称已解决人类价值对齐，也不是固定预算单生命期流式 RL 的实证。
+
+接回奖励设计，可以把任务写成两个待检查的映射：先从经历识别事件，再由事件计算奖励。下面的分解是教学用的接口，不是该论文提出的新 RL 算法。奖励权重可以保持不变，而事件识别器需要随传感器变化重新接地；反过来，识别正确而权重改变，才是在改变评价偏好。
+
+$$
+Z_{t+1}=g_{\eta_t}(H_{t+1}),\qquad R_{t+1}=\rho_\psi(Z_{t+1})
+$$
+
+g 负责“发生了什么”的识别，ρ 负责“这个事件值多少”的评分。若二者都可学习，必须保存其版本和各自监督来源。正确识别一个事件不自动证明给它的分数合适。
+
+思考：让感知映射变化而事件关系固定，再让事件关系变化而感知固定，会分别破坏上面哪一项假设？如果两类事件在所有已知关系中完全对称，仅靠无标签关系匹配能否唯一确定它们的名字？需要加入什么经验或先验才能打破对称？
 
 <a id="lesson-derive"></a>
 
@@ -386,10 +412,10 @@ $$
 Z 是所有可行轨迹指数分数的和。固定环境和轨迹集合。若轨迹具有不同基准概率，应把它们纳入分布，而不是当作奖励。
 
 $$
-\mathcal L(\theta)=\log Z(\theta)-\theta^\top\widehat F,\qquad \nabla\mathcal L=\sum_\tau P_\theta(\tau)F(\tau)-\widehat F
+\widehat F=\frac1M\sum_{i=1}^M F(\tau_i),\qquad\mathcal L(\theta)=\log Z(\theta)-\theta^\top\widehat F,\qquad \nabla\mathcal L=\sum_\tau P_\theta(\tau)F(\tau)-\widehat F
 $$
 
-对 log Z 求导：先对指数求导，再除以 Z，得到模型期望特征。负对数似然的梯度就是“模型特征−示范特征”。梯度下降使两者靠近。
+$\tau_1,\ldots,\tau_M$ 是给定的 $M\ge1$ 条示范，$\widehat F$ 是每条示范的累计特征再取样本平均，而不是对所有时间步重新平均。这里 $\mathcal L$ 是平均负对数似然。对 $\log Z$ 求导得到模型期望特征，所以梯度是“模型特征−示范特征”。梯度下降使两者靠近。
 
 有限轨迹 MaxEnt 负对数似然与精确梯度。测试不是完整随机 MDP 的 MaxCausalEnt 实现。
 
@@ -617,11 +643,19 @@ def intrinsic_meta_gradient(theta, eta, alpha):
 
 ### 问题支线
 
+#### 从历史构造状态与预测知识
+
+当前观测不够时，应记住什么、预测什么，又怎样在线学习？
+
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
+
+- [The Ungrounded Alignment Problem](https://yingwen.io/zh/continual-rl/research/#recent-openmind-ungrounded-alignment)
+
 #### 子任务、技能与经验获取
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 - [Reward-Aware Proto-Representations in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-reward-aware-proto-representations)
@@ -631,7 +665,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Reward-Respecting Subtasks for Model-Based Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-stomp-reward-respecting)
 
@@ -651,15 +685,15 @@ STOMP 把子任务、option、模型和规划连起来。子任务保留原任�
 
 #### 证据
 
-论文用明确的小问题展示奖励感知子任务如何产生更有用的行为和规划模型。它提供的是可分析的构造链，而非只比较一个技能执行成功率。
+论文用小问题展示奖励感知子任务怎样产生可用于规划的行为与后果模型。实验将各阶段依次进行，从而能够分清子任务设计、option 学习、模型学习和规划各自的作用。
 
 #### 条件与限制
 
-终止收益的约定是子任务定义的一部分，不能随意换成固定终点奖励。特征和子任务候选的选择尚不等于完整自主发现机制；实验也不构成整个 OaK 架构的验证。
+这些实验没有同时运行并更新全部阶段。特征选择、子任务淘汰和规划计算分配仍需算法；终止收益属于子任务规格，不能随意换成固定终点奖励，也不能混入真实奖励模型。
 
 #### 阅读与实验
 
-在同一个绕路环境中比较“最短到达目标”和“保留路径奖励”的子任务。分别计算 option 的奖励模型、折扣终点模型与一次规划备份。
+先在同一绕路环境比较两种子任务，并计算奖励模型、折扣终点模型和一次备份。再固定候选与容量，检验下游规划用途能否指导技能保留和模型重学；这第二步是拟议研究，不是原论文已证实的闭环。
 
 #### 原文与相关入口
 
@@ -740,6 +774,43 @@ ICLR 2025 · 2025 · 支持方法与理论
 
 MaestroMotif 的偏好处理、技能组织与 RL 实验。
 
+### The Ungrounded Alignment Problem
+
+Marc Pickett, Aakash Kumar Nain, Joseph Modayil, Llion Jones
+
+ICDL 2025（预印本 2024） · 2025 · 支持方法与理论
+
+#### 研究问题
+
+即使目标已经写明，智能体怎样知道其中的概念对应哪一段未知感知输入？
+
+#### 关键机制
+
+利用固定的字符转移关系知识，对未知图像编码进行无标签对齐。共享编码器与对比学习把感知模式连接到既有关系结构。
+
+#### 证据
+
+原文在置换像素的字符序列上检验触发词识别。这隔离了概念指代与感知编码的问题，而非直接训练一般 RL 控制器。
+
+#### 条件与限制
+
+预先给定的关系、重启训练与阈值选择是实验条件。受控接地任务的准确率不能当作通用价值对齐或单生命期适应的证据。
+
+#### 阅读与实验
+
+分别改变感知编码和事件关系，区分事件识别失败、预测失败与奖励偏好错误。
+
+#### 原文与相关入口
+
+- [原文](https://arxiv.org/html/2408.04242v1)：问题定义、关系传播与训练条件。
+- [机构发表目录](https://www.openmindresearch.org/research)：列为 ICDL 2025。
+
+#### 作者代码
+
+[原论文给出的作者仓库。](https://github.com/EmergenceAI/babybeaver)
+
+作者字符接地任务实现；不是流式 actor–critic 代码。
+
 
 <a id="chapter-code"></a>
 
@@ -797,3 +868,7 @@ python3 examples/reward_design_lab.py test
 - [Google DeepMind — Specification Gaming](https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/)：用具体失败区分规格漏洞与控制学习失败。
 
 - [AI Safety Gridworlds：原始环境代码](https://github.com/google-deepmind/ai-safety-gridworlds)：小型安全诊断环境。仓库已归档；独立 performance 指标不是智能体的训练奖励。
+
+- [Pickett et al. — The Ungrounded Alignment Problem](https://arxiv.org/html/2408.04242v1)：2024 预印本；Openmind 与 ICDL 官方日程列为 ICDL 2025。关系先验、无标签感知接地与触发词检测。
+
+- [EmergenceAI — babybeaver 作者代码](https://github.com/EmergenceAI/babybeaver)：论文直接给出的原作者仓库；检查训练重启、关系表和触发阈值，不能误标为流式 RL 实现。

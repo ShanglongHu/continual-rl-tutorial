@@ -8,6 +8,22 @@
 - 从梯度通路推导 dormant-unit 机制，具体实现 ReDo 与 CBP 的选择、替换、成熟期和优化器状态处理。
 - 理解 CReLU、正则化、网络重置、plasticity injection 等分支的不同作用及保留代价。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 梯度链式法则
+
+网络输出对某个权重的梯度由下游权重、激活导数与输入相乘；任一环节接近零都可能使参数难以变化。
+
+### ReLU
+
+$\operatorname{ReLU}(z)=\max(0,z)$；$z<0$ 时导数为零。一个单元在当前数据上不激活，并不意味着它在所有未来状态上都无用。
+
+### 优化器状态
+
+Adam 保存一阶矩、二阶矩及时间计数；只重置参数而不处理这些状态，可能让新参数继承旧方向和尺度。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -16,8 +32,8 @@
 
 ### 给定条件与符号
 
-- 同容量aged/fresh学习器、匹配新目标、数据顺序和优化预算。
-- 固定probe评价、优化器与归一化协议，以及允许的单元替换/参数扰动预算。
+- 同容量的新学习器与已长期训练的学习器、匹配的新目标、数据顺序和优化预算。
+- 固定探针评价、优化规则与归一化协议，以及允许的单元替换和参数扰动预算。优化器与统计状态属于各自历史，不默认清零。
 
 ### 需要求解的对象
 
@@ -28,10 +44,10 @@
 probe数据对各条件一致且不向主在线学习器提供额外世界经验；重置参数、优化器和环境是不同干预。
 
 $$
-\mathcal P_K(\theta;\mathcal D)=L_{\mathcal D}(\theta)-L_{\mathcal D}(U^K(\theta;\mathcal D))
+\mathcal P_K(M;\mathcal D_{\rm train},\mathcal D_{\rm eval})=L_{\mathcal D_{\rm eval}}(M)-L_{\mathcal D_{\rm eval}}\!\left(U^K(M;\mathcal D_{\rm train})\right)
 $$
 
-$\theta$ 为probe起点参数，$U$ 指定优化器与训练序列，$K$ 为更新预算，$L_{\mathcal D}$ 为固定独立且匹配的probe损失。比较改进量需控制初始损失；此诊断不是在线回报目标，机制还要回到真实控制评价。
+$M$ 包括参数、优化器及运行统计。$U$ 只使用训练数据执行 K 次更新；更新前后均在同一独立评价集上只读评价 M 内的预测器，不更新参数或统计。比较改进量需控制初始损失；此诊断不是在线回报目标，机制还要回到真实控制评价。
 
 ### 成立条件与解的含义
 
@@ -86,35 +102,21 @@ $\theta$ 为probe起点参数，$U$ 指定优化器与训练序列，$K$ 为更�
 - 优化器重置/参数重置：分别干预历史尺度与表示，matched对照可定位原因而代价不同。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 梯度链式法则
-
-网络输出对某个权重的梯度由下游权重、激活导数与输入相乘；任一环节接近零都可能使参数难以变化。
-
-### ReLU
-
-$\operatorname{ReLU}(z)=\max(0,z)$；$z<0$ 时导数为零。一个单元在当前数据上不激活，并不意味着它在所有未来状态上都无用。
-
-### 优化器状态
-
-Adam 保存一阶矩、二阶矩及时间计数；只重置参数而不处理这些状态，可能让新参数继承旧方向和尺度。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 可塑性的操作性定义
 
-设两个同样结构的网络接收到完全相同的新目标和训练数据：一个已经训练很久，另一个刚初始化。若前者在相同学习预算下改进更慢，便有可塑性下降的证据。反之，仅看到在线 reward 下降，还不能排除探索不足、环境更难、价值估计错误或任务本身无解。
+函数逼近使有限参数可以服务许多状态，也使学习的历史改变了以后的梯度通路与更新尺度。一次训练得到低误差，还不能说明同一网络在很久以后仍容易学习。要研究这种能力，先让两个同样结构的网络接收匹配的新目标和数据：一个已经训练很久，另一个刚初始化。控制起始误差和学习预算后，若前者改进更慢，就得到可塑性下降的证据。单独的在线回报下降还混入探索、任务难度与估值误差，因而不足以完成这个诊断。
 
 $$
-\mathcal P_K(\theta;\mathcal D)=L_{\mathcal D}(\theta)-L_{\mathcal D}(U^K(\theta;\mathcal D))
+\mathcal P_K(M;\mathcal D_{\rm train},\mathcal D_{\rm eval})=L_{\mathcal D_{\rm eval}}(M)-L_{\mathcal D_{\rm eval}}\!\left(U^K(M;\mathcal D_{\rm train})\right)
 $$
 
-这是一种可操作的 $K$ 步改进量：$U$ 指定优化器、步长、训练序列和统计更新。评价采用独立但匹配的 probe 数据，并控制初始损失；仅比较不同起点的绝对改进量会混入任务难度差异。
+这是一个 $K$ 步改进量。$M$ 包含参数、优化器与归一化统计，$U$ 指定完整更新；$L_{\mathcal D}(M)$ 是用该状态中的预测器在数据 $\mathcal D$ 上只读评价的损失，不更新参数或统计量。训练只使用 $\mathcal D_{\rm train}$，两次评价使用同一份独立且匹配的 $\mathcal D_{\rm eval}$。还应控制初始损失，避免把更少的可改进空间误判为较差学习能力。
 
-完整 aged/fresh 对照至少固定网络容量、目标难度、数据顺序、更新数、优化器和归一化。为了拆解原因，还应增加“只重置优化器”“只重置部分权重”“保留 replay 但重置网络”等条件。若 fresh 用额外探索或外部 task reset，就不再是同一学习能力测试。
+为什么把优化器也放进 $M$？令 $L(w)=(w-1)^2/2$、$w=0$，采用 $m^+=0.9m+\nabla L(w)$、$w^+=w-0.1m^+$。若旧动量为 $m=-1$，新参数为 $0.19$，损失下降；若旧动量为 $m=2$，新参数为 $-0.08$，损失反而上升。网络参数与当前损失完全相同，下一步学习能力仍可不同。比较“只重置优化器”的条件，就是为了区分这类影响与表示退化。
+
+完整 aged/fresh 对照至少固定网络容量、目标难度、数据顺序、更新数、优化规则和归一化协议。已有优化器状态与运行统计是待比较学习历史的一部分，不能在主对照中不加说明地清零。为了拆解原因，还应增加“只重置优化器”“只重置部分权重”“保留 replay 但重置网络”等条件。若 fresh 用额外探索或外部 task reset，就不再是同一学习能力测试。
 
 | 诊断量 | 能提示什么 | 不能单独证明什么 |
 | --- | --- | --- |
@@ -267,6 +269,57 @@ python3 implementations/extended_adaptation/continual_backprop.py --steps 1200 -
 **继续实验。** 固定总替换次数，再比较最低效用、随机选择与去掉成熟期。将目标改为多次同难度变化，同时加入 fresh 探针；把“选择规则有效”和“随机重生即可”分开检验。
 
 [源码](../implementations/extended_adaptation/continual_backprop.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-continual_backprop/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-continual_backprop/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-continual_backprop/curves.json)
+
+<a id="rlss-renewal-consumer-contract"></a>
+
+## 替换神经元改变了什么：删除扰动、成熟期与局部学习目标
+
+Continual Backpropagation 将常规梯度学习与少量单元更新结合。它先估计单元在当前数据上的贡献，再在足够成熟的单元中选择低效用对象。重新初始化其输入连接，并把输出连接置零。后一步只保证新随机特征暂时不贡献输出，不保证删除旧单元时网络函数不变。
+
+$$
+y(x)=\sum_i v_i h_i(x),\qquad
+v_j^+=0\quad\Longrightarrow\quad y^+(x)-y(x)=-v_jh_j(x).
+$$
+
+其余参数暂不改变。旧贡献只有本来为零，替换才对当前输出无影响。例如旧输出权重 0.3、激活为 1 与 0.7，两个输入的输出分别改变 −0.3 与 −0.21。
+
+$$
+u_i\leftarrow\eta u_i+(1-\eta)|h_i|\sum_k|v_{ik}|,\qquad
+a_i\leftarrow a_i+1,\qquad E=\{i:a_i>m\}.
+$$
+
+这是原研究使用的 contribution utility 形式；a 是年龄，m 是成熟阈值。偏差校正及层间实现应按对应作者版本核对。效用是对当前分布的启发式估计，不是未来一切任务的重要性。
+
+$$
+B\leftarrow B+\rho|E|,\qquad
+k=\min(\lfloor B\rfloor,|E|),\qquad B\leftarrow B-k.
+$$
+
+一种明确的批量小数预算实现：在本步合格集合中替换 k 个最低效用单元。原论文算法在小替换率下逐个处理；推广为批量时须写清合格集与预算的时序，不能把 ρ 的含义悄悄改成全层比例。
+
+例如 512 个单元始终合格，替换率为十万分之一，10000 步积累 51.2 次请求，整数机制实现 51 次，余下 0.2 留待后续。实际训练中新生单元不合格，所以实际数量通常更少。若每步直接取整，则这个例子一次也不会替换。年龄不是装饰性统计，它决定测试窗口与实际探索速度。
+
+删除和引入还具有不对称性。新单元输出权重为零时，其输入权重从主损失获得的梯度通常为零；输出权重仍可学习。新特征若长期不激活，或从未与主误差相关，就可能尚未获得使用机会便再次被淘汰。成熟期延缓淘汰，却不保证候选能得到有效训练信号。
+
+$$
+y=v\,\sigma(u^\top x),\qquad
+\nabla_u L=\frac{\partial L}{\partial y}\,v\,\sigma'(u^\top x)x,\qquad
+\frac{\partial L}{\partial v}=\frac{\partial L}{\partial y}\,\sigma(u^\top x).
+$$
+
+v=0 时，输入端主任务梯度为零，输出端梯度未必为零。这个代数事实说明候选学习的入口；它不证明必须采用某一种局部目标。
+
+Sutton 的 Decentralized Neural Networks 讲义讨论另一条研究思路：保留已有效工作的主干，让边缘候选通过局部目标、连接建立和效用传播参与结构搜索。此处 DNNs 指“去中心化神经网络”，不是深度神经网络的通称。讲义把结构、权重和步长视为不同适应层，并明确尚无完整实证系统。
+
+| 过程 | 局部反馈 | 与总体目标的关系 |
+| --- | --- | --- |
+| 权重学习 | 预测或控制损失的梯度 | 直接优化当前代理目标，仍受采样与自举限制 |
+| 步长适应 | 参数变化对后续误差的影响 | 调节现有学习通路，不自动产生新特征 |
+| 结构搜索 | 候选激活、被使用程度、贡献与年龄 | 需检验局部目标是否确实改善主任务或未来学习 |
+
+“经常激活”不能替代“有助于学习”。恒为一的重复单元容易达到活跃目标，却可能没有新信息；“输出权重增大”也依赖参数单位。要检验局部目标，可在固定候选生成器下比较主任务学习速度、旧功能扰动与跨目标迁移，而不是只报告候选自身的分数。
+
+接入多预测 CRL 时，一个单元可能同时服务奖励价值、GVF、option 停止判断和模型。删除它前，需要确定哪些消费者有权保护它；替换后则要维护相应的优化器统计、资格迹和模型坐标。仅在单一监督头上降低误差，没有证明这条依赖链已经闭合。
 
 <a id="lesson-normalization"></a>
 
@@ -571,7 +624,7 @@ $$
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Plasticity as the Mirror of Empowerment](https://yingwen.io/zh/continual-rl/research/#recent-plasticity-mirror-empowerment)
 
@@ -662,11 +715,11 @@ Continual Backpropagation 在梯度学习之外持续生成并测试特征。它
 
 #### 条件与限制
 
-有限序列上的学习保持不保证无限生命中的任意适应。替换率、效用定义与成熟度条件仍需选择；新任务学习速度和旧能力保留必须分开测量。
+原文明确说明，其效用主要考虑当前数据，CBP 并不解决遗忘。对新数据持续学得动与旧功能仍被保留是不同结果；有限长序列也不保证无限生命中的任意适应。替换率、效用和成熟度仍需选择。
 
 #### 阅读与实验
 
-逐项消融“成熟度筛选”“效用筛选”“随机替换”。比较相同替换预算，检验收益究竟来自定向回收还是一般参数扰动。
+在同一替换预算下消融成熟度、效用与随机替换，先检验新目标学习。随后让旧情境返回，测被回收功能的损失；若再用旧功能代价约束回收，应作为新增机制检验，不能把收益归给原始 CBP。
 
 #### 原文与相关入口
 
@@ -1095,9 +1148,9 @@ python examples/lifelong_algorithms_lab.py plasticity
 
 - [ReDo 作者实现 · Google Dopamine](https://github.com/google/dopamine/tree/master/dopamine/labs/redo)：作者发布的 Dopamine 版本；核心文件为 weight_recyclers.py 及各 recycled agent。
 
-- [Dohare et al. · Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7)：长期可塑性与 continual backpropagation 的研究。
+- [Dohare et al. · Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7)：Methods 的 CBP 更新、成熟期与替换规则；Extended Discussion 区分可塑性、保持与未来迁移。
 
-- [CBP 作者代码 · loss-of-plasticity](https://github.com/shibhansh/loss-of-plasticity)：lop/algos/gnt.py 与 lop/utils/AdamGnT.py；效用变体、成熟期、预算和 optimizer 状态均须按配置核对。
+- [Loss of plasticity · 作者实现](https://github.com/shibhansh/loss-of-plasticity)：使用对应任务的原配置，检查输入连接、输出连接及 optimizer 状态的重置。
 
 - [Lyle et al. · Understanding Plasticity in Neural Networks](https://proceedings.mlr.press/v202/lyle23b.html)：强调曲率等机制，避免将全部 plasticity loss 简化为 dead ReLU。
 

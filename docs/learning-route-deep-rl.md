@@ -107,7 +107,7 @@ python3 examples/foundations_detail_lab.py test
 
 不通过枚举最大 Q，能否直接改善动作分布？
 
-参数化策略 $\pi_\theta(a\mid s)$ 直接输出动作分布。对轨迹概率求导，可把回报的梯度写成动作 log-probability 的梯度乘回报。环境的未知转移概率不必可微。REINFORCE 用完整回报估计该权重；减去只依赖状态的 baseline，不改变相应期望梯度，却可能降低方差。
+参数化策略 $\pi_\theta(a\mid s)$ 直接输出动作分布。对轨迹概率求导，可把回报的梯度写成动作 log-probability 的梯度乘回报。这里环境规律不直接依赖策略参数，因此不需要对未知转移模型求导。REINFORCE 用完整回报估计该权重。固定状态后，$\sum_a\pi_\theta(a\mid s)\nabla_\theta\log\pi_\theta(a\mid s)=\nabla_\theta\sum_a\pi_\theta(a\mid s)=0$；所以减去与本次动作无关的 baseline 不改变期望梯度，却可能降低方差。
 
 advantage 定义为 $A_\pi(s,a)=q_\pi(s,a)-v_\pi(s)$，表示这个动作比当前策略在该状态的平均选择好多少。actor–critic 用 critic 的价值预测构造更早取得、通常方差较低的更新权重，例如 TD error 或 advantage 估计。actor 改变策略，critic 评价随之变化的策略，二者形成耦合闭环。critic 偏差仍会影响 actor。
 
@@ -117,7 +117,7 @@ $$
 \nabla_\theta J=\mathbb E_{\tau\sim\pi_\theta}\left[\sum_{t=0}^{T-1}\gamma^t\nabla_\theta\log\pi_\theta(A_t\mid S_t)\bigl(G_t-b(S_t)\bigr)\right]
 $$
 
-这里 J 是从固定初始分布出发的有限轨迹折扣回报，$G_t$ 从时刻 t 重新计折扣。baseline 在 actor 更新中按固定数值使用；连续动作要使用联合概率密度。
+这里 $J=\mathbb E[G_0]$，初始分布与有限时域固定，$G_t$ 从时刻 $t$ 重新计折扣，因此外面还有 $\gamma^t$。baseline 在 actor 更新中停止梯度；其随机拟合过程还须满足给定状态后与本次动作无关。仅有 $b(S_t)$ 的函数签名不足以保证这一点，例如用同一条样本先拟合 baseline 再原地扣除，可能引入依赖。
 
 ### 动手与核对
 

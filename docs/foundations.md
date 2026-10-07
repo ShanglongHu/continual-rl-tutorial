@@ -45,7 +45,7 @@
 不知道模型时，可以将完整回报作为样本。需要规定重复访问如何计数、数据由谁生成，以及目标策略能否被行为覆盖。
 
 - 实现 first-visit、every-visit 和 ε-soft MC 控制。
-- 推导轨迹重要性比率、ordinary IS 与 weighted IS。
+- 推导轨迹与逐决策重要性采样，区分 ordinary IS 与 weighted IS。
 - 识别终止、覆盖、方差和策略变化的边界。
 
 #### [TD 预测与控制：SARSA、Expected SARSA、Q-learning 和 Double Q](../foundations/tabular/temporal-difference.md)
@@ -268,3 +268,79 @@
 - 建立评估、目标构建、响应学习与重新评估的循环，并定义所追求的单调提升。
 - 理解 COLE 与 HOLA 怎样把这条思路扩展到合作伙伴与团队组合。
 - 区分固定对手回报、可利用度、种群安全价值与陌生伙伴泛化。
+
+<a id="foundation-continuity"></a>
+
+## 沿同一个问题，读通基础方法与持续学习
+
+同一种更新式可能用于不同目标；不同算法也可能求解同一个问题。以下从预测或优化对象出发，逐项考察表示、数据和计算条件改变后的结论。每条线均可独立阅读；箭头表示论证的衔接，不表示方法之间的优劣。
+
+### 预测的量是什么，误差又是什么？
+
+基础：先固定策略。价值是回报的条件期望。MC 使用完整回报；TD 用下一时刻的预测替代未观察的余项。两者不能仅按同一批样本上的 TD error 排序。
+
+条件改变：共享参数限制了可表示的函数。采样权重决定在哪些状态上拟合。最小价值误差、最小 Bellman 残差和 TD 固定点一般不同；神经网络又使可表示的局部方向随参数改变。
+
+研究问题：多个 GVF 共用表示时，哪些预测值得占用容量？应分别检查问题定义是否改变、数据是否覆盖，以及回答该问题的误差是否降低。
+
+[MC 与 TD](../foundations/tabular/temporal-difference.md) → [投影与半梯度](../foundations/approximation/prediction.md) → [神经价值更新](../foundations/deep/deep-value.md) → [GVF 的问题与答案](../textbook/gvf.md)
+
+### 当前输入保留了哪些历史信息？
+
+基础：Bellman 方程先假定有足够的状态。表格为不同状态分别存值；它不负责从相同观察中恢复被遗漏的历史。
+
+条件改变：特征共享是在已知信息上泛化；递归状态则保留过去信息。增加网络宽度不等于补回历史，低训练误差也不证明输入满足 Markov 性。
+
+研究问题：策略改变以后，原来的状态压缩是否仍能预测行动后果？构造状态的网络、运行时记忆、资格迹与优化器状态如何共同更新？
+
+[MDP 的状态条件](../foundations/tabular/mdps.md) → [表示与泛化](../foundations/approximation/features-control.md) → [不完全可观测](../foundations/deep/partial-observability.md) → [智能体状态](../textbook/state.md)
+
+### 估计哪种策略的价值，又按什么状态分布加权？
+
+基础：行为策略决定怎样获得经验；目标策略决定要预测哪种行为。重要性比可以校正给定状态下的动作分布，但不会自动把状态出现的频率改成目标策略的频率。
+
+条件改变：Replay 还引入缓冲区的时间组成与抽样规则。神经更新受到数据分布、共享梯度和移动目标共同影响。重复旧数据与逐条使用新数据有不同的资源和适应代价。
+
+研究问题：单一行为流怎样支持许多预测和技能？在固定内存下，怎样权衡覆盖、样本年龄、更新方差与适应速度，而不把离策略修正当作完整稳定性保证？
+
+[离策略稳定性](../foundations/approximation/off-policy.md) → [数据与训练接口](../foundations/deep/practice.md) → [离线数据的覆盖](../foundations/deep/offline.md) → [流式更新](../textbook/streaming.md)
+
+### 怎样把较晚的反馈归给较早的计算？
+
+基础：多步回报定义用多远的未来构造目标。资格迹压缩过去的特征或梯度方向。前向与后向等价必须说明参数是在整个轨迹内固定，还是每一步改变。
+
+条件改变：神经网络改变后，旧梯度不再等于用当前参数重算的梯度。递归状态还带来参数经过历史状态影响当前输出的路径，不能用一条普通 TD trace 代替。
+
+研究问题：在每步计算有界的条件下，保留多少过去影响才有用？替换特征时，怎样处理与旧特征绑定的资格迹、优化器动量和元梯度？
+
+[多步回报](../foundations/tabular/multistep.md) → [资格迹与等价条件](../foundations/approximation/traces.md) → [GAE 与 actor–critic](../foundations/deep/policy-gradient.md) → [在线信用分配](../textbook/credit.md)
+
+### 优化一段折扣回报，还是长期单位时间收益？
+
+基础：回报定义决定策略排序。折扣奖励、有限时域和平均奖励是不同目标；把折扣取大，只是在某些条件下接近相应极限。
+
+条件改变：持续任务的相对价值需要奖励率和定标条件。训练中更新策略时，奖励率也在变化。动作时长不同，还要区分每次决策与单位物理时间的收益。
+
+研究问题：长期收益率忽略有限的启动损失；单生命期不能忽略。怎样同时报告生命期收益、适应成本和后期表现，并让预测、控制与模型使用一致的时间单位？
+
+[平均奖励控制基础](../foundations/approximation/average-control.md) → [熵如何改变目标](../foundations/deep/entropy-control.md) → [平均奖励的预测、控制与规划](../textbook/average.md) → [完整学习器的评价](../textbook/control.md)
+
+### 一次策略更新，为什么能改善未来？
+
+基础：精确策略改善使用旧策略的真实价值；策略梯度使用与目标匹配的访问分布。值函数近似或梯度估计误差会破坏这些推理的前提。
+
+条件改变：PPO 的动作概率比不等于新策略的状态访问比。连续动作 actor 还会追逐 critic 的误差。限制局部更新尺度与证明实际回报单调提高是不同要求。
+
+研究问题：动作不仅改变世界，也改变未来数据与学习。比较冻结策略不等于比较持续更新的智能体；什么时候应付出当前回报去获得长期有用的经验？
+
+[精确策略改善](../foundations/tabular/dynamic-programming.md) → [策略梯度定理](../foundations/approximation/policy-gradient.md) → [TRPO 与 PPO 的近似](../foundations/deep/trust-region.md) → [持续控制的比较器](../textbook/control.md)
+
+### 模型需要预测什么，内部计算应花在哪里？
+
+基础：规划根据模型更新价值或选择动作。Dyna 把真实经验更新、模型拟合和规划查询分开。模型更新次数更多，不代表新增了真实证据。
+
+条件改变：线性价值可使用期望特征模型；非线性价值通常不能把后果分布替换成均值。Option 模型还要保留随机持续时间、真实奖励和终点的关系。
+
+研究问题：当表示、技能或环境改变时，哪些旧模型仍可复用？有限计算应优先用于收集真实经验、改进模型，还是在已有模型中规划？
+
+[Dyna 与搜索控制](../foundations/tabular/planning.md) → [神经模型与规划](../foundations/deep/model-based.md) → [Option 后果模型](../textbook/models.md) → [规划与计算分配](../textbook/planning.md)

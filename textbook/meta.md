@@ -9,6 +9,26 @@
 - 完整理解 MAML、RL²、PEARL、meta-gradient RL 与 learned update rules 的训练/测试循环及 reset 边界。
 - 用可运行的有限差分、手算与机制反例验证代码，并设计适用于持续交互而非仅任务重置的评测。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 两种时间尺度
+
+内层变量随当前经验适应；外层变量决定内层怎样适应，并由后续表现训练。“外层”不必在另一台机器，也不必慢到离线。
+
+### 梯度与 Hessian
+
+梯度描述损失随参数的一阶变化；Hessian 描述梯度本身如何改变。对一次梯度下降再求导，自然会出现 Hessian，而不是额外加的技巧。
+
+$$
+\frac{\partial (w-\alpha\nabla L(w))}{\partial w}=I-\alpha\nabla^2L(w)
+$$
+
+### 固定数据条件下求导
+
+可微优化循环通常先把采样轨迹当常量。RL 的策略变化还会改变轨迹分布；是否估计这条路径必须另行说明。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -85,31 +105,11 @@ $\eta$ 为元参数，$F_\eta$ 为更新规则，$K$ 为适应长度，$M$ 为�
 - RL²/PEARL与learned rules：前者主要适应活动/context，后者学习更新信号，参数和reset边界不同。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 两种时间尺度
-
-内层变量随当前经验适应；外层变量决定内层怎样适应，并由后续表现训练。“外层”不必在另一台机器，也不必慢到离线。
-
-### 梯度与 Hessian
-
-梯度描述损失随参数的一阶变化；Hessian 描述梯度本身如何改变。对一次梯度下降再求导，自然会出现 Hessian，而不是额外加的技巧。
-
-$$
-\frac{\partial (w-\alpha\nabla L(w))}{\partial w}=I-\alpha\nabla^2L(w)
-$$
-
-### 固定数据条件下求导
-
-可微优化循环通常先把采样轨迹当常量。RL 的策略变化还会改变轨迹分布；是否估计这条路径必须另行说明。
-
 <a id="lesson-setting"></a>
 
 ## 1. 问题设定：哪些变量在适应，适应后的表现如何评价
 
-环境变化可以要求不同形式的适应。例如，地面摩擦系数改变后，机器人可以更新控制参数、推断新的动力学情境，或改变参数学习的速度。三种方法分别改变模型参数、活动状态和学习规则，所依赖的数据与评价目标也不同。
+前面的学习器用经验改变价值或策略参数，但步长、预测时间尺度和更新规则通常由设计者给定。一个长时间运行的系统可能在不同阶段需要不同的学习速度：估计稳定时应减少噪声，已有知识失效时又要及时修正。我们因此进一步问，经验能否帮助选择怎样学习？例如摩擦系数改变后，机器人可以更新控制参数、推断当前情境，也可以调整参数学习的速度。这三条适应路径改变不同对象，必须分别定义和评价。
 
 本章有两种主要数据设定。在线元梯度可在一个持续运行的问题上工作：权重不断学习，步长或学习目标也根据后续误差调整，不要求出现一组可重置的任务。跨任务 meta-RL 则先规定任务分布与任务内适应过程，用训练任务中的经历训练初始化、推断器或更新规则，再检验新任务适应。两者都涉及学习过程，但评价单位与信息权限不同。
 
@@ -279,6 +279,89 @@ python3 implementations/continual/idbd.py --steps 1200 --seeds 0 1 2 3 4 --out r
 **继续实验。** 先补记每个坐标的步长和敏感度。再加入无关特征，并让相关特征的变化速度不同。预先固定任务族和调参预算，检验“区分特征”与“统一增大学习率”两种解释。
 
 [源码](../implementations/continual/idbd.py) · [逐种子记录](https://yingwen.io/crl-code/results/idbd/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/idbd/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/idbd/curves.json)
+
+<a id="rlss-idbd-salience"></a>
+
+## 步长塑造泛化，但步长不等于特征价值
+
+IDBD 的学习对象是“这类参数变化今后应当多快”，不是“这个输入在语义上是否重要”。区分二者，才能把逐特征步长接到持续表示学习，而不把稳定知识误当成无用知识删除。先从监督线性预测开始：输入与目标外生给定，预测为 wᵀx，误差为 y−wᵀx。
+
+$$
+\Delta w=D_\alpha\delta x,\qquad \Delta\widehat y(u)=\delta\,x(u)^\top D_\alpha x,\qquad D_\alpha=\operatorname{diag}(\alpha_1,\ldots,\alpha_d).
+$$
+
+逐坐标步长改变一次更新怎样传播到其他输入。它是一种学习偏置。若特征坐标乘 c、权重除 c，为保持相同预测变化，相应步长还需除以 c²。跨不同尺度直接比较 α 的大小，没有不变的效用含义。
+
+IDBD 用 βᵢ=log αᵢ 保证步长为正，并根据后来的预测误差调整 β。推导中的主要近似不是指数变换，而是怎样保存步长对已有权重的历史影响。令 Hⱼᵢ=∂wⱼ/∂βᵢ。即使每个 β 直接只控制一个权重，误差共享也会让它间接影响其他权重。
+
+$$
+H^+=(I-D_\alpha xx^\top)H+\operatorname{diag}(\alpha\odot\delta x).
+$$
+
+这条精确敏感度递推针对整个数据前缀使用固定 β 的 LMS，输入和目标不依赖 β。它需要保存 d×d 矩阵。第一项中非对角元素通常不为零，所以只跟踪 Hᵢᵢ 是近似，而不是线性预测自然消除了所有交叉路径。
+
+$$
+-\frac{\partial(\delta^2/2)}{\partial\beta_i}=\delta\sum_jx_jH_{ji}\ \approx\ \delta x_i h_i.
+$$
+
+保留对角敏感度 hᵢ 后，得到逐参数元更新。β 本身在线变化时，还使用了局部、缓变的敏感度近似。不能将这一 O(d) 规则称为完整跨全部学习历史的精确元梯度。
+
+$$
+\begin{aligned}\beta_i^+&=\beta_i+\theta\delta x_i h_i,\quad \alpha_i^+=e^{\beta_i^+},\\ w_i^+&=w_i+\alpha_i^+\delta x_i,\\ h_i^+&=h_i\max(1-\alpha_i^+x_i^2,0)+\alpha_i^+\delta x_i.\end{aligned}
+$$
+
+这是原始 IDBD 的更新顺序：δ 和 h 来自旧参数，先更新 β，再用新 α 更新 w 与 h。正部截断是稳定化设计，不是未修改的敏感度链式法则。
+
+正的 δxᵢhᵢ 表示近期沿这一坐标的变化，与当前误差给出的更新方向一致；它提供“先前可能应该更快”的证据。负值可能意味着过度修正，也可能来自噪声或相关特征的相互补偿。它不是一个逐样本正确的“相关／无关输入”分类器。
+
+| 观察 | 至少两种可能原因 | 不能立即采取的行动 |
+| --- | --- | --- |
+| α 很小 | 无关噪声；有用但已稳定的预测；输入很少出现 | 直接删除该特征 |
+| 输出权重很大 | 贡献显著；输入单位很小；与其他特征抵消 | 把权重绝对值当作通用效用 |
+| 新特征降低本步误差 | 捕捉可重复结构；拟合不可预测噪声 | 立即宣称获得了可迁移表示 |
+| 元梯度几乎为零 | 误差已小；特征不激活；敏感度衰减 | 宣称永远无需再学习 |
+
+原始实验使用 20 个独立标准正态输入，只有 5 个参与目标，每个相关系数为 ±1；定期翻转一个相关系数，使这些输入始终需要追踪。这个设计有意把“相关”与“需要快速更新”联系起来。它不证明在任意环境中 α 都等于重要性。把系数固定后，一个已经学准的关键输入可能需要很小步长，却仍不应被删除。
+
+逐步 IDBD 教学实现：先对照更新时序，再做敏感度有限差分
+
+```python
+def idbd_step(weights, beta, history, features, target, meta_rate=0.01):
+    """Linear supervised IDBD, with diagonal sensitivity and positive clipping."""
+    error = target - sum(w * x for w, x in zip(weights, features))
+    new_beta = [b + meta_rate * error * x * h
+                for b, x, h in zip(beta, features, history)]
+    alpha = [math.exp(b) for b in new_beta]
+    new_weights = [w + a * error * x
+                   for w, a, x in zip(weights, alpha, features)]
+    new_history = [h * max(0.0, 1.0 - a * x * x) + a * error * x
+                   for h, a, x in zip(history, alpha, features)]
+    return new_weights, new_beta, new_history, error
+```
+
+**算法：将数学正确性与特征效用实验分开**
+
+1. 固定一段二维、相关输入的监督数据，并冻结 β。
+1. 分别用完整 H 递推与 β 的中心有限差分计算最终权重敏感度。
+1. 先验证两者一致，再对照只保留对角的近似。
+1. 恢复在线 β 后，单独记录更新前误差、步长、敏感度与数值范围。
+1. 先复现相关输入持续漂移，再加入“有用但稳定”和“稀有但关键”的输入。
+1. 只有比较删除前后的未来损失及下游影响，才讨论特征淘汰。
+
+Expand-and-Add 进一步把当前观测、动作和旧状态送入非线性特征生成器，再用快速线性读出来学习预测。递归可以使线性读出依赖较长历史，但没有免费保存全部历史：状态容量、更新成本、时间信用与特征维护仍是约束。错误较大时 imprint 新特征，也可能只记住噪声。
+
+生成与检验至少需要成熟期、真实未来样本上的预测检验，以及特征依赖关系。一个特征对当前读出贡献不大，却可能是另一个有用特征的输入。沿依赖链传播效用并加衰减是一种架构设计选择；不是 IDBD 自动提供的性质。共享 GVF、option 与模型以后，删除特征还可能改变问题函数，须维护这些对象的语义。
+
+到 TD 或 actor–critic，误差里的后继预测和实际数据流也依赖学习过程。TIDBD、Metatrace 与不同元梯度方法保留的路径不相同。先分清所求导的目标、丢弃的依赖与固定的数据假设，再比较其数值和实验结果，不能仅因都有一个 h 或 trace 就互换公式。
+
+| 机制 | 所表达的问题 | 改变后须重新检查什么 |
+| --- | --- | --- |
+| Interest i | 哪些预测处境值得分配近似资源 | 评价目标是否也被改动 |
+| Emphasis M | 这些预测经自举又依赖哪些处境 | 强调分布、重要性比方差、稳定性条件 |
+| 资格迹 e | 当前误差应更新哪些过去参与的参数 | 目标策略、λ、旧梯度与当前表示的一致性 |
+| 逐参数步长 α | 沿各参数方向多快改变 | 更新几何、元目标、输入尺度和交叉敏感度 |
+
+这四个量都能放大或缩小一次更新，却不能因此互换。给当前 TD 更新乘较大的 α，并不等于正确传播先前状态的 interest。反过来，emphasis 的大值可能来自罕见的重要性比乘积，不意味着该特征应永久拥有较大学习率。联合自适应时，应先冻结三项只改变一项，再检验耦合；不能把每个模块各自的固定条件定理拼成整个自适应系统的保证。
 
 <a id="lesson-tidbd"></a>
 
@@ -456,6 +539,42 @@ python3 implementations/extended_adaptation/metatrace.py --steps 1200 --seeds 0 
 **继续实验。** 先增加随机策略价值与样本累计奖励指标，再考虑更长延迟或奖励尺度变化。若只换一个更困难任务而不保留同骨干对照，仍无法判断元历史是不是收益来源。
 
 [源码](../implementations/extended_adaptation/metatrace.py) · [逐种子记录](https://yingwen.io/crl-code/results/extended-metatrace/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/extended-metatrace/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/extended-metatrace/curves.json)
+
+<a id="research-openmind-metaoptimize"></a>
+
+## MetaOptimize：今天的误差如何评价过去的步长
+
+调节学习率需要一个评价标准。梯度幅度可以用于归一化，却不能单独说明过去的步长是否改善了后续学习。Sharifnassab、Salehkaleybar 与 Sutton 的 MetaOptimize（ICML 2025）将这个问题写成未来损失的折扣和，再构造只使用已到达数据的元更新。
+
+$$
+F_t^{\gamma_m}=(1-\gamma_m)\sum_{\tau>t}\gamma_m^{\tau-t-1}f_\tau(w_\tau),\qquad x_{t+1}=\operatorname{Alg}_{\rm base}(x_t,\nabla f_t(w_t),\beta_t)
+$$
+
+这里将原文的元目标折扣 $\gamma$ 改记 $\gamma_m\in[0,1)$，与环境回报折扣分开。$x$ 包含权重及优化器内部状态；$\beta$ 可通过 $\alpha_i=\exp\beta_i$ 决定各参数块的步长。
+
+直接在时刻 t 对未来目标求导需要尚未发生的数据。后向视角让每个损失在真正出现时，评价此前各次元参数选择的影响。交换项的到达时间解决因果可计算性，但元参数在此期间也会变化，所以有限元步长下不能声称与预知未来的算法轨迹完全相同。
+
+$$
+\mathcal H_\tau=(1-\gamma_m)\sum_{t<\tau}\gamma_m^{\tau-t-1}\frac{\mathrm d w_\tau}{\mathrm d\beta_t},\qquad \widehat\nabla_\beta F_\tau=\mathcal H_\tau^\top\nabla f_\tau(w_\tau)
+$$
+
+这是原文式 (6)–(7) 的因果代理。它汇集不同历史时刻的敏感度，不等于把所有 $\beta_t$ 当成同一个固定参数。前后向更新的接近性需小元步长等条件。
+
+手算一个独立的局部例子：$w_0=0$，训练损失为 $(w-1)^2/2$，$\alpha=e^\beta=0.1$，于是 $w_1=0.1$、$\partial w_1/\partial\beta=0.1$。后来仍预测目标 1 时，评价梯度为 $-0.9$，对旧 $\beta$ 的导数为 $-0.09$；若后来目标变为 $-1$，导数则为 $0.11$。同样的旧梯度幅度，因后续目标不同而获得相反的步长评价。这个单次链式法则示例不是完整 MetaOptimize 轨迹。
+
+| 原文中的计算选择 | 省略或保留的路径 |
+| --- | --- |
+| 完整框架 | 联合追踪内层状态、元优化器状态和元敏感度的动态。 |
+| 2×2 近似 | 删除敏感度状态自身相关的 Jacobian 行列块。 |
+| L 近似 | 进一步删除内层状态对元更新的部分反馈。 |
+| Hessian-free 变体 | 对指定优化器及导数路径作简化；不能把所有变体都称作精确二阶元梯度。 |
+
+论文包含非平稳 CIFAR100：十个顺序任务、每样本一次、batch size 为一、切换不通知优化器且不重置权重；同时含图像与语言建模实验。它为在线步长适应提供证据，但不是 actor–critic 控制回报证据。ImageNet 中分块步长未优于标量版，也应保留。作者实现见 sabersalehk/MetaOptimize；读取具体 optimizer 类与配置，不将框架名当成唯一算法。
+
+与本章 IDBD、Metatrace 对照时，先比较所评价的损失、敏感度路径与更新时序；与 Intentional Updates 对照时，再比较“学习全局尺度”与“按本次输出变化反解尺度”。二者可组合，但组合后的收益需要单独验证。
+
+- 思考：若元折扣变小，哪些过去步长的影响更快退出评价？这与缩短环境回报目标有什么不同？
+- 研究练习：固定数据和内层更新，分别消融敏感度反馈、分块尺度和元目标时域；记录累计损失、元状态内存、每步耗时与任务变化后的恢复。
 
 <a id="lesson-meta-rl"></a>
 
@@ -977,6 +1096,7 @@ IDBD 适应步长，MAML 学初始化，context-based meta-RL 推断任务；内
 - [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-trac-online-regularization)
 - [How Should We Meta-Learn Reinforcement Learning Algorithms?](https://yingwen.io/zh/continual-rl/research/#recent-meta-algorithm-search-comparison)
 - [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
+- [MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters](https://yingwen.io/zh/continual-rl/research/#recent-openmind-metaoptimize)
 
 #### 持续问题与可比较实验
 
@@ -1329,6 +1449,43 @@ arXiv预印本 · 2016 · 支持方法与理论
 
 - [作者原文](https://arxiv.org/html/1607.00446)：局部目标、状态λ、均值／二阶矩预测与完整算法。
 
+### MetaOptimize: A Framework for Optimizing Step Sizes and Other Meta-parameters
+
+Arsalan Sharifnassab, Saber Salehkaleybar, Richard S. Sutton
+
+ICML 2025 · 2025 · 支持方法与理论
+
+#### 研究问题
+
+怎样根据后来真正发生的损失，评价过去采用的步长，而不预知未来？
+
+#### 关键机制
+
+先写未来损失的元目标，再以历史敏感度建立因果后向更新。优化器状态也进入递推。完整联合敏感度、分块尺度及 Hessian-free 近似承担不同计算代价。
+
+#### 证据
+
+正式论文包含静态图像、语言建模与非平稳 CIFAR100 实验；部分近似可接近精心选择的学习率计划。分块步长不在所有实验中优于标量版本。
+
+#### 条件与限制
+
+这些实验主要检验优化与监督学习，不能自动推出持续 actor–critic 的回报改善。元优化器仍有步长和结构选择；元目标折扣也不是环境回报折扣。
+
+#### 阅读与实验
+
+先在元学习章手算一次步长对后续误差的影响，再对照作者代码辨认内层状态、元状态和被删去的导数路径。
+
+#### 原文与相关入口
+
+- [ICML 正式论文](https://proceedings.mlr.press/v267/sharifnassab25a.html)：正式年份为 2025；2024 是早期预印本年份。
+- [定稿推导与实验](https://arxiv.org/html/2402.02342v6)：未来元目标、后向代理及多种计算近似。
+
+#### 作者代码
+
+[正式论文链接的作者仓库。](https://github.com/sabersalehk/MetaOptimize)
+
+原作者提供的优化器组合与实验实现；不同配置不是同一条更新规则。
+
 
 <a id="chapter-code"></a>
 
@@ -1350,7 +1507,7 @@ python3 examples/state_meta_lab.py meta
 
 - [配套章节：流式学习](streaming.md#lesson-output-steps)：数据与计算协议、Stream-X 和 Intentional 的完整尺度推导、实现与对照。
 
-- [Sutton：Adapting Bias by Gradient Descent（IDBD）](https://cdn.aaai.org/AAAI/1992/AAAI92-027.pdf)：原始 IDBD：对数步长、逐特征适应与敏感度历史。
+- [Sutton · Adapting Bias by Gradient Descent: An Incremental Version of Delta-Bar-Delta](https://cdn.aaai.org/AAAI/1992/AAAI92-027.pdf)：原始 IDBD、逐参数学习率和漂移目标实验。其对角敏感度近似与现代完整元梯度需要区分。
 
 - [Kearney 等：TIDBD 2018 版本](https://arxiv.org/abs/1804.03334)：本页代码具体对应 Algorithm 1 的 semi-gradient、累积迹版本。
 
@@ -1399,3 +1556,11 @@ python3 examples/state_meta_lab.py meta
 - [Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning · 作者实现](https://github.com/ComputationalRobotics/TRAC)：trac.py、PyTorch/JAX optimizer 包与控制/视觉实验。 作者项目页与仓库均明确标为官方实现。
 
 - [RLC 2025 原文](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_218.pdf)：比较对象、元训练/测试与多维成本。
+
+- [Sharifnassab, Salehkaleybar & Sutton · MetaOptimize · ICML 2025](https://proceedings.mlr.press/v267/sharifnassab25a.html)：正式会议记录；原文第 2–6 节定义因果元目标、联合敏感度与计算近似，第 7 节区分静态及非平稳监督实验。
+
+- [MetaOptimize · 2025 定稿原文](https://arxiv.org/html/2402.02342v6)：采用 v6 而非仍只含早期实验的 2024 版本；元目标折扣不能与环境折扣混用。
+
+- [MetaOptimize · 作者实现](https://github.com/sabersalehk/MetaOptimize)：各 base/meta optimizer 组合对应不同实现；仍有元步长和配置选择。
+
+- [Sutton & Barto · Reinforcement Learning: An Introduction, 2nd edition](http://incompleteideas.net/book/the-book-2nd.html)：第 9 章的表示与泛化、第 11 章的离策略目标，为逐坐标步长与 TD 元学习提供基础。

@@ -8,6 +8,18 @@
 - 解释普通累积迹与 true-online 的差别，推导 Dutch trace。
 - 用重复状态和独立前向实现检查每个轨迹前缀。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 前向与后向视图
+
+前向视图从某个状态向未来构造回报目标；后向视图在反馈到来时，根据过去特征留下的资格更新权重。两者描述的时间方向不同。
+
+### 固定特征与线性预测
+
+本章 true-online 的精确等价以线性预测、固定特征及给定步长约定为基础。神经网络梯度迹是另一种近似，不自动具有同一等价。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -82,18 +94,6 @@ $$
 - 传统 TD(λ) / true-online TD：后者精确匹配指定在线前向视图，而非只在小步长下近似。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 前向与后向视图
-
-前向视图从某个状态向未来构造回报目标；后向视图在反馈到来时，根据过去特征留下的资格更新权重。两者描述的时间方向不同。
-
-### 固定特征与线性预测
-
-本章 true-online 的精确等价以线性预测、固定特征及给定步长约定为基础。神经网络梯度迹是另一种近似，不自动具有同一等价。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 一步 TD 的信用传播瓶颈
@@ -131,6 +131,237 @@ $$
 交换两重求和的次序，得到累积资格迹。不需要保存全部过去特征，只保存它们的衰减和。
 
 冻结权重的批量等价并不证明在线逐步更新时的精确等价。在线更新会改变后续出现的预测值；相同状态重复出现时，差异尤其明显。普通 TD(lambda) 是重要的有效方法，但不能忽略这个条件就声称它严格实现某个在线前向过程。
+
+<a id="rlss-trace-error-bound"></a>
+
+## λ 改变什么：预测误差、信用跨度与表示不足
+
+固定策略、固定特征和常数折扣 $0\leq\gamma<1$。令 $T$ 是该策略的 Bellman 算子，先研究期望目标算子，而非随机在线权重迭代。对 $0\leq\lambda<1$，把各个 n 步目标按几何权重混合。
+
+$$
+T_\lambda v=(1-\lambda)\sum_{n=1}^{\infty}\lambda^{n-1}T^n v,\qquad
+\|T_\lambda v-T_\lambda u\|_\infty\leq \frac{\gamma(1-\lambda)}{1-\gamma\lambda}\|v-u\|_\infty.
+$$
+
+把每项的 γⁿ 误差界提出，再求几何级数，就得到这个系数。λ 越接近一，目标对旧预测的依赖越弱。它不表示一个随机长回报的方差也更小。
+
+$$
+\|v_{w_\lambda}-v_\pi\|_{D_\pi}^{2}\leq
+\frac{1-\gamma\lambda}{1-\gamma}\min_w\|v_w-v_\pi\|_{D_\pi}^{2}.
+$$
+
+这是固定线性表示、在策略稳态加权及相应存在与收敛条件下的常用渐近误差界。不是深网、离策略或有限常数步长轨迹的保证。λ=1 的极限给 MC 的投影目标；γ=1 的回合任务需另一组 properness 条件，不能代入本式的分母。
+
+这个界把两件事分开。表示无法表达真值时，最佳可达误差本来就非零。TD 的自举固定点还可能偏离这个最佳投影。增大 λ 可以减弱后一种差距，但不会创造缺失的状态信息。若两个历史被压成同一特征，长 trace 不会自动让策略在这两个历史中选择不同动作。
+
+$$
+q=\gamma\lambda,\qquad H_{1/2}=\frac{\log(1/2)}{\log q}\quad(0<q<1),\qquad
+\sum_{j=0}^{\infty}q^j=\frac1{1-q}.
+$$
+
+第一式给 trace 在无新激活时衰减到一半所需的步数。第二式给单位特征每步重复激活时累积迹的极限。γ 规定预测问题的未来权重；λ 是学习算法的自举/信用选择，虽然它们在 trace 中相乘，含义仍不同。
+
+例如 $\gamma=1,\lambda=.9$ 时，半衰期约 6.58 步，但反复激活的累积迹可接近 10。把当前梯度归一化到单位长度，也不会把累计 trace 的长度限制到一。相同步长在不同 λ、激活频率和特征重叠下产生的实际预测改变量不同。对稀疏表示，还应记录 trace 非零项数量，不能仅根据当前特征的稀疏度估计开销。
+
+| 观察到的问题 | 不能立即得出的结论 | 下一项诊断 |
+| --- | --- | --- |
+| λ 增大后误差变小 | 长迹在所有任务上更好 | 联合扫描步长；拆开偏差和方差 |
+| λ 增大后参数爆炸 | 长时信用本身不可用 | 记录实际更新、trace 范数与重复激活 |
+| MC 仍有大误差 | 还需要更长 trace | 检查表示别名和数据覆盖 |
+| 运行很久后学习变慢 | 必定是可塑性丧失 | 先冻结表示与目标，区分追踪时标和梯度退化 |
+
+<a id="rlss-trace-lab-fixedpoint"></a>
+
+## 诊断实验一：λ 能改变固定点，不能补全状态
+
+问题：若两个实际状态具有相同特征，增加 λ 能否修复预测？下面只研究固定策略的预测。环境是三个状态的持续 Markov 奖励过程。没有动作，没有终止状态，也没有回合重置。每步先按当前状态发出奖励，再按转移矩阵采样下一状态。γ 固定为 0.9；所有 λ 预测同一个折扣回报。
+
+$$
+P=\begin{bmatrix}.8&.2&0\\0&.5&.5\\.3&0&.7\end{bmatrix},\quad
+r=\begin{bmatrix}1\\0\\-1\end{bmatrix},\quad
+\Phi=\begin{bmatrix}1&0\\1&0\\0&1\end{bmatrix},\quad
+d=\frac1{31}\begin{bmatrix}15\\6\\10\end{bmatrix}.
+$$
+
+P 的每一行给出下一状态的分布，r(s) 是 Rₜ₊₁ 在当前状态 s 的值。Φ 的行是学习器可见特征。状态 0 与 1 共用一个预测权重。d 是环境稳态分布，满足 dᵀP=dᵀ。
+
+信息权限必须分开。在线 TD 只接收当前特征、奖励和下一特征。解析诊断器可以读取 P、r 和隐藏状态，并计算真值。它们不能进入 TD 更新。奖励可能帮助一个有记忆的学习器区分状态；本实验故意固定无记忆特征。因此“表示不足”是这里选定学习器的限制，不是整个任务不可能解决。
+
+$$
+v=(I-\gamma P)^{-1}r,\qquad
+w_{\rm proj}=(\Phi^\top D\Phi)^{-1}\Phi^\top Dv,\qquad D=\operatorname{diag}(d).
+$$
+
+第一式由 v=r+γPv 解出环境真值。第二式最小化稳态加权平方预测误差。它是此特征空间的最佳预测，不是实际 TD 自动获得的答案。
+
+本例的 $v\approx(3.4890,-0.1282,-0.1567)^\top$。最佳可表示预测为 $(2.4555,2.4555,-0.1567)^\top$，RMS 误差仍为 1.34494。前两个状态的真值不同，而预测必须相同；只延长 trace 不会产生新的特征。
+
+再求 TD 的目标。先将参数冻结为任意 $w$，令稳态 trace 包含无限过去。展开 $e_t=\sum_{k\geq0}(\gamma\lambda)^k\phi_{t-k}$，并逐项求 $\mathbb E[e_t\delta_t]$。每一项包含从过去状态到当前状态的 $P^k$。几何求和给出下式。
+
+$$
+\begin{gathered}\mathbb E[e_t\delta_t\mid w\text{ fixed}]=b_\lambda-A_\lambda w,\\
+A_\lambda=\Phi^\top D(I-\gamma\lambda P)^{-1}(I-\gamma P)\Phi,\qquad
+b_\lambda=\Phi^\top D(I-\gamma\lambda P)^{-1}r,\qquad
+w_\lambda=A_\lambda^{-1}b_\lambda.\end{gathered}
+$$
+
+这里的期望是对固定参数、稳态状态与迹分布求的。实际在线 wₜ 与经验相关，不能把该式直接当成 E[wₜ] 的精确递推。λ=1 时两个环境矩阵抵消，得到 w₁=w_proj；λ<1 一般得到不同的投影 Bellman 固定点。
+
+$$
+\|\Phi w_\lambda-v\|_D^2
+=\underbrace{\|\Phi w_{\rm proj}-v\|_D^2}_{\text{表示误差}}
++\underbrace{\|\Phi w_\lambda-\Phi w_{\rm proj}\|_D^2}_{\text{固定点偏离最佳投影}}.
+$$
+
+最佳投影残差与特征空间正交，因此交叉项为零。这是误差分解，不是“TD 噪声”的分解；此时尚未进行采样学习。
+
+![TD 固定点与最佳可表示预测的稳态加权距离随 λ 变化](https://yingwen.io/crl-code/diagnostics/rlss-traces/fixed-point-gap.svg)
+
+图一只画误差分解的第二项开平方。λ=1 时它为零；总预测误差不为零。曲线来自明确给出的线性系统，不是训练曲线。
+
+| λ | 解析 TD 价值 RMS 误差 | 同一个表示下限 |
+| --- | --- | --- |
+| 0 | 1.39930 | 1.34494 |
+| 0.5 | 1.36390 | 1.34494 |
+| 0.9 | 1.34597 | 1.34494 |
+| 1 | 1.34494 | 1.34494 |
+
+解析固定点、期望迭代与稳定性：这些函数需要环境模型，只用于诊断。完整文件包含小型矩阵求解器。
+
+```python
+def projected_system(lam):
+    """Stationary, frozen-parameter mean TD drift = b_lambda - A_lambda w.
+
+    D weights hidden states by their stationary probabilities. The inverse is
+    a geometric sum of transition powers. No trajectory is sampled here.
+    """
+    resolvent = i_minus(GAMMA * lam)
+    a = mm(PHI_T_D, solve_columns(resolvent, mm(i_minus(GAMMA), PHI)))
+    b = mv(PHI_T_D, solve(resolvent, R))
+    return a, b, solve(a, b)
+
+
+def expected_iteration(a, b, alpha, steps):
+    """Model-based deterministic drift iteration, NOT a sampled TD run."""
+    w = [0.0, 0.0]
+    for _ in range(steps):
+        aw = mv(a, w)
+        w = [x + alpha * (target - current) for x, target, current in zip(w, b, aw)]
+    return w
+
+
+def spectral_radius(a, alpha):
+    """rho(I-alpha*A), including complex eigenvalues of a real 2x2 matrix."""
+    trace = a[0][0] + a[1][1]
+    determinant = a[0][0] * a[1][1] - a[0][1] * a[1][0]
+    root = cmath.sqrt(trace * trace - 4 * determinant)
+    eigenvalues = [(trace + root) / 2, (trace - root) / 2]
+    return max(abs(1 - alpha * eig) for eig in eigenvalues)
+```
+
+读图问题：图一趋于零，为什么不意味着预测已经精确？如果把 Φ 换成三个状态的一热编码，哪一项先消失？固定点的解释参见 [Tsitsiklis 与 Van Roy 的原论文，第三节](https://web.mit.edu/jnt/www/Papers/J063-97-bvr-td.pdf)；资格迹与线性函数近似见 [Sutton 与 Barto，第 12 章](http://incompleteideas.net/book/the-book-2nd.html)。
+
+<a id="rlss-trace-lab-scale"></a>
+
+## 诊断实验二：更长的信用跨度，也改变更新尺度
+
+固定预测器时，一次过去特征激活对 $k$ 步后 TD 误差的系数为 $(\gamma\lambda)^k$。这是信用传播。取本例 γ=0.9：λ=0 时只更新当前激活；λ=0.5、0.9、1 时，十步前激活的系数分别约为 0.00034、0.12158、0.34868。此处比较的是误差的分配系数，不是最终预测误差。
+
+另一件事是反复激活。本例每一步都有一个非负单位特征。故资格迹的 L1 范数不依赖具体经过哪一个状态。即使两个坐标轮流激活，旧迹与新迹仍然累加。
+
+$$
+e_{-1}=0,\quad e_t=\gamma\lambda e_{t-1}+\phi_t,\qquad
+\|e_t\|_1=\frac{1-(\gamma\lambda)^{t+1}}{1-\gamma\lambda},\qquad
+\|\Delta w_t\|_1=\alpha|\delta_t|\,\|e_t\|_1.
+$$
+
+范数恒等式依赖这里的非负一热特征；有符号或一般连续特征不能直接套用。后一个等式来自 Δw=αδe，对任意 trace 都成立。
+
+![四种 λ 下累积迹 L1 范数从零增长到不同极限](https://yingwen.io/crl-code/diagnostics/rlss-traces/trace-mass.svg)
+
+图二：横轴为已观察转移数，初始 trace 为零。γ=0.9 时，λ=0、0.5、0.9、1 的极限分别为 1、1.818、5.263、10。相同 α 和相同 δ 不代表相同大小的参数更新。
+
+尺度也会改变确定性迭代的稳定范围。令解析迭代为 $w_{k+1}=w_k+\alpha(b_\lambda-A_\lambda w_k)$，则 $w_{k+1}-w_\lambda=(I-\alpha A_\lambda)(w_k-w_\lambda)$。对每个初值都收敛的充要条件是该矩阵的谱半径严格小于 1。α=0 位于边界，但完全不学习。
+
+![完整 α 扫描中各 λ 的确定性期望迭代谱半径](https://yingwen.io/crl-code/diagnostics/rlss-traces/expected-stability.svg)
+
+图三：所有 λ 都扫描 α=0,0.1,…,10，没有分别挑选有利步长。曲线低于 1 的部分是确定性迭代稳定区。一次这样的迭代使用已知模型做矩阵计算，不是一次流式样本更新。
+
+例如 α=3 时，λ=0 的谱半径约为 0.855，λ=1 约为 1.032；前者的期望迭代收敛，后者一般发散。这不意味着在线 TD 可安全使用 α=3。随机更新、状态相关性和常数步长偏差不由这个二维确定性稳定条件完全刻画。下一实验使用远小得多的采样步长。
+
+读图问题：若把 α 乘以 1−γλ，累计迹的极限尺度得到补偿，是否连学习噪声、收敛速度和每个方向的更新也相同？答案是否定的。Aλ 的几何、δ 的分布和样本相关性仍会改变。尺度补偿是诊断对照，不是最优步长公式。
+
+<a id="rlss-trace-lab-sampling"></a>
+
+## 诊断实验三：有限经验流与解析答案相差多少
+
+现在去掉学习器对模型的访问。每个条件独立运行 16 个种子，每次 20,000 步，从稳态分布采样初始状态；权重和 trace 均从零开始。不同 λ 和步长规则使用配对的同一状态流。保留 λ=0、0.5、0.9、1 的全部结果。规则一固定 α=0.01；规则二用 α=0.01(1−γλ) 补偿累计迹的极限尺度。没有经验回放、目标网络、投影截断或隐藏的梯度裁剪。
+
+真正的采样 TD(λ)：先用旧权重计算 δ，再更新 trace 与权重；诊断记录不进入学习器。
+
+```python
+def td_step(w, e, features, reward, next_features, lam, alpha):
+    """Accumulating on-policy semi-gradient TD(lambda), fixed linear features.
+
+    Compute both predictions before changing any weight. There is no replay,
+    model, hidden state, gradient through the target, or trace reset.
+    """
+    delta = reward + GAMMA * dot(w, next_features) - dot(w, features)
+    trace = [GAMMA * lam * old + feature for old, feature in zip(e, features)]
+    next_w = [weight + alpha * delta * z for weight, z in zip(w, trace)]
+    return next_w, trace
+
+
+def run_stream(seed, lam, alpha, steps=STEPS, checkpoints=CHECKPOINTS):
+    w, e = [0.0, 0.0], [0.0, 0.0]
+    _, _, target = projected_system(lam)
+    target_values = mv(PHI, target)
+    records = []
+
+    def record(step):
+        fitted = mv(PHI, w)
+        records.append({"step": step, "weights": list(w),
+                        "value_rmse": value_distance(fitted, VALUE),
+                        "fixed_point_distance": value_distance(fitted, target_values),
+                        "trace_l1": sum(abs(x) for x in e)})
+
+    record(0)
+    wanted = set(checkpoints)
+    for t, (features, reward, next_features) in enumerate(transitions(seed, steps), 1):
+        w, e = td_step(w, e, features, reward, next_features, lam, alpha)
+        if not all(math.isfinite(x) for x in w):
+            # Never omit a failed run or serialize Infinity as a curve point.
+            raise ArithmeticError(f"Nonfinite weights: seed={seed}, lambda={lam}, alpha={alpha}, step={t}")
+        if t in wanted:
+            record(t)
+    return {"seed": seed, "lambda": lam, "alpha": alpha, "checkpoints": records}
+```
+
+![两种预定步长规则下的有限轨迹终点误差、运行范围与解析参照](https://yingwen.io/crl-code/diagnostics/rlss-traces/sampled-error.svg)
+
+图四：每个采样点为 16 个独立种子的第 20,000 步 RMS 误差均值；范围带为这些运行的最小值至最大值，不是置信区间。解析曲线是不含采样噪声的 TD 固定点；水平线是表示下限。全部运行均保留。
+
+| λ | 固定 α：均值 ± 标准差 | 尺度补偿 α：均值 ± 标准差 |
+| --- | --- | --- |
+| 0 | 1.4203 ± 0.0366 | 1.4203 ± 0.0366 |
+| 0.5 | 1.4056 ± 0.0567 | 1.3900 ± 0.0322 |
+| 0.9 | 1.4355 ± 0.1125 | 1.3709 ± 0.0293 |
+| 1 | 1.4996 ± 0.1869 | 1.3671 ± 0.0303 |
+
+结果把三个问题分开了。解析固定点随 λ 接近最佳投影，但固定 α 的有限样本误差没有随之单调下降。λ=1 的解析误差最低，固定 α 时的这组终点均值却最高。尺度补偿缩小了这一差距，但仍没有消除表示下限。这组数字只说明机制可以相互抵消，不建立算法排名，也不能证明这个补偿规则适合其他任务。标准差描述运行间离散程度，不是均值的置信区间。
+
+计算预算也应明确。实验共 128 条采样运行，合计 2,560,000 次 TD 更新；每步维护两个权重和两个迹坐标。模型求解和确定性期望迭代另计，不冒充环境样本。JSON 还保留每次运行的中间检查点、终点、全部 α 稳定性扫描以及相同迭代次数的确定性迭代。相同迭代次数不代表相同经验或计算预算。常数步长末端误差不等于渐近收敛定理。
+
+仅需 Python 3.10 及标准库；run 会写入指定 JSON 文件。
+
+```bash
+python3 examples/rlss_trace_diagnostics.py test
+python3 examples/rlss_trace_diagnostics.py run --output results.json
+```
+
+[下载独立实验代码](../../examples/rlss_trace_diagnostics.py) · [查看全部结果与运行协议](https://yingwen.io/crl-code/diagnostics/rlss-traces/results.json)。test 核对稳态、Bellman 真值、λ=1 投影、矩阵逆与 400 项几何展开的一致性，以及逐步 trace 和更新范数恒等式；它们是实现检查，不是学习性能证据。
+
+最后一个问题：若表示和策略也在持续变化，哪个“固定点”还固定？本实验首先冻结这些对象，才使三种作用能够分离。转向深度或持续学习时，应分别记录特征变化、旧迹方向与当前梯度的失配、目标漂移和真实更新范数。不能仅凭 λ 较大就断言长期记忆更好，也不能把固定线性表示的收敛结论移植到非线性网络。
 
 <a id="traces-online"></a>
 
@@ -173,6 +404,18 @@ $v_{\rm old}$ 保存上一时刻在当前状态上作出的旧预测。后两项
 1. 保存 $v_{\rm old}\leftarrow v'$；真正终止后清除回合 trace
 
 本页公式使用常数步长。逐时间改变步长时，原论文给出另外的缩放 trace 形式，不应在未核对的情况下随意替换。线性精确等价也是有限轨迹的算法等价，不等于在所有任务上都保证更高回报。
+
+为什么 Dutch trace 会含步长？可以先完全去掉 TD，考虑更简单的监督问题：依次观察 $x_0,\ldots,x_{T-1}$，最后才得到所有预测共同要预测的标量结果 $G$。概念算法等到 $G$ 可用，再按原顺序执行线性回归更新。一次更新可写为 $w^+=(I-\alpha xx^\top)w+\alpha xG$；过去的更新会被后来的更新继续变换，所以不能仅累加 $\alpha x$。
+
+$$
+\begin{aligned}a_{-1}&=w_0,\quad z_{-1}=0,\\a_t&=a_{t-1}-\alpha x_t(x_t^\top a_{t-1}),\\z_t&=z_{t-1}+\alpha[1-x_t^\top z_{t-1}]x_t,\\w_T&=a_{T-1}+z_{T-1}G.\end{aligned}
+$$
+
+对“当前权重=与 G 无关的部分+G 的系数”作归纳即可得到递推。这里只讨论共同的最终结果 G，不是任意奖励序列的通用 MC 公式。z 是已把步长吸收进去的 Dutch 型迹。
+
+每次只需两个向量和若干内积，内存与每步计算都是 $O(d)$，不随等待 $G$ 的时间 $T$ 增长。不要显式构造 $d\times d$ 矩阵：先算 $x^\top a$ 或 $x^\top z$，再乘 $x$。最终获得 $G$ 时也只做 $O(d)$ 合并。重复特征 $x=1$、$\alpha=.5$、$w_0=0$ 时，$z$ 依次为.5、.75；$G=1$ 后最终参数为.75，与逐次回归相同。
+
+这个推导说明资格迹不限于 TD：它也能是对一个清楚但昂贵的前向算法做精确递归压缩。span-independent 指资源需求不随延迟跨度增长，不指反馈提前到达。非线性网络更新不再具有上述关于 G 的仿射形式，因此不能原封不动地继承这组精确等价。
 
 <a id="experiment-true_online_td"></a>
 
@@ -296,6 +539,14 @@ n-step 在线更新通常保留最近 n 步的奖励、状态或特征。线性 
 
 资格迹保存“过去哪些参数方向应对当前误差负责”。Agent state 保存“为当前预测或决策应记住什么历史”。两者并不相同。递归神经状态的参数变化还需要通过状态转移传播导数；把线性特征 trace 叫作完整 RTRL 或 BPTT，会混淆两种信用路径。
 
+$$
+e_t=\gamma\lambda e_{t-1}+\nabla_w\hat v(S_t,w_t)=\sum_{k=0}^{t}(\gamma\lambda)^{t-k}\nabla_w\hat v(S_k,w_k).
+$$
+
+这是普通非线性梯度迹实际保存的对象：每个历史状态在当时参数下的梯度。它通常不等于把所有历史状态在当前参数 $w_t$ 下重新求导后再相加。
+
+当表示变化缓慢时，旧梯度方向可能仍有用；变化快速时，当前误差沿旧方向更新可能已不能改变当初那项预测，甚至改变相反。较长迹同时扩大信用范围与梯度陈旧程度。缩短 λ、限制更新量或重新计算历史梯度处理的是不同折中；后者又会引入存储和计算成本。不能仅在代码中把线性 x 换成自动微分梯度，就宣称保留 true-online 的精确前向等价。
+
 持续变化时，较长 trace 可以更快传递延迟反馈，也可能跨越动力学变化而把新误差作用于旧情境。实验需要改变奖励延迟和环境变化频率，记录恢复速度与 trace 范数，不能只在固定短回合中选一个 lambda。
 
 <a id="lesson-check"></a>
@@ -337,6 +588,17 @@ python3 examples/approximation_textbook_lab.py test
 ## 与教材主线的衔接
 
 本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+### 怎样把较晚的反馈归给较早的计算？
+
+多步回报定义用多远的未来构造目标。资格迹压缩过去的特征或梯度方向。前向与后向等价必须说明参数是在整个轨迹内固定，还是每一步改变。
+
+函数逼近与深度方法：神经网络改变后，旧梯度不再等于用当前参数重算的梯度。递归状态还带来参数经过历史状态影响当前输出的路径，不能用一条普通 TD trace 代替。
+
+持续学习中的研究问题：在每步计算有界的条件下，保留多少过去影响才有用？替换特征时，怎样处理与旧特征绑定的资格迹、优化器动量和元梯度？
+
+[多步回报](../tabular/multistep.md) → [资格迹与等价条件](traces.md) → [GAE 与 actor–critic](../deep/policy-gradient.md) → [在线信用分配](../../textbook/credit.md)
+
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 

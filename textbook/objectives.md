@@ -9,6 +9,38 @@
 - 说明随机停止解释和势函数塑形的成立条件，计算条件失效时的反例。
 - 在同一资源预算下比较整个学习过程与冻结策略，区分 continuing、continual 和 non-stationary。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 期望
+
+同一策略可能产生多条轨迹。期望按这些轨迹的概率加权，而不是只选成功轨迹。
+
+$$
+\mathbb E[X]=\sum_x P(X=x)x
+$$
+
+### 条件概率
+
+给定已经看到的历史和选定动作，描述下一条经验的分布。条件中不能包含尚未到达的信息。
+
+$$
+P(O_{t+1},R_{t+1}\mid H_t,A_t)
+$$
+
+### 几何级数
+
+固定比例衰减的无限和有闭式解。折扣回报、随机停止和周期算例都用到它。
+
+$$
+\sum_{k=0}^{\infty}\gamma^k=\frac1{1-\gamma},\qquad0\le\gamma<1
+$$
+
+### 马尔可夫状态
+
+若状态保留了预测下一步奖励和状态所需的历史信息，就能支持一步递推。当前图像不一定满足这个条件。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -84,38 +116,6 @@ $T$ 是评价长度，$0\le\gamma\le1$ 是时间权重，$R_{t+1}$ 是执行动�
 
 - 有限寿命评价：保留启动、探索与恢复成本，长度本身是协议的一部分。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 期望
-
-同一策略可能产生多条轨迹。期望按这些轨迹的概率加权，而不是只选成功轨迹。
-
-$$
-\mathbb E[X]=\sum_x P(X=x)x
-$$
-
-### 条件概率
-
-给定已经看到的历史和选定动作，描述下一条经验的分布。条件中不能包含尚未到达的信息。
-
-$$
-P(O_{t+1},R_{t+1}\mid H_t,A_t)
-$$
-
-### 几何级数
-
-固定比例衰减的无限和有闭式解。折扣回报、随机停止和周期算例都用到它。
-
-$$
-\sum_{k=0}^{\infty}\gamma^k=\frac1{1-\gamma},\qquad0\le\gamma<1
-$$
-
-### 马尔可夫状态
-
-若状态保留了预测下一步奖励和状态所需的历史信息，就能支持一步递推。当前图像不一定满足这个条件。
 
 <a id="lesson-setting"></a>
 
@@ -721,6 +721,44 @@ python3 implementations/learner_control/online_differential_q.py --steps 1200 --
 
 [源码](../implementations/learner_control/online_differential_q.py) · [逐种子记录](https://yingwen.io/crl-code/results/learner_control_online/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learner_control_online/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learner_control_online/curves.json)
 
+<a id="rlss-temporal-uniformity"></a>
+
+## 时间上的统一性：持续更新与计算代价
+
+Alberta Plan 所说的 temporal uniformity，指学习、规划、表征构造不依赖一个特殊且不计代价的训练阶段。它不是“环境不变化”，也不是“每一步必须执行完全相同数量的梯度更新”。条件触发的更新、休眠和自适应步长都可以由同一个持续运行的规则决定。
+
+$$
+Z_{t+1}=\mathcal U(Z_t,A_t,O_{t+1},R_{t+1}),\qquad A_{t+1}\sim\Pi(\cdot\mid Z_{t+1}).
+$$
+
+Z 包括用于行动的状态、模型参数、资格迹、统计量、元参数和规划队列。规则 U 持续适用；它的输出与计算路径可以依赖当前信息。这是有限学习器的记账表达，不是某一种固定架构。
+
+“从不关掉学习”也不充分。若步长只能减小、不能在变化后恢复，更新虽然非零，也可能几乎无法改变预测。反过来，稳定时期暂时不更新某个模型，不必违背持续学习；需要说明何种可观测事件会重新启动它，以及监测本身占多少资源。
+
+| 计量 | 适用情形 | 不能漏掉的成本 |
+| --- | --- | --- |
+| 真实交互步 | 仿真器等待学习器，环境步定义固定 | 每步多少更新、模型查询与持久存储 |
+| 真实经过时间 | 世界在计算时仍演化 | 响应延迟、等待动作、逾期或恢复 |
+| 有限生命期收益 | 学习成本属于智能体表现 | 探索、技能学习与表示替换期间的损失 |
+
+例子：两个方法使用同样一千条真实转移，一个每步做一次更新，另一个做一百次模型 backup。按交互步画图可以比较经验利用；不能由此声称第二个方法计算更高效。若环境每十毫秒必须接收动作，额外规划还可能推迟动作，进而改变实际获得的数据。
+
+$$
+g_{\rm time}(\Lambda)=\lim_{n\to\infty}\frac{\mathbb E_\Lambda[\sum_{k=0}^{n-1}R_{k+1}]}{\mathbb E_\Lambda[\sum_{k=0}^{n-1}\tau_k]}.
+$$
+
+这是一个需要极限及相应长期条件的单位时长评价。τ 是真实经过时间。它不是 E[R/τ]，也不是每个决策步等权的奖励平均。任务若采用有限时限，应直接报告该时限内实际得到的总收益。
+
+**算法：从研究设定到可执行的资源协议**
+
+1. 先规定世界时钟：学习期间是否继续演化？
+1. 再规定动作截止时间、等待动作及逾期后果。
+1. 记录实际交互步、实际时长、更新数、模型查询数与峰值内存。
+1. 区分上线前数据/调参成本与计入生命期的学习成本。
+1. 比较算法时保持同一评价协议；另用同数据诊断定位更新机制。
+
+因此，大世界观点并不要求把原来每项保证全部抛弃。应先标出保证依赖的条件，再逐项改变信息、表示、数据权限或计算预算。这样，失败时才能区分目标变了、信息不足、估计不稳，还是来不及完成决策。
+
 <a id="lesson-code"></a>
 
 ## 10. 运行与检查
@@ -819,9 +857,17 @@ preferences 输出折扣价值、奖励率和前五步收益。stopping 独立�
 
 学会预测后果，何时能真正改善决策？
 
-模型可提取性的理论说明某类能力需要什么知识，不指定唯一网络。Dreamer 研究潜在想象控制，STOMP 研究随机时长行为模型，DRAGO 研究旧模型知识保留。模型误差、查询策略和规划收益之间仍需实验连接。
+给定模型可研究怎样规划；模型也在学习时，规划会选择性地查询误差，并改变以后的数据。Dreamer、STOMP 和 DRAGO 分别研究想象控制、随机时长行为模型和旧知识保留。新的比较应固定规划查询与总预算，检验哪些后果误差真正改变选择，哪些维护值得继续。
 
 - [Distributional Model Equivalence for Risk-Sensitive Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-distributional-model-equivalence)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [An Idiosyncrasy of Time-discretization in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-openmind-time-discretization)
 
 #### 持续控制、平均奖励与重置
 
@@ -835,7 +881,7 @@ preferences 输出折扣价值、奖励率和前五步收益。stopping 独立�
 
 长期能力应怎样定义，各个机制又怎样共同产生它？
 
-形式化论文提供定义和条件，架构讲座提出模块组织，算法论文检验特定机制。完整系统还要明确智能体、外部设计者和世界各自承担的工作；组件成立不自动意味着组合后的长期收益成立。
+形式化论文规定对象与条件，架构路线提出组织方式，算法实验检验局部机制。撤掉阶段间冻结后，一个模块会改变另一个模块的学习问题；有限预算应优先维护哪条知识，成为新的决策。先检验两模块反馈和资源分配，再扩大整机，而不是由组件分别有效推断长期组合收益。
 
 - [Rethinking the Foundations for Continual Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-rethinking-crl-foundations)
 - [Plasticity as the Mirror of Empowerment](https://yingwen.io/zh/continual-rl/research/#recent-plasticity-mirror-empowerment)
@@ -939,6 +985,37 @@ NeurIPS 2023 · 2023 · 支持方法与理论
 
 分布模型等价与风险敏感实验；不提供任意任务的安全证书。
 
+### An Idiosyncrasy of Time-discretization in Reinforcement Learning
+
+Kris De Asis, Richard S. Sutton
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同样的物理奖励流，为什么会因奖励和折扣放在区间的不同位置而得到不同目标？
+
+#### 关键机制
+
+从连续时间回报的右端点近似出发，让区间奖励与后继价值按到达时间共同折扣。固定间隔时只差一个比例，不等间隔时这个比例一般无法提出求和。
+
+#### 证据
+
+原文给出时间离散化分析与实验。教材用恒定奖励率的两段时间计算，比较左右端点近似与精确积分。
+
+#### 条件与限制
+
+奖励率采样与已经积分的区间奖励不同。该修正不能消除动作延迟或低采样率遗漏事件，也不是任意 SMDP 接口都应照搬的公式。
+
+#### 阅读与实验
+
+固定每秒的目标而非每步折扣，再改变采样周期及抖动。报告积分误差、每秒更新次数和控制收益。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式出版入口。
+- [原文推导](https://arxiv.org/html/2406.14951v2)：式 7 与不均匀时间步的回报定义。
+
 
 <a id="chapter-code"></a>
 
@@ -977,3 +1054,5 @@ python3 examples/objectives_lab.py all
 - [Javed & Sutton · The Big World Hypothesis and its Ramifications for Artificial Intelligence](https://oaklab.ai/posts/the-big-world-hypothesis)：问题选择与容量不匹配假设，不是关于一切环境的定理。
 
 - [Kumar et al. · Continual Learning as Computationally Constrained Reinforcement Learning](https://arxiv.org/html/2307.04345v3)：第 2 节明确比较完整智能体的平均奖励与计算限制，同时指出平均奖励不能区分所有有限时间损失；第 3 节区分计算、信息和物理容量。
+
+- [Sutton、Bowling、Pilarski · The Alberta Plan for AI Research](https://arxiv.org/abs/2208.11173)：Research Vision 区分经验、时间统一、计算约束和其他智能体；本文预算例子是教学分析。

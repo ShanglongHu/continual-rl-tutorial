@@ -8,6 +8,22 @@
 - 求解局部 KL 约束，理解 Fisher、共轭梯度与回溯。
 - 按优势符号解释 PPO，并固定旧策略、优势与 critic target。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### Bellman 递推
+
+当前价值等于即时奖励加折扣后的后继价值；预测目标与最优控制目标不同。
+
+### 函数与梯度
+
+神经网络把参数和输入映射为输出。链式法则必须指明哪些量参与求导，哪些量作为固定目标。
+
+### 经验分布
+
+on-policy 数据由当前策略产生；off-policy 数据可来自旧策略，但能否正确复用取决于算法目标和数据覆盖。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -80,22 +96,6 @@ $$
 - Clip / KL penalty：前者截取目标分支，后者在目标中惩罚偏离，二者都需观测实际分布变化。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### Bellman 递推
-
-当前价值等于即时奖励加折扣后的后继价值；预测目标与最优控制目标不同。
-
-### 函数与梯度
-
-神经网络把参数和输入映射为输出。链式法则必须指明哪些量参与求导，哪些量作为固定目标。
-
-### 经验分布
-
-on-policy 数据由当前策略产生；off-policy 数据可来自旧策略，但能否正确复用取决于算法目标和数据覆盖。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 旧策略的数据与新策略的状态分布
@@ -106,7 +106,7 @@ $$
 d_\pi(s)=(1-\gamma)\sum_{t=0}^{\infty}\gamma^t\Pr_\pi(S_t=s),\qquad r_\theta(s,a)=\frac{\pi_\theta(a\mid s)}{\pi_0(a\mid s)}
 $$
 
-$d_\pi$ 是归一化折扣状态分布。概率比只修正给定状态中的动作分布，不会自动把旧状态分布变成新状态分布。
+$d_\pi$ 是归一化折扣状态分布，所有策略共用同一初始分布，$J(\pi)=\mathbb E_\pi\sum_t\gamma^tR_{t+1}$。概率比只修正给定状态中的动作分布，不会自动把旧状态分布变成新状态分布。
 
 本章使用覆盖候选动作的旧策略。若旧策略对某个动作的概率为零，普通重要性比没有定义；小批量估计也无法凭空得到该动作的优势。
 
@@ -119,6 +119,12 @@ J(\pi_\theta)-J(\pi_0)=\frac{1}{1-\gamma}\mathbb E_{s\sim d_{\pi_\theta},a\sim\p
 $$
 
 将 $A=Q-V$ 展开为一步奖励与两个价值项，再沿新策略轨迹求折扣和；中间价值项望远镜相消。
+
+$$
+\mathbb E_{\pi_\theta}\sum_{t=0}^{N-1}\gamma^t A^{\pi_0}(S_t,A_t)=\mathbb E_{\pi_\theta}\!\left[\sum_{t=0}^{N-1}\gamma^tR_{t+1}+\gamma^N V^{\pi_0}(S_N)-V^{\pi_0}(S_0)\right]
+$$
+
+先在有限 N 上展开，才能看见尚未消去的尾值。奖励有界且 γ<1 使尾值趋零；共同初始分布下，最后的初始价值期望等于旧策略回报。再按 d 的定义重写折扣和，才得到上式。这一步不需要候选策略的 critic。
 
 右侧仍需新策略的状态访问分布。可采样的近似是用 $d_{\pi_0}$ 替换它，再用动作概率比。新旧策略相同时，surrogate 的值与一阶导数都对齐，但远离旧策略后不再是精确性能。
 
@@ -144,7 +150,7 @@ $$
 x=F^{-1}g,\qquad\Delta_* =\sqrt{\frac{2\delta}{g^\top x}}\,x
 $$
 
-拉格朗日条件给出 $g=\eta F\Delta$，再把二次约束取等号得到缩放。若梯度为零，则不需要更新。
+此式先假定 $F$ 正定且 $g\ne0$。拉格朗日条件给出 $g=\eta F\Delta$，再把二次约束取等号得到缩放。若梯度为零，则不需要更新；奇异的 $F$ 不能直接求逆。
 
 神经网络不显式存储整个 $F$。给定向量 $v$，二次自动微分计算 $Fv=\nabla_\theta[(\nabla_\theta\bar D_{\rm KL})^\top v]$。共轭梯度只需要这个乘法接口，就能近似解线性系统。加入 $\kappa I$ 阻尼有助于处理奇异和数值噪声，但求解的已是阻尼后的方向。
 
@@ -202,6 +208,28 @@ python3 implementations/deep/ppo.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 [源码](../../implementations/deep/ppo.py) · [逐种子记录](https://yingwen.io/crl-code/results/deep-ppo/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/deep-ppo/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/deep-ppo/curves.json)
 
+<a id="course-state-ratio"></a>
+
+## 4.1 · 动作概率比没有校正所有状态的访问频率
+
+$$
+\mathbb E_{s\sim d^{\pi_0},\ a\sim\pi_0}
+\left[\frac{\pi(a\mid s)}{\pi_0(a\mid s)}A^{\pi_0}(s,a)\right]
+=\mathbb E_{s\sim d^{\pi_0},\ a\sim\pi}A^{\pi_0}(s,a)
+$$
+
+在动作支持条件下，一步概率比把动作分布换成 π；等式右边的状态分布仍然是旧的 d。性能差分恒等式要求的是新策略的状态访问分布。
+
+两步例子：起点以概率 p 进入支路，否则直接结束。旧策略 p=0.1，新策略 p=0.2。支路中的动作分布完全不变，所以该状态所有动作的概率比都是一；但支路实际出现的概率翻了一倍。只在支路样本上乘当地动作比，无法制造缺少的访问次数。完整轨迹或前缀比可以校正相应分布，但通常承受更大的方差。
+
+TRPO 用限制策略变化来控制 surrogate 与真实改进的差距。PPO clipping 则限制部分样本继续变好的激励，不是完整的状态分布校正。即使批内 KL 很小，未覆盖状态、近似优势以及变化环境仍可能使真实回报下降。长时任务中，小的局部动作变化可以累积成明显不同的访问路径。
+
+更直接的反例不需要未覆盖状态。单状态、两动作，旧概率各半，旧优势为 $(1,-1)$，$\varepsilon=0.2$。候选概率为 $(p,1-p)$。只要 $p\ge0.6$，两个动作的期望 clipped 目标都合计为 0.2；从 p=0.6 到接近一，目标完全平坦，但旧到新 KL 为 $-\tfrac12\log(4p(1-p))$，可任意大。因此目标达到 clipping 平台，并未定义一个信赖域。
+
+若旧策略的优势估计符号已经错误，限制更新幅度只会让错误方向走得少一些，不会把方向变正确。可先在可精确求值的小 MDP 中同时计算真实性能差、未裁剪 surrogate 和 clipped surrogate，再单独加入 critic 误差。这样才能区分策略更新限制与价值估计本身的作用。
+
+与 CRL 的连接：动力学变化、目标变化和状态构造变化，都会在策略 KL 之外引入偏差。评价 PPO 式持续适应时，需要报告变化后累计收益、恢复时间和行动覆盖，而不仅是每轮 clipping fraction。
+
 <a id="lesson-algorithm"></a>
 
 ## 5 · 两类算法的精确更新次序
@@ -232,7 +260,7 @@ def fisher_vector_product(logits, vector, damping=0.):
 
 ## 6 · 一维 TRPO 与两个 clipping 例子
 
-单状态两个动作，$\pi_\theta(1)=\sigma(\theta)$，旧 $\theta=0$，优势分别为 $1,-1$。此时 $g=0.5$，$F=0.25$。令 KL 半径 $\delta=0.01$，局部全步为 $\Delta=\sqrt{0.08}\approx0.28284$。新动作一概率约为 $0.57024$，实际旧到新 KL 为 $\log\cosh(\Delta/2)\approx0.009967$，因此全步满足这一例的约束。
+单状态两个动作，$\pi_\theta(1)=\sigma(\theta)$，旧 $\theta=0$，优势分别为 $1,-1$。这里对归一化占用下的 $\mathbb E[r_\theta A]$ 求导，故 $g=0.5$，$F=0.25$；保留性能 surrogate 的 $1/(1-\gamma)$ 时，$g$ 也乘此正数，但它在约束全步的归一化中消去。令 KL 半径 $\delta=0.01$，局部全步为 $\Delta=\sqrt{0.08}\approx0.28284$。新动作一概率约为 $0.57024$，实际旧到新 KL 为 $\log\cosh(\Delta/2)\approx0.009967$，因此全步满足这一例的约束。
 
 PPO 取 $\varepsilon=0.2$。若 $A=2,r=1.4$，目标是 $\min(2.8,2.4)=2.4$。若 $A=-2,r=0.6$，目标是 $\min(-1.2,-1.6)=-1.6$。第二例很容易写反：负优势下概率减少过多时，截断取的是更负的一项。
 
@@ -386,11 +414,24 @@ python3 examples/deep_textbook_lab.py test
 
 - [Spinning Up · ppo.py](https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/ppo/ppo.py)：官方 PyTorch PPO 与 KL 提前停止。
 
+- [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：§9–11：函数逼近与离策略；§12：资格迹；§13.1 的短走廊与 §13.2–13.5 的策略梯度。对照各结论采用的策略类、采样分布与函数表示。
+
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
 
 本章提供一组可复用的算法工具；基础阅读顺序不是问题类别的互斥划分。
+
+### 一次策略更新，为什么能改善未来？
+
+精确策略改善使用旧策略的真实价值；策略梯度使用与目标匹配的访问分布。值函数近似或梯度估计误差会破坏这些推理的前提。
+
+函数逼近与深度方法：PPO 的动作概率比不等于新策略的状态访问比。连续动作 actor 还会追逐 critic 的误差。限制局部更新尺度与证明实际回报单调提高是不同要求。
+
+持续学习中的研究问题：动作不仅改变世界，也改变未来数据与学习。比较冻结策略不等于比较持续更新的智能体；什么时候应付出当前回报去获得长期有用的经验？
+
+[精确策略改善](../tabular/dynamic-programming.md) → [策略梯度定理](../approximation/policy-gradient.md) → [TRPO 与 PPO 的近似](trust-region.md) → [持续控制的比较器](../../textbook/control.md)
+
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 

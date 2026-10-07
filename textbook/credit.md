@@ -12,6 +12,34 @@
 - 从广义投影 Bellman 误差推导 GTD2／TDC／TDRC 的三条迹，核对非线性冻结总和等价。
 - 连接 actor–critic、GAE 和 RTRL／RTU，区分回报信用、状态敏感度与参数变化造成的过时导数。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 价值预测
+
+固定策略的价值 $v_\pi(s)$ 是未来回报的条件期望。网络 $v_w$ 只是估计。以下先讨论固定策略的预测问题。
+
+### TD 误差
+
+一步奖励与下一状态预测形成目标，再减去当前预测。两次预测使用同一组更新前参数。
+
+$$
+\delta_t=R_{t+1}+\gamma v_w(S_{t+1})-v_w(S_t)
+$$
+
+### 线性逼近
+
+固定特征 $x_t$ 与权重 $w$ 的内积构成预测。对权重的梯度是 $x_t$；学习特征的情况需要额外求导。
+
+$$
+v_w(S_t)=w^\top x_t,\qquad\nabla_wv_w(S_t)=x_t
+$$
+
+### 终止与截断
+
+真正终止的尾值为零。记录窗口结束不一定是终止；若任务仍继续，尾部应保留 bootstrap。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -93,34 +121,6 @@ $w$ 是本段冻结的预测参数，$T$ 是真实终点，$G_t^\lambda$ 是本�
 
 - GTD2/TDC/TDRC：以辅助误差预测和梯度迹连接指定投影目标，目标、曲率与正则路径需各自检查。
 
-
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 价值预测
-
-固定策略的价值 $v_\pi(s)$ 是未来回报的条件期望。网络 $v_w$ 只是估计。以下先讨论固定策略的预测问题。
-
-### TD 误差
-
-一步奖励与下一状态预测形成目标，再减去当前预测。两次预测使用同一组更新前参数。
-
-$$
-\delta_t=R_{t+1}+\gamma v_w(S_{t+1})-v_w(S_t)
-$$
-
-### 线性逼近
-
-固定特征 $x_t$ 与权重 $w$ 的内积构成预测。对权重的梯度是 $x_t$；学习特征的情况需要额外求导。
-
-$$
-v_w(S_t)=w^\top x_t,\qquad\nabla_wv_w(S_t)=x_t
-$$
-
-### 终止与截断
-
-真正终止的尾值为零。记录窗口结束不一定是终止；若任务仍继续，尾部应保留 bootstrap。
 
 <a id="lesson-setting"></a>
 
@@ -486,13 +486,23 @@ python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4
 
 ## SwiftTD：信用长度、坐标步长与有效更新率必须分别控制
 
-SwiftTD（RLC 2024）连接了三个问题：线性 true-online 信用、逐坐标步长适应，以及过大的有效更新率。它不是给 TD(λ) 换一个固定 learning rate。作者提供稠密、稀疏二值和稀疏实值三种线性实现；没有据此证明任意学习中的神经表示稳定。
+前面的 true-online 方法处理过去预测应得到多少信用。另一个问题是，给定这些信用，这次更新究竟改变预测多少？若每个权重都有自己的步长，仅检查每一个步长是否很小并不够。先暂时去掉旧迹与自举，考虑线性预测 $v=w^\top x$ 和本次固定的标签 y。
 
 $$
-\alpha_i=e^{\beta_i},\qquad \tau=\sum_i\alpha_i x_i^2,\qquad a_i=\min\{1,\eta/\tau\}\alpha_i x_i,\qquad \sum_i a_i x_i=\min\{\tau,\eta\}
+\delta=y-w^\top x,\qquad \Delta w_i=\alpha_i\delta x_i\quad\Longrightarrow\quad v^+-v=\delta\sum_i\alpha_i x_i^2=\tau\delta.
 $$
 
-这是作者实现中限制新资格增量尺度的部分。τ=0 时取不缩放分支。η 约束当前特征方向上的有效增量，不是简单逐个裁剪参数；完整算法还有荷兰迹、预测差修正及元敏感度。
+τ 是这一次更新消去当前误差的比例，所以新误差为 (1−τ)δ。τ=1 时恰好达到固定标签，τ>1 时越过标签。它是预测空间中的有效率，不是任意一个参数的名义步长。
+
+例如 $x=(1,10)$，两个步长都为 .01，却有 $\tau=.01+.01\times100=1.01$。当前误差为一时，预测增加1.01。把第二坐标的输入单位扩大十倍会把其贡献扩大百倍；即使名义步长不变，学习幅度也已改变。
+
+$$
+\alpha_i=e^{\beta_i},\qquad c=\min\{1,\eta/\tau\},\qquad a_i=c\alpha_i x_i,\qquad \sum_i a_i x_i=\min\{\tau,\eta\}.
+$$
+
+β 是对数步长，η>0 是规定的有效率上限；τ=0 时取 c=1。共同缩放保留各坐标相对步长。上例取 η=.2，使用 δa 的当前预测改变量就为 .2，而不是1.01。
+
+现在放回时间信用。旧资格已经保存了过去输入，新向量 a 只决定当前输入怎样加入资格。因而上述上限不是整个带迹更新的上限。SwiftTD（RLC 2024）把这种尺度控制与线性 true-online 信用、步长适应结合起来。理解这三个环节后，才能看清下面的源码时序。
 
 $$
 b=z^\top x,\qquad z\leftarrow z+a(1-b)
@@ -500,13 +510,15 @@ $$
 
 这里 z 已先按 γλ 衰减，a 含坐标步长和上述共同缩放。这是源码中的资格构造顺序；只抄这一行并加普通 TD 误差，不构成完整 SwiftTD。
 
+因子 1−b 扣除了旧资格已经沿当前特征保留的部分，接回前面 Dutch trace 的构造。完整方法还需校正新旧预测差，并跟踪步长对过去权重更新的影响。后者是元敏感度：它回答改变学习规则会造成什么后果，与资格迹回答的时间信用问题不同。
+
 | 代码中的变量 | 为什么不能省略 | 检查方式 |
 | --- | --- | --- |
 | `beta`、`h`、`p`、`z_bar` | 当前步长的历史影响需要敏感度与元信用 | 冻结元步长，与完整适应版比较 |
 | `v_old`、`v_delta`、`z_delta` | 区分旧预测和此前更新造成的预测变化 | 重复特征、非零初始化时逐前缀核对 |
 | `tau`、`eta`、`decay` | 限制新资格尺度，超界时衰减相关步长并调整敏感度 | 放大输入特征，记录有效率而非只记名义 α |
 
-作者仓库 src/cpp/SwiftTD.cpp 的 Step 接口先接收当前特征和刚收到的奖励，再完成上一预测的更新。因此不能把它当成完全相同参数时序的 update(s,r,s′) 而重复推进两次。终止和变折扣接口也要按库实际支持范围核对。教学神经 TD(λ) 便于观察梯度漂移，但不是 SwiftTD 的替代复现。
+作者仓库提供稠密、稀疏二值和稀疏实值的线性实现。src/cpp/SwiftTD.cpp 的 Step 先接收当前特征和刚收到的奖励，再完成上一预测的更新；不能把它当成相同时序的 update(s,r,s′) 而重复推进两次。终止和变折扣接口也要按库实际支持范围核对。教学神经 TD(λ) 用于观察梯度漂移，并非这些线性规则的替代复现。
 
 一个研究对照应固定特征、目标和轨迹，分别关闭元步长、有效率上界和衰减。之后再学习表示。如果同时换成深网、改初始化并加入归一化，已无法从结果判断哪一项产生收益。
 
@@ -786,6 +798,34 @@ $$
 actor使用下一状态的V-trace目标构造动作回报。它不等于直接使用$v_t^{VT}-V_t$。实践中策略梯度比率上限还可以单独设置；本文小程序令它与ρmax一致。
 
 IMPALA作者代码先计算行为与目标动作log-prob的差，再用反向scan形成窗口目标，最后stop_gradient。它保存短轨迹并进行批量训练。反向scan在数组上从后向前计算，不等于严格流式后向资格迹；前者依赖已保存的窗口，后者在新误差到达时更新一条压缩迹。
+
+<a id="research-openmind-control-variates"></a>
+
+## 多步控制变量：期望备份为何还需要真实路径
+
+Q(σ)选择采样与期望的混合程度；De Asis 与 Sutton 的另一篇 2018 年工作问：已经采到长回报，能否减去其中可由当前价值解释的波动？答案是逐决策加入条件均值为零的控制变量。
+
+$$
+\rho_{t+1}=\frac{\pi(A_{t+1}\mid S_{t+1})}{\mu(A_{t+1}\mid S_{t+1})},\quad \bar Q_{t+1}=\sum_a\pi(a\mid S_{t+1})Q(S_{t+1},a),\qquad G_{t:t+n}=R_{t+1}+\gamma\left[\bar Q_{t+1}+\rho_{t+1}(G_{t+1:t+n}-Q_{t+1})\right]
+$$
+
+对应原文式 (21) 的重排，边界 $G_{t+n:t+n}=Q_{t+n}$。冻结 $Q$、策略且满足覆盖时，$\mathbb E_\mu[\bar Q-\rho Q\mid S]=0$，所以相对逐决策重要性采样目标不新增偏差；有限步 bootstrap 原有的估计偏差仍在。
+
+手算：两动作行为概率均为 0.5，目标概率为 $(0.9,0.1)$，$Q=(1,3)$。比率是 $(1.8,0.2)$，直接校正的尾值取 1.8 或 0.6，均值 1.2、方差 0.36。一步边界上 $G=Q$，修正后总为 $\bar Q=1.2$；多步时仍保留 $\rho(G-Q)$，因此新的奖励信息没有被全部替换为期望值。
+
+若采到目标策略绝不会选择的动作，ρ 为零，递推回到目标动作期望；若 ρ 很大，被放大的是回报相对预测的残差。预测与回报相关时这有助于减小波动；价值估计很差时，选择系数 −1 并非普遍最优，不能承诺方差总是下降。
+
+| 方法 | 应分开观察的变化 |
+| --- | --- |
+| Q(σ) | 一步目标的采样／期望混合，以及匹配的多步传播。 |
+| 逐决策控制变量 | 添加零均值校正，将可预测的部分与真实回报残差分开。 |
+| Retrace | 使用 Expected Sarsa 误差，再限制多步传播比率；其原作者并非 De Asis。 |
+| Replay | 改变数据保存和重复使用；本身不定义上述回报估计器。 |
+
+原文连接到 Expected Sarsa、Tree-backup 与 Retrace，但不能把这些方法的全部理论相互移植。冻结前向回报恒等式、表格算子稳定性、变参神经网络实验是不同层次。固定 n 样本窗口可具有有界内存，但仍保存历史样本；不等于本教材不保留样本的严格流式协议，需匹配相应后向递推。
+
+- 思考：动作价值的控制变量在 on-policy 情况下还存在，而状态价值形式中的 (1−ρ)V 消失，原因是什么？
+- 反例练习：保持多步尾回报或固定终端目标 G=(1,3)，采用反向排序的差估计 Q=(3,1)，使 G 与 Q 不再是同一个一步边界量。原 ρG=(1.8,0.6)，均值 1.2、方差 0.36；加控制变量后，目标期望 Q̄=2.8，Q̄+ρ(G−Q)=(−0.8,3.2)，均值仍为 1.2，方差却增至 4。枚举验证，并解释“无新增偏差”为何不蕴含“方差降低”。
 
 <a id="lesson-state-lambda"></a>
 
@@ -1260,7 +1300,7 @@ python3 examples/credit_assignment_lab.py test
 
 当前观测不够时，应记住什么、预测什么，又怎样在线学习？
 
-状态是支持后续计算的内部信息；GVF 指定一个预测问题；RTRL 和资格迹规定信用如何传播。三者可以组合，但不是相互替代的算法名称。先理解给定策略的预测，再讨论预测怎样改善控制。
+给定状态后可以估计价值；观测不足时，还要学习保留哪些历史。GVF 规定预测什么，RTRL 计算递归敏感度，资格迹组织时间信用。应分别检验信息是否进入状态、反馈能否教会这种保留，以及有限预测预算怎样分配，而不是把三者当作替代算法。
 
 - [Scalable Real-Time Recurrent Learning Using Columnar-Constructive Networks](https://yingwen.io/zh/continual-rl/research/#recent-columnar-constructive-networks)
 - [Real-Time Recurrent Learning using Trace Units in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-real-time-trace-units)
@@ -1282,6 +1322,7 @@ python3 examples/credit_assignment_lab.py test
 - [A Greedy Approach to Adapting the Trace Parameter for Temporal Difference Learning](https://yingwen.io/zh/continual-rl/research/#recent-lambda-greedy)
 - [Streaming Reinforcement Learning under Partial Observability with Real-Time Recurrent Learning](https://yingwen.io/zh/continual-rl/research/#recent-streaming-rtu-rtrl-2026)
 - [Recurrent Reinforcement Learning with Memoroids](https://yingwen.io/zh/continual-rl/research/#recent-memoroids-sequence-learning)
+- [Per-decision Multi-step Temporal Difference Learning with Control Variates](https://yingwen.io/zh/continual-rl/research/#recent-openmind-control-variates)
 
 #### 流式协议下的稳定更新
 
@@ -1745,6 +1786,36 @@ masked MuJoCo仍落后批量PPO。固定参数精确RTRL不代表在线变参敏
 
 - [2026年v2原文](https://arxiv.org/html/2605.24709v2)：方法、5-seed实验、masked MuJoCo负边界与staleness诊断。
 
+### Per-decision Multi-step Temporal Difference Learning with Control Variates
+
+Kristopher De Asis, Richard S. Sutton
+
+UAI 2018 · 2018 · 支持方法与理论
+
+#### 研究问题
+
+怎样保留长路径中的新奖励信息，同时减去已经可预测的采样波动？
+
+#### 关键机制
+
+在逐决策重要性采样回报中加入条件均值为零的控制变量。期望动作价值承担可预测部分，重要性比率仍作用于真实回报相对当前预测的残差。
+
+#### 证据
+
+原文统一讨论动作和状态价值的多步目标，并连接 Expected Sarsa、Tree-backup 与 Retrace。教材枚举一个两动作例子的期望和方差。
+
+#### 条件与限制
+
+无新增偏差不代表没有 bootstrap 误差，也不保证任意差预测都降低方差。此为研究者加入 Openmind 前的工作。
+
+#### 阅读与实验
+
+保持采样策略、价值函数与路径长度不变，分别计算控制变量前后的均值和方差；随后再讨论神经网络参数变化。
+
+#### 原文与相关入口
+
+- [原论文](https://arxiv.org/html/1807.01830v1)：重点读动作价值回报、条件均值与 λ-return 的关系。
+
 
 <a id="chapter-code"></a>
 
@@ -1821,3 +1892,7 @@ python3 examples/credit_assignment_lab.py all
 - [Stream-X · 原文及修订版](https://arxiv.org/abs/2410.14606)：读者需要区分2024 ObGD与2026修订的更新控制器，不混合超参数与源码。
 
 - [Stream-X · 作者固定版本](https://github.com/mohmdelsayed/streaming-drl/tree/9326fc3e23a401f28087ae2e41b635888740586b)：2026版，先读optimizer.py、稀疏初始化及agent更新时序；代码许可证与教程原创代码不同。
+
+- [De Asis & Sutton · Per-decision Multi-step TD with Control Variates · UAI 2018](https://arxiv.org/html/1807.01830v1)：式 (21)、(23)、(24) 给动作／状态回报及 λ-return 关系。
+
+- [De Asis et al. · Multi-step Reinforcement Learning: A Unifying Algorithm · AAAI 2018](https://arxiv.org/abs/1703.01327)：Q(σ) 原文；2017 是预印本年份，正式会议为 2018。与控制变量论文互补，不重复计算为同一项成果。

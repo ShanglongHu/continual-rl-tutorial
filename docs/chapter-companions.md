@@ -8,9 +8,14 @@
 
 [教材](../textbook/objectives.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-objectives)
 
-- Richard S. Sutton｜持续经验型智能体的总纲：奖励、回报与持续交互的统一问题表述。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：奖励、回报与持续交互的统一问题表述。
 - Andrew G. Barto｜自适应控制、内在动机与层级学习：自适应控制与强化学习问题的形成。
 - David Abel｜从表示抽象到“学习究竟在哪里”：持续学习定义与智能体内部学习过程。
+- Michael Bowling｜博弈、评测与 agency：比较固定策略与完整学习过程，明确奖励表示、研究假说和形式化提案的不同角色。
+- Martha White｜可靠 off-policy 学习到长期控制：将环境、任务、关注分布与学习目标分别定义。
+- Esraa Elelimy｜高效在线递归学习：区分冻结策略评价与持续学习过程评价。
+- Khurram Javed｜有限算力下的持续构造与信用分配：把大世界立场转化为可被反驳的研究问题。
+- Patrick M. Pilarski｜预测知识、人机共适应与身体：智能增强的系统目标
 
 ## 奖励假设与奖励设计
 
@@ -20,11 +25,13 @@
 
 [教材](../textbook/reward-design.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-reward-design)
 
-- Richard S. Sutton｜持续经验型智能体的总纲：奖励假设与从经验学习的总体问题。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：奖励假设与从经验学习的总体问题。
 - David Abel｜从表示抽象到“学习究竟在哪里”：奖励表达能力与持续学习的概念基础。
 - Michael Bowling｜博弈、评测与 agency：奖励表示的公理条件与设计者目标。
 - Will Dabney｜价值分布与目标／agent 基础：奖励表达与偏好表示。
 - Satinder Singh｜内在动机、时间抽象与 agency：奖励、内在动机与智能能力的关系。
+- John D. Martin｜奖励表达、规划计算与环境中的记忆：检验目标能被奖励表达的条件。
+- Matthew E. Taylor｜迁移、教学与人类输入：人类输入的语义
 
 ## 平均奖励与差分价值
 
@@ -36,7 +43,8 @@
 
 - Martha White｜可靠 off-policy 学习到长期控制：平均奖励、可靠 off-policy 学习与长期控制。
 - Adam White｜从实时预测知识到可信实验：平均奖励学习与经验研究。
-- Richard S. Sutton｜持续经验型智能体的总纲：差分价值与 continuing control。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：差分价值与 continuing control。
+- Kris De Asis｜多步价值学习与面向真实时间的机器人：从真实时间理解持续任务的回报。
 
 ## 智能体状态与递归学习
 
@@ -50,6 +58,13 @@ POPGym 隔离记忆需求；Forager 检查长期交互。对照完整状态 orac
 - Esraa Elelimy｜高效在线递归学习：递归网络的在线训练。
 - Leslie Pack Kaelbling｜部分可观测与层级机器人规划：部分可观测决策与信念状态。
 - Amy Zhang｜可泛化与分层决策所需的表示：面向决策的状态表示。
+- Joseph Modayil｜从感知结构到可验证预测知识：从观测关系构造内部状态。
+- Randy Goebel｜知识表示、推理与可检验的解释：分开状态的预测充分性与人类可理解性。
+- John D. Martin｜奖励表达、规划计算与环境中的记忆：研究内部状态与外部痕迹的边界。
+- Dale Schuurmans｜表示、优化与可规划状态：表示要支持预测与决策；部分可观测的理论条件应和实现一起阅读。
+- Martha White｜可靠 off-policy 学习到长期控制：比较预测语义、表示可更新性与循环计算成本。
+- Adam White｜从实时预测知识到可信实验：同时评价部分可观测性、记忆语义和更新代价。
+- Khurram Javed｜有限算力下的持续构造与信用分配：从计算依赖解释可在线训练的循环架构。
 
 ## 价值预测与资格迹
 
@@ -59,9 +74,12 @@ Random Walk 与小型马尔可夫奖励过程：有解析真值，便于分开�
 
 [教材](../textbook/value.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-value)
 
-- Richard S. Sutton｜持续经验型智能体的总纲：TD 学习与资格迹。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：TD 学习与资格迹。
 - Andrew G. Barto｜自适应控制、内在动机与层级学习：价值学习与演员—评论家框架。
 - Peter Dayan｜预测表征与计算神经科学：Successor representation 连接预测与表征。
+- Arsalan Sharifnassab｜更新几何、步长适应与流式学习：比较 Bellman 目标与更新几何。
+- Csaba Szepesvári｜统计效率和算法边界：把表格 TD、函数逼近与随机逼近保证的条件逐一列出。
+- Martin Müller｜长期价值与临时搜索记忆：TD 不只可用于真实轨迹学习，也可作为模拟搜索中的局部价值更新。
 
 ## 通用价值函数与预测知识
 
@@ -71,10 +89,11 @@ Random Walk 与小型马尔可夫奖励过程：有解析真值，便于分开�
 
 [教材](../textbook/gvf.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-gvf)
 
-- Joseph Modayil｜由可验证预测构成知识：以通用价值函数组织预测知识。
+- Joseph Modayil｜从感知结构到可验证预测知识：以通用价值函数组织预测知识。
 - Patrick M. Pilarski｜预测知识、人机共适应与身体：机器人预测知识与人机共适应。
 - Adam White｜从实时预测知识到可信实验：并行离策略预测与实时经验学习。
 - Martha White｜可靠 off-policy 学习到长期控制：稳定的离策略预测方法。
+- Matthew Schlegel｜预测式状态与表示支持规划：预测问题及其发现
 
 ## 持续控制与学习智能体比较
 
@@ -87,7 +106,9 @@ Random Walk 与小型马尔可夫奖励过程：有解析真值，便于分开�
 - Michael Bowling｜博弈、评测与 agency：持续学习器的评价与可行偏离比较。
 - Martha White｜可靠 off-policy 学习到长期控制：适应过程、学习目标与评测。
 - David Abel｜从表示抽象到“学习究竟在哪里”：历史过程与持续学习定义。
-- Richard S. Sutton｜持续经验型智能体的总纲：GPI 为局部策略改善提供基础。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：GPI 为局部策略改善提供基础。
+- Csaba Szepesvári｜统计效率和算法边界：固定问题中的策略优化率不能代替整个持续学习器的生命期评价。
+- Dieter Büchler｜高动态机器人中的在线适应：动态运动与物理时间
 
 ## 深度价值学习
 
@@ -112,6 +133,9 @@ CartPole 做管线检查；MinAtar 或 ALE 做视觉控制。不能把 CartPole 
 - Sergey Levine｜从现实机器人经验到可泛化控制：策略优化、机器人学习与深度 RL 教学。
 - Pieter Abbeel｜技能学习、元学习与通用机器人：策略搜索、机器人控制与元学习。
 - Gautham Vasan｜增量策略梯度与在线连续控制：增量策略梯度和连续控制。
+- Dale Schuurmans｜表示、优化与可规划状态：把真梯度优化理论与含估计误差的 actor–critic 更新区分。
+- Martha White｜可靠 off-policy 学习到长期控制：从明确目标推导 actor 更新，再分析近似与分布错配。
+- Shibhansh Dohare｜持续更新特征，而非只保护参数：区分表征可训练性和策略分布坍塌。
 
 ## 最大熵控制
 
@@ -123,6 +147,7 @@ Pendulum 做单位与动作范围检查；MuJoCo / DMC 控制需固定版本、�
 
 - Sergey Levine｜从现实机器人经验到可泛化控制：最大熵控制与现实经验学习。
 - Hado van Hasselt｜稳定深度价值学习与持续 RL 基础：价值估计误差与双估计器方法的基础。
+- Dale Schuurmans｜表示、优化与可规划状态：用 soft consistency 理解策略、价值与熵正则化目标的共同结构。
 
 ## 时间信用分配与资格迹
 
@@ -132,10 +157,11 @@ Pendulum 做单位与动作范围检查；MuJoCo / DMC 控制需固定版本、�
 
 [教材](../textbook/credit.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-credit)
 
-- Richard S. Sutton｜持续经验型智能体的总纲：多步回报、资格迹与在线信用分配。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：多步回报、资格迹与在线信用分配。
 - A. Rupam Mahmood｜把学习放回物理时间：True-online TD 与在线更新。
 - Khurram Javed｜有限算力下的持续构造与信用分配：资源受限的递归信用分配。
 - Esraa Elelimy｜高效在线递归学习：高效在线递归学习。
+- Kris De Asis｜多步价值学习与面向真实时间的机器人：连接抽样、期望与多步备份。
 
 ## 流式更新与稳定性
 
@@ -148,6 +174,11 @@ Pendulum 做单位与动作范围检查；MuJoCo / DMC 控制需固定版本、�
 - A. Rupam Mahmood｜把学习放回物理时间：严格增量深度 RL 与在线稳定化。
 - Mohamed Elsayed｜严格增量的深度强化学习：Streaming deep RL 的实现与评测。
 - Gautham Vasan｜增量策略梯度与在线连续控制：增量 actor–critic。
+- Joseph Modayil｜从感知结构到可验证预测知识：检查并行预测的每步计算。
+- Kris De Asis｜多步价值学习与面向真实时间的机器人：逐步更新必须满足运行时预算。
+- Arsalan Sharifnassab｜更新几何、步长适应与流式学习：从预期函数变化理解单样本稳定化。
+- Sorina Lupu｜自适应控制与直接从经验学习的机器人：真实机器人中的延迟与逐步计算。
+- Khurram Javed｜有限算力下的持续构造与信用分配：按每步成本而不只按参数量比较方法。
 
 ## 元学习与学习规则的适应
 
@@ -157,10 +188,15 @@ IDBD 适应步长，MAML 学初始化，context-based meta-RL 推断任务；内
 
 [教材](../textbook/meta.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-meta)
 
-- Richard S. Sutton｜持续经验型智能体的总纲：增量步长适应与元学习。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：增量步长适应与元学习。
 - Martha White｜可靠 off-policy 学习到长期控制：学习规则适应和稳定性。
 - Chelsea Finn｜快速适应与机器人元学习：MAML 与快速适应。
 - Luisa Zintgraf｜用潜变量推断进行快速适应：基于隐变量的元强化学习。
+- Arsalan Sharifnassab｜更新几何、步长适应与流式学习：追踪学习规则对未来误差的影响。
+- John D. Martin｜奖励表达、规划计算与环境中的记忆：通过后续学习效果适应规划采样。
+- Sorina Lupu｜自适应控制与直接从经验学习的机器人：区分离线元学习与运行时适应。
+- A. Rupam Mahmood｜把学习放回物理时间：跟踪逐特征学习速度，同时追问元参数和非平稳性。
+- Khurram Javed｜有限算力下的持续构造与信用分配：区分学习表示的外层过程与在线更新率的自适应。
 
 ## 目标条件化与子任务构造
 
@@ -187,6 +223,9 @@ Four Rooms 检查覆盖与打断条件；迁移目标时同时报告预训练成
 - Doina Precup｜从 options 到可持续的抽象智能体：Options、时间抽象与层级控制。
 - Pierre-Luc Bacon｜时间抽象与优化视角：Option-Critic 的端到端优化。
 - André Barreto｜可组合的价值知识与技能：可组合价值知识与技能。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：理解随机时长行为的接口。
+- Levi H. S. Lelis｜让学到的知识指导搜索：比较程序组件、可执行技能与有明确启动／终止语义的 options。
+- Dieter Büchler｜高动态机器人中的在线适应：带时间的子目标
 
 ## Dyna 与模型学习
 
@@ -196,8 +235,9 @@ Blocking Maze / Shortcut Maze：固定真实交互，另报规划备份次数与
 
 [教材](../textbook/dyna.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-dyna)
 
-- Richard S. Sutton｜持续经验型智能体的总纲：Dyna：直接学习、模型学习与规划的统一。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：Dyna：直接学习、模型学习与规划的统一。
 - David Silver｜规划、强化学习与经验规模：搜索、价值学习与模型支持的决策。
+- Martin Müller｜长期价值与临时搜索记忆：比较真实经验、模型模拟和双记忆的不同更新来源。
 
 ## 转移模型与后果模型
 
@@ -211,6 +251,8 @@ Blocking Maze / Shortcut Maze：固定真实交互，另报规划备份次数与
 - Danijar Hafner｜潜在世界模型与行为想象：潜在世界模型与想象学习。
 - Samuel Kessler｜task-agnostic 世界模型的持续适应：任务无关的持续世界模型。
 - Matthew Schlegel｜预测式状态与表示支持规划：预测表示与规划接口。
+- Randy Goebel｜知识表示、推理与可检验的解释：讨论学得模型表达了什么以及何时失效。
+- Sorina Lupu｜自适应控制与直接从经验学习的机器人：辨认模型误差与闭环控制需求。
 
 ## 时间抽象与规划
 
@@ -224,6 +266,12 @@ Blocking Maze / Shortcut Maze：固定真实交互，另报规划备份次数与
 - George Konidaris｜从技能出发构造符号世界：抽象技能的符号规划。
 - Levi H. S. Lelis｜让学到的知识指导搜索：学习引导搜索。
 - Martin Müller｜长期价值与临时搜索记忆：搜索中的临时记忆与长期价值。
+- John D. Martin｜奖励表达、规划计算与环境中的记忆：分配有限的模型查询与备份。
+- Michael Bowling｜博弈、评测与 agency：将 DeepStack 的决策时重求解与跨经验的参数学习分账。
+- Csaba Szepesvári｜统计效率和算法边界：区分可查询模型中的模拟效率、模型误差和真实交互效率。
+- Dale Schuurmans｜表示、优化与可规划状态：联合评价学得的表示与可执行的规划，而不是只考察编码质量。
+- Marlos C. Machado｜表示—技能—经验的循环：表示如何支持决策时规划
+- Matthew Schlegel｜预测式状态与表示支持规划：表示支持多尺度规划
 
 ## 知识保留与再适应
 
@@ -237,6 +285,8 @@ Continual World / COOM：逐任务学习矩阵、任务身份权限、首次习�
 - Eric Eaton｜可组合知识的 lifelong RL：终身策略学习与知识组合。
 - Jorge A. Mendez｜模块化与知识组合：模块化持续学习。
 - Alessandro Lazaric｜知识迁移的条件与负迁移：迁移条件与负迁移。
+- Shibhansh Dohare｜持续更新特征，而非只保护参数：同时观察旧知识保留与新知识学习，避免只报告其中一个。
+- Matthew E. Taylor｜迁移、教学与人类输入：迁移与负迁移
 
 ## 可塑性与特征更新
 
@@ -251,6 +301,8 @@ Continual World / COOM：逐任务学习矩阵、任务身份权限、首次习�
 - Evgenii Nikishin｜早期经验偏置与部分重置：早期经验偏置与网络重置。
 - Ghada Sokar｜休眠神经元与 ReDo：休眠神经元与 ReDo。
 - Rishabh Agarwal｜统计可靠的 RL 比较与可塑性诊断：可靠比较与可塑性诊断。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：检验训练年龄对继续学习的影响。
+- A. Rupam Mahmood｜把学习放回物理时间：把短期数值稳定与长期学习能力分成两个指标。
 
 ## 探索与经验选择
 
@@ -265,6 +317,9 @@ Procgen / MiniGrid 分离训练关卡和测试关卡；加入不可学习噪声�
 - Ian Osband｜深度探索与认识不确定性：不确定性与深度探索。
 - Pierre-Yves Oudeyer｜学习进步驱动的自主发展：学习进展驱动的自主发展。
 - Jeff Clune｜从质量多样性到开放式能力增长：质量多样性与开放式搜索。
+- Csaba Szepesvári｜统计效率和算法边界：用 bandit 上下界理解反馈不足和比较器选择，再进入状态会随动作改变的 RL。
+- Marlos C. Machado｜表示—技能—经验的循环：技能如何改变探索
+- Dieter Büchler｜高动态机器人中的在线适应：身体决定探索空间
 
 ## 持续学习的智能体架构
 
@@ -274,7 +329,7 @@ Procgen / MiniGrid 分离训练关卡和测试关卡；加入不可学习噪声�
 
 [教材](../textbook/architectures.md) · [实验](https://yingwen.io/zh/continual-rl/labs/#experiment-architectures)
 
-- Richard S. Sutton｜持续经验型智能体的总纲：从经验构造知识的整体架构。
+- Richard S. Sutton｜从时间信用分配到持续经验型智能体：从经验构造知识的整体架构。
 - David Abel｜从表示抽象到“学习究竟在哪里”：智能体结构与持续学习定义。
 - Marlos C. Machado｜表示—技能—经验的循环：表征、技能与经验生成的耦合。
 - 温颖 Ying Wen｜相互影响、递归推理与合作决策：递归推理与多智能体相互影响。
@@ -286,6 +341,13 @@ Procgen / MiniGrid 分离训练关卡和测试关卡；加入不可学习噪声�
 - 朱军 Jun Zhu｜Bayesian 持续学习与主动遗忘：Bayesian 持续学习与遗忘机制。
 - 张伟楠 Weinan Zhang｜可读 RL 教学、决策学习与 agent：深度 RL 教学与决策学习。
 - 杨耀东 Yaodong Yang｜大规模合作、博弈与适应：合作、博弈与多智能体适应。
+- Joseph Modayil｜从感知结构到可验证预测知识：让预测知识服务后续决策。
+- Randy Goebel｜知识表示、推理与可检验的解释：连接学习模块、推理模块与解释接口。
+- John D. Martin｜奖励表达、规划计算与环境中的记忆：把身体、环境和计算纳入系统边界。
+- Levi H. S. Lelis｜让学到的知识指导搜索：把慢速表示学习、快速程序搜索和执行过程定义为不同接口。
+- Martin Müller｜长期价值与临时搜索记忆：检验局部搜索与长期学习的接口，保留模块组合失败的负证据。
+- Patrick M. Pilarski｜预测知识、人机共适应与身体：人机双方共同适应
+- Matthew E. Taylor｜迁移、教学与人类输入：交互中人的适应
 
 ## 实验设计、统计与算法测试
 
@@ -298,3 +360,19 @@ Procgen / MiniGrid 分离训练关卡和测试关卡；加入不可学习噪声�
 - Adam White｜从实时预测知识到可信实验：实验设计、性能变异与调参。
 - Martha White｜可靠 off-policy 学习到长期控制：算法比较与基准方法论。
 - Rishabh Agarwal｜统计可靠的 RL 比较与可塑性诊断：统计可靠的深度 RL 评价。
+- Joseph Modayil｜从感知结构到可验证预测知识：分别测预测误差与控制效用。
+- Randy Goebel｜知识表示、推理与可检验的解释：为解释的忠实性设计干预和对照。
+- Kris De Asis｜多步价值学习与面向真实时间的机器人：比较控制频率、延迟与恢复成本。
+- Arsalan Sharifnassab｜更新几何、步长适应与流式学习：拆分预条件、尺度控制与元学习的作用。
+- Sorina Lupu｜自适应控制与直接从经验学习的机器人：同时报告学习、恢复和平台成本。
+- Michael Bowling｜博弈、评测与 agency：从 ALE 与扑克评测学习平台设计、统计方差和可比较条件。
+- Csaba Szepesvári｜统计效率和算法边界：让统计效率结论与实际实验的数据访问、资源预算保持一致。
+- Levi H. S. Lelis｜让学到的知识指导搜索：测试组合泛化与跨任务摊销，同时保留预训练、建库和模拟成本。
+- Martin Müller｜长期价值与临时搜索记忆：精确求解证据、有限样本胜率和持续适应曲线各自回答不同问题。
+- A. Rupam Mahmood｜把学习放回物理时间：将机器人设置与生命期成本纳入比较。
+- Esraa Elelimy｜高效在线递归学习：联合操纵可观测性与变化机制，而非只延长训练。
+- Shibhansh Dohare｜持续更新特征，而非只保护参数：用同难度长期序列与替换对照识别机制。
+- Marlos C. Machado｜表示—技能—经验的循环：固定技能与在线发现的对照
+- Patrick M. Pilarski｜预测知识、人机共适应与身体：交互价值与使用者负担
+- Matthew E. Taylor｜迁移、教学与人类输入：计入教师与源任务成本
+- Dieter Büchler｜高动态机器人中的在线适应：恢复、损耗和外部干预

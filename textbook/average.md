@@ -10,6 +10,22 @@
 - 严格区分目标折扣、中心化折扣 critic 和资格迹衰减；识别有限折扣带来的价值及 actor 方向偏差。
 - 解释非线性逼近、流式更新、慢混合与 option 随机时长增加的困难，不将表格保证外推到深网。
 
+<a id="chapter-prerequisites"></a>
+
+## 预备知识与符号
+
+### 状态与马尔可夫性
+
+给定当前状态和动作，下一步奖励与状态的条件分布不再依赖更早历史；观测不充分时，需要先构造带记忆的 agent state。
+
+### 策略评估与控制
+
+策略评估求固定策略 $\pi$ 的价值；控制则寻找收益更高的策略。控制样本可由探索策略 $b$ 产生，因此样本奖励均值未必是最优策略的奖励率。
+
+### TD 与半梯度
+
+用当前估计的下一状态价值补齐未知未来，把它视作本步固定目标再更新当前估计；这不是对整个 Bellman residual 求全梯度。
+
 <a id="problem-definition"></a>
 
 ## 本章的问题定义
@@ -86,22 +102,6 @@ $T$ 是原始环境步数，$\Pi$ 是允许的策略集合。预测只估计固�
 - 奖励中心化：处理共同奖励偏移；折扣联合更新的中心不应预先当成奖励率。
 
 
-<a id="chapter-prerequisites"></a>
-
-## 预备知识与符号
-
-### 状态与马尔可夫性
-
-给定当前状态和动作，下一步奖励与状态的条件分布不再依赖更早历史；观测不充分时，需要先构造带记忆的 agent state。
-
-### 策略评估与控制
-
-策略评估求固定策略 $\pi$ 的价值；控制则寻找收益更高的策略。控制样本可由探索策略 $b$ 产生，因此样本奖励均值未必是最优策略的奖励率。
-
-### TD 与半梯度
-
-用当前估计的下一状态价值补齐未知未来，把它视作本步固定目标再更新当前估计；这不是对整个 Bellman residual 求全梯度。
-
 <a id="lesson-setting"></a>
 
 ## 1 · 每单位时间的收益
@@ -123,7 +123,7 @@ $g_\pi$ 是每个原始环境步的平均收益。本章假设它与初始状态
 | $h(s)$ / $q(s,a)$ | 差分价值，又称 bias | 根据 TD 误差更新 |
 | $\alpha$、$\eta$ | 价值步长、奖励率相对步长 | 本页固定；非平稳场景可研究自适应 |
 
-奖励率衡量长期稳态表现，相对价值衡量从当前状态出发，在进入稳态之前比平均水平多赚或少赚多少。两者都需要：两条策略可能长期奖励率相同，但在前几百步的收益相差很大。对有限预算研究还要报告累计收益、变化后恢复时间，不能只报告最终 g。
+奖励率衡量长期单位时间的表现。差分价值通过扣除这一共同增长率，描述起点对累计收益的相对影响；它并不假定过程会在某个有限时刻精确进入稳态。两条策略可能奖励率相同，却在前几百步收益相差很大。差分价值在跨策略比较时还要统一规范，有限预算研究则应直接报告累计收益和恢复成本。
 
 <a id="lesson-discount-choice"></a>
 
@@ -281,6 +281,8 @@ $d_\pi(s)$ 是策略长期访问状态 s 的比例。把 Poisson 方程左乘 $d
 | 单常返类，允许暂态 | 仍有唯一稳态分布；gain 不依赖初态 | Poisson 解只差常数；周期性仍可能使逐步极限振荡 |
 | 多个常返类 | 可能因初态或最终进入的类而异 | 一般需要状态相关 gain；本章标量方程可能无解 |
 
+最小反例是两个互不相通的自环状态，奖励分别恒为 0 和 1。两个起点的奖励率分别为 0 和 1；若强行共用一个标量 $g$，Poisson 方程会同时要求 $g=0$ 和 $g=1$。所以“有限、平稳、持续运行”不足以保证本章的标量设定。相反，周期性本身不阻止时间平均存在：奖励依次为 0、2 的二状态环具有 $g=1$，但逐时刻期望奖励不收敛。
+
 $$
 (I-P_\pi)h_\pi=r_\pi-g_\pi\mathbf1,\qquad d_\pi^\top h_\pi=0.
 $$
@@ -436,6 +438,40 @@ $$
 甚至方向也会相反。令 $\pi_p$ 在状态 0 以概率 p 选择 A，其余时候选择 B，$0<p<1$。其稳态分布为 $(1,10p,10(1-p))/11$，所以 $g(p)=(10-6p)/11$、$dg/dp=-6/11$。但 $\gamma=0.5$ 时，精确折扣动作价值差是 $4-\gamma/(1-0.9\gamma)=34/11$。稳态 score 更新方向因此是 $B_\gamma(p)=34/121>0$，与真实梯度相反。这里 critic 没有训练误差，gain 也完全正确。
 
 若用 logit 参数 $p=\sigma(\theta)$，两个方向都再乘 $p(1-p)$；在 $p=1/2$ 时分别为 $-3/22$ 和 $17/242$。因此“去掉目标中的折扣、在学习算法中加回”是一项需要证明或量化偏差的设计，不是一条不带条件的等价变换。可以研究随数据增加的折扣调度、对平均梯度的显式校正，或不改变 Poisson 目标的信用分配衰减；三者应分别命名。
+
+<a id="course-average-slow-modes"></a>
+
+## 把折扣作为求解参数：它先压掉了哪些长期差异？
+
+中心化折扣 critic 在有限折扣下不同于差分价值。差异有多大，取决于环境的时间尺度，不只取决于 γ 看上去是否接近 1。冻结一条有限、不可约的策略链，可以用一个最小例子把这层误差算出来。
+
+$$
+P=\begin{pmatrix}1-\varepsilon&\varepsilon\\\varepsilon&1-\varepsilon\end{pmatrix},\qquad r=\begin{pmatrix}1\\-1\end{pmatrix},\qquad d=\begin{pmatrix}1/2\\1/2\end{pmatrix},\qquad g=d^\top r=0.
+$$
+
+$0<\varepsilon<1/2$。两个状态都有较大概率停留，长期访问各半；奖励率为零，但初始处于高奖励状态仍比处于低奖励状态有利。
+
+$$
+Pr=(1-2\varepsilon)r,\quad h=\frac{r}{2\varepsilon},\quad u_\gamma=\frac{r}{1-\gamma(1-2\varepsilon)},\quad \frac{u_\gamma(s)}{h(s)}=\frac{2\varepsilon}{1-\gamma+2\gamma\varepsilon}.
+$$
+
+这里 $r$ 恰是非恒定特征方向，且其稳态均值为零。分别代入 $(I-P)h=r$ 与 $(I-\gamma P)u_\gamma=r$ 即得。比值同时适用于两个非零状态值，不涉及常数规范的混淆。
+
+取 ε=0.01，差分价值是 (50,−50)。即使 γ=0.99，中心化折扣值也只有约 (33.557,−33.557)。准确奖励率已经被减去，仍有约 32.9% 的状态差异被压小。若 ε=0.0001 而 γ 仍为 0.99，该比值仅约 0.0196。对慢得多的过程，同一个折扣几乎抹掉了差分价值中的长期结构。
+
+若希望这项相对缩小不超过 $\eta\in(0,1)$，令 $q=1-\gamma$，由上式可直接得到 $q\leq 2\varepsilon\eta/[(1-\eta)(1-2\varepsilon)]$。这个界只属于本例，但它说明“足够接近 1”必须相对于混合时间解释。增大 γ 让估计更接近 bias，也增加需要从经验分辨的时长。
+
+课程提出过从较小折扣逐步趋向 1 的思路：目标保持平均奖励，折扣仅作为中间估计器参数。它是一条求解思路，不是仅凭固定策略极限就得到的在线控制定理。每次调整折扣，critic 的目标会移动；同时学习策略、奖励率和表示时，还有其他移动目标。
+
+$$
+u_{\gamma_{t+1}}-u_{\gamma_t}\approx(\gamma_{t+1}-\gamma_t)(I-\gamma_tP)^{-1}P\,u_{\gamma_t}.
+$$
+
+这是冻结 P、奖励与正确 g 后，对折扣求导得到的一阶变化。靠近慢模态时逆矩阵的作用较强。固定折扣增量未必造成固定大小的目标移动；critic 尚未跟上时再次增大折扣，会增加跟踪误差。
+
+这个例子没有动作，所以尚不证明策略选择受损。要检验控制影响，应加入一个可以改变到达概率或转换成本的动作，再与精确 Poisson 解比较。记录有限折扣偏差、采样误差与策略改善方向，不能只因学习曲线变平就判定折扣调度已正确逼近平均奖励控制。
+
+一个有区分力的研究问题是：能否依据已有经验对关键时间尺度的分辨程度调整折扣，而不是按训练步数预设日程？在严格流式条件下，旧数据不能重新计算新时域标签；适应折扣、保留多尺度 GVF 和直接差分预测各需要不同的记忆与计算。应在同一预算下比较，而非将辅助预测数量视为免费。
 
 <a id="lesson-trace-decay"></a>
 
@@ -990,6 +1026,42 @@ $$
 
 原文提供线性诊断实验，但尚未确认对应的作者代码仓库。BEC 的作者仓库不能自动充当 RETD 的官方实现。上述矩阵检查是可独立完成的教学验证；完整复现仍需核对论文附录的全部采样、步长与统计协议。
 
+<a id="research-openmind-episodic-centering"></a>
+
+## 回合会终止，中心化怎样保持原来的目标
+
+在无限折扣流中，每步减去常数只平移价值；在长短不一的回合中，这会变成按持续时间收费。De Asis、Elsayed 与 He（RLC 2026）从终止边界出发推广 Differential TD，让中心化也能服务原有的 episodic 目标。此处的“differential”描述参数化与更新，不能据名字把评价目标改为平均奖励。
+
+反例：$\gamma=0.9$。动作 A 立即给 1 并终止；B 先给 0，再给 1.2 并终止。原回报分别为 1 和 1.08，B 更好。若仅在真实回合内每步减去 $c=0.2$，回报变成 0.8 和 0.7，排序翻转。
+
+$$
+\Phi(s)=\frac{c}{1-\gamma}\ (s\ne S_T),\quad \Phi(S_T)=0,\qquad F(s,s')=\gamma\Phi(s')-\Phi(s)=\begin{cases}-c/(1-\gamma),&s'=S_T,\\-c,&s'\ne S_T,\end{cases}\quad(s\ne S_T).
+$$
+
+固定 $c$、$\gamma<1$ 时，这是满足终止势函数为零的 potential shaping。分段式针对从非终止状态出发的转移；吸收终点自身的转移有 $F(S_T,S_T)=0$。普通转移仍减 $c$，进入终点则减 $c/(1-\gamma)$。这样整段回报统一减去起点势函数，而非按回合长度扣费。
+
+在上例中，修正后的 A 为 −1，B 为 −0.92，二者都恰好减去 2，原排序恢复。终止边界补偿并不是让机器人真的在终点继续运行；它只是将假想吸收状态上的折扣尾部写入价值定义。
+
+$$
+V(s;w,b)=V^\Delta(s;w)+b,\qquad V^\Delta(S_T;w)=-b,\qquad \delta_t=\begin{cases}R_{t+1}-b_t-V^\Delta(S_t;w_t),&S_{t+1}=S_T,\\R_{t+1}-(1-\gamma)b_t+\gamma V^\Delta(S_{t+1};w_t)-V^\Delta(S_t;w_t),&\text{otherwise}.\end{cases}
+$$
+
+改用共享的价值偏置 $b$ 可避免除以 $1-\gamma$。在折扣情形 $c=(1-\gamma)b$；这两个符号属于不同单位，更新比例也需对应重参数化。该价值偏置形式还能用于最终终止、总回报有限的 $\gamma=1$ 回合。
+
+$$
+w_{t+1}=w_t+\alpha_t\delta_t\nabla_wV^\Delta(S_t;w_t),\qquad b_{t+1}=b_t+\eta\alpha_t\delta_t
+$$
+
+两条更新使用同一个旧误差。在线变化的 $b$ 不能只靠“固定势函数保持策略排序”的结论论证；论文进一步通过共享偏置的线性 TD 表示讨论其保证。
+
+共享偏置是所有非终止状态共用一个标量，多动作网络中也须跨输出共享；它不等同于为每个动作随意增加一个独立 bias。论文的线性预测分析依赖固定表示、访问与终止等条件；流式深度实验是另一层证据，不能推广为任意深网控制收敛定理。
+
+这与本章的奖励率 g、折扣 TD 参照 c 各有含义。把终点视为无限零奖励吸收状态时，任何最终终止策略的长期平均奖励均为零；因此仍需评价原来的回合总回报或折扣回报。
+
+- 思考：如果只是采样窗口用完，能否采用终止分支？不能；真实后继价值仍属于目标。
+- 比较固定中心化、遗漏终止补偿、正确补偿与学习共享偏置四种情况；先核对策略排序，再研究学习速度。
+- 将常数奖励偏移、回合时长和任务 reset 权限分别控制，避免把目标变化误认为样本效率提升。
+
 <a id="lesson-nonlinear"></a>
 
 ## 12 · 换成神经网络：哪些结构不再成立
@@ -1018,29 +1090,41 @@ $$
 
 有些 actor–critic 分析要求 actor 步长 $\beta_t$ 相对 critic 步长 $\alpha_t$ 满足 $\beta_t/\alpha_t\to0$，并配合其他假设。不能把“代码里 actor 学习率较小”当成全部条件。表格 Differential TD/Q 的固定 η 联合更新则属于另一条证明路线，两者不能混称。
 
-流式实验应先固定表示与策略，检查预测；再允许策略改善；最后才允许表示学习与模型规划同时发生。每加一个移动对象，都保持相同环境流、日志预算和关闭该机制的对照。至少记录奖励率误差、参考漂移、梯度范数、不同状态的预测变化与真实策略收益。
+流式实验应先固定表示与策略，检查预测；再允许策略改善；最后才允许表示学习与模型规划同时发生。固定数据的预测比较可以使用同一条转移流。控制比较则匹配初始条件、外生随机性和资源预算，让各算法的动作产生各自的后续经验；强行给它们相同状态轨迹会改变闭环控制问题。每增加一个可学习对象，都保留关闭该机制的对照。至少记录奖励率误差、参考漂移、梯度范数、不同状态的预测变化与真实策略收益，并计入学习和规划的成本。
 
 <a id="research-average-aro-ddpg"></a>
 
 ## 深度连续控制 · ARO-DDPG 如何连接奖励率、critic 与确定性策略
 
-问题是连续动作的平均奖励控制。确定性策略输出动作，critic 表示该策略的差分动作价值。Saxena 等人的 ARO-DDPG（ICML 2023）把平均奖励 actor–critic 推向连续控制，但需要区分策略梯度恒等式、有限时间理论和完整深网工程。
+差分 critic 已经能比较“先做这个动作，再执行当前策略”的长期后果。连续动作控制还需要知道，稍微改变这个动作会怎样改变奖励率。确定性策略 μθ 直接输出动作；下面从它的差分方程出发，寻找可以交给 actor 的方向。先考虑有限状态、连续动作，策略附近的诱导链不可约，所需导数存在且可交换求和与微分。
+
+$$
+q^\mu(s,a)=r(s,a)-g_\mu+\sum_{s'}P(s'\mid s,a)h_\mu(s'),\qquad h_\mu(s)=q^\mu(s,\mu_\theta(s)).
+$$
+
+g 是每步奖励率，h 是按固定规范确定的差分状态价值。给全部 h 和 q 加同一个常数，不改变动作间的差别。动作导数先固定当前策略及其后续 h，只改变最初的动作。
+
+$$
+\nabla_\theta g_\mu+\nabla_\theta h_\mu(s)=u_\theta(s)+\sum_{s'}P_\mu(s,s')\nabla_\theta h_\mu(s'),\qquad u_\theta(s)=\nabla_\theta\mu_\theta(s)\nabla_aq^\mu(s,a)\big|_{a=\mu_\theta(s)}.
+$$
+
+对差分方程求导。u 收集当前动作改变奖励与转移的影响；最后一项保留后续策略变化造成的差分价值变化。下一步将它消去，而不是把它假装成常数。
 
 $$
 \nabla_\theta g_{\mu_\theta}=\mathbb E_{S\sim d_{\mu_\theta}}\!\left[\nabla_\theta\mu_\theta(S)\,\nabla_a q^{\mu_\theta}(S,a)\big|_{a=\mu_\theta(S)}\right]
 $$
 
-在相应平稳性、可微性与可积条件下，确定性策略梯度使用当前策略的平稳状态分布。d 是状态分布，不是任意 replay 分布；公式中的 q 是该策略的差分价值。
+用当前策略的平稳分布 d 对前式求平均。由 $d^\top P_\mu=d^\top$，两边的差分价值导数相消，剩下奖励率梯度。连续状态需以积分替代求和，并满足相应平稳、可积与微分条件。
 
-推导的关键是对策略的 Poisson 方程微分，再用平稳分布消去后继偏差函数的变化项。差分价值的共同常数不影响动作导数。然而，改变 replay 分布一般会改变估计的方向；target network 也不能使离策略样本自动成为精确的当前策略梯度。
+这个消去步骤解释了为什么状态分布不能任换成 replay 频率：其他分布一般不满足同一平稳等式。Saxena 等人的 ARO-DDPG（ICML 2023）研究怎样在离策略数据上近似这项更新，再将其用于深度连续控制。目标网络减慢 critic 变化，但不完成状态分布校正。
 
 原论文定理 3.4 明确把行为稳态权重下的方向称为近似梯度，并在一致遍历与其他正则条件下约束其误差。第 4 节的随机逼近分析使用线性 critic、步长/时间尺度和投影等条件；有限时间结论控制梯度范数，并保留逼近与采样误差项。它不是深网找到全局最优策略的保证。
 
 $$
-y=r+(1-d)\min_i Q^-_i(s^+,\mu^-(s^+)),\qquad L_Q=\frac12\sum_i\bigl(Q_i(s,a)+\rho-y\bigr)^2
+y=r+(1-d_{\rm end})\min_i Q^-_i(s^+,\mu^-(s^+)),\qquad L_Q=\frac12\sum_i\bigl(Q_i(s,a)+\rho-y\bigr)^2
 $$
 
-作者工程 cheetah_run/ddpg_model.py 中的主要 critic 损失。ρ 是可训练的奖励率标量；同一损失同时更新 critic 与 ρ。d 是工程使用的边界标记，必须回到环境检查其语义。这里不是把 d 的所有含义都认定为真实终止。
+作者工程 cheetah_run/ddpg_model.py 中的主要 critic 损失。ρ 是可训练的奖励率标量；同一损失同时更新 critic 与 ρ。$d_{\rm end}$ 是代码的边界标记，与上面的稳态分布 d 不同；是否代表真正终止，须由环境协议确定。
 
 作者工程包含双 critic、目标网络、replay 和训练段落。train.py 会重新初始化环境段落。因此该工程可以帮助研究深度平均奖励控制，却不能仅凭名称当作不重置的单次生命算法。论文理论的函数类、采样与步长条件，也不能替代完整深网联合训练的证明。
 
@@ -1057,7 +1141,7 @@ $$
 
 ## 平均奖励最大熵控制 · ASAC 的策略改善比较什么
 
-ASAC（RLC 2025）研究平均奖励下的熵正则控制。先固定一个参考策略 $\pi_0$ 和温度 α。目标是长期外部奖励率减去相对 $\pi_0$ 的信息代价。改变温度或参考策略，就改变了优化目标，而不只是改变训练技巧。
+差分价值允许共同加一个常数，所以不能通过“新 critic 的数值更大”判断策略是否变好。若还希望策略保留一定随机性，应先把这种偏好写进长期目标，再推导改善。固定参考策略 $\pi_0$ 和温度 α，目标取长期外部奖励率减去相对参考策略的信息代价。这是 ASAC（RLC 2025）研究的平均奖励熵正则问题。
 
 $$
 g^\alpha_\pi=\lim_{T\to\infty}\frac1T\mathbb E_\pi\!\left[\sum_{t=0}^{T-1}\left(R_{t+1}-\alpha\log\frac{\pi(A_t\mid S_t)}{\pi_0(A_t\mid S_t)}\right)\right],\quad\alpha>0
@@ -1065,13 +1149,39 @@ $$
 
 使用 α 表示温度，相当于论文的逆温度 β 的倒数。要求策略在参考策略支持集内，并满足相应长期平均存在条件。外部奖励率与含正则项的奖励率需分开报告。
 
+先在有限状态动作上推导，假定参考动作概率为正，所比较策略诱导不可约链，奖励有界。固定当前策略 π，令 q 为它的准确 soft 差分动作价值：本步先计外部奖励，动作的信息代价通过状态价值计入。这样可把一次动作改善和长期率的变化接起来。
+
 $$
-\pi^+(a\mid s)=\frac{\pi_0(a\mid s)\exp(q(s,a)/\alpha)}{\int \pi_0(\tilde a\mid s)\exp(q(s,\tilde a)/\alpha)\,d\tilde a},\qquad L_\pi=\mathbb E\!\left[\alpha\log\frac{\pi(A\mid S)}{\pi_0(A\mid S)}-q(S,A)\right]
+q(s,a)=r(s,a)-g_\pi^\alpha+\sum_{s'}P(s'\mid s,a)h(s'),\qquad h(s)=\sum_a\pi(a\mid s)\left[q(s,a)-\alpha\log\frac{\pi(a\mid s)}{\pi_0(a\mid s)}\right].
 $$
 
-固定 q 后，对每个状态最大化动作价值减去 KL 代价，得到指数倾斜策略。离散动作时分母改为求和。Lπ 是对应的策略投影目标；神经策略只能近似该解。
+q 和 h 对应同一固定策略与同一熵约定，不是任意两个网络输出。h 是在当前状态按 π 选择动作时的正则价值。
 
-平均奖励策略改善应比较策略的奖励率，而不是未经规范化的两个差分价值。给整个 q 加常数，指数倾斜策略不变，q 的数值大小却改变。原文的证明使用新策略的稳态分布、可积的差分值和相应支持条件；它并不保证任意连续空间神经近似与联合优化的每一步都改善收益。
+$$
+\mathcal I_q(\kappa;s)=\sum_a\kappa(a\mid s)\left[q(s,a)-\alpha\log\frac{\kappa(a\mid s)}{\pi_0(a\mid s)}\right],\qquad\pi^+(a\mid s)=\frac{\pi_0(a\mid s)e^{q(s,a)/\alpha}}{Z_q(s)}.
+$$
+
+κ 是候选动作分布。对概率求导并满足总和为一，得到右边的指数倾斜分布，Z 是其归一化常数。连续动作可改为密度与积分，但须存在有限的 Z 及相关期望。
+
+$$
+\mathcal I_q(\kappa;s)=\alpha\log Z_q(s)-\alpha D_{\rm KL}(\kappa(\cdot\mid s)\Vert\pi^+(\cdot\mid s)),\qquad\mathcal I_q(\pi^+;s)\ge\mathcal I_q(\pi;s)=h(s).
+$$
+
+KL 非负，因此 π⁺ 对每个状态至少与旧策略一样好。这时比较的是固定旧 q 下的局部动作选择，还不是两个新旧 critic 的任意数值。
+
+$$
+g_\kappa^\alpha-g_\pi^\alpha=\mathbb E_{S\sim d_\kappa}[\mathcal I_q(\kappa;S)-h(S)].
+$$
+
+代入 q 的差分方程，右边成为新策略的正则奖励率减旧率，再加 dκ 加权的 Pκh−h；最后一项由平稳性消去。取 κ=π⁺，上面的逐状态不等式便给出率不下降。
+
+一个单状态例子是 $q=(0,1)$、参考概率各半、$\alpha=1$。指数倾斜给出高值动作概率 $e/(1+e)\approx.7311$。此时 $\mathcal I_q(\pi^+)=\log((1+e)/2)\approx.6201$，高于均匀选择的 .5。给两个 q 同加十，动作概率不变，两个局部值都加十，改善差仍为 .1201。
+
+$$
+L_\pi(\theta)=\mathbb E_{S\sim\nu,\ A\sim\pi_\theta(\cdot\mid S)}\left[\alpha\log\frac{\pi_\theta(A\mid S)}{\pi_0(A\mid S)}-Q_\phi(S,A)\right].
+$$
+
+工程中以经验状态分布 ν 和近似 critic 替代上述逐状态准确改善。这一步固定 critic 参数 φ 和参考策略；重参数化 actor 时仍需对其采样动作求 Q 的动作导数。共享策略网络只能近似指数倾斜，减小此经验损失不等于已经证明真实率改善。
 
 $$
 \operatorname{KL}\!\left(\pi\,\middle\|\,\frac{\pi_0 e^{\beta q}}{Z}\right)=\mathbb E_{\pi}\!\left[\log\frac{\pi}{\pi_0}-\beta q\right]+\log Z,\qquad\alpha=1/\beta
@@ -1297,9 +1407,17 @@ reset critic 使用 reset 指示作为信号，fd 按对应移动参考更新。
 
 哪些行为值得成为可复用技能，技能怎样帮助探索和新任务？
 
-Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA 学习有区别的行为，HIQL 利用离线目标轨迹，MaestroMotif 引入语言先验。它们承担不同的设计工作；生成技能、选择技能与组合技能需要分别评价。
+教材可以先给定目标和技能集合；持续构造还要决定哪些行为值得练习、维护或放弃。谱结构、路径奖励、时间距离和语言先验提供不同候选偏置。先固定候选比较选择与组合，再改变生成器，才能辨认下游收益究竟来自哪一步。
 
 - [Posterior Sampling for Continuing Environments](https://yingwen.io/zh/continual-rl/research/#recent-cpsrl-continuing-exploration)
+
+#### 流式协议下的稳定更新
+
+只有当前经验和有限状态时，学习如何保持数值稳定与有效信用分配？
+
+流式是数据使用协议，资格迹是时间信用机制，归一化和 Intentional 是尺度控制，Adam 是一种自适应更新。先对齐允许保存什么、每步计算多少和使用哪版算法，再比较效果。
+
+- [An Idiosyncrasy of Time-discretization in Reinforcement Learning](https://yingwen.io/zh/continual-rl/research/#recent-openmind-time-discretization)
 
 #### 持续控制、平均奖励与重置
 
@@ -1311,6 +1429,7 @@ Laplacian 描述行为图结构，奖励感知表示加入路径价值，METRA �
 - [Reward Centering](https://yingwen.io/zh/continual-rl/research/#recent-reward-centering-discounted)
 - [An Empirical Study of Deep Reinforcement Learning in Continuing Tasks](https://yingwen.io/zh/continual-rl/research/#recent-continuing-task-deep-study)
 - [Posterior Sampling for Continuing Environments](https://yingwen.io/zh/continual-rl/research/#recent-cpsrl-continuing-exploration)
+- [Extending Differential Temporal Difference Methods for Episodic Problems](https://yingwen.io/zh/continual-rl/research/#recent-openmind-episodic-differential)
 
 #### 持续问题与可比较实验
 
@@ -1454,6 +1573,68 @@ CPSRL 以独立随机时钟重采样模型并规划，而不等待真实 reset �
 - [RLC 2024 原文](https://rlj.cs.umass.edu/2024/papers/RLJ_RLC_2024_277.pdf)：随机重采样、折扣联系与 Bayesian regret 假设。
 - [RLJ 论文记录](https://rlj.cs.umass.edu/2024/papers/Paper277.html)：作者、会议与理论结果。
 
+### Extending Differential Temporal Difference Methods for Episodic Problems
+
+Kris De Asis, Mohamed Elsayed, J. He
+
+RLC 2026 / RLJ · 2026 · 支持方法与理论
+
+#### 研究问题
+
+中心化怎样加速回合任务的学习，又不因为回合长度不同而改变目标？
+
+#### 关键机制
+
+处理终止边界的中心化尾项，再用共享价值偏置重参数化。区分奖励单位的中心与价值单位的偏置，使最终终止的无折扣回合也能使用适当形式。
+
+#### 证据
+
+论文分别研究固定中心化的策略不变性、在线偏置学习的线性 TD 分析，以及流式深度实验。教材给出遗漏终止补偿导致排序翻转的两动作反例。
+
+#### 条件与限制
+
+这里沿用原回合目标，不是把目标改成长期平均奖励。线性预测条件不保证非线性控制全局收敛；采样截断也不是自然终止。
+
+#### 阅读与实验
+
+计算立即终止和延迟终止两条路径的原始、错误中心化、正确补偿回报。再辨认代码里的偏置、终止分支和更新前 TD 误差。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：问题、保证与实验分别阅读。
+- [原文](https://arxiv.org/html/2605.04368v1)：终止补偿、共享偏置与回合式扩展。
+
+### An Idiosyncrasy of Time-discretization in Reinforcement Learning
+
+Kris De Asis, Richard S. Sutton
+
+RLC 2024 / RLJ · 2024 · 支持方法与理论
+
+#### 研究问题
+
+同样的物理奖励流，为什么会因奖励和折扣放在区间的不同位置而得到不同目标？
+
+#### 关键机制
+
+从连续时间回报的右端点近似出发，让区间奖励与后继价值按到达时间共同折扣。固定间隔时只差一个比例，不等间隔时这个比例一般无法提出求和。
+
+#### 证据
+
+原文给出时间离散化分析与实验。教材用恒定奖励率的两段时间计算，比较左右端点近似与精确积分。
+
+#### 条件与限制
+
+奖励率采样与已经积分的区间奖励不同。该修正不能消除动作延迟或低采样率遗漏事件，也不是任意 SMDP 接口都应照搬的公式。
+
+#### 阅读与实验
+
+固定每秒的目标而非每步折扣，再改变采样周期及抖动。报告积分误差、每秒更新次数和控制收益。
+
+#### 原文与相关入口
+
+- [RLC 正式记录](https://rlj.cs.umass.edu/2024/papers/Paper164.html)：正式出版入口。
+- [原文推导](https://arxiv.org/html/2406.14951v2)：式 7 与不均匀时间步的回报定义。
+
 
 <a id="chapter-code"></a>
 
@@ -1471,7 +1652,7 @@ python examples/lifelong_algorithms_lab.py average
 
 ## 参考文献与实现
 
-- [Sutton & Barto · Reinforcement Learning: An Introduction · §10.3–10.4、§13.6](http://incompleteideas.net/book/the-book-2nd.html)：平均奖励问题、按自身稳态分布评价折扣价值，以及持续任务的策略梯度。固定起点目标与自身稳态目标必须分开。
+- [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
 
 - [Sutton, McAllester, Singh & Mansour · Policy Gradient Methods with Function Approximation · 1999](https://proceedings.neurips.cc/paper/1999/file/464d828b85b0bed98e80ade0a5c43b0f-Paper.pdf)：平均奖励策略梯度及相容函数逼近的经典原文；本章从稳态与 Poisson 方程逐步重推，不将相容条件省略为任意神经 critic。
 
@@ -1538,3 +1719,7 @@ python examples/lifelong_algorithms_lab.py average
 - [Sample Complexity of Average-Reward Q-Learning · 2026](https://arxiv.org/abs/2601.13642)：单智能体与联邦、生成模型采样、折扣调度和奖励缩放；尚未确认作者代码。
 
 - [A Harmonic Mean Formulation of Average Reward RL in SMDPs · 2026](https://arxiv.org/abs/2605.04880)：作为目标一致性审查材料；本节给出与总奖励/总时间不等价的确定性反例，不作为默认算法。
+
+- [De Asis, Elsayed & He · Extending Differential TD for Episodic Problems · RLC 2026](https://rlj.cs.umass.edu/2026/papers/Paper33.html)：RLJ 第 7 卷正式条目；固定中心化的策略不变性、在线偏置学习与深度实测分别理解。
+
+- [Episodic Differential TD · 原文 §3–4 与附录 C](https://arxiv.org/html/2605.04368v1)：区分奖励单位的中心 c 与价值单位的共享偏置 b；终止边界和 γ=1 回合形式需成套使用。
