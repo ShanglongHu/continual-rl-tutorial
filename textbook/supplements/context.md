@@ -12,7 +12,7 @@
 
 [Tolman（1948）](https://home.csulb.edu/~cwallis/382/readings/482/tolman.%20cognitive_maps_in_rats_and_men.1948.html)讨论的潜伏学习范式让大鼠先在没有食物奖励的迷宫中探索，再引入食物。表现随后迅速改善，提示无奖励探索期间也可能形成了可供以后使用的知识。
 
-这区分了学习与当前行为表现。它挑战的是“只有被即时强化的反应链才会留下有用知识”这一狭窄解释，并不单独证明动物获得了完整的欧氏地图。线索间的联结也可能解释部分表现；捷径、绕路和改变出发点等测试可以进一步区分解释。
+无奖励探索留下的知识，在食物出现后才显示出行为价值。那么动物学到了什么？可能是相邻线索的联系、可沿用的路线，也可能是容许新路线推断的空间关系。捷径、绕路和改变出发点等测试，让这些解释产生不同预测。
 
 <a id="context-state-representation"></a>
 
@@ -27,7 +27,7 @@
 | 任务阶段 | 在有关的行为序列中已经完成了什么？ |
 | 智能体状态 | 智能体现在保留哪些信息供预测与控制使用？ |
 
-表示是信息的编码方式；智能体状态是某一时刻实际用于计算的内部变量。两者相关，但不是同义词。状态可以包含情境的不确定性，而不是唯一标签。把历史压缩进一个向量，也不自动证明该向量满足马尔可夫性：还要检验它是否保留了所需的预测信息。
+表示规定信息怎样编码，智能体状态则是当前保存下来的具体内容。例如，状态可以记录“门已开”的确定判断，也可以保存两种门锁规则的概率。我们关心它保留了哪些历史区别，因为这些区别决定下一步预测和行动。
 
 <a id="context-inference"></a>
 
@@ -35,13 +35,65 @@
 
 [Gershman、Blei 与 Niv（2010）](https://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf)用潜在原因解释情境依赖的消退与恢复：在情境 B 中不再发生结果，可能促使主体建立另一种解释，而非抹除在 A 中形成的联结。返回 A 后的恢复支持这种可能性，但不足以唯一确定模型。
 
+把实验顺序画出来，问题会更明确。在 A 中，线索预告结果；在 B 中，反复给出相同线索却不再给结果，原有反应逐渐减少；随后回到 A，只呈现线索，反应可以恢复。这称为 ABA 情境性恢复（renewal）。它与过一段时间后出现的自发恢复是不同操作。
+
+![条纹房间A中线索预告结果，点纹房间B中线索后无结果，回到A不提供新结果。下方固定记忆为1与0，读取权重0.9与0.1产生预测0.9。](https://yingwen.io/crl-figures/mind-psych3-extinction-renewal.svg)
+
+上方为 ABA 范式的原创示意，参见 [Gershman 等（2010）开篇](https://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf)。下方为指定记忆与权重的独立算例，不是动物反应量或拟合结果。闪电只表示厌恶性结果；测试时不再给该结果。虚线表示模型读取。[数值计算](https://yingwen.io/crl-code/figures/psych-learning-round3.mjs)。
+
+设两份已形成的关系分别预测“有结果”与“无结果”，其数值固定为 $v_A=1,v_B=0$。给定线索后的读取权重为 $b=(0.9,0.1)$ 时，预测为 0.9；在另一情境取 $b=(0.1,0.9)$ 时，预测为 0.1。返回原情境后恢复第一组权重，就得到 0.9。整个测试过程没有改写 $v_A,v_B$。相反，若唯一记忆已被覆盖成 0，而且不再更新或引入其他信息，仅更换房间不能从这个 0 中读回旧关系。这里先把权重指定出来；后面的情境推断模型才讨论如何由观测形成它们。
+
+“新旧记忆竞争”还可以接受细胞层面的干预。[Lacagnina 等（2019）](https://pmc.ncbi.nlm.nih.gov/articles/PMC6705137/)在小鼠情境恐惧学习与消退时分别标记齿状回活动细胞。抑制消退时标记的细胞，会使消退后的冻结反应增加；抑制获得阶段标记的细胞，则减弱后来出现的自发恢复。两种操作支持不同记忆表征对行为具有不同作用。该研究检验的是情境恐惧及其恢复，不是图中线索的 ABA 实验。
+
+对于持续学习器，看到回报先降后升，不能立刻断定旧知识被重新学会。可以在返回旧任务前冻结价值与模型参数，允许历史状态或情境信念变化，再测第一次选择；随后固定读取条件作对照。若冻结内容仍能恢复，接下来应研究什么线索触发了检索，以及错误检索会造成什么行为，而不是只增加防遗忘正则项。
+
 [COIN（Heald 等，2021）](https://www.nature.com/articles/s41586-021-04129-3)研究力场扰动下的伸手适应。先长期学习一种扰动，再短暂学习反向扰动；随后在约束运动、减少运动误差的通道试次中测量补偿力，可以观察先前适应的恢复。
 
-模型在运动前按情境概率混合已有记忆；反馈到来后，再更新情境判断及对应记忆。改变记忆内容与改变已有记忆的表达比例，是两条不同途径。快慢双过程也能解释部分恢复，因此论文还检验线索诱发的恢复等新预测。对 CRL 的启发不是无限保存任务模块，而是不要把所有行为适应都归因于参数更新。
+模型在运动前按情境概率混合已有记忆；反馈到来后，再更新情境判断及对应记忆。改变记忆内容与改变已有记忆的表达比例，是两条不同途径。快慢双过程也能解释部分恢复。为进一步区分，论文在通道阶段插入两次原方向扰动，检验由这些体验诱发的恢复；并用感觉线索与扰动的一致或冲突关系检验单次更新。结果支持情境推断解释的这些新预测，仍不意味着其他状态推断模型已被全部排除。
+
+<a id="context-timescales"></a>
+
+## 4. 输出归零，内部记忆也归零了吗？
+
+[Smith、Ghazizadeh 与 Shadmehr（2006）](https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.0040179)先让人适应机械臂施加的侧向力场，再短暂改成反向力场，最后用机械通道把侧向轨迹误差压到接近零。通道仍能测出手施加的补偿力。原方向补偿在这一阶段重新出现后逐渐减弱。这个程序的重要之处是：少了新的侧向误差，仍能观察输出变化，因而可以检验隐藏过程的保持动态。
+
+两过程模型给出一个可手算解释。令 $x_{f,n}$ 与 $x_{s,n}$ 是第 n 次动作前两个过程的补偿量，总补偿 $x_n=x_{f,n}+x_{s,n}$；$p_n$ 是需要抵消的外力量，误差 $e_n=p_n-x_n$。两个过程同时接收这一误差，但保持率 A 与误差敏感性 B 不同：
+
+$$
+x_{f,n+1}=A_f x_{f,n}+B_f e_n,\qquad x_{s,n+1}=A_s x_{s,n}+B_s e_n,\qquad 0<A_f<A_s<1,\quad B_f>B_s>0.
+$$
+
+f 表示更新较快、保持较差的过程，s 表示更新较慢、保持较好的过程。它是试次级运动适应模型，误差单位与补偿量相同；不是奖励 TD 误差，也没有从公式确定两个过程所在的脑区。
+
+用原创参数演算恢复：反向训练结束后设 $x_f=-0.4,x_s=0.4$，总输出为 0；随后把模型的误差钳为 0，取 $A_f=0.5,A_s=0.99$。一步后两者为 −0.2 与 0.396，总量变为 0.196；再一步为 −0.1 与 0.39204，总量为 0.29204。没有任何新的误差修正，旧方向却重新出现。原因是相反贡献之前互相抵消，随后衰减速度不同；不是从空白重新学出了原方向。参数仅用于算例，未拟合被试。
+
+我们现在有两种产生恢复的机制：不同衰减速度，以及旧情境重新获得较大权重。可以继续改变提示与反馈的一致性，比较两者预言的恢复幅度和单次更新。这样，快慢过程的算例就引出了情境推断需要多解释的现象。
+
+<a id="context-belief-update"></a>
+
+## 5. 先判断正在发生什么，再决定改写多少
+
+下面是受情境推断启发的两情境教学模型，不是 COIN 的完整推断算法。隐藏情境 $c_t\in\{A,B\}$ 决定本次扰动。智能体先接收线索 $q_t$，形成动作前概率 $b^-_t(j)$；动作后得到反馈 $y_t$，再形成责任概率 $b^+_t(j)$。给定情境转移矩阵 $T_{ij}$ 与观测似然，贝叶斯更新为：
+
+$$
+b^-_t(j)=\frac{p(q_t\mid j)\sum_i T_{ij}b^+_{t-1}(i)}{\sum_k p(q_t\mid k)\sum_i T_{ik}b^+_{t-1}(i)},\qquad b^+_t(j)=\frac{p(y_t\mid j,q_t)b^-_t(j)}{\sum_k p(y_t\mid k,q_t)b^-_t(k)}.
+$$
+
+所有分母须为正。这里似然被视为给定；真实学习还需估计噪声、转移与情境内状态。动作前后概率使用的信息不同，不能用已看到结果的后验替代当时的决策信息。
+
+设两份旧记忆预测的外力分别为 $\mu_A=+1,\mu_B=-1$。线索后概率为 $(0.9,0.1)$，于是外力预测均值是 $0.9\times1+0.1\times(-1)=0.8$。某次反馈在 A 下的似然为 0.05，在 B 下为 0.8；后验成为 $(0.36,0.64)$。如果接下来线索和转移不再改变这组概率，即使两份记忆的数值完全冻结，预测均值也已变成 −0.28。这个变化来自哪份旧知识被更多使用。
+
+![左面板展示快过程和慢过程互相抵消后因保持率不同产生反弹；右面板展示两份记忆固定时，后验权重改变使混合预测从正变负。](https://yingwen.io/crl-figures/mind-learning-context.svg)
+
+原创数值算例，非人体数据拟合。左侧总输出变化来自不同衰减；右侧来自记忆使用权重变化。相似行为可以由不同内部机制产生，需用额外干预区分。
+
+再允许内容更新时，一种简化近似是 $\mu_{j,t+1}=\mu_{j,t}+\alpha b^+_t(j)(y_t-\mu_{j,t})$：较可能产生反馈的情境得到较大更新。它不是一般贝叶斯后验的精确递推，误差噪声不同还需要不同增益。若两种旧情境对反馈都给出极低概率，仅把它们重新归一化仍会制造虚假的确定性；系统可能需要新情境、异常模型或更多探测。这使情境推断同时成为“读哪份记忆”与“写入哪份记忆”的问题。
+
+与 RL 的联系在状态构造和经验归因，而不是把运动误差改名为奖励。若回到旧任务时动作很快恢复，可以分别冻结记忆内容、固定情境权重和隐藏提示，观察哪种操作消除恢复。只有加入这些对照，才能判断系统是在检索、推断还是持续改写参数。
 
 <a id="context-relational-structure"></a>
 
-## 4. 换一批对象，关系是否还能使用？
+## 6. 换一批对象，关系是否还能使用？
 
 你熟悉一座建筑的走廊布局。房间名称全部更换后，“从入口左转，再过两个门”的关系仍可能有效。若走廊连接被改变，原关系则会误导行动。迁移需要说明保持不变的究竟是什么。
 
@@ -51,7 +103,7 @@
 
 <a id="context-task-structured-memory"></a>
 
-## 5. 记住的不仅是地点，还有行为结构
+## 7. 记住的不仅是地点，还有行为结构
 
 [El-Gaby 等（2024）](https://www.nature.com/articles/s41586-024-08145-x)让小鼠学习多组任务：依次到达四个奖励位置，再循环。位置改变，但序列结构保持。研究记录的是内侧额叶皮层，不是海马。许多细胞的活动跟随到达下一目标的进度，并随路程伸缩。
 
@@ -61,9 +113,31 @@
 
 <a id="context-transfer-boundaries"></a>
 
-## 6. 用变化的类型检验抽象
+## 8. 用变化的类型检验抽象
 
 [Stachenfeld 等（2017）](https://www.nature.com/articles/nn.4650)提出把海马理解为预测地图。后继表示编码某策略下折扣累积的未来占用，而不是完整转移模型。因此，改变奖励时可能复用部分知识；改变策略或通道连接时，未来占用本身也可能改变。
+
+先看两座实际用于计算研究的迷宫。左图在探索之后才给出食物；右图让已经熟练的短路突然封闭。两者都要求改变行为，但需要修改的知识不同。
+
+![两种 gridworld：左侧先探索后出现奖励，右侧先学会短路再在 B 处封路。S 为起点，R 为奖励位置。](https://yingwen.io/crl-figures/russek-2017-figure-2.png)
+
+Russek、Momennejad、Botvinick、Gershman 与 Daw（2017），[原论文图 2](https://doi.org/10.1371/journal.pcbi.1005768.g002)，[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)，原图未修改。浅灰为可通行区域；比较新增奖励与封闭通道后，从 S 出发的首次选择。
+
+用一个固定策略的后继表示写出差别。$M^\pi(s,j)$ 记录从 s 出发以后在 j 的折扣访问次数，其中包含时刻 0 的当前位置。令 $r^\pi(j)$ 为从 j 行动得到的一步奖励的条件均值，则：
+
+$$
+M^\pi(s,j)=\mathbb E_\pi\!\left[\sum_{k=0}^{\infty}\gamma^k\mathbf 1\{S_{t+k}=j\}\mid S_t=s\right],\qquad v^\pi(s)=\sum_j M^\pi(s,j)r^\pi(j).
+$$
+
+这是固定策略、马尔可夫状态、$0\le\gamma<1$ 下的表示。未来奖励按“在 j 采取动作后获得”的约定计入 $r^\pi(j)$。等式来自按访问状态拆分期望回报。
+
+当通道与策略保持不变时，更新奖励均值后可以重新计算所有起点的价值。若某条通道被封住，通往它的远处状态也需要新的未来访问预测；仅更新封路附近的一行，远处的旧预测仍可能保留。固定策略的价值计算还要与改善策略所需的行动比较区分开来。
+
+![原论文的价值和策略结果：a 为表格 TD，b 为 SR-TD 对新增奖励的反应，c 为后继依赖，d 为 SR-TD 遇到封路后的表现。](https://yingwen.io/crl-figures/russek-2017-figure-4.png)
+
+Russek 等（2017），[原论文图 4](https://doi.org/10.1371/journal.pcbi.1005768.g004)，[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)，原图未修改。灰度表示模拟中的中位数价值，箭头表示据此得到的策略。先比较 a、b，再看 d 中仍朝向封堵位置的箭头。
+
+[Russek 等](https://doi.org/10.1371/journal.pcbi.1005768)在局部再训练后测试远处选择。SR-TD 能利用先前探索应对新增奖励，却在封路测试中保留旧方向。比较中的两种方法都允许一步模型前瞻；差别在于预测表示如何更新。[作者代码](https://github.com/evanrussek/Predictive-Representations-PLOS-CB-2017)还实现了重新计算后继表示等方案，便于继续比较知识存储与规划计算的取舍。
 
 延续门前机器人的例子：分别只改变门的颜色、走廊连接、地面摩擦、领取钥匙的顺序。若只在换颜色时成功，证据支持外观泛化，不足以支持关系迁移。若评测直接提供真实情境编号，就绕过了情境推断难点。应在相同交互与记忆预算下比较，并记录错误发生在哪一类变化中。
 
@@ -92,30 +166,42 @@
 
 ## 原始材料与阅读顺序
 
-1. [Tolman — Cognitive maps in rats and men（1948）](https://home.csulb.edu/~cwallis/382/readings/482/tolman.%20cognitive_maps_in_rats_and_men.1948.html)
+1. [Lacagnina 等 — Distinct hippocampal engrams control extinction and relapse of fear memory（2019）](https://pmc.ncbi.nlm.nih.gov/articles/PMC6705137/)
+
+   比较图 3–4 对消退与获得阶段标记细胞的抑制；记录的行为是冻结。该实验的自发恢复与 ABA 情境性恢复须分开，它们为新旧记忆的不同作用提供互补约束。
+
+2. [Tolman — Cognitive maps in rats and men（1948）](https://home.csulb.edu/~cwallis/382/readings/482/tolman.%20cognitive_maps_in_rats_and_men.1948.html)
 
    先读潜伏学习与空间定向的例子。区分“学习不必立即表现”与“已经证明一种地图格式”。
 
-2. [Gershman, Blei & Niv — Context, Learning, and Extinction（2010）](https://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf)
+3. [Gershman, Blei & Niv — Context, Learning, and Extinction（2010）](https://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf)
 
    读开头的消退、恢复与潜在原因解释。推断出的情境是模型变量，不保证对应世界中的真实分类。
 
-3. [Heald, Lengyel & Wolpert — Contextual inference underlies the learning of sensorimotor repertoires（2021）](https://www.nature.com/articles/s41586-021-04129-3)
+4. [Heald, Lengyel & Wolpert — Contextual inference underlies the learning of sensorimotor repertoires（2021）](https://www.nature.com/articles/s41586-021-04129-3)
 
    先读图 1 的创建、更新与表达，再看恢复实验。COIN 解释感知运动适应，不是完整持续强化学习架构。
 
-4. [Whittington et al. — The Tolman-Eichenbaum Machine（2020）](https://pmc.ncbi.nlm.nih.gov/articles/PMC7707106/)
+5. [Smith、Ghazizadeh 与 Shadmehr — Interacting Adaptive Processes with Different Timescales（2006）](https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.0040179)
+
+   读双过程方程及图 2–3 的误差钳制与适应反弹。通道测量区分输出与轨迹误差；模型中的快慢过程没有唯一解剖对应。
+
+6. [Whittington et al. — The Tolman-Eichenbaum Machine（2020）](https://pmc.ncbi.nlm.nih.gov/articles/PMC7707106/)
 
    读结构与感觉内容的分离，再读重映射预测。模型的神经一致性与人工迁移收益需要分别检验。
 
-5. [El-Gaby et al. — A cellular basis for mapping behavioural structure（2024）](https://www.nature.com/articles/s41586-024-08145-x)
+7. [El-Gaby et al. — A cellular basis for mapping behavioural structure（2024）](https://www.nature.com/articles/s41586-024-08145-x)
 
    按图 1 的跨任务行为、图 4 的缓冲模型及后续预测阅读。任务进度不是钟表时间；记录证据不等同因果必要性。
 
-6. [Stachenfeld, Botvinick & Gershman — The hippocampus as a predictive map（2017）](https://www.nature.com/articles/nn.4650)
+8. [Stachenfeld, Botvinick & Gershman — The hippocampus as a predictive map（2017）](https://www.nature.com/articles/nn.4650)
 
    读预测地图的定义与策略依赖。未来占用表示不能不经更新就回答所有新策略的后果。
 
-7. [Mackenzie Weygandt Mathis — Leveraging insights from neuroscience to build adaptive artificial intelligence（2026）](https://www.nature.com/articles/s41593-025-02169-w)
+9. [Russek et al. — Predictive representations can link model-based reinforcement learning to model-free mechanisms（2017）](https://doi.org/10.1371/journal.pcbi.1005768)
+
+   先读图 2、4 的任务和结果，再读 SR-TD 与 SR-MB 的更新。观察奖励、转移和策略三种重估分别要求改动哪些知识。期刊提供 CC BY 4.0 原图及作者代码。
+
+10. [Mackenzie Weygandt Mathis — Leveraging insights from neuroscience to build adaptive artificial intelligence（2026）](https://www.nature.com/articles/s41593-025-02169-w)
 
    可从公开摘要及图 1–4 的导览入手；全文可能需机构权限。这是观点文章，不是单一架构的实验验证。

@@ -21,6 +21,27 @@ class PublicExport(unittest.TestCase):
         text='[original](https://example.org/paper#equation)'
         self.assertEqual(sync.rewrite_markdown(text,'a.md','docs/a.md',{},set()),text)
 
+    def test_published_figures_and_data_stay_online(self):
+        cases={
+            '/crl-figures/example.svg':'https://yingwen.io/crl-figures/example.svg',
+            '/crl-figures/example%20data.json?download=1#values':'https://yingwen.io/crl-figures/example%20data.json?download=1#values',
+            'https://yingwen.io/crl-figures/example.png#panel':'https://yingwen.io/crl-figures/example.png#panel',
+            'http://yingwen.io/crl-figures/example.json?raw=1':'https://yingwen.io/crl-figures/example.json?raw=1',
+        }
+        for href,expected in cases.items():
+            for label in ('[data]', '![figure]'):
+                with self.subTest(href=href,label=label):
+                    output=sync.rewrite_markdown(label+'('+href+')','a.md','docs/a.md',{},set())
+                    self.assertEqual(output,label+'('+expected+')')
+
+    def test_figure_paths_do_not_rewrite_external_hosts(self):
+        for href in ('https://example.org/crl-figures/example.svg',
+                     'https://yingwen.io.example.org/crl-figures/example.json',
+                     '//example.org/crl-figures/example%20data.json?raw=1#values'):
+            text='[external]('+href+')'
+            with self.subTest(href=href):
+                self.assertEqual(sync.rewrite_markdown(text,'a.md','docs/a.md',{},set()),text)
+
     def test_published_source_assets_resolve_to_existing_repository_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)

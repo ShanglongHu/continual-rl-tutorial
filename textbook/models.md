@@ -211,6 +211,10 @@ python3 implementations/extended_knowledge/option_model.py --steps 1200 --seeds 
 
 ## 3. 期望模型为什么有时够用，有时必错
 
+![抛物线上两个等概率后果的价值均为一，平均后果零的价值却为零。](https://yingwen.io/crl-figures/concept-research-model-expectation.svg)
+
+绿色线段连接两个真实后果的价值；橙点表示把平均后果送入同一个价值函数。两种运算给出不同答案。数值由 research-mechanisms.mjs 精确计算；下文给出线性情形的等价条件。
+
 状态很多时，显式存每个终点的概率昂贵。若下游价值对特征线性，就可以把求和移入特征期望，预测一个固定维度的向量 $m_o(s)$。这不是近似技巧，而是给定前提下的恒等式；但前提本身非常重要。
 
 $$

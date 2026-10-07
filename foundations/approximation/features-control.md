@@ -124,6 +124,10 @@ $$
 
 若没有哈希碰撞，每次恰有 $K$ 个激活特征，单次半梯度更新让当前预测改变 $\alpha K\delta$。因此常用 $\alpha=\eta/K$，让有效更新比例接近 $\eta$。这来自特征范数，不是一条适用于所有表示的步长定律。
 
+![两套错位网格中共享活动 tile 的数量，决定一次更新对邻居预测的影响](https://yingwen.io/crl-figures/concept-depth-classic-tiles.svg)
+
+着色格是状态 0.25 激活的两个特征，每个权重增加 0.1。下方四个位置分别共享 1、2、1、0 个特征，因此预测增加 0.1、0.2、0.1、0。图中没有哈希碰撞。原创精确算例，依据 [Sutton 与 Barto §9.5.4](http://incompleteideas.net/book/the-book-2nd.html) 的 tile coding 定义；[计算代码](https://yingwen.io/crl-code/figures/classic-visual-depth.mjs)。
+
 多维观测可以联合划分或分组划分。联合网格表达变量交互，但组合数增长很快；分组特征省内存，却可能无法表示关键交互。哈希限制参数容量，但碰撞会把无关状态绑定在一起。记录容量、激活数和碰撞策略，才能解释性能差异。
 
 <a id="rlss-feature-geometry"></a>

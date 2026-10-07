@@ -79,6 +79,10 @@ $$
 
 ## 2 · 从表格到神经网络：一次更新会影响哪些预测？
 
+![两个状态连接到共享参数，随后用梯度向量显示固定特征与非线性梯度随参数变化的区别。](https://yingwen.io/crl-figures/concept-credit-shared-gradients.svg)
+
+先看连接：更新一个状态，会沿共享参数改变另一个状态。再看梯度方向：在线性例子中方向固定，在非线性例子中方向会转动。后者还会使先前累计的资格迹与当前梯度不再对齐。图的独立算例用于解释几何关系，本节随后给出一般公式。
+
 $$
 \begin{aligned}v_w(s)&=x(s)^\top w,\\w^+&=w+\alpha\delta x(s),\\v_{w^+}(\bar s)-v_w(\bar s)&=\alpha\delta\,x(\bar s)^\top x(s).\end{aligned}
 $$

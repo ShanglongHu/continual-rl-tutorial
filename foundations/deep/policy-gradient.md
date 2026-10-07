@@ -189,6 +189,10 @@ $$
 
 $b_t$ 是能否 bootstrap；$c_t$ 是能否把下一行样本的优势继续接上。真正终止使二者为零。环境被人工重置的 timeout 通常 $b_t=1$、$c_t=0$。普通 batch 尾部用最后观测的价值，递推 carry 初始化为零。
 
+![GAE 中价值自举与下一行优势的两条接续路径，在三种边界下分别开关](https://yingwen.io/crl-figures/concept-depth-classic-gae-masks.svg)
+
+三栏固定奖励、旧价值与折扣参数，只比较不同边界语义。蓝箭头从最后观测取 V′；橙箭头接下一行的优势，只有它属于同一轨迹时才可接入。人工重置后不能使用重置观察代替最后观测。数值是 [GAE §3](https://arxiv.org/pdf/1506.02438#page=4) 递推的原创算例；时间截断的自举语义见 [Pardo 等 §3](https://proceedings.mlr.press/v80/pardo18a/pardo18a.pdf#page=5)。[计算代码](https://yingwen.io/crl-code/figures/classic-visual-depth.mjs)。
+
 若序列内部没有边界，展开得到 $\hat A_t=\sum_{l\ge0}(\gamma\lambda)^l\delta_{t+l}$。$\lambda=0$ 只保留一步误差；$\lambda=1$ 在真终止 episode 中望远镜消去为 $G_t-V_\phi(S_t)$。不准确的 critic 在较小 $\lambda$ 下通常引入更多 bootstrap 偏差，较长估计又通常承受更多采样噪声。
 
 $$

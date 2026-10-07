@@ -192,6 +192,10 @@ $$
 
 终止时截到终点。n 小更依赖价值估计，n 大使用更多实际结果，也等待更久、通常有更大方差。具体的误差权衡取决于奖励噪声、价值估计和轨迹长度。
 
+![同一条轨迹上的前向多步目标与向过去传播的 TD 误差。](https://yingwen.io/crl-figures/concept-credit-forward.svg)
+
+先固定整段轨迹上的价值参数。上方从一个起点向未来看，下方沿同一经验把误差分配给过去；资格迹让后者能逐步计算。图中轨迹用于解释传播方向，下节两步链另给第一次更新的数值。
+
 $$
 G_t^\lambda=(1-\lambda)\sum_{n\ge1}\lambda^{n-1}G_t^{(n)},\quad 0\le\lambda<1,\qquad G_t^\lambda-V(S_t)=\sum_{k\ge0}(\gamma\lambda)^k\delta_{t+k}
 $$

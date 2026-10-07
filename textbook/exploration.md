@@ -268,6 +268,10 @@ ICLR 2025 的 Langevin Soft Actor-Critic（LSAC）把这一思路用于分布式
 
 ## 5 · 学习进展与自动课程
 
+![不断变化的噪声图案与可重复学习的固定图案，对应不变的高误差和下降的预测误差。](https://yingwen.io/crl-figures/concept-research-exploration-progress.svg)
+
+上排误差更高，但没有下降；下排误差较小，却在改善。画面与数值是说明两种信号差异的构造例子，不是图像网络的训练结果。RND 的目标是当前输入上的固定随机函数，与这里预测随机下一帧的困难不同；持续变化的输入和预测器遗忘仍需分别检查。
+
 $$
 \operatorname{LP}_k=E_{k,\rm before}-E_{k,\rm after},\qquad \operatorname{ALP}_k=|E_{k,\rm before}-E_{k,\rm after}|
 $$

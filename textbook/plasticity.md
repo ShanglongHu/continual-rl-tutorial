@@ -172,6 +172,10 @@ $$
 
 下一个样本上，若新激活 $h_{\rm new}\ne0$ 且误差非零，即使输出权重为零，输出权重仍有梯度。输出连接建立后，输入权重才重新获得下游梯度。新生单元需要学习时间，频繁再次替换会打断这一过程。
 
+![单个ReLU单元的四帧连接图：输入为负导致休眠，回收后激活恢复但输出连接为零，随后两步梯度下降逐渐恢复两条学习通路。](https://yingwen.io/crl-figures/concept-crl-mechanisms-plasticity.svg)
+
+固定 x=1、目标 y=1，用平方损失和步长 0.1；每帧的金色箭头表示该快照上非零的反向梯度。回收瞬间输出仍为零，第一步先把输出权重变为 0.05；下一步输入权重才变为 0.504875，图内作了四舍五入。下方圆点标出预激活在 ReLU 曲线上的位置。这是一个选中单元的精确机制演示，不是 ReDo 的整体训练结果。
+
 <a id="experiment-extended-redo"></a>
 
 ### 实验：实验 · 回收低活动单元，不保证这个任务学得更好
@@ -342,6 +346,10 @@ $$
 式中假定投影前范数非零。投影保持权重方向，仅恢复范数。归一化的可学习缩放与偏置是另一组参数，需要按具体变体单独约束；它们不自动满足这里的尺度不变条件。
 
 归一化还有第二个作用：均值和方差使单元之间的梯度耦合，位于 ReLU 前的归一化可以给部分不激活的预激活量传递其他单元的梯度。这与直接替换单元是不同机制。有效学习率保持恒定也并非总是最优：价值估计需要一定程度的收敛，论文中的部分 Rainbow 实验仍需要显式衰减。研究问题因而是适应速度与估计噪声的调度，而非无条件维持最大更新幅度。
+
+随机环境把这种区分变得更重要。Bordne 与 Biedenkapp（EWRL 2026）在三个 DMC 任务的 SAC 训练中分别加入观测和动作噪声，同时记录回报、critic 学习探针和 Q 值。他们以当前预测加抽样扰动作为探针目标，使起始损失较可比；这是局部拟合能力的诊断，与本章独立训练/评价数据的协议可分别报告。
+
+在较难的所测条件下，重置常改善学习；跨任务汇总时，观测噪声下叠加 LayerNorm 未胜过单独重置。严重失败还伴随 Q 值急剧增大，较容易任务则出现噪声下更高的探针可塑性。这些单任务实验使我们需要同时检查“还能否拟合固定目标”与“在线 TD 目标是否稳定”。实际诊断可冻结探针标签和数据，再观察改变噪声、重置或归一化后，哪一项先恢复；观测噪声带来的部分可观测性也应单独控制。[原文 §4–6](https://andrebiedenkapp.github.io/assets/pdf/paper/26-ewrl-plastic.pdf)。
 
 <a id="lesson-churn"></a>
 
@@ -1143,6 +1151,8 @@ python examples/lifelong_algorithms_lab.py plasticity
 <a id="lesson-sources"></a>
 
 ## 参考文献与实现
+
+- [Bordne & Biedenkapp — Towards Understanding the Impact of Plasticity Loss on RL in Stochastic Environments · EWRL 2026](https://andrebiedenkapp.github.io/assets/pdf/paper/26-ewrl-plastic.pdf)：噪声、局部学习探针与 TD 稳定性的对照实验。
 
 - [Sokar et al. · The Dormant Neuron Phenomenon in Deep RL](https://proceedings.mlr.press/v202/sokar23a.html)：ReDo 活动度定义、重置流程与实验。
 

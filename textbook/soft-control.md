@@ -126,6 +126,10 @@ $$
 
 这是期望价值加熵的优化。对正概率的内部解加乘子 $\eta$，令导数 $Q_a$−$\tau$(log $p_a$+1)+$\eta$=0。
 
+![三个固定动作价值下，三种温度对应的精确 softmax 策略。](https://yingwen.io/crl-figures/concept-research-soft-policy.svg)
+
+每行价值均为 (0,1,2)，仅温度改变。较高温度使动作概率更均匀；它增加目标中的熵权重，不意味着每个随机动作都有较高信息价值。计算脚本 research-mechanisms.mjs。
+
 $$
 p_a^*=\frac{\exp(Q_a/\tau)}{\sum_b\exp(Q_b/\tau)},\qquad V^*(s)=\tau\log\sum_a\exp(Q(s,a)/\tau)
 $$

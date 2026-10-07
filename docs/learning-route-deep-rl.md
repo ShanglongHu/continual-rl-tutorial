@@ -22,7 +22,7 @@
 
 计算 TD 平方误差时，先用当前约定构造目标 $y$，再只对预测求导，是一个明确算法选择。若让梯度穿过下一状态的 bootstrap，会变成另一条更新。即使目标暂时冻结，优化器只是在拟合这批目标；损失下降也不等于真实策略回报上升。
 
-deadly triad 描述函数逼近、bootstrap、off-policy 的交互风险。replay、target network 与梯度限制是具体稳定化机制，不是把网络恢复成表格的证明。调试时先检查 terminal mask、target 梯度、张量维度和数据分布，再谈更大网络。
+deadly triad 描述函数逼近、bootstrap、off-policy 的交互风险。replay 改变采样，target network 减缓标签变化，梯度限制控制更新幅度；这些机制保留了共享参数带来的耦合，仍需检查其稳定性。调试时先检查 terminal mask、target 梯度、张量维度和数据分布，再考虑网络规模。
 
 $$
 L(\theta)=\tfrac12\mathbb E_{(s,a,r,s')\sim\mathcal D}\bigl[Q_\theta(s,a)-\operatorname{sg}(y)\bigr]^2,\qquad \nabla_\theta L=\mathbb E[(Q_\theta-y)\nabla_\theta Q_\theta]
@@ -65,7 +65,7 @@ python3 examples/foundations_detail_lab.py test
 
 DQN 将新转移放入 replay buffer，从中抽取小批量样本训练。这样可以重用经验并改变相邻训练样本的相关性，但缓冲区分布不等于当前策略分布。目标网络 $\bar\theta$ 在若干更新内保持不变，使回归标签变化更慢；随后再同步或缓慢跟踪在线参数。
 
-普通 DQN 用目标网络同时选择最大动作和评价它。当估计噪声与最大值选择耦合时，会出现过估计倾向。Double DQN 用在线网络选动作、目标网络评价该动作，分开两个角色。它不要求两个网络完全独立，也不保证所有误差都无偏。
+普通 DQN 用目标网络同时选择最大动作和评价它。当估计噪声与最大值选择耦合时，会出现过估计倾向。Double DQN 用在线网络选动作、目标网络评价该动作，分开两个角色来减轻这种选择偏差。两个网络仍有相关性，其他估计误差也仍可能存在。
 
 完整循环还包括探索策略、初始采样期、每步更新次数、target 同步周期、真实终止处理和评价协议。比较算法时这些环节不能无意中改变。原始 DQN 代码有 Atari 图像预处理和旧 Torch 依赖；学习核心逻辑可以从 NeuralQLearner 开始，但不能把核心文件独立运行当成完整实验。
 
@@ -250,7 +250,7 @@ python3 examples/foundations_detail_lab.py test
 
 世界模型把观测历史编码为内部状态，并预测下一内部状态、奖励或观测。它可以支持模型预测控制：每步从当前状态比较候选动作序列，只执行首个动作，再用真实观测重规划。也可以在模型中产生轨迹，以此训练价值与策略。
 
-两种路径都需要明确模型在哪个数据分布上可靠。策略优化会主动寻找高预测奖励的区域，也可能找到模型最不准确的区域。一步预测误差小，并不保证长时想象轨迹正确；模型损失也不能代替真实环境中的控制评价。
+两种路径都需要明确模型在哪个数据分布上可靠。策略优化会主动寻找高预测奖励的区域，也可能找到模型最不准确的区域。多步想象还会把早期预测误差带入后续输入，因此应同时检查一步模型损失、长时轨迹误差和真实环境中的控制收益。
 
 Dyna、MPC、MCTS 与 Dreamer 因此应按接口区分：Dyna 强调真实学习与模拟 backup 的结合；MPC 强调执行一小段再重规划；MCTS 把搜索预算分配到树上；Dreamer 类方法从潜在模型想象训练行为。它们可能共享部件，但不是可互换的名称。
 
@@ -388,4 +388,4 @@ python3 examples/marl_objectives_lab.py test
 - [MAT · Multi-Agent Reinforcement Learning is a Sequence Modeling Problem](https://arxiv.org/abs/2205.14953)：固定策略的优势分解与条件动作生成。
 - [Lanctot et al. · A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning](https://arxiv.org/abs/1711.00832)：经验元博弈、元策略求解与近似最佳响应。
 
-下一步：不必先读完所有深度研究分支才研究 CRL。选定问题后，再确定神经表示是否必要、信息与数据权限是什么，以及学习状态怎样长期保留。持续学习评价的是这些模块共同组成的完整学习器，而不只评价训练结束时的一组网络权重。
+下一步：进入 CRL 时，可按所选问题补充深度研究分支：先确定是否需要神经表示，再规定信息与数据权限，以及学习状态怎样长期保留。评价对象随之扩展为这些模块共同组成的完整学习器，包含训练期间的行动和更新。

@@ -32,9 +32,35 @@
 
 这也产生真实的理论分歧：具身与生态取向更强调有机体在环境中的直接活动与关系，不一定接受丰富内部生成模型是解释的必要起点。两方都可以重视行动；分歧在于用什么概念解释行动中的知觉。可结合[主动知觉与认知边界](agency.md)比较，而不先宣布一种说法取代另一种。
 
+<a id="prediction-precision"></a>
+
+## 3. 一次能检验“精度”的知觉实验
+
+“根据可靠性加权”必须比一个事后故事多做一步：先独立测量各信息源的可靠性，再预测它们冲突时的判断。[Ernst 与 Banks（2002）](https://doi.org/10.1038/415429a)让 4 名被试通过视觉、触觉或两者一起判断条形物体高度。视觉显示中加入不同程度的噪声；视触觉一起呈现时，两种高度有时略有冲突。先测单通道辨别，再预测双通道的主观相等点与辨别阈值。
+
+当视觉变得不可靠，综合判断更偏向触觉；结果接近由单通道方差预测的最小方差组合。因为权重不是直接从每个双通道条件任意拟合出来，这比仅说“人会用两种感觉”更有约束力。它仍是特定高度判断与噪声范围的行为证据，既未定位唯一神经回路，也未证明完整层级预测编码或自由能理论。
+
+先把可靠性画出来。两个通道对同一物体给出 52 和 56 毫米的读数。窄曲线表示：在当前噪声模型下，读数对真实高度有较强约束。宽曲线容许的高度范围更大。只让视觉曲线变宽，综合判断就向触觉读数移动；物体本身和这一次的两个读数都没有改变。
+
+![两个高度读数不变，只增加视觉噪声；视觉似然变宽，精度加权估计从52.4移到54.56毫米。](https://yingwen.io/crl-figures/mind-inference3-precision.svg)
+
+先看上方的两个通道，再比较两组似然曲线。蓝线是视觉，橙虚线是触觉；两图使用同一高度范围与密度尺度，绿色竖线为组合估计。图中数字来自下文独立高斯噪声算例，不是 Ernst 与 Banks 的被试数据。[计算代码](https://yingwen.io/crl-code/figures/mind-inference-round3.mjs)。
+
+独立推导这个小模型。真实高度是 z，两个无偏估计为 $x_v=z+\epsilon_v$ 与 $x_h=z+\epsilon_h$，噪声独立且方差分别为 $\sigma_v^2,\sigma_h^2>0$。考虑无偏线性组合 $\widehat z=w x_v+(1-w)x_h$。独立性使其方差为 $w^2\sigma_v^2+(1-w)^2\sigma_h^2$；令对 w 的导数为零，得到：
+
+$$
+w^*=\frac{\sigma_h^2}{\sigma_v^2+\sigma_h^2}=\frac{\tau_v}{\tau_v+\tau_h},\qquad \tau_i=\sigma_i^{-2},\qquad \widehat z=\frac{\tau_vx_v+\tau_hx_h}{\tau_v+\tau_h}.
+$$
+
+τ 称为精度，即方差的倒数。这一最小方差线性结果只需上述二阶矩条件；进一步假设独立高斯噪声和平坦先验，才同时得到相应的最大似然／后验均值解释。
+
+原创算例取视觉报告 52 毫米、触觉报告 56 毫米。若两者标准差分别是 1 与 3 毫米，视觉权重为 0.9，组合为 52.4 毫米。只把视觉标准差改成 4 毫米，权重降为 $9/(16+9)=0.36$，组合变成 54.56 毫米。输入冲突仍是 4 毫米，改变判断的是对噪声的认识，不是残差大小本身。若两传感器共享偏差、相关噪声，或实际上指向不同物体，这个公式就需要修改。
+
+它对 RL 的直接启发是构造和校准用于决策的状态：同一感觉偏差可能是可信的新信息，也可能是传感器噪声。观测精度不等于 TD 步长，更不等于结果偏好。一个温度估计器可以非常准确，却仍需任务目标规定何时应该停止工作。
+
 <a id="prediction-compression"></a>
 
-## 3. 预测下一步，不等于只理解一步
+## 4. 预测下一步，不等于只理解一步
 
 “只预测下一个词，所以不能学会长程结构”不是成立的推论。一个事件的下一步结果，可能依赖很久以前的线索。降低下一步预测损失，可能要求系统提取长程结构。问题在于数据与目标是否确实迫使它保存这种结构，而不是结构能否原则上出现在模型中。
 
@@ -48,7 +74,7 @@ $$
 
 <a id="prediction-state"></a>
 
-## 4. 预测能够定义状态，但要说清楚预测集合
+## 5. 预测能够定义状态，但要说清楚预测集合
 
 设一个人在迷宫入口看到了左灯。若这个灯决定十分钟后哪个出口安全，只预测眼前走廊可能不需要记住它；预测出口结果则需要。于是“学到了预测”没有说明学到了足够的状态。需要问：哪些未来，在什么行动条件下，被训练目标覆盖？
 
@@ -58,7 +84,7 @@ $$
 
 <a id="prediction-learning"></a>
 
-## 5. 参数固定，仍可能在经验中改变策略
+## 6. 参数固定，仍可能在经验中改变策略
 
 一个贝叶斯决策器可以用固定的更新规则不断修正后验。其代码没有变化，但知识与选择都变了。同样，网络参数固定不代表整个智能体不再学习。隐藏状态、上下文和外部记忆都可能保存新经验。
 
@@ -68,9 +94,19 @@ $$
 
 <a id="prediction-action-gap"></a>
 
-## 6. 从预测到控制，还缺哪些条件？
+## 7. 从预测到控制，还缺哪些条件？
 
 考虑一个教学例子。动作 A 在两个世界中都给 1 分。动作 B 在世界一中给 3 分，在世界二中给 −2 分。已有记录全部选择 A。两个世界对这些记录给出完全相同的解释，却要求不同的最优行动。仅靠更准确地拟合已有记录，不能区分它们。这个信息缺口对序列模型、价值网络和学习到的动力学模型都存在。
+
+![上半部用视觉和触觉噪声权重算例展示知觉融合；下半部显示两个世界对已观察动作 A 的后果相同，而未观察动作 B 的后果相反。](https://yingwen.io/crl-figures/mind-learning-prediction.svg)
+
+原创推导与决策算例，非实验数据图。可靠性决定怎样合并已有证据；行动覆盖决定证据是否足以区分世界。这是两个不同的问题。
+
+把信息缺口写得更严格：设世界在交互中固定，结果确定，智能体先验 $P(W_1)=P(W_2)=1/2$。无论收集多少条 A→1 的记录 D，都有 $P(D\mid W_1)=P(D\mid W_2)=1$，所以后验仍为各一半。把已有记录再预测得准确一些，不能改变这个似然比。模型若总预测 B→3，它只是加入了对世界一的偏好；这项偏好必须来自额外经验或结构假设。
+
+这还让我们算出探索为何依赖剩余时间。只剩一步时，B 的先验期望是 0.5 分，低于 A 的 1 分，应选 A。若还剩两步且无额外风险或探测成本，先试 B 就会辨认世界：第一步期望为 0.5，第二步在世界一选 B 得 3，在世界二选 A 得 1，第二步期望为 2，总计 2.5 分；一直选 A 只得 2 分。这里多出的收益来自一次真实行动带来的信息。若失败 −2 不被任务允许，或世界会在两步之间变化，这个计算及可行策略都要改写。
+
+这个例子把三层分开：预测器能否表达两个世界；已有数据能否识别哪一个是真的；控制器是否值得花一次行动来获得信息。内部反复模拟可以帮助算出 2.5，但在没有新约束时，不能把各一半的世界后验变为确定。这并不否认计算的价值，而是明确它使用和产生了哪类信息。
 
 | 从预测走向控制需要的条件 | 为什么不能省略 |
 | --- | --- |
@@ -102,6 +138,8 @@ $$
 
 4. 分别列出“模型可以表达某种算法”“训练后学到了它”“在新世界有效运行它”各需要什么证据。
 
+5. 精度图中，两通道的读数没有变，判断却移动了。如果它们的误差来自同一个传感器偏差，独立噪声公式会在哪里失效？
+
 ## 原始材料与阅读顺序
 
 1. [Rao & Ballard · Predictive coding in the visual cortex（1999）](https://doi.org/10.1038/4580)
@@ -112,22 +150,26 @@ $$
 
    从知觉、行动与注意之间的联系读起。并读评论与回应，区分共享一个框架和共享某种具体神经实现。
 
-3. [Friston · The free-energy principle: a unified brain theory?（2010）](https://doi.org/10.1038/nrn2787)
+3. [Ernst 与 Banks · Humans integrate visual and haptic information in a statistically optimal fashion（2002）](https://doi.org/10.1038/415429a)
+
+   读图 1–4 与 Methods 的独立通道测量、视觉噪声和线索冲突。把定量线索融合的证据与整个预测处理框架的主张分开。
+
+4. [Friston · The free-energy principle: a unified brain theory?（2010）](https://doi.org/10.1038/nrn2787)
 
    了解统一表述的动机。区分变分量、生理能耗与具体算法，不把理论总括当作每个机制均已被实验确认。
 
-4. [Delétang et al. · Language Modeling Is Compression（ICLR 2024）](https://proceedings.iclr.cc/paper_files/paper/2024/hash/3cbf627fa24fb6cb576e04e689b9428b-Abstract-Conference.html)
+5. [Delétang et al. · Language Modeling Is Compression（ICLR 2024）](https://proceedings.iclr.cc/paper_files/paper/2024/hash/3cbf627fa24fb6cb576e04e689b9428b-Abstract-Conference.html)
 
    理解概率预测与编码长度的联系。编码效率本身不建立未观察行动的因果知识。
 
-5. [Predictive Representations of State（NIPS 2001）](https://proceedings.neurips.cc/paper_files/paper/2001/hash/1e4d36177d71bbb3558e43af9577d70e-Abstract.html)
+6. [Predictive Representations of State（NIPS 2001）](https://proceedings.neurips.cc/paper_files/paper/2001/hash/1e4d36177d71bbb3558e43af9577d70e-Abstract.html)
 
    读“测试”与状态表示的定义。留意行动条件和充分性条件，不把表示定理当作通用学习算法。
 
-6. [Hu et al. · Belief State Transformer（ICLR 2025）](https://proceedings.iclr.cc/paper_files/paper/2025/hash/01b3dea1871f7cea1e0e6be1f2f085bc-Abstract-Conference.html)
+7. [Hu et al. · Belief State Transformer（ICLR 2025）](https://proceedings.iclr.cc/paper_files/paper/2025/hash/01b3dea1871f7cea1e0e6be1f2f085bc-Abstract-Conference.html)
 
    读紧凑信念状态的动机与预测目标。将表示要求与特定实验支持的范围分开。
 
-7. [Laskin et al. · In-context Reinforcement Learning with Algorithm Distillation（ICLR 2023）](https://arxiv.org/abs/2210.14215)
+8. [Laskin et al. · In-context Reinforcement Learning with Algorithm Distillation（ICLR 2023）](https://arxiv.org/abs/2210.14215)
 
    比较学习历史与专家轨迹两种训练材料。重点看测试时什么在变化，以及哪些经验来自预训练。

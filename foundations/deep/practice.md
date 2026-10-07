@@ -154,6 +154,10 @@ $h$ 是当下的历史摘要，$E$ 是摘要对参数的敏感度。保留 $h$ �
 
 配套最小例子固定递归系数 $a$，学习输入系数 $\theta$：$h_t=ah_{t-1}+\theta x_t$，初始 $h_0=0$。于是 $E_t=aE_{t-1}+x_t$。取 $a=0.5,\theta=0.2$，输入 $(1,0,0)$，得到状态 $(0.2,0.1,0.05)$ 与敏感度 $(1,0.5,0.25)$。对输入系数做中心差分即可检验最后的 0.25；若改为学习递归系数，直接导数项应变为 $h_{t-1}$。
 
+![完整梯度、截断梯度与清空记忆下，前向 hidden state 和参数敏感度的不同演化](https://yingwen.io/crl-figures/concept-depth-classic-memory-gradients.svg)
+
+在第一步之后施加边界操作，其他设置相同。蓝色是前向记忆；橙色圆面积表示对输入系数 $\theta$ 的敏感度。detach 将已得到的 $h_1$ 当作常数，后两步的记忆数值仍为 0.1、0.05；清空记忆才使它们变成 0。参数在三步内保持不变，图中未做优化。[精确递推代码](https://yingwen.io/crl-code/figures/classic-visual-depth.mjs)。
+
 从 replay 抽取 recurrent 序列还需要初始状态。用一段 burn-in 重建 hidden state 能缓解直接用零状态的失配，但使用当前参数重建的状态不一定等于采集时的状态。跨任务的变化和长时记忆会放大这一差别。模型记忆、记忆重建和梯度窗口应分别记录。
 
 <a id="course-optimizer-memory"></a>

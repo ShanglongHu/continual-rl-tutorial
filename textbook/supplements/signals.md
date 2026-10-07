@@ -4,7 +4,7 @@
 
 一次意外发生后，学习系统怎样判断该学什么，以及哪些过去的活动应当发生改变？
 
-强化学习与动物学习共享一个问题：经验必须改变未来行为，但经验本身不会标出应当修改的知识。本章从条件作用实验出发，逐步区分预测误差、神经调制信号和局部可塑性。它们之间存在重要联系，却不是同一个概念。
+声音已经能预告食物时，再加一盏灯，动物往往很少学到灯与食物的关系。预测误差为这种现象提供了一个计算解释。沿着这个解释，我们将研究误差出现在什么时刻、怎样影响突触，以及为什么不同神经元可能学到不同的预测。
 
 <a id="contingency"></a>
 
@@ -46,7 +46,15 @@ $$
 
 经典多巴胺研究中，意外奖励常引起短暂活动增强；学习后，反应可以出现在预测奖励的线索处；预期奖励缺席时，活动可能下降。Schultz、Dayan 与 Montague 将这些现象与时间差分预测联系起来。其关键是“相对预期的变化”，不是“奖励有多快乐”。这篇论文构建了理论联系，不能替代因果干预证据。[Schultz 等，1997](https://web.math.princeton.edu/~sswang/fundamental-readings-for-Wang-lab-members/schultz_montague97_science.pdf)
 
-Steinberg 等在大鼠的阻断程序中，在奖励到达时短暂激活多巴胺神经元。新线索获得了原本较弱的学习。时间精确的干预支持这些神经元活动能够参与塑造后续行为。但人工激活的充分性，不意味着自然活动的每个成分都只编码奖励误差，也不意味着它完全不影响动机或注意。[原始实验](https://www.nature.com/articles/nn.3413)
+Steinberg 等在大鼠的阻断程序中，在奖励到达时短暂激活多巴胺神经元。新线索随后获得了原本较弱的学习。这使研究从记录相关活动前进到干预：在预期误差很小时加入活动，可以改变后续的线索学习。[原始实验](https://www.nature.com/articles/nn.3413)
+
+先用一个原创 TD 算例理解记录中的三个时刻。设每试次依次经历背景、线索、奖励后终止，$\gamma=1$，奖励为 1，终止价值为 0。只在这个有限试次算例中用不折扣回报，并把试次开始视为给定，不把下一次试次接在后面。学习前各状态估计均为 0，奖励到来时 $\delta=1$。学会后，线索状态估计为 1，奖励到来时 $\delta=1-1=0$；若该次奖励被省略，则为 $0-1=-1$。如果线索出现的时间尚不可预测，进入线索状态会带来正误差；若连线索时间也可预测，误差还会向更早的预测信息移动。这说明响应出现在何处取决于时间与状态假设。
+
+阻断干预提供比“形状像 TD”更强的检验：把食物数量与线索训练关系保持不变，却在本应几乎没有误差的时刻加入活动，考察随后对新线索的反应。若变化只发生在照光当下，它可能是动作表达改变；若在后续不照光的测试中保留，才支持经验被改变。这个逻辑仍不能区分人工信号是直接进入误差计算，还是先改变注意、结果表征或强化作用。判断算法身份需要更多可区分的操作。
+
+![左侧是三种奖励预期条件下的原创 TD 算例，右侧区分中脑放电与末梢多巴胺释放两种测量。](https://yingwen.io/crl-figures/mind-learning-signals.svg)
+
+左侧按正文的有限试次算例计算：同样的奖励，在不同预期下产生不同误差。右侧标出两种神经测量的位置；这是一幅机制图，实测结果见所引论文。
 
 | 证据层次 | 能约束的问题 | 不能单独推出的结论 |
 | --- | --- | --- |
@@ -64,15 +72,57 @@ Yagishita 等在小鼠伏隔核急性脑片中，分开控制谷氨酸输入和�
 
 <a id="beyond-one-scalar"></a>
 
-## 5 · 为什么不能把多巴胺写成一个统一标量？
+## 5 · 不同细胞与投射带来哪些新问题
 
 Sharpe 等先让大鼠接触中性线索之间的顺序关系，当时不提供奖励；随后才把后一个线索与食物联系起来。对多巴胺神经元的时间精确干预，影响了前一阶段的刺激—刺激学习。未来行为可以利用并未直接与食物配对的线索。这个结果要求考虑关于事件关系的学习，而不只考虑缓存下来的食物价值；它仍不能证明动物使用了某种指定的搜索规划器。[Sharpe 等，2017](https://sharpelab.psych.ucla.edu/wp-content/uploads/sites/185/2018/09/Sharpe-et-al.-2017.-Nature-Neuroscience.pdf)
 
+“结果没预料到”还有另一种含义：并非获得更多或更少，而是得到了另一种东西。[Stalnaker 等（2019）](https://gershmanlab.com/pubs/Stalnaker19.pdf)用气味指定大鼠前往左、右食槽，随后在部分区组中保持液滴数量，只改变葡萄味与热带水果味。独立偏好测试和取食反应时未显示两种口味的价值差异。结果换味仍引起被鉴别为多巴胺细胞的活动变化。
+
+![上方画出气味端口、两个食槽及三滴结果换味；下方独立模型的标量价值误差为零，葡萄和热带水果的计数误差分别为负三、正三。](https://yingwen.io/crl-figures/mind-psych3-identity-error.svg)
+
+任务部分依据 [Stalnaker 等（2019）图 1–3](https://gershmanlab.com/pubs/Stalnaker19.pdf)重新绘制；只画其中数量固定的换味操作。每滴效用均为 1 是下方算例的假设，不能由“偏好差异不显著”推出严格相等。图中没有模拟或转绘神经响应。[可复算代码](https://yingwen.io/crl-code/figures/psych-learning-round3.mjs)。
+
+假设一次结果由向量 $c=(n_{\mathrm{grape}},n_{\mathrm{tropical}})$ 描述，每滴的给定效用均为 1，即 $u=(1,1)$。学过三滴葡萄之后，预测为 $\widehat c=(3,0)$；现在收到三滴热带水果，观察为 $(0,3)$。若只预测 $u^\top c$，两个结果都值 3，标量误差为零；若预测结果身份，误差却为 $c-\widehat c=(-3,3)$。同一次经验，可以不改变当前任务价值，却改进关于世界的知识。以后两种结果的价值若分开，这种区别才会影响选择。
+
+研究进一步把跨细胞记录按同类试次对齐，用留出的试次检验解码。换味早期，活动模式能区分哪一种口味被意外呈现；学会新的对应后，这种误差信息减弱。单细胞或群体均值没有提供同样的身份区分。这是伪群体的统计解码，不是对同时记录网络信息流的直接追踪。
+
+对人工预测器，相应选择可以十分明确：分别学习两种结果的发生量，或学习一个同时输出它们的向量预测，再单独规定当前任务怎样评价结果。GVF 提供前一种问题规格；它没有要求这些预测都充当控制目标。分布式价值学习回答的是“同一回报有哪些可能数值”，这里回答的是“发生了哪种事件”。下一节将讨论这两个方向的区别。
+
 Engelhard 等在小鼠虚拟导航任务中进行单细胞钙成像，发现腹侧被盖区多巴胺神经元对感觉、运动和认知变量具有不同的反应模式。群体平均曲线可能掩盖这种差异。这里应保留两点：奖励预测误差解释了一组重要现象；多巴胺系统并不因此被穷尽。相关变量的统计编码，也不自动等于独立的因果功能。[Engelhard 等，2019](https://www.nature.com/articles/s41586-019-1261-9)
+
+另一个分离发生在同一投射的不同位置。[Mohebi 等（2019）](https://pmc.ncbi.nlm.nih.gov/articles/PMC6555489/)让大鼠在奖励概率会变化的左右选择任务中取食，并在相同任务范式下比较经鉴定的 VTA 多巴胺细胞放电与伏隔核核心部的多巴胺释放。奖励预告线索可增强两者；释放还随接近奖励及近期奖励预期变化，而细胞放电未出现对应的全部动态。作者用多种释放测量方法交叉核验，因此差别不能简单归为任务不同。
+
+这使局部释放调节成为一个需要研究的过程：下游收到的信号，还受到轴突末梢所在区域的影响。下一步需要在保持上游输入可比时操纵局部机制，观察它怎样改变释放和行为。
+
+把这一分离带回学习模型，可以构造一台已经熟知自动售货机的智能体。机器稳定给出预期结果，学习误差接近零；若剩余时间变短或当前需求增大，智能体仍可能更快启动取物动作。维持行为所需的价值或动机量不必随误差归零。反过来，一个已经吃饱的主体也可能发现机器故障并形成新预测，却没有强烈取食行为。因而实验至少要分别测下一次选择、启动时延与后续保留，不能用“动作更多”同时代表学得更多和更想去做。
+
+<a id="distributional-predictions"></a>
+
+## 6 · 同一个结果，为什么有不同的预测误差
+
+每次获得 0.5，与等概率获得 0、0.5、1，平均奖励相同，却有不同的风险和结果范围。只学习均值时，这两种情形得到相同答案。分布式强化学习则用多个坐标描述可能的回报。[Dabney 等（2020）](https://doi.org/10.1038/s41586-019-1924-6)据此提出神经预测：不同多巴胺细胞应有不同的误差变号点。他们分析小鼠 VTA 单细胞记录，在奖励大小与奖励概率任务中检验了这些差异。
+
+看一个独立的一步算例。结果 R 取 0、0.5、1，概率均为三分之一。一个预测通道用正残差权重 $\tau$、负残差权重 $1-\tau$ 更新标量 v，其中 $0<\tau<1$。相应的平均更新为：
+
+$$
+\mathbb E[\Delta v]/\alpha=\tau\,\mathbb E[(R-v)_+]-(1-\tau)\,\mathbb E[(v-R)_+],\qquad (z)_+=\max(z,0).
+$$
+
+$\alpha>0$ 为公共步长。正误差将 v 向上推，负误差将 v 向下推；平衡点是该分布的 $\tau$-expectile。它与分位数使用不同的残差权重。
+
+取 $\tau=0.2$。若 $0<v<0.5$，正残差来自 0.5 与 1，负残差来自 0。令平均更新为零，得到 $0.2(1.5-2v)=0.8v$，所以 $v=0.25$。同样计算，$\tau=0.5$ 与 0.8 的平衡点分别为 0.5 与 0.75。于是同一次结果 0.5，会让三个通道分别出现正、零、负误差。若结果恒为 0.5，三个平衡点都会落在 0.5。
+
+![两个平均奖励相同的任务，确定奖励为0.5，三点任务等概率给0、0.5、1。三种expectile在前者相同，在后者分别为0.25、0.5、0.75。](https://yingwen.io/crl-figures/mind-distributional-expectiles.svg)
+
+上方比较结果分布，下方比较三个学习通道的平衡点。数值来自正文的一步模型；[生成脚本](https://yingwen.io/crl-code/figures/mind-distributional.mjs)与[数据](https://yingwen.io/crl-figures/mind-distributional-data.json)可复算。
+
+论文的神经分析还检验了不同细胞对正、负误差的相对响应，以及这些响应与变号点的关系。这是一种把算法结构转成可测预测的研究路径。它也提出了下游问题：多样的预测怎样被读出，怎样影响风险下的行动选择？
+
+这里增加的是同一回报分布的描述方式。GVF 则允许改变所问的问题：累计什么信号、沿哪个策略、持续到何时。两种推广可以结合，例如同时学习“到出口前的碰撞次数”及其分布；选择预测问题和选择答案的表示形式，是两个设计维度。
 
 <a id="crl-questions"></a>
 
-## 6 · 对持续学习的启发：先问预测对象，再问更新信号
+## 7 · 从学习信号回到持续交互
 
 把这些思想带回持续强化学习，首先要问预测对象是什么。奖励、接触、危险和某个事件的到达时间，不必共享一个预测头。其次要问状态是否足够：同一线索在不同背景或等待时长下，可能有不同含义。最后才问误差如何改变局部记忆。一个统一损失下降，不能证明每个知识系统都得到适当更新。
 
@@ -80,7 +130,7 @@ Engelhard 等在小鼠虚拟导航任务中进行单细胞钙成像，发现腹�
 
 ## 本章小结
 
-生物学习最有价值的启发，不是给算法找到一个脑区名称，而是用不同层次的证据约束“预测什么、修改哪里、何时修改”这三个问题。
+从阻断到神经干预，再到不同预测通道，学习信号的研究不断细化三个问题：预测什么、修改哪里、何时修改。这些问题同样决定持续学习器能从一段经验中获得什么。
 
 ### 可选的关联阅读
 
@@ -100,30 +150,42 @@ Engelhard 等在小鼠虚拟导航任务中进行单细胞钙成像，发现腹�
 
 ## 原始材料与阅读顺序
 
-1. [Sutton 与 Barto · Reinforcement Learning: An Introduction，§14.2.2–14.2.3、§15.6](https://mitpress.mit.edu/9780262039246/reinforcement-learning/)
+1. [Stalnaker 等（2019）· Dopamine neuron ensembles signal the content of sensory prediction errors](https://gershmanlab.com/pubs/Stalnaker19.pdf)
+
+   先读图 1 的固定数量换味和偏好对照，再对照图 2 的平均响应与图 3 的身份解码。细胞按同类试次组成伪群体；关键差异是预测错了什么，而不只是误差幅度。
+
+2. [Sutton 与 Barto · Reinforcement Learning: An Introduction，§14.2.2–14.2.3、§15.6](https://mitpress.mit.edu/9780262039246/reinforcement-learning/)
 
    出版社页面含作者网站与开放阅读入口。先核对试次级 Rescorla–Wagner 更新，再比较逐时刻 TD 与资格迹。学习规则、反应生成和神经实现是不同层次；本文的两线索算例独立编写。
 
-2. [Rescorla（1968）· Probability of shock in the presence and absence of CS in fear conditioning](https://www.appstate.edu/~steelekm/classes/psy5300/Documents/Rescorla1968.pdf)
+3. [Rescorla（1968）· Probability of shock in the presence and absence of CS in fear conditioning](https://www.appstate.edu/~steelekm/classes/psy5300/Documents/Rescorla1968.pdf)
 
    读实验 1 的随机组与条件组，再读实验 2 的概率对照。支持背景事件率影响条件作用；行为抑制不是对内部预测的直接测量。
 
-3. [Schultz、Dayan 与 Montague（1997）· A Neural Substrate of Prediction and Reward](https://web.math.princeton.edu/~sswang/fundamental-readings-for-Wang-lab-members/schultz_montague97_science.pdf)
+4. [Schultz、Dayan 与 Montague（1997）· A Neural Substrate of Prediction and Reward](https://web.math.princeton.edu/~sswang/fundamental-readings-for-Wang-lab-members/schultz_montague97_science.pdf)
 
    读奖励出现、预告与遗漏的响应图，以及时间差分解释。它是经典理论综合，不能当作神经信号与 TD 完全同一的证明。
 
-4. [Steinberg 等（2013）· A causal link between prediction errors, dopamine neurons and learning](https://www.nature.com/articles/nn.3413)
+5. [Steinberg 等（2013）· A causal link between prediction errors, dopamine neurons and learning](https://www.nature.com/articles/nn.3413)
 
    重点读图 1—2 的阻断程序和光遗传干预。支持特定时间的多巴胺活动能促进线索学习；不证明所有多巴胺活动都只是误差。
 
-5. [Yagishita 等（2014）· A critical time window for dopamine actions on the structural plasticity of dendritic spines](https://pubmed.ncbi.nlm.nih.gov/25258080/)
+6. [Yagishita 等（2014）· A critical time window for dopamine actions on the structural plasticity of dendritic spines](https://pubmed.ncbi.nlm.nih.gov/25258080/)
 
    从脑片中的输入时序与树突棘测量入手。时间窗口为资格迹思想提供细胞机制线索，不能直接推广为完整行为尺度的信用分配规则。
 
-6. [Sharpe 等（2017）· Dopamine transients are sufficient and necessary for acquisition of model-based associations](https://sharpelab.psych.ucla.edu/wp-content/uploads/sites/185/2018/09/Sharpe-et-al.-2017.-Nature-Neuroscience.pdf)
+7. [Sharpe 等（2017）· Dopamine transients are sufficient and necessary for acquisition of model-based associations](https://sharpelab.psych.ucla.edu/wp-content/uploads/sites/185/2018/09/Sharpe-et-al.-2017.-Nature-Neuroscience.pdf)
 
    读感觉预条件作用的三个阶段及时间控制。支持非奖励事件关系的学习作用；标题中的 model-based 不指定完整的规划算法。
 
-7. [Engelhard 等（2019）· Specialized coding of sensory, motor and cognitive variables in VTA dopamine neurons](https://www.nature.com/articles/s41586-019-1261-9)
+8. [Engelhard 等（2019）· Specialized coding of sensory, motor and cognitive variables in VTA dopamine neurons](https://www.nature.com/articles/s41586-019-1261-9)
 
    比较单细胞响应与群体汇总。支持多变量和细胞间异质性；编码分析本身不确立各变量的因果作用。
+
+9. [Mohebi 等（2019）· Dissociable dopamine dynamics for learning and motivation](https://pmc.ncbi.nlm.nih.gov/articles/PMC6555489/)
+
+   读任务时序、图 1 的奖励率关系、图 3–4 的快速释放与放电比较及讨论中的空间分辨率限制。不同测量的分离约束统一信号解释；局部机制仍需直接干预。
+
+10. [Dabney et al.（2020）· A distributional code for value in dopamine-based reinforcement learning](https://doi.org/10.1038/s41586-019-1924-6)
+
+   从图 1 的多预测通道读到图 2 的变号点，再读图 4 的正负响应不对称。把均值预测、expectile 与分位数分开；神经预测和人工学习算法在这里形成了双向联系。

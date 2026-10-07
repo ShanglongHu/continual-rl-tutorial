@@ -150,6 +150,10 @@ $$
 
 令 $\ell_j=\lfloor b_j\rfloor,u_j=\lceil b_j\rceil$。若二者不同，向下格点加 $p_j(u_j-b_j)$，向上格点加 $p_j(b_j-\ell_j)$。若相同，全部质量都加到该格点；直接用两个插值权重会把整数点的质量错误清零。
 
+![Categorical Bellman 投影中，三个原子的平移缩放与概率质量向邻居格点分配](https://yingwen.io/crl-figures/concept-depth-classic-distribution-projection.svg)
+
+先改变位置，再分配质量。颜色跟踪同一份概率，柱高表示概率大小；中间的 0.5 质量分成 0.25 与 0.25，最后得到 (0,0.45,0.55)。本例没有支持裁剪，均值保持 0.55。这里用三个原子展开 C51 所用投影，不是 51 原子的训练结果。原创精算，依据 [Bellemare 等 §4.2、式 (7)](https://proceedings.mlr.press/v70/bellemare17a/bellemare17a.pdf#page=6)；[计算代码](https://yingwen.io/crl-code/figures/classic-visual-depth.mjs)。
+
 $$
 L_{\rm cat}(\theta)=-\sum_i m_i\log p_{\theta,i}(s,a)
 $$

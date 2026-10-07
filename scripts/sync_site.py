@@ -41,6 +41,9 @@ def rewrite_markdown(text: str, source: str, target: str, links: dict[str, str],
         parts = urlsplit(absolute)
         if parts.netloc != "yingwen.io" or parts.scheme not in {"http", "https"}:
             return match.group(0)
+        if parts.path.startswith("/crl-figures/"):
+            # Figures and their data remain website assets, not repository files.
+            return "](" + parts._replace(scheme="https").geturl() + ")"
         if parts.path.startswith("/crl-code/"):
             # Only inspect published Python source roots. Download bundles,
             # results and query-bearing links keep their website semantics.

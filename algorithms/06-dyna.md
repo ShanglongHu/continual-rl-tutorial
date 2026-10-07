@@ -156,6 +156,10 @@ $$
     1. $Q(\tilde s,\tilde a)\leftarrow Q(\tilde s,\tilde a)+\alpha[\hat r+\hat\gamma\max_bQ(\hat s',b)-Q(\tilde s,\tilde a)]$。
   1. 继续真实交互；回合边界由任务协议决定。
 
+![走廊中新获得的终点奖励，通过两个模型备份向尚未重访的位置传播。](https://yingwen.io/crl-figures/concept-crl-mechanisms-planning.svg)
+
+图中是三条边的 0→1→2→G 链。最近一次真实转移只把位置 2 的值改为 1；两次模型备份再得到 0.9 与 0.81。规划期间真实智能体仍在 G。下一节用更短的 A→B→终点链手算相同机制。
+
 不能把规划生成的转移重新当成真实样本去更新同一个模型，否则会用自己的想象强化自己的错误；也不能把 n 次规划算作 n 个真实环境步。在报告中分别记录 real steps、model updates、planning backups 和实际运行时间。
 
 <a id="experiment-dyna_q"></a>

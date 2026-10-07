@@ -30,7 +30,13 @@
 
 [McClelland、McNaughton 与 O’Reilly（1995）](https://www.cnbc.cmu.edu/~plaut/IntroPDP/papers/McClellandMcNaughtonOReilly95PR.comp-learn-sys.pdf)提出：海马系统支持快速、较分离的经验编码；新皮层通过较慢、交错的学习形成重叠表示。新旧经验共同参与学习，能够减轻新经验对已有结构的破坏。
 
-这不等于“海马负责短期、皮层负责长期”。关键是学习速度、表示重叠与经验组织方式。人工智能可以检验快慢通路是否有益，但必须与相同存储量、计算量的单通路比较。增加模块本身不能证明这一理论。
+这种分工依据学习速度、表示重叠和经验组织方式。快速系统保存新事件的细节，慢速系统从交错经验中逐渐提取规律。在人工系统中，可以保持存储量与更新预算相同，比较这样的分工何时有助于吸收例外并保留旧知识。
+
+不过，慢学习不是不随知识改变的常数。[Tse 等（2007）](https://doi.org/10.1126/science.1135935)先让大鼠学习多组味道与地点的固定配对，再加入新的配对。已有结构下，一次学习后的新关联能被保持；在新学习后 48 小时进行海马损伤仍可保留测试表现，而 3 小时后损伤会造成损害。研究还比较熟悉但配对持续变化的情境：只熟悉场地不足以带来同样的新关联保持。
+
+图式在这里有了具体含义：先前形成的稳定关联结构帮助吸收相关新信息。熟悉但配对不稳定的对照，把结构作用与场地熟悉分开；损伤时点则追踪这种新关联对海马的依赖怎样变化。
+
+考虑一个办公室知识库的原创对照。系统已知道“每层同一编号都在电梯左侧”，新同事的房间号只需绑定进已有结构；若新楼编号随机，写入同样一条记录并不能提供相同泛化。要检验结构的作用，可以让两组拥有相同旧记录数、相同访问次数和相同新例子，只改变旧关系是否一致。再关闭情景检索，测能否用已更新表示回答未见组合，并同时测试旧关联。成功只说明这一人工机制利用了结构；把文件移进长期目录本身不构成巩固证据。
 
 <a id="memory-replay-consolidation"></a>
 
@@ -38,23 +44,62 @@
 
 再激活是先前活动模式再次出现。重放更强调经验中的时序关系被重新表达。巩固则指记忆随时间趋于稳定或重新组织。观察到重放，不等于已经证明发生了某种特定的巩固。
 
-[Girardeau 等（2009）](https://www.nature.com/articles/nn.2384)在大鼠空间学习后的巩固时段选择性抑制海马尖波涟漪，观察到记忆表现受损。这支持此类事件参与记忆过程；它不直接说明哪段内容被删除，也不证明所有重放都有相同作用。
+[Girardeau 等（2009）](https://www.nature.com/articles/nn.2384)让大鼠学习八臂迷宫中固定有食物的三个臂。每天训练后，在一小时休息与睡眠中在线检测海马尖波涟漪，并触发电刺激中断它。关键刺激对照把同类刺激延迟 80—120 毫秒，使多数涟漪得以完成；另设未植入对照。即时中断组后续空间记忆表现较差，而所测整体睡眠结构未见相同改变。
+
+延迟刺激对照把“有电刺激”与“恰好打断事件”分开，因此比单纯比较睡与不睡更接近检验涟漪相关过程。但干预同时中断该时刻的群体活动，并没有按解码内容只删去某一条路线。结论支持涟漪相关活动对这项记忆任务的贡献，不足以指定更新算法、信息流方向或每次事件的内容价值。
+
+![上半部区分稳定旧关联下的新配对与熟悉但不稳定的配对，标明后续保持测试；下半部把检测后立即中断和延迟刺激画在同一时间线上。](https://yingwen.io/crl-figures/mind-learning-memory.svg)
+
+按原实验设计独立绘制。上半部看既有结构与损伤时点，下半部看立即中断与延迟刺激。两组对照分别研究新知识的整合和训练后活动的作用。
 
 经验回放缓存只是人工实现的一种。生物重放可以压缩、选择或重组经验。CRL 中还必须计入保存与重新计算的成本。比较重放方法时，应分别改变内容、顺序和更新次数，否则无法知道收益来自经验组织还是更多计算。
 
+一个更细的人工对照是先保存同一批交互，再给各方法完全相同的更新次数。甲重放新旧轨迹；乙只重复新轨迹；丙重放相同旧样本但打乱时间关系。若甲优于乙，可以支持旧经验参与更新的价值；若甲又优于丙，才提示时序信息可能重要，还须保证打乱没有改变标签含义。若评价期仍允许检索原记录，表现提升也可能来自直接读取，不能全部归为参数巩固。这些是拟议辨析，不是上述动物实验已经验证的 AI 结果。
+
+接下来的问题是选择：一生中经历过的事情很多，休息时应该重放哪一段？[Mattar 与 Daw（2018）](https://doi.org/10.1038/s41593-018-0232-z)将一次记忆访问看成一次价值更新，按它对未来决策的预期作用排序。他们区分两个因素：更新能改善该处选择多少，以及未来多大程度上会用到该处选择。这个规范模型把正向、反向和离线重放放进同一个计算问题。
+
+用一个贪心选择的算例理解第一个因素。当前位置有动作 A、B。一次更新后，按更新后的价值评价旧选择与新选择：
+
+| 更新前估计 | 一次更新 | 选择怎样变化 | 该次决策的估计收益增量 |
+| --- | --- | --- | --- |
+| A=5，B=4.5 | A：5→6 | 仍选 A | 0 |
+| A=5，B=4.5 | B：4.5→5.5 | 从 A 改为 B | 5.5−5=0.5 |
+
+两个更新都让一个估计增加 1，只有后者改变选择。若第二个地点今后几乎不会再到达，这次改善也很少被使用。因此，按 TD 误差大小排序与按决策收益排序，会产生不同的重放顺序。这个小表固定了贪心规则；使用随机策略时，最佳动作不变也可能发生动作概率的变化。
+
+Mattar 与 Daw 在导航模拟中发现，这种排序会在获得新结果后沿过去路径反向传播，也会把计算指向即将到达的位置。模型解释了为什么不同重放方向可能服务于同一决策目的，同时留下了实现问题：系统怎样以有限成本找到值得重放的经验？[作者代码](https://github.com/marcelomattar/PrioritizedReplay)可以用来检查这一排序如何影响路径与学习。
+
+<a id="memory-structural-replay"></a>
+
+## 4. 重放的是经历次序，还是推断出的关系？
+
+如果重放只是高速重播，那么神经序列应当沿着先前实际见过的顺序展开。要检验这一点，不能只发现一段完整序列从未出现过：主体可能分别见过 A→B、B→C，再把局部关系串成 A→B→C。更强的对照要连局部相邻关系也打乱。
+
+[Liu 等（2019）](https://pmc.ncbi.nlm.nih.gov/articles/PMC6657653/)先用一组对象教人一种重新排列的规则，再换一组新图片。第二项实验让呈现顺序不含规则顺序中的任何相邻转移。休息期间，用独立训练的对象分类器分析脑磁图，再检验不同对象的解码活动是否依次出现。结果支持规则定义的序列，而不是实际观看顺序。
+
+![同一批八个新对象的规则次序和实际观看次序。规则先用另一批对象习得。观看次序在两条链之间交替，完全不含规则中的相邻边；休息期比较解码活动更符合哪套顺序。](https://yingwen.io/crl-figures/mind-psych3-structural-replay.svg)
+
+依据 [Liu 等（2019）Study 2 与图 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC6657653/)的区分逻辑绘制原创算例。第一部分用新对象展开先前学会的结构；三部分始终追踪同一批新对象。对象和打乱次序为教学构造，不是某一被试的重放记录。虚线代表待检验的规则关系，实线代表呈现顺序。[序列与交集检查](https://yingwen.io/crl-code/figures/psych-learning-round3.mjs)。
+
+图中的两条链共有六条相邻边。实际呈现为 A3、B1、A1、B4、A4、B2、A2、B3，相邻七次都跨越 A、B 两组。因此，只把看见的相邻图片关联起来，不能得到组内的六条边。已有排序规则提供了新的组织依据。这也说明第一项实验为何还不够：那里的完整次序虽然被打乱，各个真相邻关系仍曾出现过。
+
+这里测到的是解码活动中的统计时序，不是参与者对自己在想什么的逐时刻报告。重要的计算问题则很具体：离线活动能够结合旧结构与新对象，生成没有按那个顺序经历过的内容。人工回放因而有三种不同来源：原始交互记录、对记录的重排、模型生成的反事实轨迹。只有第一种天然保留原来的经验次序；后两种必须说明哪些关系支持重组。
+
+把一扇原本关闭的门想象为已经打开，可以生成通向新目的地的轨迹，但想象本身没有验证门能否打开。评测重组机制时，应另设不符合旧结构的新任务，观察系统是否会把熟悉关系错误套用进去。重放内容越灵活，越需要区分经验事实、结构推断和等待验证的预测。
+
 <a id="memory-retrieval-storage"></a>
 
-## 4. 读不出来，不等于已经丢失
+## 5. 读不出来，不等于已经丢失
 
 [Ryan 等（2015）](https://tonegawalab.mit.edu/wp-content/uploads/2015/06/305_Ryan_Science_2015.pdf)在小鼠情境恐惧学习后抑制蛋白质合成。自然情境线索难以引出原有反应，但光遗传激活学习时标记的细胞能够恢复冻结反应。这个结果约束了“记忆已完全消失”的解释。
 
-它没有证明全部记忆细节都完整保存，更不能推出所有遗忘只是提取失败。恢复一种行为反应，也不等于恢复完整的主观经历。证据的对象是该操作、该任务与该行为指标。
+自然线索与直接激活的差别，把研究转向了读取条件：在同一记忆操作之后，哪种输入仍能引出学过的冻结反应？若要研究事件细节的保存，还需要增加能辨别这些细节的行为测试。
 
 人工智能同样可能保存着有用信息，却因检索线索变化、读取模块失配或策略不再使用它而表现下降。因而应分别测试原线索、新线索和受控读取；还应区分不更新参数的恢复与重新训练后的恢复。后者可能只是重新学会。
 
 <a id="memory-active-forgetting"></a>
 
-## 5. 遗忘也可能受到调节
+## 6. 遗忘也可能受到调节
 
 在“想／不想”实验中，人先学会词对，再面对线索反复回忆或抑制相应词。[Anderson 与 Green（2001）](https://www.nature.com/articles/35066572)发现，抑制项目的后续回忆低于未练习项目。原线索测试可能混入联想阻塞；独立线索测试用于进一步约束这种竞争解释，但行为下降仍不是存储被物理抹除的直接测量。
 
@@ -64,7 +109,7 @@
 
 <a id="memory-crl-experiment"></a>
 
-## 6. 一个区分保持与调用的思想实验
+## 7. 一个区分保持与调用的思想实验
 
 让一个导航智能体依次经历规则相反的房间 A、B，再返回 A。首先冻结可学习参数，并禁止新增长期记忆、改写检索索引和更新归一化统计；保留事先规定的内部状态递推与只读检索，测试旧规则能否恢复。测试前给定相同的起始内部状态，并分别报告第一步表现与观察情境线索后的表现。否则，一个系统只是带着上一阶段的状态进入测试，也会改变比较结果。
 
@@ -95,30 +140,42 @@
 
 ## 原始材料与阅读顺序
 
-1. [Tulving — Memory and Consciousness（1985）](https://www.esalq.usp.br/lepse/imgs/conteudo_thumb/Memory-and-Consciousness.pdf)
+1. [Liu 等 — Human Replay Spontaneously Reorganizes Experience（2019）](https://pmc.ncbi.nlm.nih.gov/articles/PMC6657653/)
+
+   重点读 Study 2、图 4 和 STAR Methods 的排序规则。第一项实验保留了单条相邻转移，第二项才排除这种局部串联解释；脑磁图解码与直接记录神经放电也应区分。
+
+2. [Tulving — Memory and Consciousness（1985）](https://www.esalq.usp.br/lepse/imgs/conteudo_thumb/Memory-and-Consciousness.pdf)
 
    读情景与语义记忆的概念区分。用于分清知识内容与回忆方式，不据此赋予人工缓存人的意识性质。
 
-2. [Baddeley & Hitch — Working Memory（1974）](https://doi.org/10.1016/S0079-7421%2808%2960452-1)
+3. [Baddeley & Hitch — Working Memory（1974）](https://doi.org/10.1016/S0079-7421%2808%2960452-1)
 
    读记忆负荷与推理任务的关系。关注维持信息和执行任务的竞争，不把容量效应直接定位到单一脑区。
 
-3. [McClelland et al. — Complementary Learning Systems（1995）](https://www.cnbc.cmu.edu/~plaut/IntroPDP/papers/McClellandMcNaughtonOReilly95PR.comp-learn-sys.pdf)
+4. [McClelland et al. — Complementary Learning Systems（1995）](https://www.cnbc.cmu.edu/~plaut/IntroPDP/papers/McClellandMcNaughtonOReilly95PR.comp-learn-sys.pdf)
 
    先读灾难性干扰与交错学习的模拟，再读海马—皮层解释。计算模型说明一种可能机制，不是唯一生物实现。
 
-4. [Girardeau et al. — Selective suppression of hippocampal ripples impairs spatial memory（2009）](https://www.nature.com/articles/nn.2384)
+5. [Tse 等 — Schemas and Memory Consolidation（2007）](https://doi.org/10.1126/science.1135935)
+
+   读图 2 的新配对、图 4 的损伤延迟、图 5 的一致与不一致情境。区分结构、熟悉性及海马依赖；48 小时属于该任务的操作条件。
+
+6. [Girardeau et al. — Selective suppression of hippocampal ripples impairs spatial memory（2009）](https://www.nature.com/articles/nn.2384)
 
    读抑制的时机与行为对照。区分涟漪事件的因果贡献与某段记忆内容是否被破坏。
 
-5. [Ryan et al. — Engram Cells Retain Memory Under Retrograde Amnesia（2015）](https://tonegawalab.mit.edu/wp-content/uploads/2015/06/305_Ryan_Science_2015.pdf)
+7. [Mattar & Daw — Prioritized memory access explains planning and hippocampal replay（2018）](https://doi.org/10.1038/s41593-018-0232-z)
+
+   先读图 1 的 gain 与 need，再读图 2 的正向和反向重放；方法部分推导一次价值更新的预期效益。它回答重放什么值得，而高效找到这些记忆仍是实现问题。
+
+8. [Ryan et al. — Engram Cells Retain Memory Under Retrograde Amnesia（2015）](https://tonegawalab.mit.edu/wp-content/uploads/2015/06/305_Ryan_Science_2015.pdf)
 
    对照自然线索与直接激活后的冻结反应。结论限于该任务与操作，不外推为所有遗忘的统一解释。
 
-6. [Anderson & Green — Suppressing unwanted memories by executive control（2001）](https://www.nature.com/articles/35066572)
+9. [Anderson & Green — Suppressing unwanted memories by executive control（2001）](https://www.nature.com/articles/35066572)
 
    重点比较图 1–2 的原线索、独立线索及竞争解释。词对实验不能直接等同临床情境中的记忆变化。
 
-7. [Shuai et al. — Forgetting Is Regulated through Rac Activity in Drosophila（2010）](https://www.sciencedirect.com/science/article/pii/S0092867409016304)
+10. [Shuai et al. — Forgetting Is Regulated through Rac Activity in Drosophila（2010）](https://www.sciencedirect.com/science/article/pii/S0092867409016304)
 
    读获得、衰减、干扰与反转学习的对照。遗忘受到调节，不意味着每次遗忘都有适应价值。

@@ -197,6 +197,10 @@ python3 implementations/average_systems/differential_dyna.py --steps 1200 --seed
 
 设状态 0→1→2→终点，只有最后一步奖励 1。最初所有值为零；看到最后一步后，2 的值需要改变。更新 0 暂时没有作用，因为它的后继 1 还没变化。优先更新 2，再更新能到达 2 的前驱 1，再更新 0，可以把一次新信息在三个 backup 中传到底。更新顺序由模型中的前驱依赖关系决定。
 
+![同一条四格走廊左侧只发生一次真实到达，右侧三帧的价值色块沿模型前驱从终点向起点传播。](https://yingwen.io/crl-figures/concept-crl-mechanisms-planning.svg)
+
+先前已经观察到 $0\to1$、$1\to2$ 的零奖励转移；最新真实一步 $2\to G$ 得到奖励 1。取 $\gamma=0.9$、步长 1，先直接更新状态 2，再查询模型做两次前驱备份，得到 0.9、0.81。右侧箭头表示价值依赖，真实智能体一直留在 G。这是带前驱调度的 Dyna 小例，不是均匀抽样 Dyna 必然采取的更新顺序。
+
 $$
 P(s,a)=\left|\hat r(s,a)+\gamma(1-\hat d)\max_{a'}Q(\hat s',a')-Q(s,a)\right|
 $$
@@ -336,6 +340,10 @@ H 是计划跨度，终点价值补偿截断以后未展开的后果。没有终
   1. 比较累计 reward + terminal value，选最好序列
   1. 仅执行首个动作；下次用新观测重新估计状态并规划
 1. CEM 近似：保留高分 elite 序列，拟合其分布，再采样和筛选若干轮
+
+CEM 的这一步重拟合，使模型同时承担两种作用：给当前候选评分，并通过精英集合决定以后到哪里搜索。模型即使冻结，自己产生的查询分布仍会变化。Obst 与 Stolzenburg（2026 预印本）保存不同模型产生的候选池，再交叉评分：固定候选池比较评分器，固定评分器比较候选来源。于是，池内排序准确但所有候选都差，与池内已有好方案却选错，可以分别诊断。
+
+为检验早期筛选的后果，他们从相同初始候选池分叉，只将首轮模型精英换成模拟器实际成本选出的精英；后续恢复原评分器并匹配随机采样。所测 Walker/Cheetah 条件下，干预降低了最终选中动作序列的实际成本。这个实验依赖每个候选从同一物理状态重置执行；把它转成可部署方法，还须去掉该 oracle，并测闭环重规划回报。[原文 §3–4、§7](https://arxiv.org/html/2610.00921v1)。
 
 MCTS 则根据已展开节点的结果，把有限预算投向更有希望或更不确定的分支。一次 simulation 通常分为 selection、expansion/evaluation、backup 三步。Q 估计告诉我们已知收益，先验概率和访问次数给探索项。下面是常见 PUCT 型选择结构，不是所有 MCTS 的唯一定义。
 
@@ -626,6 +634,16 @@ Dyna 的五状态小链会学到贪心状态值 $[0.729,0.81,0.9,1,0]$。训练�
 | 环境长期变化且无任务边界 | 近期校准 + 预算化规划 + 主动验证 | 模型、表示、技能同时漂移无法归因 |
 
 非平稳 Dyna 的经典动机是：模型未报告变化，不代表世界未变化。可用距离上次尝试的时间等信号鼓励真实验证被长期忽略的动作，例如 Dyna-Q+ 类方法在模型规划 reward 中增加与未尝试时长相关的 bonus。但该 bonus 是探索设计，不是新的真实 reward；评估仍应采用环境原 reward，并把额外探索成本计入。
+
+真实验证之后，还要决定用哪些经验修正模型。Yang 等（2026 预印本）比较完整历史与近期窗口：较大的永久动力学变化下，旧数据可能拖慢适应；旧动力学复现时，同一批数据又有用。一个标量估计例子说明这种权衡。设样本相互独立、各自无偏于所属动力学参数，单样本方差均为 $\sigma^2$，两参数相差 $M$：
+
+$$
+\mathcal E(\beta)=\beta^2M^2+\frac{\beta^2\sigma^2}{n_o}+\frac{(1-\beta)^2\sigma^2}{n_f},\qquad \beta^*=\frac{\sigma^2/n_f}{M^2+\sigma^2/n_o+\sigma^2/n_f}
+$$
+
+$\beta$ 是旧样本均值的权重，$n_o,n_f>0$，$\sigma^2>0$。第一项是偏差平方，后两项是方差；令导数为零得 $\beta^*$。这是简化估计问题，深度控制还包含访问分布和策略更新。
+
+其 DreamerV3/TD-MPC2 实验中，复现条件下删旧数据的代价较一致，永久变化后的收益则依算法和条件而异。论文的执行器响应选择器用完整轨迹事后分析；在线系统还需仅用过去数据决定保留。这把“发现变化”推进为更精确的问题：哪些旧经验已失配，哪些经验可能再次需要？[原文 §III–VII](https://arxiv.org/html/2609.18167v1)。
 
 研究上更有辨识力的问题是：“每步有限 B 次计算，应优先验证哪个模型、更新哪个技能模型、还是改进哪个价值？”这连接了变化检测、价值相关模型误差、元学习计算分配与长期知识维护。把所有预算都放进更大模型，并不能自动解决这一调度问题。
 
@@ -1173,6 +1191,10 @@ python3 examples/knowledge_algorithms_lab.py planning
 <a id="lesson-sources"></a>
 
 ## 参考文献与实现
+
+- [Obst & Stolzenburg — In CEM, a World Model Is Also a Proposal Mechanism · 2026 预印本](https://arxiv.org/html/2610.00921v1)：交叉评分与首轮精英干预，分别检查筛选和候选生成。
+
+- [Yang et al. — Characterizing Replay Retention Under Dynamics Shift in Model-Based RL · 2026 预印本](https://arxiv.org/html/2609.18167v1)：永久与复现变化下的经验保留；标量偏差—方差分析。
 
 - [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：第 7、8、12、13 章；期望备份、资格迹、策略梯度与算法条件。
 

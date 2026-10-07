@@ -1,5 +1,61 @@
 {
   "figures": {
+    "russek-maze-tasks": {
+      "id": "russek-maze-tasks",
+      "title": "潜伏学习与绕路：分别改变奖励和通道",
+      "src": "/crl-figures/russek-2017-figure-2.png",
+      "width": 4040,
+      "height": 1834,
+      "alt": "Russek 等论文图 2：左侧迷宫标出起点 S 和后来出现奖励的位置 R；右侧有上下两条通路，中间短路的 B 处将被封堵。",
+      "authors": "Evan M. Russek、Ida Momennejad、Matthew M. Botvinick、Samuel J. Gershman、Nathaniel D. Daw",
+      "paper": "Predictive representations can link model-based reinforcement learning to model-free mechanisms",
+      "figureLabel": "Figure 2",
+      "version": "PLOS Computational Biology 正式版（2017）",
+      "sourceUrl": "https://doi.org/10.1371/journal.pcbi.1005768",
+      "figureUrl": "https://doi.org/10.1371/journal.pcbi.1005768.g002",
+      "originalImageUrl": "https://journals.plos.org/ploscompbiol/article/figure/image?download&size=large&id=10.1371/journal.pcbi.1005768.g002",
+      "license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "evidenceUrl": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005768",
+        "notice": "© 2017 Russek et al. 原论文按 Creative Commons Attribution 4.0 许可发布。"
+      },
+      "reproduction": "直接保存期刊提供的高清 PNG；未裁剪或修改。",
+      "reading": "先看奖励出现后是否能从远处起点找到它，再看短路封堵后是否会改走另一条路。这两种操作分别改变奖励知识与转移知识。",
+      "limits": "图是计算研究使用的网格任务；图中的鼠与食物是示意符号，结果属于论文的算法模拟。",
+      "provenance": {
+        "retrieved": "2026-10-07",
+        "sha256": "e79799572e4f651225b9d8792af11d1d4cc21cc94c4fc6b221c1a07888155d29"
+      }
+    },
+    "russek-sr-values": {
+      "id": "russek-sr-values",
+      "title": "预测地图学到了什么：价值与策略的原始结果图",
+      "src": "/crl-figures/russek-2017-figure-4.png",
+      "width": 3735,
+      "height": 3357,
+      "alt": "Russek 等图 4：灰度表示中位数价值，箭头表示隐含策略。a 与 b 比较局部奖励学习后表格 TD 与 SR-TD 的价值；c 展示后继链；d 展示 SR-TD 在封路后的旧方向。",
+      "authors": "Evan M. Russek、Ida Momennejad、Matthew M. Botvinick、Samuel J. Gershman、Nathaniel D. Daw",
+      "paper": "Predictive representations can link model-based reinforcement learning to model-free mechanisms",
+      "figureLabel": "Figure 4",
+      "version": "PLOS Computational Biology 正式版（2017）",
+      "sourceUrl": "https://doi.org/10.1371/journal.pcbi.1005768",
+      "figureUrl": "https://doi.org/10.1371/journal.pcbi.1005768.g004",
+      "originalImageUrl": "https://journals.plos.org/ploscompbiol/article/figure/image?download&size=large&id=10.1371/journal.pcbi.1005768.g004",
+      "license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "evidenceUrl": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005768",
+        "notice": "© 2017 Russek et al. 原论文按 Creative Commons Attribution 4.0 许可发布。"
+      },
+      "reproduction": "直接保存期刊提供的高清 PNG；保留四个面板、灰度和箭头，未重算或修改数据。",
+      "reading": "比较 a、b 的非局部价值变化，再看 d 中仍指向封堵通道的箭头。论文两种方法均允许一步前瞻；灰度是跨模拟的中位数价值。",
+      "limits": "结果针对论文给定的局部再训练与首次测试协议。带重放或重新计算后继表示的方法应另作比较。",
+      "provenance": {
+        "retrieved": "2026-10-07",
+        "sha256": "397663bc7e921cadbf4837d4c4dfc45fdf9099596c2f877b455a4a0cbde32efc"
+      }
+    },
     "forager-world": {
       "id": "forager-world",
       "title": "Forager：全局世界与智能体能看到的局部",
@@ -114,6 +170,12 @@
     }
   },
   "placements": {
+    "supplement-context": {
+      "context-transfer-boundaries": [
+        "russek-maze-tasks",
+        "russek-sr-values"
+      ]
+    },
     "worlds": {
       "worlds-information": [
         "forager-world"

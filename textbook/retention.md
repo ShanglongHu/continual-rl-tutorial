@@ -292,6 +292,10 @@ $$
 
 ## 6 · 稳定性与适应性的二次例子
 
+![新旧任务的两个抛物线损失，以及保留权重零、一、五对应的三个参数位置。](https://yingwen.io/crl-figures/concept-research-retention-conflict.svg)
+
+上方两条曲线使用相同参数轴。下方每行标出一个加权联合目标的精确最小点；增加旧任务权重把参数拉向右侧。它改变的是优化目标，而不只是优化速度。计算脚本：research-mechanisms.mjs。
+
 $$
 L(w)=\tfrac12(w+1)^2+\tfrac\kappa2(w-1)^2,\qquad \frac{dL}{dw}=(w+1)+\kappa(w-1),\qquad w_*=\frac{\kappa-1}{\kappa+1}
 $$

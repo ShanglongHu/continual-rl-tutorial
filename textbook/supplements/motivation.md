@@ -22,6 +22,18 @@
 
 测试不再提供食物，排除了必须在测试中重新体验动作后果才能减少按压的解释。结果支持动物利用了关于结果身份及其当前价值的信息。但它不独自说明这种信息由在线树搜索、关联提取还是其他机制组合使用。还要检验食物厌恶是否确实形成，以及运动能力和整体活动是否受损。
 
+![三阶段装置示意：杠杆产生食物、没有杠杆时食物与不适配对、恢复杠杆但不给食物。下方把已保存的动作结果关系与旧动作价值缓存分开。](https://yingwen.io/crl-figures/mind-psych3-outcome-devaluation.svg)
+
+按结果贬值范式原创绘制。图中展示目标食物贬值组；原实验还用另一种食物贬值作对照。下方 1→0 是独立的一步算例，虚线表示内部读取，不是重新执行动作。未画按压次数或拟合动物数据。[算例代码](https://yingwen.io/crl-code/figures/psych-learning-round3.mjs)。
+
+用最小模型检查这个推断。动作 a 确定产生结果 o，原来 $u(o)=1$，后来单独获知 $u(o)=0$。若保存了关系 $p(o\mid a)=1$，可以在测试前重算 $Q(a)=p(o\mid a)u(o)=0$。若只保存旧动作值 $Q(a)=1$，且贬值经验没有触发对这个缓存的更新，那么首次测试仍读取 1。分歧在于新结果知识能否到达动作评价。它不在于测试时是否调用了名为“规划”的程序。
+
+因此，需要第二种改变来继续区分算法。[Momennejad 等（2017）](https://gershmanlab.com/pubs/Momennejad17.pdf)先让人学习两条多步路径，再只从路径中段开始接触变化：一组改变终点奖励，另一组改变中段转移。测试再次比较两个起点，此时不给新结果。奖励重估后的偏好改变较大；转移重估也有效，但较弱。后一结果很重要：人并非完全不能更新转移关系。
+
+这两个操作要求不同的信息传播。只存起点总价值、只从当前真实经历的状态作局部更新时，两种中段变化都不能立即改写起点。保存未来访问预测并单独保存奖励，可以直接重估奖励；中段改道却使旧访问预测也失效。完整模型规划能够处理两种变化，但还要计入模型学习误差和计算成本。原文用这些受限模型的不同预测解释行为；“能贬值”本身不是完整世界模型的鉴别标签。
+
+对 CRL，这是一组很实用的思想实验。先让系统学会路线，再只给终点新信息，最后在禁止继续训练的条件下测第一次起点选择。随后把奖励变化替换为转移变化，并给同样经验与计算预算。两次测试共同回答：知识存在哪里，什么改变能触发远处更新，以及表现恢复究竟来自重新交互还是内部计算。
+
 <a id="contingency-habit"></a>
 
 ## 3 · 结果仍然好，动作却不再必要
@@ -58,9 +70,49 @@ $$
 
 Keramati 与 Gutkin 将奖励定义为内部状态朝生理调节点改善的量，并研究它如何支持预测性调节。该模型把“获取结果”和“维持生理状态”联系起来，而不是把需要视为动作价值之外的附注。其结论依赖特定驱力函数、结果模型和时间目标。它不是所有奖励都等于缺乏减少的实验证明，也没有免除设计者选择调节点与调节尺度的责任。[Keramati 与 Gutkin，2014](https://elifesciences.org/articles/04811)
 
+<a id="need-revaluation"></a>
+
+## 6 · 盐还没有重新尝到，线索为何已改变意义？
+
+结果贬值通常包含对结果的新体验。更尖锐的问题是：身体需要改变之后，是否一定要重新尝到结果，才知道它值得追求？[Tindell 等（2009）](https://pmc.ncbi.nlm.nih.gov/articles/PMC2792765/)先让大鼠学习不同声音分别预告蔗糖、高浓度盐水和无结果；高浓度盐水在正常状态下引出厌恶反应。诱导新的钠缺乏状态后，测试先只放声音，随后才给实际味觉刺激。
+
+关键观察是在还没重新尝到盐水的线索测试中，腹侧苍白球对盐线索的反应已经增强。蔗糖与无结果线索提供选择性对照，后续味觉反应用来确认盐水在新状态下的意义发生变化。论文跨日分析不假定记录到的是同一批细胞。这支持身体状态能即时重估已有线索意义；神经反应并不直接测量人的主观“想要”，也没有识别出唯一的规划算法。
+
+用一个原创运输例子区分“后果知识”与“后果价值”。动作 A 到达补水站，B 到达补盐站，单步结果特征分别为 $\phi_A=(1,0)$、$\phi_B=(0,1)$。若需要权重从 $w=(3,1)$ 变为 $(1,4)$，在后果不变的条件下，$Q(A)=\phi_A^\top w$ 从 3 变为 1，$Q(B)$ 从 1 变为 4；无需重新走路也能改变排序。若系统只存了旧标量 3 与 1，却没有结果身份或状态条件，就缺少这样重估的依据。这里的数值和线性效用是教学假设，不是盐实验拟合结果。
+
+多步决策可以用已知模型重新规划，也可以在奖励线性分解及动力学稳定等条件下，重估已有策略的后继特征。这两种实现都还要解决策略选择与覆盖：未被旧知识区分的结果，不能靠更换价值权重重新生出来。盐实验提出了功能要求，没有替人工系统选择某一种数据结构。
+
+![上半部显示声音与盐水关联训练、钠缺乏、先测声音后测盐水的时间顺序；下半部显示饮水的口腔信号先于血液恢复影响调节。](https://yingwen.io/crl-figures/mind-learning-motivation.svg)
+
+原创实验逻辑示意，非数据图。上半部依据 Tindell 等的测试顺序隔离新状态中的再次品尝；下半部依据 Zimmerman 等区分快速摄入线索与较慢体液变化。两个范式检验不同功能，不能拼成同一条已证实的脑内算法。
+
+<a id="anticipatory-regulation"></a>
+
+## 7 · 停止饮水，不必等到血液恢复
+
+[Zimmerman 等（2016）](https://pmc.ncbi.nlm.nih.gov/articles/PMC5161740/)用钙信号记录小鼠穹窿下器官 SFO 中的 Nos1 神经元。饮水开始后活动迅速下降，而血液渗透压尚未恢复；只看到水或对空饮水管作舔舐运动不能解释这一变化。摄入高渗液体可先引起下降、随后出现纠正；进食则迅速提高活动，抑制这些细胞会减少伴随进食的饮水。
+
+把这些对照合起来，得到一个具体结论：这类细胞整合摄入相关信号与体液信息，使调节可以提前发生。它们并非只读取当下血液偏差。但“提前”不等于已经证明了学习到的显式世界模型：先天通路、经验关联与其他前馈机制也可能实现它。钙活动、饮水量与主观口渴更不能直接互换。
+
+可以手算为什么延迟会改变控制。假设水箱每拍消耗 1 单位，启动补给后两拍才到账 4 单位，安全下限是 1。当前库存为 3 时启动，到账前依次为 2、1；等到库存为 1 才启动，就可能先跌到 0。控制器必须把在途补给、消耗速度与未来需求纳入状态。若它只看当前偏差，再高的反应增益也不能消除到账延迟。这个工程算例说明预测对调节的用途，不主张水箱和 SFO 具有相同实现。
+
+<a id="homeostatic-objective"></a>
+
+## 8 · “减少偏差”要比较整条路径
+
+为检查奖励定义，另设一个简化记账模型。内部状态为 $d_t$，给定非负偏差函数 $D(d_t)$，记 $D_t=D(d_t)$，并把一步奖励定义为 $r_{t+1}=D_t-D_{t+1}$。这包含该步所有内部变化，是本节算例的定义；它不等于已识别出的生物奖励函数。展开有限 $T$ 步回报，邻项相消得到：
+
+$$
+\sum_{t=0}^{T-1}\gamma^t(D_t-D_{t+1})=D_0-(1-\gamma)\sum_{t=1}^{T-1}\gamma^{t-1}D_t-\gamma^{T-1}D_T,\qquad 0<\gamma\le 1.
+$$
+
+D 的量纲决定奖励量纲。这个代数恒等式只说明所定义目标如何评价路径；不是生理稳定性定理。有限期限的终点项必须保留。
+
+路径甲的偏差为 $(4,1,0)$，乙为 $(4,9,0)$。不折扣时两条路径总奖励同为 4，中途的巨大偏差被完全抵消；取 $\gamma=0.9$，甲为 $3+0.9\times1=3.9$，乙为 $-5+0.9\times9=3.1$。折扣使较早减小偏差更有利，但仍不把偏差上限变成硬约束。若偏差 9 已意味着失效，必须另行规定可行状态或终止后果。Keramati 与 Gutkin 对折扣的讨论提醒我们检查这一条件；不能由“有稳态奖励”直接推断系统在每一时刻都安全。
+
 <a id="continual-bridge"></a>
 
-## 6 · 持续智能体需要区分三种变化
+## 9 · 持续智能体需要区分三种变化
 
 第一种变化是世界关系变了：原有动作不再到达预期结果。第二种是需要变了：结果仍能得到，却不再值得追求。第三种是使用知识的条件变了：经验仍然保留，但当前没有被提取或执行。三者都可能使回报下降，解决办法却不应相同。
 
@@ -89,30 +141,42 @@ Keramati 与 Gutkin 将奖励定义为内部状态朝生理调节点改善的量
 
 ## 原始材料与阅读顺序
 
-1. [Corbit 与 Balleine（2005）· General and outcome-specific Pavlovian-instrumental transfer](https://pubmed.ncbi.nlm.nih.gov/15673677/)
+1. [Momennejad 等（2017）· The successor representation in human reinforcement learning](https://gershmanlab.com/pubs/Momennejad17.pdf)
+
+   图 3 给出只重学路径中段的设计，图 4–5 比较奖励与转移重估。两种操作都能改变人的偏好，但程度不同。后继表示、局部缓存和模型规划在这里产生不同的条件性预测。
+
+2. [Corbit 与 Balleine（2005）· General and outcome-specific Pavlovian-instrumental transfer](https://pubmed.ncbi.nlm.nih.gov/15673677/)
 
    读两种结果与两类损伤的比较。支持一般动机和结果特异性影响可以分离；不能把一个脑区等同于一个完整控制算法。
 
-2. [Adams 与 Dickinson（1981）· Instrumental Responding following Reinforcer Devaluation](https://journals.sagepub.com/doi/10.1080/14640748108400816)
+3. [Adams 与 Dickinson（1981）· Instrumental Responding following Reinforcer Devaluation](https://journals.sagepub.com/doi/10.1080/14640748108400816)
 
    抓住非条件性食物对照和无奖励测试。支持行为可使用重新评价的结果信息；并不指定这些信息的具体存储与计算方式。
 
-3. [Hammond（1980）· The effect of contingency upon the appetitive conditioning of free-operant behavior](https://onlinelibrary.wiley.com/doi/10.1901/jeab.1980.34-297)
+4. [Hammond（1980）· The effect of contingency upon the appetitive conditioning of free-operant behavior](https://onlinelibrary.wiley.com/doi/10.1901/jeab.1980.34-297)
 
    注意原实验用水强化，并分别安排响应与无响应时的概率。支持关系退化不同于简单停止强化；仍需考虑总强化率等因素。
 
-4. [Dickinson、Nicholas 与 Adams（1983）· The Effect of the Instrumental Training Contingency on Susceptibility to Reinforcer Devaluation](https://doi.org/10.1080/14640748308400912)
+5. [Dickinson、Nicholas 与 Adams（1983）· The Effect of the Instrumental Training Contingency on Susceptibility to Reinforcer Devaluation](https://doi.org/10.1080/14640748308400912)
 
    比较比率、间隔训练和不同测试安排。学习史影响贬值敏感性；不能由不敏感直接判定唯一的 model-free 机制。
 
-5. [Niv、Daw、Joel 与 Dayan（2007）· Tonic dopamine: opportunity costs and the control of response vigor](https://nivlab.princeton.edu/wp-content/uploads/sites/938/2025/10/s00213-006-0502-4.pdf)
+6. [Niv、Daw、Joel 与 Dayan（2007）· Tonic dopamine: opportunity costs and the control of response vigor](https://nivlab.princeton.edu/wp-content/uploads/sites/938/2025/10/s00213-006-0502-4.pdf)
 
    先读快慢动作的成本平衡，再读对多巴胺的解释。这是计算模型及神经编码假说，不是奖励率等于多巴胺浓度的测量定律。
 
-6. [Zénon、Devesse 与 Olivier（2016）· Dopamine Manipulation Affects Response Vigor Independently of Opportunity Cost](https://pmc.ncbi.nlm.nih.gov/articles/PMC6601940/)
+7. [Zénon、Devesse 与 Olivier（2016）· Dopamine Manipulation Affects Response Vigor Independently of Opportunity Cost](https://pmc.ncbi.nlm.nih.gov/articles/PMC6601940/)
 
    读省时间与增加奖励两种任务的分离。结果限制了所检验的机会成本解释；药理操作并不能隔离全部多巴胺信号成分。
 
-7. [Keramati 与 Gutkin（2014）· Homeostatic reinforcement learning for integrating reward collection and physiological stability](https://elifesciences.org/articles/04811)
+8. [Keramati 与 Gutkin（2014）· Homeostatic reinforcement learning for integrating reward collection and physiological stability](https://elifesciences.org/articles/04811)
 
    读内部状态、驱力与奖励的定义及预测性调节情境。等价关系有模型条件；不能将其推广为所有动机或人类价值的统一实证结论。
+
+9. [Tindell 等（2009）· Dynamic Computation of Incentive Salience](https://pmc.ncbi.nlm.nih.gov/articles/PMC2792765/)
+
+   读图 1 的先线索后结果测试、神经分析中的跨日单位处理及盐缺乏结果。关键是新身体状态下尚未重新品尝，而不是所有先验经验均不存在。
+
+10. [Zimmerman 等（2016）· Thirst neurons anticipate the homeostatic consequences of eating and drinking](https://pmc.ncbi.nlm.nih.gov/articles/PMC5161740/)
+
+   读图 2–4 的饮水、空舔、摄入液体及进食对照。前馈调节的证据不单独决定其由先天线路还是学习模型实现。

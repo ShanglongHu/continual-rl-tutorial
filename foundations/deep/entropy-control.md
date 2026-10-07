@@ -161,6 +161,12 @@ $$
 
 ## 3 · 重参数化与 tanh 的 Jacobian
 
+先看一维动作。Gaussian 可以采到任意实数，但执行器只允许一个有限区间。tanh 把两端的样本压到边界附近；同一批概率挤进更短的区间，密度就要变高。随后把动作范围放大二倍，同一份概率分布到二倍宽度，密度又要减半。动作变了坐标，概率没有凭空增加或消失。
+
+![标准高斯、tanh有界动作及二倍物理动作的概率密度和等概率着色区间](https://yingwen.io/crl-figures/concept-deep3-sac-density.svg)
+
+取 $u\sim\mathcal N(0,1)$。三块着色区间由同一事件 $-0.5\le u\le0.5$ 逐次映射而来，概率相同。横轴分别是三个坐标，都按相同数值比例绘制；纵轴是对应密度，范围相同。因此三块着色面积也相同。在零点 tanh 导数为一，所以前两行密度相等；二倍缩放后密度减半，log-density 再减 $\log2$。这是 SAC Appendix C 的变量变换加上本章物理动作缩放算例，不是训练所得动作分布。
+
 $$
 \begin{gathered}\epsilon\sim\mathcal N(0,I)\\u=\mu_\theta(s)+\sigma_\theta(s)\odot\epsilon\\a=\tanh u\\\log\pi_\theta(a\mid s)=\sum_j\left[\log\mathcal N(u_j;\mu_j,\sigma_j^2)-\log(1-\tanh^2u_j)\right]\end{gathered}
 $$

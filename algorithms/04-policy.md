@@ -130,6 +130,10 @@ $$
 
 使用 ∇p=p∇log p；环境项与 $\theta$ 无关，只有策略项留下。连续空间将求和换积分，还需要可交换求导与积分等正则条件。
 
+![两步共享 Bernoulli 策略的四条轨迹概率，以及解析目标曲线上的一次梯度更新。](https://yingwen.io/crl-figures/concept-classic-policy-gradient.svg)
+
+分支宽度是动作概率，末端数字是完整轨迹概率。这个独立例子不给策略阶段信息，仅动作 1 后接动作 0 的序列获奖；折扣为 0.5。参数从 0.7 沿精确期望梯度更新到约 0.513553，使动作 1 概率从 0.668 降到 0.626。曲线是解析目标，不是采样训练表现。
+
 $$
 \nabla J=\mathbb E[\sum_t\nabla\log\pi_\theta(A_t\mid S_t)G_t],\qquad G_t=\sum_{k=t}^{T-1}R_{k+1}
 $$
@@ -205,6 +209,10 @@ r_t(\theta)=\exp[\log\pi_\theta(A_t\mid S_t)-\log\pi_{\mathrm{old}}(A_t\mid S_t)
 $$
 
 比率修正旧状态上的动作分布；它不是完整轨迹重要性采样，也没修正当前策略诱导的新状态分布。PPO 因此是局部代理优化，不能把每次 loss 降低解释成严格策略改善。
+
+![正优势和负优势对应的 PPO 裁剪函数，两者的平坦区位于不同侧。](https://yingwen.io/crl-figures/learning-classic-ppo-clip.svg)
+
+横轴是新旧动作概率比。正优势停止奖励过大的概率增幅，负优势停止奖励过大的概率降幅；错误方向的梯度仍保留。图中的分段函数与本节 min 公式对应。
 
 | 优势符号 | 停止继续奖励的区间 | 仍然保留梯度的情形 |
 | --- | --- | --- |

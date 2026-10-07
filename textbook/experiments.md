@@ -304,6 +304,10 @@ python3 implementations/classic/td0.py --steps 1200 --seeds 0 1 2 3 4 --out resu
 
 ## 6 · 配对 bootstrap 与区间含义
 
+![三组成对生命期各自汇总为一个分数差，再按整对索引三、三、一进行重采样。](https://yingwen.io/crl-figures/concept-research-experiment-pairing.svg)
+
+每条点列代表一次完整运行，而不是八个独立样本。分数采用第 7 节可手算的三对数值；颜色标识配对。重采样改变整次运行的组成，不打散同一轨迹的时间点。图示一次重采样，没有由它计算置信区间。
+
 把每个完整 run 汇总成预定主指标，得到成对分数。一次 bootstrap 从这些配对索引中有放回抽取与原样本相同数量的索引，再计算差值均值。重复这个过程，用重采样分布的分位数构造 percentile 区间。
 
 $$

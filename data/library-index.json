@@ -6448,7 +6448,8 @@
     ],
     "chapterIds": [
       "objectives",
-      "credit"
+      "credit",
+      "options"
     ]
   },
   {
@@ -6611,6 +6612,27 @@
   },
   {
     "id": "CH-objectives-11",
+    "title": "Khetarpal、Riemer、Rish 与 Precup · Towards Continual Reinforcement Learning: A Review and Perspectives",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "第 6.2–6.3 节将累计回报与保持、迁移、技能复用等探测指标分开讨论；本章的窗口指标和小迷宫数值由原创脚本独立定义、计算。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://arxiv.org/pdf/2012.13490",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/objectives/#lesson-sources",
+    "sourceIds": [
+      "CH-objectives-11"
+    ],
+    "chapterIds": [
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-objectives-12",
     "title": "Sutton、Bowling、Pilarski · The Alberta Plan for AI Research",
     "kind": "论文",
     "topic": "objectives",
@@ -6624,7 +6646,7 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/objectives/#lesson-sources",
     "sourceIds": [
-      "CH-objectives-11"
+      "CH-objectives-12"
     ],
     "chapterIds": [
       "objectives",
@@ -8828,7 +8850,28 @@
     ]
   },
   {
-    "id": "CH-gvf-13",
+    "id": "CH-gvf-12",
+    "title": "Mahmood, Yu, White & Sutton · Emphatic Temporal-Difference Learning",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "§3 式 (10)–(13) 给出 interest、follow-on 与资格迹的时间索引；本章图示以一条行为轨迹核对上一与当前重要性比。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1507.01569",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "sourceIds": [
+      "CH-gvf-12"
+    ],
+    "chapterIds": [
+      "gvf"
+    ]
+  },
+  {
+    "id": "CH-gvf-14",
     "title": "RLPark · GTDLambda.java 固定版本",
     "kind": "代码",
     "topic": "prediction",
@@ -8842,14 +8885,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-13"
+      "CH-gvf-14"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-14",
+    "id": "CH-gvf-15",
     "title": "RLPark · Horde.java",
     "kind": "代码",
     "topic": "prediction",
@@ -8863,14 +8906,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-14"
+      "CH-gvf-15"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-19",
+    "id": "CH-gvf-20",
     "title": "Janjua et al. · GVFs in the Real World · Machine Learning",
     "kind": "论文",
     "topic": "prediction",
@@ -8892,7 +8935,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/AB-WATER-GVF-2024/",
     "sourceIds": [
-      "CH-gvf-19",
+      "CH-gvf-20",
       "AB-WATER-GVF-2024"
     ],
     "chapterIds": [
@@ -8902,7 +8945,7 @@
     ]
   },
   {
-    "id": "CH-gvf-20",
+    "id": "CH-gvf-21",
     "title": "Yan et al. · GVFs for Remaining Useful Life and Failure-Mode Prediction",
     "kind": "论文",
     "topic": "prediction",
@@ -8916,14 +8959,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-20"
+      "CH-gvf-21"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-25",
+    "id": "CH-gvf-26",
     "title": "NeurIPS 2020 原文",
     "kind": "论文",
     "topic": "prediction",
@@ -8945,7 +8988,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-25"
+      "CH-gvf-26"
     ],
     "chapterIds": [
       "gvf",
@@ -8954,7 +8997,7 @@
     ]
   },
   {
-    "id": "CH-gvf-26",
+    "id": "CH-gvf-27",
     "title": "Proper Value Equivalence · NeurIPS 2021",
     "kind": "论文",
     "topic": "prediction",
@@ -8968,7 +9011,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-26"
+      "CH-gvf-27"
     ],
     "chapterIds": [
       "gvf",
@@ -8977,7 +9020,7 @@
     ]
   },
   {
-    "id": "CH-gvf-28",
+    "id": "CH-gvf-29",
     "title": "Touati & Ollivier · Learning One Representation to Optimize All Rewards",
     "kind": "论文",
     "topic": "prediction",
@@ -8991,7 +9034,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-28"
+      "CH-gvf-29"
     ],
     "chapterIds": [
       "gvf",
@@ -8999,7 +9042,7 @@
     ]
   },
   {
-    "id": "CH-gvf-29",
+    "id": "CH-gvf-30",
     "title": "Modayil, White & Sutton — Multi-timescale Nexting",
     "kind": "论文",
     "topic": "prediction",
@@ -9021,7 +9064,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/omx-nexting/",
     "sourceIds": [
-      "CH-gvf-29",
+      "CH-gvf-30",
       "omx-nexting"
     ],
     "chapterIds": [
@@ -9031,7 +9074,7 @@
     ]
   },
   {
-    "id": "CH-gvf-30",
+    "id": "CH-gvf-31",
     "title": "Sutton et al. · Horde（AAMAS 2011）",
     "kind": "论文",
     "topic": "prediction",
@@ -9045,7 +9088,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-30"
+      "CH-gvf-31"
     ],
     "chapterIds": [
       "gvf",
@@ -9055,7 +9098,7 @@
     ]
   },
   {
-    "id": "CH-gvf-31",
+    "id": "CH-gvf-32",
     "title": "Wan et al. · Planning with Expectation Models",
     "kind": "论文",
     "topic": "prediction",
@@ -9069,7 +9112,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-31"
+      "CH-gvf-32"
     ],
     "chapterIds": [
       "gvf"
@@ -10268,7 +10311,7 @@
     "title": "Elsayed, Lupu, Vasan & Mahmood · Stream-X，2026 修订版",
     "kind": "论文",
     "topic": "streaming",
-    "description": "逐坐标 StreamingOptimizer、layer-aware 初始化及 Stream-RAC；附录 B.2 解释相对于早期方法的变化。",
+    "description": "2026-09-21 v3；逐坐标 StreamingOptimizer、layer-aware 初始化及 Stream-RAC。附录 C 对照早期版本，§4–5 给出变化环境与设备端学习协议。",
     "question": "数据能否重复访问？每步存储和计算是否有界？归一化与输出尺度控制怎样影响一次更新？",
     "links": [
       {
@@ -10291,7 +10334,28 @@
     ]
   },
   {
-    "id": "CH-streaming-11",
+    "id": "CH-streaming-10",
+    "title": "Vitchutripop 等 · An Analysis of Streaming Deep Reinforcement Learning for Adaptive Continual Learning in Robotics",
+    "kind": "论文",
+    "topic": "streaming",
+    "description": "2026-09-23 预印本。§III–V 与表 I、III：预训练后一次改变的模拟适应，区分峰值和适应期均值，并核查优化器与资格迹同时变化的对照。",
+    "question": "数据能否重复访问？每步存储和计算是否有界？归一化与输出尺度控制怎样影响一次更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2609.28807v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
+    "sourceIds": [
+      "CH-streaming-10"
+    ],
+    "chapterIds": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-streaming-12",
     "title": "Welford · Note on a Method for Calculating Corrected Sums of Squares and Products",
     "kind": "论文",
     "topic": "streaming",
@@ -10305,14 +10369,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-11"
+      "CH-streaming-12"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-13",
+    "id": "CH-streaming-14",
     "title": "De Asis & Sutton · An Idiosyncrasy of Time-discretization in RL · RLC 2024",
     "kind": "论文",
     "topic": "streaming",
@@ -10338,7 +10402,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/OM-TIME-2024/",
     "sourceIds": [
-      "CH-streaming-13",
+      "CH-streaming-14",
       "OM-TIME-2024"
     ],
     "chapterIds": [
@@ -10349,7 +10413,7 @@
     ]
   },
   {
-    "id": "CH-streaming-14",
+    "id": "CH-streaming-15",
     "title": "Time-discretization · 原文式 (7)",
     "kind": "论文",
     "topic": "streaming",
@@ -10363,7 +10427,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-14"
+      "CH-streaming-15"
     ],
     "chapterIds": [
       "streaming",
@@ -10372,7 +10436,7 @@
     ]
   },
   {
-    "id": "CH-streaming-15",
+    "id": "CH-streaming-16",
     "title": "Kris De Asis · Design for Learning · 2025",
     "kind": "论文",
     "topic": "streaming",
@@ -10386,7 +10450,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-15"
+      "CH-streaming-16"
     ],
     "chapterIds": [
       "streaming"
@@ -10793,7 +10857,60 @@
     ]
   },
   {
-    "id": "CH-meta-23",
+    "id": "CH-meta-24",
+    "title": "Burega、Martin、Kapeluck、Bowling：Meta-Gradient Search Control（2024）",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "元梯度调整搜索控制，让模型查询分布服务于真实学习进展；研究模型错误和动态变化下的规划效率。 适用范围：改善查询分配不自动纠正模型，也不保证元学习计算免费；前身与后续论文不能算作两次独立验证。",
+    "question": "规划预算有限且模型不完美时，该把模拟更新花在哪些查询上？ 把查询分布、模型本身与价值学习器分开画出，再检查外层损失使用哪一类真实经验。",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2406.19561v1",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://arxiv.org/abs/2406.19561",
+        "label": "原文"
+      },
+      {
+        "url": "/zh/continual-rl/resource/omx-search-control/",
+        "label": "个人研究脉络与读法"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/resource/omx-search-control/",
+    "sourceIds": [
+      "CH-meta-24",
+      "omx-search-control"
+    ],
+    "chapterIds": [
+      "dyna",
+      "planning",
+      "meta"
+    ]
+  },
+  {
+    "id": "CH-meta-25",
+    "title": "Osband：Planning to Learn（2026，预印本）",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "第 2–3 节区分当前梯度收益与剩余学习预算；实验对象是分类，不是持续控制。",
+    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2610.03667v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
+    "sourceIds": [
+      "CH-meta-25"
+    ],
+    "chapterIds": [
+      "meta"
+    ]
+  },
+  {
+    "id": "CH-meta-26",
     "title": "NeurIPS 2024 原文",
     "kind": "论文",
     "topic": "meta",
@@ -10815,7 +10932,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-23"
+      "CH-meta-26"
     ],
     "chapterIds": [
       "meta",
@@ -10824,7 +10941,7 @@
     ]
   },
   {
-    "id": "CH-meta-24",
+    "id": "CH-meta-27",
     "title": "作者论文 v3",
     "kind": "论文",
     "topic": "meta",
@@ -10838,7 +10955,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-24"
+      "CH-meta-27"
     ],
     "chapterIds": [
       "meta",
@@ -10847,7 +10964,7 @@
     ]
   },
   {
-    "id": "CH-meta-25",
+    "id": "CH-meta-28",
     "title": "Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning · 作者实现",
     "kind": "代码",
     "topic": "meta",
@@ -10865,7 +10982,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-25"
+      "CH-meta-28"
     ],
     "chapterIds": [
       "meta",
@@ -10874,7 +10991,7 @@
     ]
   },
   {
-    "id": "CH-meta-26",
+    "id": "CH-meta-29",
     "title": "RLC 2025 原文",
     "kind": "论文",
     "topic": "meta",
@@ -10888,7 +11005,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-26"
+      "CH-meta-29"
     ],
     "chapterIds": [
       "meta",
@@ -10897,7 +11014,7 @@
     ]
   },
   {
-    "id": "CH-meta-28",
+    "id": "CH-meta-31",
     "title": "MetaOptimize · 2025 定稿原文",
     "kind": "论文",
     "topic": "meta",
@@ -10911,7 +11028,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-28"
+      "CH-meta-31"
     ],
     "chapterIds": [
       "meta",
@@ -10920,14 +11037,14 @@
   },
   {
     "id": "CH-goals-0",
-    "title": "Schaul et al. — Universal Value Function Approximators",
+    "title": "SUN: Reaching for Novelty in Reinforcement Learning · 2026 预印本",
     "kind": "论文",
     "topic": "skills",
-    "description": "目标作为价值函数输入，状态与目标通过共享表示实现泛化；比较原文表示分解与直接拼接输入的实现。",
+    "description": "首次到达价值、乘性目标选择及候选覆盖条件。",
     "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
     "links": [
       {
-        "url": "https://proceedings.mlr.press/v37/schaul15.html",
+        "url": "https://arxiv.org/html/2609.08642v1",
         "label": "原文入口"
       }
     ],
@@ -10941,6 +11058,48 @@
   },
   {
     "id": "CH-goals-1",
+    "title": "Viteri et al. — When Do Intrinsic Rewards Lead to Exploration? · 2026 预印本",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "以反事实历史信息检验内在目标；正文使用定义与闹钟例。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2610.02159v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
+    "sourceIds": [
+      "CH-goals-1"
+    ],
+    "chapterIds": [
+      "goals"
+    ]
+  },
+  {
+    "id": "CH-goals-2",
+    "title": "Schaul et al. — Universal Value Function Approximators",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "目标作为价值函数输入，状态与目标通过共享表示实现泛化；比较原文表示分解与直接拼接输入的实现。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v37/schaul15.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
+    "sourceIds": [
+      "CH-goals-2"
+    ],
+    "chapterIds": [
+      "goals"
+    ]
+  },
+  {
+    "id": "CH-goals-3",
     "title": "Andrychowicz et al. — Hindsight Experience Replay",
     "kind": "论文",
     "topic": "skills",
@@ -10954,7 +11113,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-1"
+      "CH-goals-3"
     ],
     "chapterIds": [
       "goals",
@@ -10963,7 +11122,7 @@
     ]
   },
   {
-    "id": "CH-goals-2",
+    "id": "CH-goals-4",
     "title": "OpenAI Baselines — her_sampler.py",
     "kind": "代码",
     "topic": "skills",
@@ -10977,14 +11136,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-2"
+      "CH-goals-4"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-3",
+    "id": "CH-goals-5",
     "title": "Florensa et al. — Automatic Goal Generation for RL Agents",
     "kind": "论文",
     "topic": "skills",
@@ -10998,14 +11157,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-3"
+      "CH-goals-5"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-4",
+    "id": "CH-goals-6",
     "title": "Goal generation — 作者 rllab-curriculum",
     "kind": "代码",
     "topic": "skills",
@@ -11019,14 +11178,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-4"
+      "CH-goals-6"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-5",
+    "id": "CH-goals-7",
     "title": "Sutton et al. — Reward-Respecting Subtasks",
     "kind": "论文",
     "topic": "skills",
@@ -11040,7 +11199,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-5"
+      "CH-goals-7"
     ],
     "chapterIds": [
       "goals",
@@ -11049,7 +11208,7 @@
     ]
   },
   {
-    "id": "CH-goals-6",
+    "id": "CH-goals-8",
     "title": "Park et al. — HIQL · NeurIPS 2023",
     "kind": "论文",
     "topic": "skills",
@@ -11063,7 +11222,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-6"
+      "CH-goals-8"
     ],
     "chapterIds": [
       "goals",
@@ -11072,7 +11231,7 @@
     ]
   },
   {
-    "id": "CH-goals-7",
+    "id": "CH-goals-9",
     "title": "HIQL 作者实现",
     "kind": "代码",
     "topic": "skills",
@@ -11090,7 +11249,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-7"
+      "CH-goals-9"
     ],
     "chapterIds": [
       "goals",
@@ -11100,7 +11259,7 @@
     ]
   },
   {
-    "id": "CH-goals-8",
+    "id": "CH-goals-10",
     "title": "HIQL 目标采样 — src/gc_dataset.py",
     "kind": "代码",
     "topic": "skills",
@@ -11114,14 +11273,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-8"
+      "CH-goals-10"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-9",
+    "id": "CH-goals-11",
     "title": "HIQL 核心文件 — src/agents/hiql.py",
     "kind": "代码",
     "topic": "skills",
@@ -11135,14 +11294,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-9"
+      "CH-goals-11"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-10",
+    "id": "CH-goals-12",
     "title": "OGBench · ICLR 2025",
     "kind": "论文",
     "topic": "skills",
@@ -11160,7 +11319,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-10"
+      "CH-goals-12"
     ],
     "chapterIds": [
       "goals",
@@ -11169,7 +11328,7 @@
     ]
   },
   {
-    "id": "CH-goals-12",
+    "id": "CH-goals-14",
     "title": "Klissarov et al. — MaestroMotif · ICLR 2025",
     "kind": "论文",
     "topic": "skills",
@@ -11183,7 +11342,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-12"
+      "CH-goals-14"
     ],
     "chapterIds": [
       "goals",
@@ -11192,7 +11351,7 @@
     ]
   },
   {
-    "id": "CH-goals-13",
+    "id": "CH-goals-15",
     "title": "MaestroMotif 作者实现",
     "kind": "代码",
     "topic": "skills",
@@ -11210,7 +11369,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-13"
+      "CH-goals-15"
     ],
     "chapterIds": [
       "reward-design",
@@ -11221,7 +11380,7 @@
     ]
   },
   {
-    "id": "CH-options-1",
+    "id": "CH-options-2",
     "title": "Bacon, Harb & Precup — The Option-Critic Architecture",
     "kind": "论文",
     "topic": "skills",
@@ -11235,14 +11394,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-1"
+      "CH-options-2"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-3",
+    "id": "CH-options-4",
     "title": "Machado et al. — A Laplacian Framework for Option Discovery",
     "kind": "论文",
     "topic": "skills",
@@ -11256,7 +11415,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-3"
+      "CH-options-4"
     ],
     "chapterIds": [
       "options",
@@ -11266,7 +11425,7 @@
     ]
   },
   {
-    "id": "CH-options-5",
+    "id": "CH-options-6",
     "title": "Machado et al. — Eigenoption Discovery through the Deep Successor Representation · ICLR 2018",
     "kind": "论文",
     "topic": "skills",
@@ -11280,14 +11439,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-5"
+      "CH-options-6"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-6",
+    "id": "CH-options-7",
     "title": "Machado et al. — Temporal Abstraction in RL with the Successor Representation · JMLR 2023",
     "kind": "论文",
     "topic": "skills",
@@ -11301,14 +11460,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-6"
+      "CH-options-7"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-7",
+    "id": "CH-options-8",
     "title": "Klissarov & Machado — Deep Covering Options · ICML 2023",
     "kind": "论文",
     "topic": "skills",
@@ -11322,14 +11481,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-7"
+      "CH-options-8"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-8",
+    "id": "CH-options-9",
     "title": "DCEO 作者实现",
     "kind": "代码",
     "topic": "skills",
@@ -11343,14 +11502,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-8"
+      "CH-options-9"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-9",
+    "id": "CH-options-10",
     "title": "Proper Laplacian Representation Learning · ICLR 2024",
     "kind": "论文",
     "topic": "skills",
@@ -11360,38 +11519,6 @@
       {
         "url": "https://arxiv.org/abs/2310.10833",
         "label": "原文入口"
-      },
-      {
-        "url": "/zh/continual-rl/research/#recent-proper-laplacian-representations",
-        "label": "研究问题与方法导读"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
-    "sourceIds": [
-      "CH-options-9"
-    ],
-    "chapterIds": [
-      "state",
-      "options",
-      "exploration",
-      "goals",
-      "gvf",
-      "planning",
-      "dyna",
-      "models"
-    ]
-  },
-  {
-    "id": "CH-options-10",
-    "title": "ALLO 作者实现",
-    "kind": "代码",
-    "topic": "skills",
-    "description": "train_laprepr.py 是训练入口；同时阅读原始变量、对偶乘子与正交约束，而非仅看平滑损失。",
-    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
-    "links": [
-      {
-        "url": "https://github.com/tarod13/laplacian_dual_dynamics",
-        "label": "实现入口"
       },
       {
         "url": "/zh/continual-rl/research/#recent-proper-laplacian-representations",
@@ -11415,6 +11542,38 @@
   },
   {
     "id": "CH-options-11",
+    "title": "ALLO 作者实现",
+    "kind": "代码",
+    "topic": "skills",
+    "description": "train_laprepr.py 是训练入口；同时阅读原始变量、对偶乘子与正交约束，而非仅看平滑损失。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://github.com/tarod13/laplacian_dual_dynamics",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-proper-laplacian-representations",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
+    "sourceIds": [
+      "CH-options-11"
+    ],
+    "chapterIds": [
+      "state",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning",
+      "dyna",
+      "models"
+    ]
+  },
+  {
+    "id": "CH-options-12",
     "title": "Value-Aware Eigenoptions · RLC 2025 workshop",
     "kind": "论文",
     "topic": "skills",
@@ -11436,7 +11595,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/ak-value-aware-eigenoptions/",
     "sourceIds": [
-      "CH-options-11",
+      "CH-options-12",
       "ak-value-aware-eigenoptions"
     ],
     "chapterIds": [
@@ -11447,7 +11606,7 @@
     ]
   },
   {
-    "id": "CH-options-12",
+    "id": "CH-options-13",
     "title": "Park, Rybkin & Levine — METRA · ICLR 2024",
     "kind": "论文",
     "topic": "skills",
@@ -11461,7 +11620,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-12"
+      "CH-options-13"
     ],
     "chapterIds": [
       "options",
@@ -11471,7 +11630,7 @@
     ]
   },
   {
-    "id": "CH-options-13",
+    "id": "CH-options-14",
     "title": "METRA 作者实现",
     "kind": "代码",
     "topic": "skills",
@@ -11489,7 +11648,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-13"
+      "CH-options-14"
     ],
     "chapterIds": [
       "state",
@@ -11501,7 +11660,7 @@
     ]
   },
   {
-    "id": "CH-options-14",
+    "id": "CH-options-15",
     "title": "METRA 核心文件 — iod/metra.py",
     "kind": "代码",
     "topic": "skills",
@@ -11515,14 +11674,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-14"
+      "CH-options-15"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-19",
+    "id": "CH-options-20",
     "title": "Sharma et al. — Dynamics-Aware Unsupervised Discovery of Skills",
     "kind": "论文",
     "topic": "skills",
@@ -11536,14 +11695,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-19"
+      "CH-options-20"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-22",
+    "id": "CH-options-23",
     "title": "Kotamreddy & Machado · A Study of Value-Aware Eigenoptions",
     "kind": "论文",
     "topic": "skills",
@@ -11557,14 +11716,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-22"
+      "CH-options-23"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-23",
+    "id": "CH-options-24",
     "title": "Value-Aware Eigenoptions · workshop接收记录",
     "kind": "论文",
     "topic": "skills",
@@ -11578,14 +11737,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-23"
+      "CH-options-24"
     ],
     "chapterIds": [
       "options"
     ]
   },
   {
-    "id": "CH-options-27",
+    "id": "CH-options-28",
     "title": "NeurIPS 2025 原文与补充材料入口",
     "kind": "论文",
     "topic": "skills",
@@ -11607,7 +11766,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-27"
+      "CH-options-28"
     ],
     "chapterIds": [
       "options",
@@ -11617,7 +11776,7 @@
     ]
   },
   {
-    "id": "CH-options-28",
+    "id": "CH-options-29",
     "title": "Option Keyboard 的经典桥梁",
     "kind": "论文",
     "topic": "skills",
@@ -11631,7 +11790,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/options/#lesson-sources",
     "sourceIds": [
-      "CH-options-28"
+      "CH-options-29"
     ],
     "chapterIds": [
       "options",
@@ -12061,7 +12220,49 @@
     ]
   },
   {
-    "id": "CH-planning-5",
+    "id": "CH-planning-0",
+    "title": "Obst & Stolzenburg — In CEM, a World Model Is Also a Proposal Mechanism · 2026 预印本",
+    "kind": "论文",
+    "topic": "models",
+    "description": "交叉评分与首轮精英干预，分别检查筛选和候选生成。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2610.00921v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
+    "sourceIds": [
+      "CH-planning-0"
+    ],
+    "chapterIds": [
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-planning-1",
+    "title": "Yang et al. — Characterizing Replay Retention Under Dynamics Shift in Model-Based RL · 2026 预印本",
+    "kind": "论文",
+    "topic": "models",
+    "description": "永久与复现变化下的经验保留；标量偏差—方差分析。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2609.18167v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
+    "sourceIds": [
+      "CH-planning-1"
+    ],
+    "chapterIds": [
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-planning-7",
     "title": "Google DeepMind — mctx",
     "kind": "代码",
     "topic": "models",
@@ -12075,14 +12276,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-5"
+      "CH-planning-7"
     ],
     "chapterIds": [
       "planning"
     ]
   },
   {
-    "id": "CH-planning-9",
+    "id": "CH-planning-11",
     "title": "Hansen, Su & Wang — TD-MPC2 · ICLR 2024",
     "kind": "论文",
     "topic": "models",
@@ -12091,30 +12292,6 @@
     "links": [
       {
         "url": "https://arxiv.org/abs/2310.16828",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
-    "sourceIds": [
-      "CH-planning-9"
-    ],
-    "chapterIds": [
-      "planning",
-      "dyna",
-      "models",
-      "options"
-    ]
-  },
-  {
-    "id": "CH-planning-11",
-    "title": "Shehmar et al. — Laplacian Representations for Decision-Time Planning · ICML 2026",
-    "kind": "论文",
-    "topic": "models",
-    "description": "ALPS 正式论文：特征值缩放、区域子目标和短时域规划；实验设定为离线目标条件 RL。",
-    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
-    "links": [
-      {
-        "url": "https://proceedings.mlr.press/v306/shehmar26a.html",
         "label": "原文入口"
       }
     ],
@@ -12131,15 +12308,15 @@
   },
   {
     "id": "CH-planning-13",
-    "title": "Machado Research — ALPS 作者实现",
-    "kind": "代码",
+    "title": "Shehmar et al. — Laplacian Representations for Decision-Time Planning · ICML 2026",
+    "kind": "论文",
     "topic": "models",
-    "description": "原始工程；分别追踪表示训练、模型训练、区域图和评估时规划，并保持作者任务与配置。",
+    "description": "ALPS 正式论文：特征值缩放、区域子目标和短时域规划；实验设定为离线目标条件 RL。",
     "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
     "links": [
       {
-        "url": "https://github.com/machado-research/ALPS",
-        "label": "实现入口"
+        "url": "https://proceedings.mlr.press/v306/shehmar26a.html",
+        "label": "原文入口"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
@@ -12154,7 +12331,31 @@
     ]
   },
   {
-    "id": "CH-planning-14",
+    "id": "CH-planning-15",
+    "title": "Machado Research — ALPS 作者实现",
+    "kind": "代码",
+    "topic": "models",
+    "description": "原始工程；分别追踪表示训练、模型训练、区域图和评估时规划，并保持作者任务与配置。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://github.com/machado-research/ALPS",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
+    "sourceIds": [
+      "CH-planning-15"
+    ],
+    "chapterIds": [
+      "planning",
+      "dyna",
+      "models",
+      "options"
+    ]
+  },
+  {
+    "id": "CH-planning-16",
     "title": "ALPS 高层路径 — planner/hierarchical.py",
     "kind": "代码",
     "topic": "models",
@@ -12168,14 +12369,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-14"
+      "CH-planning-16"
     ],
     "chapterIds": [
       "planning"
     ]
   },
   {
-    "id": "CH-planning-15",
+    "id": "CH-planning-17",
     "title": "ALPS 低层优化 — planner/optimizer.py",
     "kind": "代码",
     "topic": "models",
@@ -12189,7 +12390,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-15"
+      "CH-planning-17"
     ],
     "chapterIds": [
       "planning"
@@ -12490,7 +12691,28 @@
     ]
   },
   {
-    "id": "CH-plasticity-1",
+    "id": "CH-plasticity-0",
+    "title": "Bordne & Biedenkapp — Towards Understanding the Impact of Plasticity Loss on RL in Stochastic Environments · EWRL 2026",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "噪声、局部学习探针与 TD 稳定性的对照实验。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://andrebiedenkapp.github.io/assets/pdf/paper/26-ewrl-plastic.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
+    "sourceIds": [
+      "CH-plasticity-0"
+    ],
+    "chapterIds": [
+      "plasticity"
+    ]
+  },
+  {
+    "id": "CH-plasticity-2",
     "title": "ReDo 作者实现 · Google Dopamine",
     "kind": "代码",
     "topic": "plasticity",
@@ -12508,7 +12730,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
     "sourceIds": [
-      "CH-plasticity-1"
+      "CH-plasticity-2"
     ],
     "chapterIds": [
       "plasticity",
@@ -12517,7 +12739,7 @@
     ]
   },
   {
-    "id": "CH-plasticity-5",
+    "id": "CH-plasticity-6",
     "title": "Abbas et al. · Loss of Plasticity in Continual Deep RL",
     "kind": "论文",
     "topic": "plasticity",
@@ -12531,14 +12753,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
     "sourceIds": [
-      "CH-plasticity-5"
+      "CH-plasticity-6"
     ],
     "chapterIds": [
       "plasticity"
     ]
   },
   {
-    "id": "CH-plasticity-7",
+    "id": "CH-plasticity-8",
     "title": "Lyle et al. · Normalization and effective learning rates in reinforcement learning",
     "kind": "论文",
     "topic": "plasticity",
@@ -12547,29 +12769,6 @@
     "links": [
       {
         "url": "https://papers.nips.cc/paper_files/paper/2024/hash/c04d37be05ba74419d2d5705972a9d64-Abstract-Conference.html",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
-    "sourceIds": [
-      "CH-plasticity-7"
-    ],
-    "chapterIds": [
-      "plasticity",
-      "retention",
-      "deep-value"
-    ]
-  },
-  {
-    "id": "CH-plasticity-8",
-    "title": "Tang et al. · Mitigating Plasticity Loss in Continual RL by Reducing Churn",
-    "kind": "论文",
-    "topic": "plasticity",
-    "description": "ICML 2025：用参考状态的函数空间约束控制预测改变。",
-    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
-    "links": [
-      {
-        "url": "https://arxiv.org/abs/2506.00592",
         "label": "原文入口"
       }
     ],
@@ -12585,6 +12784,29 @@
   },
   {
     "id": "CH-plasticity-9",
+    "title": "Tang et al. · Mitigating Plasticity Loss in Continual RL by Reducing Churn",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "ICML 2025：用参考状态的函数空间约束控制预测改变。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2506.00592",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
+    "sourceIds": [
+      "CH-plasticity-9"
+    ],
+    "chapterIds": [
+      "plasticity",
+      "retention",
+      "deep-value"
+    ]
+  },
+  {
+    "id": "CH-plasticity-10",
     "title": "C-CHAIN 作者实现 · MinAtar Double DQN",
     "kind": "代码",
     "topic": "plasticity",
@@ -12598,7 +12820,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/plasticity/#lesson-sources",
     "sourceIds": [
-      "CH-plasticity-9"
+      "CH-plasticity-10"
     ],
     "chapterIds": [
       "plasticity"
@@ -16269,29 +16491,6 @@
     "chapterIds": [
       "models",
       "dyna",
-      "meta"
-    ]
-  },
-  {
-    "id": "omx-search-control",
-    "title": "Meta-Gradient Search Control: A Method for Improving the Efficiency of Dyna-style Planning",
-    "kind": "论文",
-    "topic": "models",
-    "description": "元梯度调整搜索控制，让模型查询分布服务于真实学习进展；研究模型错误和动态变化下的规划效率。 作者预印本；前身为 2022 元学习 workshop 工作。适用范围：改善查询分配不自动纠正模型，也不保证元学习计算免费；前身与后续论文不能算作两次独立验证。",
-    "question": "规划预算有限且模型不完美时，该把模拟更新花在哪些查询上？ 把查询分布、模型本身与价值学习器分开画出，再检查外层损失使用哪一类真实经验。",
-    "links": [
-      {
-        "url": "https://arxiv.org/abs/2406.19561",
-        "label": "原文"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/resource/omx-search-control/",
-    "sourceIds": [
-      "omx-search-control"
-    ],
-    "chapterIds": [
-      "dyna",
-      "planning",
       "meta"
     ]
   },

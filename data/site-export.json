@@ -5,6 +5,30 @@
   "text_license": "CC BY 4.0",
   "third_party_assets": [
     {
+      "path": "/crl-figures/russek-2017-figure-2.png",
+      "authors": "Evan M. Russek、Ida Momennejad、Matthew M. Botvinick、Samuel J. Gershman、Nathaniel D. Daw",
+      "source": "https://doi.org/10.1371/journal.pcbi.1005768",
+      "license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "evidenceUrl": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005768",
+        "notice": "© 2017 Russek et al. 原论文按 Creative Commons Attribution 4.0 许可发布。"
+      },
+      "sha256": "e79799572e4f651225b9d8792af11d1d4cc21cc94c4fc6b221c1a07888155d29"
+    },
+    {
+      "path": "/crl-figures/russek-2017-figure-4.png",
+      "authors": "Evan M. Russek、Ida Momennejad、Matthew M. Botvinick、Samuel J. Gershman、Nathaniel D. Daw",
+      "source": "https://doi.org/10.1371/journal.pcbi.1005768",
+      "license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "evidenceUrl": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005768",
+        "notice": "© 2017 Russek et al. 原论文按 Creative Commons Attribution 4.0 许可发布。"
+      },
+      "sha256": "397663bc7e921cadbf4837d4c4dfc45fdf9099596c2f877b455a4a0cbde32efc"
+    },
+    {
       "path": "/crl-figures/forager-v1-figure-2.png",
       "authors": "Steven Tang、Xinze Xiong、Anna Hakhverdyan、Andrew Patterson、Jacob Adkins、Jiamin He、Esraa Elelimy、Parham Mohammad Panahi、Martha White、Adam White",
       "source": "https://arxiv.org/abs/2605.01131v1",
@@ -81,13 +105,13 @@
     {
       "file": "algorithm-tutorials.json",
       "target": "data/algorithm-tutorials.json",
-      "sha256": "c9ce9bc21e04e8341ec593203f0661fff43622f391f40238338622cb5306ca50",
+      "sha256": "df5681edabe367cbd2aef93c792aac4df842562fc9cdd22121c71c32cbe842d7",
       "page": null
     },
     {
       "file": "algorithm-tutorials.md",
       "target": "docs/algorithm-tutorials.md",
-      "sha256": "74857e50d7d3f618199cdf195fa2c52db06f922298f8b9c4528eaec0c709d5ad",
+      "sha256": "71f2d3f134ccdfbff4ee6625ddfed729798575bc1c046b5c89753fb209cf342c",
       "page": null
     },
     {
@@ -117,25 +141,25 @@
     {
       "file": "average-reward.md",
       "target": "docs/average-reward.md",
-      "sha256": "5b70d84224acafaca6ade8c67e01558aadd9f4f8d82b682ac7c584be1936f822",
+      "sha256": "1cf27fdc82d1668da2d890a43380a68d8b76c0318b4ba63bee912b6b1758edd0",
       "page": null
     },
     {
       "file": "bridge-chapters.json",
       "target": "data/bridge-chapters.json",
-      "sha256": "d849b9f2d1f5b09a11fad79c7143d3858e68afeb5d30b2eaada27c5a8977560f",
+      "sha256": "60b692d768ca29b4e982047f667ef78c4fe6ac0c44198121180f065af8a46ff0",
       "page": null
     },
     {
       "file": "chapter-architectures.md",
       "target": "textbook/architectures.md",
-      "sha256": "dcecf8273dade1b1464d858655863c58eafbf483973a905f02f4225d0056b678",
+      "sha256": "4dfc695fe2693fd8a561b15f09b0f74a1d61ba74d223901b53bae648bdc6b256",
       "page": "construction/architectures/"
     },
     {
       "file": "chapter-average.md",
       "target": "textbook/average.md",
-      "sha256": "e3829b1354553d9fd515ec2f0d3ee25e58bb3368a0937354f44ca818d2d4f761",
+      "sha256": "818ac93421eb4ad78acd53a5a5e45b7b1b0ed0ce11afbc21ed133a9b725f0bc0",
       "page": "algorithms/average-reward/"
     },
     {
@@ -153,103 +177,103 @@
     {
       "file": "chapter-control.md",
       "target": "textbook/control.md",
-      "sha256": "b5c14379a329907fae5029f12bfff3f439238f6d8c8abacba43fcd04b55dcc88",
+      "sha256": "b4c597d879710c5d506aa0adf7956798711c46f31e68a532cb3b571bbc03f353",
       "page": "algorithms/control/"
     },
     {
       "file": "chapter-credit.md",
       "target": "textbook/credit.md",
-      "sha256": "658640589e866886258b58e266b43b51b62d8ccbbf61bfbbd0345d9b4f62c9ed",
+      "sha256": "a8110484827ef34774ab0adccc0ab2e4e4f6e955180b82346d5e63cefd878a33",
       "page": "algorithms/credit-assignment/"
     },
     {
       "file": "chapter-deep-value.md",
       "target": "textbook/deep-value.md",
-      "sha256": "235f533a3ca4a66392d4259b910d4a38d999116d4c60b51535831cb6931bc9f4",
+      "sha256": "1d3dbbc9242e251dd77299a860f841cff8004dc7dc2447ba5ec59217b3c5af3b",
       "page": "algorithms/deep-value/"
     },
     {
       "file": "chapter-dyna.md",
       "target": "textbook/dyna.md",
-      "sha256": "1772713b21ffc3291facce902c0ab276a17dcee996669e862c3f1bcf84cce3ec",
+      "sha256": "8ad3cca20aaef03346c9c88777721a8b88d28732ef544829fd2018f64d28377f",
       "page": "algorithms/dyna/"
     },
     {
       "file": "chapter-experiments.md",
       "target": "textbook/experiments.md",
-      "sha256": "c7978c49d342b8a18b63a03aab950c4ef97b437a7f684484ca278ccafae63381",
+      "sha256": "dbac3b53e33eb697f5832917a1e1814f4304eb46efca43ced8ae314df30b3fe6",
       "page": "experiments/"
     },
     {
       "file": "chapter-exploration.md",
       "target": "textbook/exploration.md",
-      "sha256": "ebe72b36201e85c81745cd70ed50ec163a4a76255d46f2ff44b5ac5099fe7af5",
+      "sha256": "a7cf5747700de09c90fe8cad66db80ce859fcb2c6670281d0a0b70cc043f205b",
       "page": "algorithms/exploration/"
     },
     {
       "file": "chapter-goals.md",
       "target": "textbook/goals.md",
-      "sha256": "2728914c0160a023e550d0356a9bcf0d900fd38044875618b561a8bbd4c7ab58",
+      "sha256": "d57610c55919478451238cd5fde7461ce28b9c8104e75de48590b514279111a7",
       "page": "construction/goals/"
     },
     {
       "file": "chapter-gvf.md",
       "target": "textbook/gvf.md",
-      "sha256": "534576bc391cf92a0980cbe7bb12919fe756e77414fe51b02ebb3f7ff8202d00",
+      "sha256": "9cb4da8b8b0f4e52f1fcc9ae6080f7c5ca0e03bbdf3469577251e33cd0c5c65b",
       "page": "construction/predictive-knowledge/"
     },
     {
       "file": "chapter-meta.md",
       "target": "textbook/meta.md",
-      "sha256": "f9855ca78226d8730f9f61891aa41c93309be5cc95e18ece8bc70bf8407d8383",
+      "sha256": "34681cdeb72f070100b78cf4cdecf8cc55fd328fa5b5963a708b0aec76cf2c33",
       "page": "algorithms/meta/"
     },
     {
       "file": "chapter-models.md",
       "target": "textbook/models.md",
-      "sha256": "2b3a2ce11e732fbe09cb2b21f2a11cd0d39f8b722e3cdbedf673824f2b1ee7ac",
+      "sha256": "80b89a57b8613565aa5965cf1167245e8bf1756102f14ae72af60c0d4ca110e4",
       "page": "construction/models/"
     },
     {
       "file": "chapter-objectives.md",
       "target": "textbook/objectives.md",
-      "sha256": "262d0026fdbe358778aa06f6ed5b727a427dc241bca830a7ed3736d61f98c11e",
+      "sha256": "152a11f56609bc464a96a7df890f8ada4e271ee996ff9180631ee3252547c4af",
       "page": "foundations/objectives/"
     },
     {
       "file": "chapter-options.md",
       "target": "textbook/options.md",
-      "sha256": "9189192ebea1a00cc1274b6f976178a245c3a8a898fba4dece22eb9910e766ec",
+      "sha256": "cd845a710ec83862bc80eaf24cf8a3d4c57db2a0342545155b9a197bb273c5f6",
       "page": "construction/options/"
     },
     {
       "file": "chapter-planning.md",
       "target": "textbook/planning.md",
-      "sha256": "d0cec628c00c119580ce956554e524f6b622823849f2661e9cb054613292f175",
+      "sha256": "aa0f2b1e043db6c36271047d4a003726d6b151534f198d78c1c69f77888f7148",
       "page": "construction/planning/"
     },
     {
       "file": "chapter-plasticity.md",
       "target": "textbook/plasticity.md",
-      "sha256": "1e9c98438c98b8cc7583433cb8e5690c39dd31331b15847b97b2e454f1e29026",
+      "sha256": "a0f87b961fcbb4cf73f71cd392609d0012635c11ada598b26268343e01bfda81",
       "page": "algorithms/plasticity/"
     },
     {
       "file": "chapter-policy.md",
       "target": "textbook/policy.md",
-      "sha256": "126de11c09fc6daed037b549d473f12e43d129c44e599fa5c59955ba5058fccc",
+      "sha256": "4e6d2d2b972951e9bcb55f6765e9265a19fc876cb8ba681f1e7788934abf4c55",
       "page": "algorithms/policy/"
     },
     {
       "file": "chapter-retention.md",
       "target": "textbook/retention.md",
-      "sha256": "02f37637f5d906c958d1bac1742b878ee88de0b51bed8a585d4ee8f7001a8b6b",
+      "sha256": "55236aceffef036a7afb785d509b6d6100e361145783b61ca184a360df956e03",
       "page": "algorithms/retention/"
     },
     {
       "file": "chapter-reward-design.md",
       "target": "textbook/reward-design.md",
-      "sha256": "03eb3dd28b170f153dd8a53cadcfd7be18084e70c8e7872ba3bc667f8ea3f548",
+      "sha256": "f4e3afae272d4e38b7909d05071f014973ffc9624efd10c1fea14e89504bf282",
       "page": "foundations/reward-design/"
     },
     {
@@ -261,25 +285,25 @@
     {
       "file": "chapter-soft-control.md",
       "target": "textbook/soft-control.md",
-      "sha256": "d356bc43f223c6b431652f1284177453e23b3bffcfe0294edace246ba3f6dda9",
+      "sha256": "398e69b45613a1d9e57e21c51210e1e4c874750832828f604f3d481b734d694c",
       "page": "algorithms/soft-control/"
     },
     {
       "file": "chapter-state.md",
       "target": "textbook/state.md",
-      "sha256": "d839a5230492cca582e0e6d11ce79480a81cd072dd12f97d38fea7d29d754e54",
+      "sha256": "6b43ba2dc28b18bd26cf1e984655f52928fa9da218d08f48f38306e2b815a1ec",
       "page": "construction/state/"
     },
     {
       "file": "chapter-streaming.md",
       "target": "textbook/streaming.md",
-      "sha256": "d6fb5f9845e9695b71edc2bfa6ad16396146707ac519bab1f6e364f843c5ef51",
+      "sha256": "b359ef455995c3e16f78b3c2dfb987bc174e821505927734603a10d34bb04ee8",
       "page": "algorithms/streaming/"
     },
     {
       "file": "chapter-value.md",
       "target": "textbook/value.md",
-      "sha256": "4cf76e01b21ce3c56195c2ae71e6a5c49afb01dc0376265fe62db72aa4e8aa61",
+      "sha256": "40c672f48934fe081a06c5e2ff0552d7928ca628f0d69697b66f9ba49f08073e",
       "page": "algorithms/value/"
     },
     {
@@ -363,13 +387,13 @@
     {
       "file": "field-framework.json",
       "target": "data/field-framework.json",
-      "sha256": "a72998f6d8ae82c56e9c4d0a5aaecca77a3a81c85eb485dcac578cf82b5e492a",
+      "sha256": "4339a7acd2ca0251fad118ca148b2b596bd26909d2b7e2705bb8cea5ff485938",
       "page": null
     },
     {
       "file": "field-framework.md",
       "target": "docs/field-framework.md",
-      "sha256": "17b5c4ef578e7f4d3447e5f443189945e7c376e5bf1ae6fdc3ea2e4c4ec0931f",
+      "sha256": "b099235a6fdcd7defd446ead4efb41cf57b6d575035b336388b2539f0e649080",
       "page": null
     },
     {
@@ -381,7 +405,7 @@
     {
       "file": "foundations.json",
       "target": "data/foundations.json",
-      "sha256": "6ac8539d5552312fc58f6d07934c93bccfe9d751864602aed2d0523a2331e0c5",
+      "sha256": "9d2a4f9362402cb07ab95f18abb8baa594a4e84f30c4fbebb823ae8466023b53",
       "page": null
     },
     {
@@ -417,25 +441,25 @@
     {
       "file": "intro-01-lifetime.md",
       "target": "tutorials/01-lifetime.md",
-      "sha256": "91e7d50c4172c6523029b1dd63e1b87a6b707f4dc0b2253d3772e9502eea6930",
+      "sha256": "f5bdd3cbb86d75f16c7713817e6786554a7b9780f015219210354a2dedff2a79",
       "page": null
     },
     {
       "file": "intro-02-tracking.md",
       "target": "tutorials/02-tracking.md",
-      "sha256": "3a58a3f9e57e3b3e92f31211a2e2cafebe355004384c50df3f401d4315eea441",
+      "sha256": "b76ed1f7be33a8b4d4cb2083b578845ac37a39e1443aff725be99ebee758a05b",
       "page": null
     },
     {
       "file": "intro-03-plasticity.md",
       "target": "tutorials/03-plasticity.md",
-      "sha256": "324afb521ca64717554c8f9b98dee82c4cc081bfb1ba76c264b8286dfafe9241",
+      "sha256": "acd84513c8ccf917784fbff61fec8876e57bea95e941133a89d645cd1cf98529",
       "page": null
     },
     {
       "file": "intro-04-state.md",
       "target": "tutorials/04-state.md",
-      "sha256": "0abee617076846c6dfacd6362afa5d525b1abd3295df3b200a0033e4d788bfd8",
+      "sha256": "1b393b515355e5172ff1d526ffadb7d57f6a762e7694067de8763303f4d513f7",
       "page": null
     },
     {
@@ -453,13 +477,13 @@
     {
       "file": "intro-07-evaluate.md",
       "target": "tutorials/07-evaluate.md",
-      "sha256": "4b401b663f5fc4c7c6eecf1531d1079364df2d4ea6c9ade8031e80826018c94c",
+      "sha256": "53a94720c8ceb1f8decf03151d7d4e65abfd726ec3e36675c62c694b085a2a5d",
       "page": null
     },
     {
       "file": "intro-08-project.md",
       "target": "tutorials/08-research.md",
-      "sha256": "59d55dfbb174817b030fc857aa9fc463f6f33b116880681ee7487a96d609e05b",
+      "sha256": "0ada406cc104ac4addcca222ab0d08156db98978eba5d4600a1d213592e75fa8",
       "page": null
     },
     {
@@ -477,43 +501,43 @@
     {
       "file": "learning-dynamics.md",
       "target": "docs/learning-dynamics.md",
-      "sha256": "bbb9029dd72453f503a3e4976983df2d082e90562876c0dc8445edff61f40922",
+      "sha256": "b09ea42968e94f67996ff15bfdd0a24eb100b52ddb67f80f5ba09a854df2d912",
       "page": "foundations/learning-dynamics/"
     },
     {
       "file": "learning-route-classic-rl.md",
       "target": "docs/learning-route-classic-rl.md",
-      "sha256": "a7fd981513beefa14782171ef2519767f8388677c5ab0e44f565dd48b80748d0",
+      "sha256": "7f5d8655880a14eb1135a6266cb476609b941d3afa9007f1d9e80055f4f488f0",
       "page": null
     },
     {
       "file": "learning-route-continual-rl.md",
       "target": "docs/learning-route-continual-rl.md",
-      "sha256": "6bb3f73b78cff3324ff4a9500f8f45ae11e151758a63bb89a214071936c3f1e5",
+      "sha256": "a5b43d5ecda13791f518913b74e14979bb1c14e7b44c5ff5d618e6d42044dbb9",
       "page": null
     },
     {
       "file": "learning-route-deep-rl.md",
       "target": "docs/learning-route-deep-rl.md",
-      "sha256": "4a4b1f73ed7f8e755f61c740f75991a16326b29b3e31835bd9ec36008d2e6316",
+      "sha256": "781b733a363d47167be474e3c233cbda613ded81b38c3e354c6662a1e97c9777",
       "page": null
     },
     {
       "file": "learning-route.json",
       "target": "data/learning-route.json",
-      "sha256": "90c0f0d9507182217510db53a052c73e0f3616f91243e68e9cbeef6891df9850",
+      "sha256": "e5c62aa9c4f6ffc899694b5e199168170fa9c517ae05b074b0d7f38e923dd610",
       "page": null
     },
     {
       "file": "learning-route.md",
       "target": "docs/learning-route.md",
-      "sha256": "b2c65596aa825e186289ee94835a69d8e02e5b0410da99e15ca1c8efbb83abd8",
+      "sha256": "a93afe172b88eb17530028b7eedf4440a63208b07d43ffa7074b084d8d44cc67",
       "page": null
     },
     {
       "file": "library-index.json",
       "target": "data/library-index.json",
-      "sha256": "7090e62e9e49217efeb5cac043c56c5393413f581fffaae1cba36c04847e349c",
+      "sha256": "d4941ccfed306bd3bccfd9d1dbf60f467f6697b1f35007c839f14886e7c5d40e",
       "page": null
     },
     {
@@ -549,7 +573,7 @@
     {
       "file": "overview.md",
       "target": "docs/overview.md",
-      "sha256": "70e907bf7d214544e6ad219bc86a7f449cb422867112b206f980493f060b3e4d",
+      "sha256": "17b399749aa6b8970188336a2b836c80211c845499cab3cb32a7628bfdb2aba5",
       "page": null
     },
     {
@@ -645,7 +669,7 @@
     {
       "file": "source-figures.json",
       "target": "data/source-figures.json",
-      "sha256": "fb72346e48440ebd521c96d299395ecdc980cbb179027937f63c5088de94996f",
+      "sha256": "3feb531364043aa552e4d6ffa684838fa70a15d40c5446ba080eb5b3fba86b22",
       "page": null
     },
     {
@@ -663,31 +687,31 @@
     {
       "file": "study-approximation-features-control.md",
       "target": "foundations/approximation/features-control.md",
-      "sha256": "a24e89fe3d278858344d14b00b743bdc488f426cd2713259edde8e3e16ac7be2",
+      "sha256": "ab6c378a7c1b99e2ceebad361d899a2b4991a4c1a1ad59874a116f7491e66770",
       "page": "foundations/approximation/features-control/"
     },
     {
       "file": "study-approximation-off-policy.md",
       "target": "foundations/approximation/off-policy.md",
-      "sha256": "eeba800a910218b5cde50e796a87a604d76461558660aae41bf9edd058789b37",
+      "sha256": "41e3e5228733e73b2883c1460e2b409ac37f1f38c3e6ec73a5b929f740b28f22",
       "page": "foundations/approximation/off-policy/"
     },
     {
       "file": "study-approximation-policy-gradient.md",
       "target": "foundations/approximation/policy-gradient.md",
-      "sha256": "d0dcb6a04622bee6ac16c0459e5b62ed9530e7a7b2a3825c3230aa33c73e5800",
+      "sha256": "bcc10b07ab74da2c99f79fdcfb0e856af4237e7ed09dcb89cad578c6c6a9cdfb",
       "page": "foundations/approximation/policy-gradient/"
     },
     {
       "file": "study-approximation-prediction.md",
       "target": "foundations/approximation/prediction.md",
-      "sha256": "4603fcc815f25d7a373898eea7f581409058a11b58160c88d56c97d1fd19aa09",
+      "sha256": "ce12e10ca31ca4d0391a32ba8279495f0971a3489ad02b64a813f16c8a472062",
       "page": "foundations/approximation/prediction/"
     },
     {
       "file": "study-approximation-traces.md",
       "target": "foundations/approximation/traces.md",
-      "sha256": "13a3220050d0d4432376ad0919e5a09be3a2418cb679fd6d52b7deda973e60b4",
+      "sha256": "e5468863ee424192921dadc56a3f5937dc483a33561cf239c52b0ed47eef0ed1",
       "page": "foundations/approximation/traces/"
     },
     {
@@ -699,31 +723,31 @@
     {
       "file": "study-deep-deep-value.md",
       "target": "foundations/deep/deep-value.md",
-      "sha256": "bc958a15c681f13aeea94fc857293224f2f997a0fed1f2af551bcfafccadd358",
+      "sha256": "646bd1c1eba94b4abe29f3aa7254a66d89120b387f9759d9aa9e7023552232ce",
       "page": "foundations/deep/deep-value/"
     },
     {
       "file": "study-deep-deterministic-control.md",
       "target": "foundations/deep/deterministic-control.md",
-      "sha256": "8fdc943ebacf63bbc693d9d676f9d77edbdbc70f1b7c8fb4928f5bd536a20b0a",
+      "sha256": "4271699a03e693f29ef70fa58e4fcfb1f74af9a1188be1b8819a257be7ce2181",
       "page": "foundations/deep/deterministic-control/"
     },
     {
       "file": "study-deep-distributional.md",
       "target": "foundations/deep/distributional.md",
-      "sha256": "10f5bf9b4014835f14719dec1edb32c26273b273792d5f85cf64e4fe9069aa9c",
+      "sha256": "d6abb19dba8457a6ff4ae8e40b4af1400a5a5f81eb801cb8411a9c7a262a5cc7",
       "page": "foundations/deep/distributional/"
     },
     {
       "file": "study-deep-entropy-control.md",
       "target": "foundations/deep/entropy-control.md",
-      "sha256": "e00d287a4beca97acfad17b51b94acff4c9d249a4c4ecae1288133a617acef22",
+      "sha256": "9e1e90411da4da1ea42d9d4cbc8a99694028d9b58b5c23a7573ef887e0146742",
       "page": "foundations/deep/entropy-control/"
     },
     {
       "file": "study-deep-exploration.md",
       "target": "foundations/deep/exploration.md",
-      "sha256": "1a025e0d45e4cdac855b9dfc86fb31b25b3a04207288942292ac42cccca263fb",
+      "sha256": "ba3b867ac1ebdc52d91d4c5cadbd5cd031756c0833a1986513f37061b4ae4aa3",
       "page": "foundations/deep/exploration/"
     },
     {
@@ -741,7 +765,7 @@
     {
       "file": "study-deep-model-based.md",
       "target": "foundations/deep/model-based.md",
-      "sha256": "77fc7c1e75b9a69d3709b49dc95533704d5b18f16d69573b16da034632141131",
+      "sha256": "9ce650ca68768b909848e21b2f793e074cd0289d929b56576c709a1ed9319e87",
       "page": "foundations/deep/model-based/"
     },
     {
@@ -753,61 +777,61 @@
     {
       "file": "study-deep-offline.md",
       "target": "foundations/deep/offline.md",
-      "sha256": "beec3b90a77cbe2399f4211ab0c0359be60789950981e4ac011739edde70da55",
+      "sha256": "affa31e07daee0c482c6054613a772555a133c17a95eb918946ce3027138f810",
       "page": "foundations/deep/offline/"
     },
     {
       "file": "study-deep-partial-observability.md",
       "target": "foundations/deep/partial-observability.md",
-      "sha256": "a607adace0bfb172cd89f8bd5b4e96e5db9c1647f3ecfecb174a2d1cef799b4c",
+      "sha256": "b8ce7d3af960effc0c7a63ce4b42d201a3be7fc4140db599d00b3a625fefff46",
       "page": "foundations/deep/partial-observability/"
     },
     {
       "file": "study-deep-policy-gradient.md",
       "target": "foundations/deep/policy-gradient.md",
-      "sha256": "58dfa0ee6a7af9148e46c490c6f0de0dbca76e07d721ec6cc1bb1ad83f6aae4a",
+      "sha256": "e1c44d3001bad6a58189a552a873b53f992d8ad424899500a5b20b1102316291",
       "page": "foundations/deep/policy-gradient/"
     },
     {
       "file": "study-deep-practice.md",
       "target": "foundations/deep/practice.md",
-      "sha256": "d72ca3b0166e7e8d7663baf2d2d2f59d13dfa7109081058465adcfeed2a61765",
+      "sha256": "a11a11c10b7a35cc7c2f6e9ace8735d97d93eb5bc9821808ee2624f0b6ea35b8",
       "page": "foundations/deep/practice/"
     },
     {
       "file": "study-deep-trust-region.md",
       "target": "foundations/deep/trust-region.md",
-      "sha256": "5a52addbd0f1c528af7ebc4b66258402ee77ac1d104e9a76fc9854d39ac6cef5",
+      "sha256": "40817a305c895b8ca5e87868284162d12fb1c0d13c50c953368ade8aa6df9bf3",
       "page": "foundations/deep/trust-region/"
     },
     {
       "file": "study-tabular-bandits.md",
       "target": "foundations/tabular/bandits.md",
-      "sha256": "ee4dfba0f711378f9286dbb06d378efcc7b9a818816f72372e9188f89a69978c",
+      "sha256": "7f0766a4eb0d3eb509ae61a43d1c5172da56f5bf64a596dbf1d2bb6febcc2ab7",
       "page": "foundations/tabular/bandits/"
     },
     {
       "file": "study-tabular-dynamic-programming.md",
       "target": "foundations/tabular/dynamic-programming.md",
-      "sha256": "a64a5964c9a285babfbae8ed3ece442b11a7ffc25a172bd1f2f1c7c1859eb29e",
+      "sha256": "f8e4e1d5c85fedae1b57e27d96e869e30d475881bff8d23c182a25b416da0594",
       "page": "foundations/tabular/dynamic-programming/"
     },
     {
       "file": "study-tabular-mdps.md",
       "target": "foundations/tabular/mdps.md",
-      "sha256": "7f2cb6ac43a027720dadcacd68a402fc0a91869223c96a540ade74de1f0a6c36",
+      "sha256": "0d242ecdbd537f60acb6d94f0f697e375b9c0a47db9f4f06e1c1fe24db5d1640",
       "page": "foundations/tabular/mdps/"
     },
     {
       "file": "study-tabular-monte-carlo.md",
       "target": "foundations/tabular/monte-carlo.md",
-      "sha256": "7ebf2415808ab0e368dcb6b4d8151ffad3792e837cffa4704e2a6aa928909638",
+      "sha256": "f907e6e6fb0fdedfd503a8fd08ad2e17c031025119934311d20a0ec1c2c883bd",
       "page": "foundations/tabular/monte-carlo/"
     },
     {
       "file": "study-tabular-multistep.md",
       "target": "foundations/tabular/multistep.md",
-      "sha256": "f03dacebf14a6922cb14df21b40eb6f3987c6e333ea65d27416a70e00b1f7910",
+      "sha256": "73b8bdc6120bbb260ac3b297f4411f77b8fc7fe4c47a0d94d5163fabeda79e19",
       "page": "foundations/tabular/multistep/"
     },
     {
@@ -819,97 +843,97 @@
     {
       "file": "study-tabular-temporal-difference.md",
       "target": "foundations/tabular/temporal-difference.md",
-      "sha256": "2997b9bcd1ad4d84d532596c05d6b87e3607802f567738de737cd5a7f4504d4a",
+      "sha256": "5c72d4c1362329cfde11dce252ce5d08bc7e42c5fc9217e6c16758bb315eac79",
       "page": "foundations/tabular/temporal-difference/"
     },
     {
       "file": "supplement-agency.md",
       "target": "textbook/supplements/agency.md",
-      "sha256": "e60bb5ec95f96d92ce81f8e2a347d0705e67f56232c7f844df2f8a9345b2ec3d",
+      "sha256": "9602cc3dcd202a893b645b8b5f675ecfed14b41ac92a0da27160b0ee50b3adaa",
       "page": "supplements/agency/"
     },
     {
       "file": "supplement-consciousness.md",
       "target": "textbook/supplements/consciousness.md",
-      "sha256": "d269e81d56c00b51a0d0b67841a380d6d2d3185478ebde00958fecf1d024ab30",
+      "sha256": "3f378f3dc55849d492900470294e12a204d3bf0a7d6a4c23537c8adbae5d5706",
       "page": "supplements/consciousness/"
     },
     {
       "file": "supplement-context.md",
       "target": "textbook/supplements/context.md",
-      "sha256": "31309fa22985577761770ba95d3ae07bfffd28a0a073c4d1cc1eaf15834a2bed",
+      "sha256": "347a90624fe767a40a4ffdbe3d22fce680de9a24cdddcb17e8d2a6aea96d372c",
       "page": "supplements/context/"
     },
     {
       "file": "supplement-control.md",
       "target": "textbook/supplements/control.md",
-      "sha256": "9c6cad79b77577274d6464388028c7e85abc482932fccb0b171186b14514c12d",
+      "sha256": "154727c4bd86eaab7f23a3d89b654a96f996de4dfc75efb03e6c6fe1879b4d0f",
       "page": "supplements/control/"
     },
     {
       "file": "supplement-economics.md",
       "target": "textbook/supplements/economics.md",
-      "sha256": "3a38cc690e27a8d8f4e93ad45fa1e3ef658ddc3f227938e606b6828e96b0cb69",
+      "sha256": "b1452cbc058794cfe0740ae35854efe7ee7ee8b97afe514eddc336a3dfc0031b",
       "page": "supplements/economics/"
     },
     {
       "file": "supplement-explanation.md",
       "target": "textbook/supplements/explanation.md",
-      "sha256": "e6a55e0605f0cbbe9f8f00d76b994c1c450cbeec8278c79629222ab8c85eec14",
+      "sha256": "03afedb5c17400ea76e2924efdefa3a013933465fb1015deb95abec011220825",
       "page": "supplements/explanation/"
     },
     {
       "file": "supplement-memory.md",
       "target": "textbook/supplements/memory.md",
-      "sha256": "8ff7e8b0b4db3f0e61c8483f32573dd6307e65f631636fcca452c19ca9c9312c",
+      "sha256": "763873e80e14695a7aa3c8d7b0fe80ad541e8611113b48b43b10cd326b18a1d6",
       "page": "supplements/memory/"
     },
     {
       "file": "supplement-mind-philosophy.md",
       "target": "textbook/supplements/mind-philosophy.md",
-      "sha256": "57a3bf48e33b88f33100e0e29e8d5077c2171b6946b02b5b3a1bf76ac7b40aa5",
+      "sha256": "0acc14a3de52f0605a78f84af779fcc92c4651e764c31ec5c6fde1c7105ae27e",
       "page": "supplements/mind-philosophy/"
     },
     {
       "file": "supplement-motivation.md",
       "target": "textbook/supplements/motivation.md",
-      "sha256": "5705711b57fb681c631a38ef1ffcdad6e17b6f512347a75d5a25a5c6f60b3d2c",
+      "sha256": "4d649d9dcffbf2100ce0be811729f9a8046f19f99547e7b860abaf0f26443103",
       "page": "supplements/motivation/"
     },
     {
       "file": "supplement-organization.md",
       "target": "textbook/supplements/organization.md",
-      "sha256": "b5b1179f9a287a9015b4402eada9cc066cd335222e306307b0ac6c4301d3091c",
+      "sha256": "e90ad340c1941cebe00accb44da0f7faff2772ceac72e7ee15cb437af7d6d0f9",
       "page": "supplements/organization/"
     },
     {
       "file": "supplement-prediction.md",
       "target": "textbook/supplements/prediction.md",
-      "sha256": "d417f1b6c31a6f9516eaaff5f8995461ccae3b85354a2d2c47da41c2001851a4",
+      "sha256": "34106fc244069d2bffb45fb6e88d287ef04674494b03086108c05cdd3447a588",
       "page": "supplements/prediction/"
     },
     {
       "file": "supplement-signals.md",
       "target": "textbook/supplements/signals.md",
-      "sha256": "3bc6ce0cd2a4f93a1ce4fdbfb222662ceb5fa272fb9c88044a9d8fc2ebc7e270",
+      "sha256": "85621887456c5ab11b44cb81ecf6a83220d9e116d0c3575403511fc9d03d16f4",
       "page": "supplements/signals/"
     },
     {
       "file": "supplements-full.md",
       "target": "docs/supplements-full.md",
-      "sha256": "62079dcb94ca0cd3678957011a183aec3f692564be2c8312c729b6d20ed39baf",
+      "sha256": "d843dfb907957508d7fed6abb86167dcc0be6d4b04c92c30ca17a41d53f1e3b9",
       "page": null
     },
     {
       "file": "supplements.json",
       "target": "data/supplements.json",
-      "sha256": "6d6703f883a2005af2261c072c288b33f8dd534b2a1e605e6cb9f69a0be2165e",
+      "sha256": "ede7d31bb4820a8325485f30086328836f1229e44b6eac1340b4651e7af5b7bd",
       "page": null
     },
     {
       "file": "supplements.md",
       "target": "docs/supplements.md",
-      "sha256": "3305299f0a3c2f3ef10c99487e26ffc33d7b0dc6c35bfb03b67b80900a5fe3f6",
+      "sha256": "07a4849bfd13c56f483bfce38f02436d7006530b1492f609e9023f7c80aba423",
       "page": "supplements/"
     },
     {
@@ -927,7 +951,7 @@
     {
       "file": "tutorial.md",
       "target": "docs/tutorial.md",
-      "sha256": "8655ee6ce2945fbd51322d701fdc3b586030d4a63816801ea80e184c95724b48",
+      "sha256": "09d3979848fab5c6943885a386ae23bd91b9ba30392f4efcd3d0dd145b37e1c8",
       "page": null
     },
     {
