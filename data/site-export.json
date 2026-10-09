@@ -399,13 +399,13 @@
     {
       "file": "field-framework.json",
       "target": "data/field-framework.json",
-      "sha256": "d9beab95f77b1a9413830f86675196ae7dcc5ebe3045ec6a4b383f9e64cbd123",
+      "sha256": "12ab47561e95c762ce0053697ad194364b93ac252f9c7f55db8fc94743bc5151",
       "page": null
     },
     {
       "file": "field-framework.md",
       "target": "docs/field-framework.md",
-      "sha256": "1cd324038b9374f09bd6588d560714511a189dade098c4cb30b667286f1f8de0",
+      "sha256": "9d5d5cd356f2f3e8367471d5f9dba4c34526f59de242c501c415b0b27abd55dd",
       "page": null
     },
     {
@@ -2979,7 +2979,7 @@
     {
       "file": "overview.md",
       "target": "docs/overview.md",
-      "sha256": "eef7fbd9b2bec6d5cc0c4c19dd61d5615ae4d2764b8e22791b40fbad7cb01b47",
+      "sha256": "bb959a9fa3e49e85699b4dbb4dc3671b1c5eb9dd7a7dc544a0570752921abebe",
       "page": null
     },
     {

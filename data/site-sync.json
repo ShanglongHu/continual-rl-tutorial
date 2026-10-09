@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source": "https://yingwen.io/zh/continual-rl/",
-  "source_export_sha256": "cc87873fde157e042074cef2e4186faa69e2ea780fc68bd64a4dc9bf023b3d0d",
+  "source_export_sha256": "6f87bde2990dfb4bc01ab1669fbae95092acc4aaaf2fa173416f341243a5307d",
   "files": {
     "algorithms/01-value.md": {
       "sha256": "2b6ce78fd4f02e44a1a5edd351bf51530cfe33b8977c48e4af1022a2ef2ca833",
@@ -1680,8 +1680,8 @@
       "source_sha256": "2e53f9b194ab8d8e2ba457fe2938419e7002fce522577248ba9951d3d2dfd03d"
     },
     "data/field-framework.json": {
-      "sha256": "d9beab95f77b1a9413830f86675196ae7dcc5ebe3045ec6a4b383f9e64cbd123",
-      "source_sha256": "d9beab95f77b1a9413830f86675196ae7dcc5ebe3045ec6a4b383f9e64cbd123"
+      "sha256": "12ab47561e95c762ce0053697ad194364b93ac252f9c7f55db8fc94743bc5151",
+      "source_sha256": "12ab47561e95c762ce0053697ad194364b93ac252f9c7f55db8fc94743bc5151"
     },
     "data/foundations.json": {
       "sha256": "2b9c8db556ba3af30955bacbcb368cd67ee83aa018f545e928432c88733cdcc9",
@@ -1724,7 +1724,7 @@
       "source_sha256": "a5d61b618ef60a6fb79153e7bd75347dd9e6e5a34d83e4fbbba510cd97fbea69"
     },
     "data/site-export.json": {
-      "sha256": "cc87873fde157e042074cef2e4186faa69e2ea780fc68bd64a4dc9bf023b3d0d",
+      "sha256": "6f87bde2990dfb4bc01ab1669fbae95092acc4aaaf2fa173416f341243a5307d",
       "source_sha256": null
     },
     "data/source-figures.json": {
@@ -1792,8 +1792,8 @@
       "source_sha256": null
     },
     "docs/field-framework.md": {
-      "sha256": "ab7e60ac32b9b1833835a5179fadcaf265fbeca1025755cc0e74ba2f94a3584c",
-      "source_sha256": "1cd324038b9374f09bd6588d560714511a189dade098c4cb30b667286f1f8de0"
+      "sha256": "ccd7a06e6521723ca19eb6a3a22f9e95193ecfa39d8cf7bfe9850a3a2d2112f9",
+      "source_sha256": "9d5d5cd356f2f3e8367471d5f9dba4c34526f59de242c501c415b0b27abd55dd"
     },
     "docs/foundations.md": {
       "sha256": "64d6d42ec09c181cc6e6dfd43ddfad3843763ebccecce02db2b43e70b6dbc964",
@@ -1824,8 +1824,8 @@
       "source_sha256": "06d46beec0fe95f343616b20c02cd0c696faf266a1596acb75413dcb033265c6"
     },
     "docs/overview.md": {
-      "sha256": "089c1f494fd29125d2921dfc3f9bafd935470a825dc4673e271bbdc639243e9a",
-      "source_sha256": "eef7fbd9b2bec6d5cc0c4c19dd61d5615ae4d2764b8e22791b40fbad7cb01b47"
+      "sha256": "209127b299b3764b7b5db470e421ed66bb0a781092232c93b7cf2a3f7a26fb47",
+      "source_sha256": "bb959a9fa3e49e85699b4dbb4dc3671b1c5eb9dd7a7dc544a0570752921abebe"
     },
     "docs/practice-model-memory-planning.md": {
       "sha256": "958342fd7088f56fbb02a6858435a53ab6617f3fbabe49eaaea736f62ef21789",
