@@ -1,5 +1,7 @@
 # 约束强化学习：占据测度、拉格朗日与可行策略
 
+现代深度强化学习 · 并列研究分支
+
 “回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？
 
 ## 本章内容
@@ -11,6 +13,14 @@
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [MDP、回报与价值：序列决策的数学对象](../tabular/mdps.md)：明确回报与访问分布。
+- [策略梯度：从轨迹概率到 GAE 与 actor–critic](policy-gradient.md)：理解策略参数改变回报的梯度，再引入成本和乘子。
+
 
 ### 条件概率与期望
 
@@ -100,6 +110,8 @@ $$
 
 ## 1 · 约束不是另一个奖励名称
 
+前面的策略优化比较期望回报，并用信任域控制一次更新的幅度。配送机器人还可能受到另一项任务规格约束：进入风险区的次数不能超过预算。两条路线交付得几乎一样快，却可能只有一条策略满足这项规格。奖励差小，并不能代替成本核算。
+
 $$
 \max_\pi J_r(\pi),\qquad J_c(\pi)=\mathbb E_\pi\sum_{t=0}^\infty\gamma^t C_{t+1}\le d
 $$
@@ -109,6 +121,14 @@ CMDP 在回报之外声明代价预算。代价可以表示能耗、碰撞次数
 给奖励减去固定惩罚系数，是优化一个标量化目标；满足给定预算是另一个问题。除非有额外分析，不能从“惩罚很大”推出预算合格。设计者提供成本传感器、约束阈值、初始分布和事故定义；这些量并不是算法从奖励标量自动推断出的。
 
 这里先考虑有限状态动作、平稳转移和折扣期望代价。期望累计代价小，仍允许某些轨迹发生严重事故。若目标是每次执行都不越界、事故概率低于阈值或不可逆状态永不进入，需要不同约束与模型条件。
+
+用同一个已知配送模型贯穿本章。起点分布为 $\nu(s)=1$，$\gamma=0.9$。在路口 $s$ 选捷径，立即收到 $R_1=9.2,C_1=1$ 并到终点 $T$；选绕行，收到 $R_1=C_1=0$ 并到 $l$，随后唯一动作 go 带来 $R_2=10,C_2=0$ 并到 $T$。$T$ 吸收，之后奖励和成本全为零。成本一表示任务规定的一次风险区进入，不是从物理事故数据估出来的概率。设计者给定这个模型、成本事件和未归一化预算 $d=0.3$。
+
+令 $p=\pi(\text{捷径}\mid s)$。先算单条路线：捷径的折扣回报为 $9.2$，绕行是 $0+0.9\times10=9$。再按起点动作求期望，得到 $J_r(p)=9+0.2p$、$J_c(p)=p$。预测一下：将 $p$ 从 $0.6$ 改为 $0.3$，只少了多少奖励，却改变了哪一项可行性判断？
+
+![配送路口的捷径和两步绕行，以及同一回报成本坐标上p等于0.3和0.6的可行性比较](../../assets/crl-figures/constraint-control-walkthrough-routes.svg)
+
+先沿路线读奖励发生在哪一步，再看下方的成本—回报线段。$p=0.6$ 得 $J_r=9.12,J_c=0.6$，超过预算；$p=0.3$ 得 $9.06,0.3$，恰好可行。绿色是 $J_c\le0.3$，回报纵轴从 8.98 开始以放大 0.06 的差异。图和数值来自附带已知模型的原创精确计算。
 
 <a id="lesson-notation"></a>
 
@@ -134,6 +154,14 @@ $$
 
 状态占据非零时可以恢复平稳随机策略；零占据状态的动作可另作定义，不能由零除法确定。
 
+$$
+\begin{aligned}x(s,\text{绕行})&=0.1(1-p),&x(s,\text{捷径})&=0.1p,\\x(l,\text{go})&=0.09(1-p),&x(T,\text{wait})&=0.9p+0.81(1-p).\end{aligned}
+$$
+
+路口只在 t=0 访问，绕行格只可能在 t=1 访问。捷径从 t=1 起留在 T，绕行从 t=2 起留在 T；吸收尾部的几何级数产生最后一项。
+
+例如 $p=0.3$ 的四项占据依次是 $(0.07,0.03,0.063,0.837)$，总和一。$T$ 的流是 $x(T)=0.9[x(s,\text{捷径})+x(l,\text{go})+x(T)]$，代入这些数恰好成立。若删去终止状态，只剩 $0.163$ 的质量；若又把它重新除以 $0.163$，得到的是另一个统计口径，不能继续套用这里的回报换算。
+
 <a id="lesson-derive"></a>
 
 ## 3 · CMDP 的线性规划与随机化
@@ -151,6 +179,12 @@ $$
 已知有限模型下，目标与约束对占据测度是线性的。这个精确规划形式不等于神经策略优化已经解决可行性。
 
 没有约束时，有限折扣 MDP 可以找到最优确定策略；加入成本预算后，最优可行解可能需要随机化。随机化是为了在回报和代价之间满足预算，不只是训练时探索。若所有策略都超出预算，问题本身不可行，优化器不能创造一条不存在的安全策略。
+
+配送例的占据成本是 $x(s,\text{捷径})=0.1p$，规范化预算必须同时变为 $(1-\gamma)d=0.03$。规范化回报为 $9.2(0.1p)+10[0.09(1-p)]=0.9+0.02p$。因此可行区间是 $0\le p\le0.3$；回报在这个区间递增，最优解 $p^*=0.3$。纯绕行可行但少得 $0.06$，纯捷径不可行。误将成本 $0.06$ 与未归一化预算 $0.3$ 比较，会把 $p=0.6$ 错判为可行。
+
+在这个只访问一次路口的任务里，起点以概率 $0.3$ 选“全程捷径策略”，与路口按概率 $0.3$ 选捷径，产生相同轨迹分布。一般有限折扣 CMDP 中，占据流的凸组合 $x_{\mathrm{mix}}=(1-\alpha)x_A+\alpha x_B$ 仍满足线性流约束；恢复策略要按各状态占据除法，不能直接假设每个状态都以同一个 $\alpha$ 混合动作。具体是 $\pi_{\mathrm{mix}}(a\mid s)=[(1-\alpha)x_A(s,a)+\alpha x_B(s,a)]/[(1-\alpha)x_A(s)+\alpha x_B(s)]$，其中 $x_i(s)=\sum_a x_i(s,a)$，分母须非零。这保证对应的折扣占据；一般情况下不声称整条轨迹分布也相同。
+
+可行混合仍有 $30\%$ 的轨迹走捷径，轨迹成本为一；另外 $70\%$ 的轨迹成本为零，所以期望成本是 $0.3$。这里“至少一次成本事件”的概率恰好也等于 $p$，因为事件至多发生一次且发生在 $t=0$。把事件移到更晚时刻或允许重复进入后，这个概率便不能由折扣成本直接读出。若规格要求每条轨迹成本不超过 $0.3$，本例只能选 $p=0$；若要求进入概率不超过 $0.05$，则是另一条约束 $p\le0.05$。
 
 <a id="lesson-dual"></a>
 
@@ -176,6 +210,20 @@ $$
 
 有限已知 CMDP 的占据线性规划可以分析对偶与可行性；神经参数化、采样噪声和同时更新可能破坏这些简洁性质。乘子振荡、成本 critic 滞后和策略表示不足都会影响实际学习，不能只看最后一次 multiplier。
 
+回到配送例，$\mathcal L(p,\lambda)=9+0.2p-\lambda(p-0.3)$。策略上升方向为 $\partial_p\mathcal L=0.2-\lambda$；乘子做下降，而 $\partial_\lambda\mathcal L=-(p-0.3)$，因此更新中是加上预算违反量。按同一个旧版本计算两方向：
+
+$$
+p_{k+1}=\operatorname{clip}_{[0,1]}[p_k+0.5(0.2-\lambda_k)],\qquad\lambda_{k+1}=\max[0,\lambda_k+2(\widehat J_{c,k}-0.3)]
+$$
+
+$p$ 直接作为概率坐标；两项投影分别保护概率区间与非负乘子。这里用已知模型的精确成本 $p_k$ 作成本估计，演示更新时序。
+
+从 $(p_0,\lambda_0)=(0.6,0)$ 出发，得到 $(p_1,\lambda_1)=(0.7,0.6)$，随后 $(0.5,1.4)$，再到 $(0,1.8)$。第一步成本违反 $0.3$ 使乘子变大，但策略仍读旧乘子零，所以成本反而先由 $0.6$ 上升到 $0.7$。第三步未经投影的概率为 $-0.1$，才被截到零。乘子投影同样有作用：例如旧 $p=0.1,\lambda=0.1$ 时，未经投影的新乘子是 $-0.3$，应变为零。理想活跃约束的解是 $p^*=0.3,\lambda^*=0.2$；这三次选定步长的更新并不宣称收敛到它。
+
+![旧概率与旧乘子同时计算的四个快照，固定动作分位点导致捷径改为绕行，以及KL区间与成本区间的交集](../../assets/crl-figures/constraint-control-walkthrough-updates.svg)
+
+上半部条长表示捷径与绕行概率，虚线是同一个给定动作分位点 $u=0.55$：$u<p$ 走捷径，否则绕行。因此 $p=0.6,0.7$ 对应单步 $(R_1,C_1)=(9.2,1)$；$p=0.5,0$ 则先到绕行格，再收到 $R_2=10$。这是配对的模型机制计算，固定 $u$ 不用于估计概率或训练性能。下半部从另一个明确的旧策略 $p=0.2$ 出发，比较只限制局部 KL 和同时限制成本的提案；绿色是两种限制的交集。
+
 <a id="experiment-cmdp_primal_dual"></a>
 
 ### 实验：奖励提高，不代表满足成本约束
@@ -198,7 +246,7 @@ python3 implementations/extended_classic/cmdp_primal_dual.py --steps 1200 --seed
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/cmdp_primal_dual/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：最优可行动作概率绝对误差。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 1200 步时概率绝对误差均值约 0.0465，对照约 0.4083。约束更新使概率更接近目标，但有限步随机迭代不保证每一步都可行。
 
@@ -212,13 +260,25 @@ python3 implementations/extended_classic/cmdp_primal_dual.py --steps 1200 --seed
 
 ## 5 · CPO 与执行时安全的区别
 
-CPO 在策略更新中近似约束代价变化，并限制 KL 信任域，试图在提高回报时维持约束。其分析依赖真实或受控的估计、局部近似和具体约束形式；样本实现并不因此成为任意轨迹的无事故证书。
+在 [TRPO/PPO 章](trust-region.md) 中，KL 与 clipping 管的是策略变化幅度。CPO 进一步把成本变化写进候选策略的约束。[原论文 §5.3–6](https://proceedings.mlr.press/v70/achiam17a/achiam17a.pdf)先给带成本上界的理论更新，再用式 (10) 的信任域近似；其 Proposition 2 允许一个随 KL 半径而变的期望成本违反界。实际算法还将目标与成本线性化、KL 二阶展开，用采样估计、共轭梯度与回溯；这些近似不构成逐条轨迹的无事故证书。
+
+$$
+\widetilde J_{c,k}(\pi)=J_c(\pi_k)+\frac{1}{1-\gamma}\mathbb E_{s\sim d_{\pi_k},a\sim\pi}[A_c^{\pi_k}(s,a)],\qquad\bar D_{\mathrm{KL}}(\pi\Vert\pi_k)=\mathbb E_{s\sim d_{\pi_k}}D_{\mathrm{KL}}(\pi(\cdot\mid s)\Vert\pi_k(\cdot\mid s))
+$$
+
+$d_{\pi_k}$ 是归一化旧状态占据，$A_c^{\pi_k}$ 是按成本定义的旧策略 advantage。这里沿用 CPO 式 (10) 的 KL 方向；成本代理的一阶匹配不意味着在任意候选策略上等于真实成本。
 
 $$
 \max_\Delta g_r^\top\Delta\quad\text{s.t.}\quad \hat J_c+g_c^\top\Delta\le d,\qquad\tfrac12\Delta^\top F\Delta\le\delta
 $$
 
 这是理解局部 constrained update 的近似优化问题。若当前策略已不可行，需恢复步或其他处理，不能默认约束一定有满足的上升方向。
+
+配送例可直接算这个局部问题。另取可行旧策略 $p_k=0.2$，坐标仍是 $p$，令 $\Delta=p-p_k$，$\delta=0.005$。旧状态占据只有 $s$ 上的动作分布变化，$d_{\pi_k}(s)=0.1$，所以平均 KL 的二阶系数 $F=0.1/[0.2(1-0.2)]=0.625$。奖励方向按未归一化 $J_r$ 记为 $g_r=0.2$（正比例缩放不改变这里的最优提案），成本方向 $g_c=1$。KL 允许 $|\Delta|\le\sqrt{2\delta/F}\approx0.12649$，成本却要求 $0.2+\Delta\le0.3$。两者交集的奖励最大点是 $p=0.3$；只保留 KL 的奖励最大点约为 $0.32649$，期望成本超预算。
+
+两候选的精确平均 KL 也可枚举两动作求得：$0.1[p\log(p/0.2)+(1-p)\log((1-p)/0.8)]$。在 $p=0.3$ 时约 $0.002817$；在 $0.32649$ 时约 $0.004409$，都低于 $0.005$。因此本例中的成本越界并非来自 KL 超标。由于真实回报与成本恰好对 $p$ 线性，这里能直接核对；神经策略通常仍需检验代理、曲率和采样误差。
+
+图中计算的是单参数局部提案。CPO 原论文 §6.2 在近似可行域为空时提出降低成本的恢复方向，§7 则区分两种乘子：前节 primal–dual 保存乘子并跨轮更新，CPO 每轮从当前局部对偶问题重新求解。把前节的 λ 更新贴上 CPO 名称，会遗漏这项机制差异。
 
 执行时 shield 或 barrier 方法限制具体动作的可行集合，常需要可靠动力学、状态估计与不变集条件。平均约束、鲁棒控制与这些执行过滤机制可以组合，但它们保护的对象不同。训练时违反多少约束，也应与最终冻结策略的代价分开报告。
 
@@ -236,6 +296,8 @@ $$
 1. 记录每轮预算违反、训练期累计代价与独立评估。
 1. 需要硬执行保证时另行验证安全模型和动作过滤器。
 
+若改为采样学习，在旧策略采到的轨迹里应同时保存奖励、成本、终止标志和策略版本，分别估计 reward advantage 与 cost advantage。优化器读这些固定的旧批估计，更新后的策略再决定下一批实际路线。上图改变动作后，进入学习器的数据会从捷径的单步成本事件变成绕行的两步无成本经验；新策略的成本应重新评价，不能拿旧批的低成本记录替它作可行性判决。
+
 <a id="lesson-example"></a>
 
 ## 7 · 一个必须混合的最优策略
@@ -249,6 +311,16 @@ $$
 <a id="lesson-code"></a>
 
 ## 8 · 占据流、解析混合与 primal–dual 核
+
+贯穿配送例的单文件入口是 [constraint-control-walkthrough.py](../../tutorials/constraint-control-walkthrough.py)。下载到空目录即可运行，只用 Python 标准库。默认输出回报、成本、四项占据、三步更新与局部提案；--test 用 Fraction 精确枚举完整轨迹，再用独立线性方程求占据流，并枚举局部可行概率核对最优点。图的数字由独立 [JavaScript 计算](https://yingwen.io/crl-code/figures/constraint-control-walkthrough.mjs) 提供。
+
+默认 JSON 中 random_rollouts 与 neural_training_steps 均为零；四个策略快照是确定性更新计算。教程不含完整 CPO 的神经 critic、共轭梯度、回溯或执行安全层。
+
+```bash
+# 把单文件教程保存到空目录，在该目录运行：
+python3 tutorials/constraint-control-walkthrough.py
+python3 tutorials/constraint-control-walkthrough.py --test
+```
 
 规范化流残差、两动作精确可行解以及同时计算的策略/乘子一步更新。
 
@@ -301,6 +373,12 @@ CRL 的单生命期要求将探索成本、适应阶段事故和恢复能力计�
 
 ## 10 · 练习与答案
 
+- 预测：配送例把预算从 0.3 改为 0.05，最优策略怎样变？答：p=0.05，回报 9.01；仍有 5% 的轨迹计一次成本事件。
+- 手算：p=0.6 的归一化成本和预算是多少？答：0.06 与 0.03，应判不可行。
+- 定位错误：第一轮若以新 p=0.7 更新 λ，会得到什么？答：0.8；这与本页同用旧版本得到的 0.6 不同，必须另行声明更新时序。
+- 改变条件：只将折扣改为 0.95，绕行回报是多少，最优 p 还在预算边界吗？答：绕行 9.5 已超过捷径 9.2，最优为 p=0，成本约束不激活。
+- 设计对照：先冻结成本估计，分别比较旧/新乘子时序，再单独改变成本估计误差。记录动作概率、预算违反及训练成本；动作已改变并不自动说明估计可靠。
+
 - 问：代价期望小于预算，是否保证每条轨迹安全？答：不是；这是平均约束。
 - 问：提高固定惩罚一定能找到最优可行策略吗？答：不保证；混合策略、可行性及优化误差仍需处理。
 - 问：所有动作成本至少一而预算 0.6，会发生什么？答：此单状态问题不可行，程序应明确拒绝。
@@ -326,7 +404,9 @@ python3 examples/extended_foundations_lab.py test
 
 - [Altman · Constrained Markov Decision Processes](https://www.routledge.com/Constrained-Markov-Decision-Processes/Altman/p/book/9781315140223)：原作者专著；占据测度、线性规划与拉格朗日方法的系统来源。
 
-- [Achiam et al. · Constrained Policy Optimization](https://proceedings.mlr.press/v70/achiam17a.html)：CMDP、约束策略改进与局部信任域近似。
+- [Achiam et al. · Constrained Policy Optimization](https://proceedings.mlr.press/v70/achiam17a.html)：§4 给定起点的折扣 CMDP；§5.3 式 (10)、Proposition 2 的成本代理与违反界；§6 线性/二阶局部近似、共轭梯度、回溯和恢复；§7 与跨轮保存乘子的区别。
+
+- [Schulman et al. · Trust Region Policy Optimization](https://proceedings.mlr.press/v37/schulman15.html)：§4–5 从策略性能界到平均 KL 与旧策略样本代理；KL 变化限制和任务成本约束是不同对象。
 
 - [Achiam · CPO 原作者代码](https://github.com/jachiam/cpo)：原研究工程；算法实现与环境依赖应分别阅读。
 
@@ -334,6 +414,8 @@ python3 examples/extended_foundations_lab.py test
 
 - [Kochenderfer、Wheeler、Wray · Algorithms for Decision Making](https://algorithmsbook.com/)：作者书站提供决策、信念状态、模型与规划教材及配套 Julia 代码入口。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-constraints#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-constraints#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-constraints)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -349,6 +431,12 @@ python3 examples/extended_foundations_lab.py test
 持续学习中的研究问题：动作不仅改变世界，也改变未来数据与学习。比较冻结策略不等于比较持续更新的智能体；什么时候应付出当前回报去获得长期有用的经验？
 
 [精确策略改善](../tabular/dynamic-programming.md) → [策略梯度定理](../approximation/policy-gradient.md) → [TRPO 与 PPO 的近似](trust-region.md) → [持续控制的比较器](../../textbook/control.md)
+
+
+### 可进一步检验的问题
+
+- [奖励表示与奖励学习：目标怎样进入智能体？](../../docs/research-atlas.md#research-reward-design)：将回报目标与成本可行性分开，才能判断改变奖励是在表达偏好，还是只用惩罚近似另一项约束。
+- [14 · 应当探索什么、练习什么，以及如何保留未来交互与学习的机会？](../../docs/research-atlas.md#research-experience-selection)：平均成本约束不等于逐步安全或长期可恢复性，选择探索经验时需要分别规定这些未来交互条件。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

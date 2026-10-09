@@ -1,16 +1,24 @@
 # 流式强化学习：交互协议与更新稳定性
 
-机器人刚获得一条经验，下一次行动已经快到了：学习器能保存什么，还能算几次？从环境时钟、样本保留和两步 TD 算例出发，理解流式协议如何改变信用分配、数值稳定性与部署后的适应。
+机器人刚获得一条经验，下一次行动已经快到了：学习器能保存什么，还能算几次？从相同数据流、两步 TD 与中途恢复的算例出发，理解原始经验、活动状态、权重、资格迹和尺度统计怎样影响下一次更新。
 
 ## 本章内容
 
 - 明确流式数据权限、单步计算与持久内存预算，区分流式协议、持续任务和不可重置生命期。
 - 在流式协议中实现 TD(λ)，检查痕迹与终止时序；将时间信用分配与更新稳定性分开分析。
+- 逐项恢复或重置活动状态、权重、资格迹与优化器统计，复算受到影响的下一次更新。
 - 推导并比较 ObGD、StreamingOptimizer 与 Intentional Updates 的尺度机制、保证范围和失败条件。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [时间信用分配：从资格迹到深度梯度学习](../textbook/credit.md)：理解保留的资格与敏感度，再规定单次处理经验时能保存什么。
+
 
 ### 价值函数
 
@@ -279,9 +287,24 @@ python3 implementations/streaming_composition/neural_td_trace.py --steps 1200 --
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/neural_td_trace/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-neural_td_trace.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：全状态预测 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 六个状态的神经预测与0.7×0.9^(5−s)逐项比较，取均匀 RMSE。0.7来自末端奖励成功概率，参照不是本回合抽到的0或1。
+
+**step：怎样计时。** step 是真实原始转移，包含末端奖励转移；完成回合数、梯度次数和迹范数另记。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算各记录时刻的跨种子均值、样本标准差和末点误差；没有保存全部预测向量，不能仅凭 value 重新计算状态权重或逐状态误差。
+
+计算位置：[streaming_composition/neural_td_trace.py](../implementations/streaming_composition/neural_td_trace.py) · [streaming_composition/neural_td0.py](../implementations/streaming_composition/neural_td0.py) · [streaming_composition/_common.py](../implementations/streaming_composition/_common.py)
+
+</details>
 
 **结果分析。** 第 60 步，λ=0.8 的平均 RMSE 为 0.142，对照为 0.286，早期传播更快；第 600 步则为 0.0937 对 0.0607。末尾为 0.0478 对 0.0509，差异相对种子波动很小。不能只挑某一个时刻宣布迹总是更好。
 
@@ -349,7 +372,7 @@ python3 implementations/extended_adaptation/obgd2024.py --steps 1200 --seeds 0 1
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/extended-obgd2024/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：frozen_value_mse。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 60 步，ObGD 的平均 MSE 为 0.0653，固定步长为 0.00269。改变奖励后第 660 步，分别为 0.0157 与 0.000750。最后两者都近于零。这个设置没有显示 ObGD 优势，而是显示限制增量的适应速度代价。
 
@@ -571,7 +594,7 @@ python3 implementations/extended_adaptation/intentional.py --steps 1200 --seeds 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/extended-intentional/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：frozen_greedy_return。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 60 步两组五个种子的贪心回报都是 0.94。第 1200 步，Intentional 有 3 条仍为 0.94、2 条退为 −0.24，均值 0.468；固定 AC 五条均为 0.94。该配置展示了“先成功、后退化”，不能用早期成功替代全程评价。
 
@@ -603,9 +626,73 @@ python3 implementations/extended_adaptation/intentional.py --steps 1200 --seeds 
 
 两种常见错误可以直接手算定位：在终点更新前清零资格，会丢掉起点的 0.072；把当前终止转移的零折扣用于衰减过去资格，也会得到相同错误。配套测试把到达当前状态的折扣与指向下一状态的折扣分别传入。
 
+<a id="lesson-learner-state"></a>
+
+## 8 · 保存和恢复的是哪一个学习器？
+
+两步链的特征可以直接从状态编号取出，因此保存权重和资格迹已经足够执行那个例子。若特征还依赖已经发生的观察，情况便不同了。考虑固定策略产生的三条转移 A→B→C→终点，奖励依次为 2、0、1；到达 A、B、C 时的观察依次为 1、0、0。下面所有恢复对照都接收这条相同的数据流。
+
+活动状态按 $h_t=\tfrac12h_{t-1}+o_t$ 递推，取 $h_{-1}=0$，因此活动依次为 $1,0.5,0.25$。预测是 $\hat v_t=w_th_t$。这里递推系数固定，只学习读出权重 $w$，所以当前输出对 $w$ 的梯度为 $h_t$；并未训练递归网络，也不需要计算活动对递归参数的敏感度。活动 $h$ 决定本次预测使用什么特征，资格迹 $z$ 决定当前误差分给哪些过去的读出梯度。
+
+沿用逐坐标最大值更新器的一维形式，记尺度统计为 $b$，对应代码中的 max_v。取 $\gamma=0.9$、$\lambda=0.8$、$\alpha=0.1$、$\beta=0.9$，并取方便手算的 $\varepsilon=0.1$。这组数值服务于本节算例，不是作者默认配置。所有预测使用更新前的同一个 $w_t$，终点预测设为零。
+
+$$
+\begin{aligned}h_{t+1}&=\tfrac12h_t+o_{t+1}\quad\text{（非终止转移）},\\\delta_t&=R_{t+1}+\gamma_{t+1}w_th_{t+1}-w_th_t,\\z_t&=\gamma_t\lambda z_{t-1}+h_t,\qquad u_t=\delta_tz_t,\\b_t&=\max\{\beta b_{t-1},|u_t|\},\qquad w_{t+1}=w_t+\alpha\frac{u_t}{b_t+\varepsilon}.\end{aligned}
+$$
+
+初始化 $w_0=z_{-1}=b_{-1}=0$。$\gamma_t$ 衰减进入当前状态以前的资格，$\gamma_{t+1}$ 控制本次 bootstrap；第一步取 $\gamma_0=0$，终止转移取 $\gamma_3=0$。$u$ 是尚未缩放的完整增量，最终参数位移还需经过 $b$ 与 $\alpha$。
+
+第一条转移有 $\delta_0=2$、$z_0=1$、$u_0=2$、$b_0=2$，所以 $w_1=0.1\times2/(2+0.1)=2/21$。到达 B 后活动为 $h_1=0.5$。若此时暂停，需保存的学习器状态是 $w_1=2/21$、$h_1=0.5$、$z_0=1$、$b_0=2$，还要记录进入 B 的折扣、已完成一次更新及下一条数据的位置。恢复完整状态后，读入 B→C：
+
+$$
+\begin{aligned}\delta_1&=0+0.9\frac{2}{21}\frac14-\frac{2}{21}\frac12=-\frac{11}{420},\\z_1&=0.9\times0.8\times1+0.5=1.22,\\u_1&=-\frac{11}{420}\times\frac{61}{50}=-\frac{671}{21000},\\b_1&=\max\{1.8,|u_1|\}=1.8,\\\Delta w_1&=\frac{0.1u_1}{1.8+0.1}=-\frac{671}{399000},\qquad w_2\approx0.093556391.\end{aligned}
+$$
+
+这次更新不再读取 A→B。A 的影响通过活动、资格和尺度统计进入三个不同的运算位置；它们不能从权重一个数中还原。
+
+![A、B、C的活动随观察衰减；在B保存相同权重，完整恢复或分别清空资格迹、尺度统计、活动后，B到C的下一次位移不同。](../assets/crl-figures/streaming-state-checkpoint.svg)
+
+上部圆点大小辅助表示活动 h，紫框标出第一条转移更新后在 B 的暂停位置。下部四行共用权重轴：空圆是同一个旧权重，方块是第二次更新后的权重，箭头是这一次位移。活动清零时两标记重合。数值由附带脚本精确复算；这是原创有限机制算例。
+
+| 在 B 处改变什么 | 第二次更新中首先改变的量 | 更新后的 w |
+| --- | --- | --- |
+| 完整恢复 | 沿上式得到 δ=−11/420、z=1.22、b=1.8 | 0.093556391 |
+| 只清资格迹 z | δ 相同；z 从 1.22 变为 0.5 | 0.094548872 |
+| 只清尺度统计 b | δ、z 相同；b 从 1.8 变为 0.031952381 | 0.071023010 |
+| 只清活动 h | 当前及下一活动均为 0；δ=0，仍有历史资格 z=0.72 | 0.095238095 |
+| 只清权重 w | 活动、资格与尺度保留；两个预测均为 0，δ=0 | 0 |
+
+只清资格迹减少了历史梯度参与当前误差的份额；只清尺度统计则放大同一个 $u_1$ 的位移。只清活动时，第二步的误差变成零，却仍留有此前的资格。第三步终点奖励到来后，衰减后的历史资格仍能更新权重。若只加载权重文件，并把 $h,z,b$ 都从零启动，本例余下两步没有非零活动或资格，最终权重停在 $2/21$；完整恢复则最终得到约 $0.157626609$。预测参数相同不保证后续学习过程相同。
+
+终点 C 的奖励到来时，完整分支仍要先用 $z_2=0.72\times1.22+0.25=1.1284$ 更新。完成这次更新后，本例清空活动和资格，让下一回合从新观察构造活动；权重与尺度 $b_2=1.62$ 保留，更新计数继续增长。在终点更新前清迹，会把本次使用的资格错误地降到 $0.25$。重置环境、重置活动、清资格和重新初始化参数必须分别规定；只写 reset 没有指明执行了哪一个操作。
+
+这个小更新器的计数 k 只记录完成了几次更新，不进入分母。Adam 与上文 Intentional optimizer 的偏差校正还使用更新次数；恢复它们时，矩统计和计数必须保持对应。在线归一化也要保存均值、方差、样本数等递推状态。活动状态通常只跨连续轨迹保留，是否在任务切换时清空，则由实际的信息连续性与算法定义决定。
+
+恢复还需要衔接同一个外部过程。本例的输入已给定，保存 cursor=1 就能从 B→C 接着读；真实控制中，还需对应的环境或设备状态、行为随机数状态和更新配置。若设备在暂停期间继续移动，加载学习器文件不会把外部世界带回 B。接下来的经验已经改变，应按实际继续运行的协议评价。
+
+同一三条数据还可以单独检查 replay 权限：固定这些活动特征，暂用固定 $\alpha=0.1$ 的 TD(0)，逐条一次更新得到 $w=0.221017188$。若保存三条特征转移，随后重读第一条 A→B，新误差为 $2+(0.9\times0.5-1)w=1.878440547$，第四次更新得到 $w=0.408861242$。环境仍只产生三条转移，学习器多做了一次旧数据更新。保存供抽取的旧特征转移也是 replay；特征固定时可重算这个目标，若编码器可学习，旧特征还没有提供用新编码器重算原始观察的权限。
+
+中途保存一个活动与统计摘要，是让原更新过程继续；从保存的旧转移重新形成目标，则增加了经验使用权限。本节据此检查学习器在给定协议下执行了什么。信用分配章进一步讨论误差应影响哪些过去的量，元学习章进一步讨论怎样改变学习规则。完整学习器的表现还要回到[生命期评价](../textbook/objectives.md#lesson-maze-evaluation)，观察这些更新怎样改变后续行动和真实奖励；[带噪声的完整生命期算例](../textbook/objectives.md#lesson-noisy-lifetime)进一步比较在线学习期间的所得与最后冻结状态的得分。
+
 <a id="lesson-code"></a>
 
-## 8 · 机制实验与作者实现
+## 9 · 机制实验与作者实现
+
+下载下方脚本后运行；仅标准库。分数算术逐项检查中途恢复、单状态重置、终点时序与 replay。
+
+```bash
+python3 tutorials/streaming_state_walkthrough.py
+python3 tutorials/streaming_state_walkthrough.py --test
+```
+
+在站点源码目录运行：JavaScript 独立复算并核对图片。
+
+```bash
+node --test tests/crl-streaming-state-walkthrough.test.mjs
+node scripts/generate-crl-streaming-state-walkthrough.mjs --check
+```
+
+可下载[状态过程脚本](../tutorials/streaming_state_walkthrough.py)与[图的计算模块](https://yingwen.io/crl-code/figures/streaming-state-walkthrough.mjs)。Python 使用 Fraction 保存精确分数，输出逐条预测误差、资格、未缩放增量、尺度与最终位移；保存位置只从后续转移继续读取。图中保留诊断记录是为了核对过程，这些记录没有再次作为严格流式分支的更新输入。脚本没有动作学习、可训练递归网络或深度控制训练。
 
 **算法：在站点源码目录运行：独立检查两步链、共享特征、批平均、重放与双时钟，再核对 SVG 数据**
 
@@ -698,7 +785,7 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 
 <a id="lesson-branches"></a>
 
-## 9 · 从局部更新到持续学习问题
+## 10 · 从局部更新到持续学习问题
 
 局部算例解释了一次更新如何完成，机器人研究还要回答改变之后能否恢复。Vitchutripop 等（2026）的模拟实验先用 PPO 得到预训练策略，再经热启动切换到新的身体、环境或目标条件，并观察 150 万步适应。五个随机种子的断腿场景中，AdaptiveObGD 的平均峰值成功率为 96.8%，适应期均值为 74.7%；二者分别回答“曾恢复到多高”和“这段时间总体表现如何”。
 
@@ -716,7 +803,7 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 
 <a id="lesson-check"></a>
 
-## 10 · 习题与答案线索
+## 11 · 习题与答案线索
 
 - 为什么不把资格迹等同于 Adam 的一阶矩？答：痕迹积累的是输出梯度；当前 δ 到来时才分配误差。Adam 的矩积累的是各个时刻已经乘各自误差的 loss gradient。
 - 为什么 terminal 的 γnext=0 不应清掉本步全部历史信用？答：terminal 奖励属于刚结束的这一串决策，仍应沿到达当前状态的历史痕迹传播。
@@ -724,6 +811,8 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 - 能否用归一化证明长期稳定？答：归一化只控制部分尺度，目标漂移、off-policy 投影、非线性与策略反馈仍然存在。
 
 动手题：在两步链加入第三个延迟状态，手算起点更新为 $α(γλ)^2$；再将特征整体乘 10，比较固定 α、按平方缩放 α 与 ObGD。将同一样本误差改变量和长期预测误差分开画，观察它们何时不一致。
+
+恢复题：B 处只清活动与只加载权重，第二次更新都保持原权重，为什么第三次更新不同？答：前者还保存资格，终点误差仍可沿历史资格更新；后者资格也清零。再把 max_v 保留而清零计数 k，本例会改变参数位移吗？答：不会，因为本例没有偏差校正；换为使用计数的优化器时需重新计算。
 
 ## 本章的实验设计
 
@@ -746,6 +835,12 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 在线交互不等于严格 streaming。必须分别说明回放、批量、每步计算与持久存储。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-streaming) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=streaming) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=streaming)
+
+## 从本章进入实践
+
+[估计与适应](https://yingwen.io/zh/continual-rl/code/#practice-tracking)：旧经验越来越多时，怎样仍对新变化作出反应？
+
+[策略梯度与控制](https://yingwen.io/zh/continual-rl/code/#practice-policy-control)：优化器确实降低了损失，为什么行动仍可能变差？
 
 ## 持续强化学习：近期研究与原始实现
 
@@ -944,7 +1039,7 @@ Stream-X 把信号归一化、表示初始化、资格迹和受控更新尺度�
 
 #### 证据
 
-2026 年第三版扩展到 Atari、控制与机器人等实验，并包含持续变化设置。论文和代码经历过版本变化，比较结果时需要同时标明论文版本和算法实现。
+2026 年第三版扩展到 Atari、控制与机器人等实验，并包含持续变化设置。论文和代码都有过版本变化，比较结果时需要同时标明论文版本和算法实现。
 
 #### 条件与限制
 
@@ -1359,6 +1454,8 @@ python examples/lifelong_algorithms_lab.py streaming
 - [Intentional-AC 作者 actor–critic 主循环](https://github.com/sharifnassab/Intentional_RL/blob/e86e26fd8613ac212e9a52c3fed8a01d0a31f685/intentional_ac.py#L79)：update_params 用旧 critic 构造 TD 误差；actor 熵项乘该误差的符号，随后将合成梯度送入独立的 policy 优化器。
 
 - [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
+
+- [Kingma & Ba · Adam: A Method for Stochastic Optimization](https://arxiv.org/abs/1412.6980)：Algorithm 1 与 §2–3：一阶矩、二阶矩和更新计数共同决定偏差校正；只保存参数没有保存优化器的继续过程。
 
 - [van Seijen & Sutton · True Online TD Learning](https://proceedings.mlr.press/v32/seijen14.html)：线性在线前向/后向精确等价的适用范围，区别于普通 accumulating traces。
 

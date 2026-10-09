@@ -1,16 +1,26 @@
 # 特征、泛化与半梯度控制
 
+函数逼近与经典进阶方法 · 第 2 章
+
 特征怎样改变学习行为，Sarsa 又怎样在共享参数下改善策略？
 
 ## 本章内容
 
-- 比较局部 tile coding 与全局 Fourier 特征的泛化。
-- 推导动作分块表示和半梯度 Sarsa，说明动作采样与更新顺序。
+- 在同一走廊比较状态聚合、局部 tile coding 与分离特征，并理解全局 Fourier 特征的泛化。
+- 推导动作分块表示和半梯度 Sarsa，沿一次共享更新追踪动作与下一条真实经验。
 - 手算特征缩放的步长效应，并辨别预测保证与控制保证。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [函数逼近预测：从回归到 TD 固定点](prediction.md)：理解一个参数写入怎样同时改变多个状态的预测。
+- [TD 预测与控制：SARSA、Expected SARSA、Q-learning 和 Double Q](../tabular/temporal-difference.md)：掌握Sarsa与行为策略对后续经验的影响。
+
 
 ### 动作价值
 
@@ -110,6 +120,20 @@ $$
 
 $e_a$ 是动作 one-hot 向量。状态间仍共享参数，动作间则由不同参数块区分。神经网络可以选择共享主干，但那引入了另一种跨动作泛化。
 
+<a id="features-corridor"></a>
+
+## 走廊中的选择 · 预测联动怎样改变下一份经验
+
+现在只给前章走廊的 A 增加一个“退出”动作：立即得 0 并终止；“继续”仍按 A 到 B 得 +2、B 到终点得 −1。取 $\gamma=1$，两步以内真正终止，继续的真实动作价值为 1，退出为 0。为继续动作使用前章那一组共享特征；退出动作采用独立参数块，初值也取 0。B 只有继续这一个可用动作。这就把状态间共享与动作间区分放进了同一个小任务。
+
+读者知道转移表，可以枚举奖励序列 [2,−1] 得到继续的真值 1。学习器每步只收到当前位置、所选动作、奖励、后继状态和终止标志；它有固定特征图与自己维护的权重，没有真值标签，也不查询未执行动作的后果。退出估计从零开始只是初始化；在这条任务里，它恰好等于分析真值。
+
+先用一条完整的继续轨迹，按 A、B 顺序回归继续动作的回报。A 更新后，其继续估计为 0.5；B 更新后，这个未再次访问的估计变成 −0.06。退出的估计仍为 0。因此下一回合再到 A 时，贪心选择会从继续变成退出，尽管继续的真实回报较高。这里使用 MC 是为了单独看清共享的影响；后面的 Sarsa 会进一步让目标随行为而变。
+
+如果此后总按贪心退出，学习器便不再获得 B 的新经验；保留探索会改变这个后果。分动作参数块避免了不同动作被强制同值，却没有消除同一动作跨状态的干扰。由此，特征设计既决定一次更新扩散到哪里，也会通过下一次选择改变此后实际看到的数据。
+
+可以先保持这条轨迹与步长不变，只把 A、B 换成互不重叠的单位特征。继续动作在 A 的估计就不会被 B 的回归改写。下面的 tile coding 和 Fourier 基，是在更大状态空间中选择这种共享关系的两种办法。
+
 <a id="features-local"></a>
 
 ## 2 · Tile coding：局部相似性如何进入更新
@@ -124,7 +148,7 @@ $$
 
 若没有哈希碰撞，每次恰有 $K$ 个激活特征，单次半梯度更新让当前预测改变 $\alpha K\delta$。因此常用 $\alpha=\eta/K$，让有效更新比例接近 $\eta$。这来自特征范数，不是一条适用于所有表示的步长定律。
 
-![两套错位网格中共享活动 tile 的数量，决定一次更新对邻居预测的影响](https://yingwen.io/crl-figures/concept-depth-classic-tiles.svg)
+![两套错位网格中共享活动 tile 的数量，决定一次更新对邻居预测的影响](../../assets/crl-figures/concept-depth-classic-tiles.svg)
 
 着色格是状态 0.25 激活的两个特征，每个权重增加 0.1。下方四个位置分别共享 1、2、1、0 个特征，因此预测增加 0.1、0.2、0.1、0。图中没有哈希碰撞。原创精确算例，依据 [Sutton 与 Barto §9.5.4](http://incompleteideas.net/book/the-book-2nd.html) 的 tile coding 定义；[计算代码](https://yingwen.io/crl-code/figures/classic-visual-depth.mjs)。
 
@@ -238,6 +262,28 @@ $$
 
 为什么不一次消去全部误差？标签包含随机噪声；相关状态共用参数；自举目标也可能尚未正确。当前样本完全拟合，不等于下一样本误差更小。研究逐样本稳定机制时，应同时报告更新前预测误差、状态加权、预测变化量和长期收益，而不只报告没有发生数值爆炸。
 
+<a id="features-map-control"></a>
+
+### 2.1 · 只换特征图，保留同一走廊
+
+状态聚合把同组状态编码为同一个 one-hot 分量，组内预测必然相同；一套 tiling 就是这种表示。两套错开的 tiling 则允许“共享一部分，但仍能区分”。给走廊位置一个固定特征坐标 $z(A)=0.30,z(B)=0.60$，格宽 $h=0.5$。用上面的键规则，A 激活 $(0,0),(1,1)$，B 激活 $(0,1),(1,1)$：只有后一键共享。坐标用于生成特征，走廊仍只有 A、B 和终点，并未增加中间的可访问状态。
+
+为了只比较共享关系，把三种表示都放进三个坐标，补零坐标不增加有效信息；每个动作保存独立的三个权重。将两套 tile 的二值向量除以 $\sqrt2$，使它与聚合、分离特征同为单位范数。于是可以使用同一零初值与同一步长 $\alpha=0.6$，而不把激活数差异误当成共享关系的效果：
+
+| 表示 | $\phi(A)$ | $\phi(B)$ | 共享内积 $g$ |
+| --- | --- | --- | --- |
+| 分离特征 | $(1,0,0)$ | $(0,1,0)$ | 0 |
+| 两套 normalized tile | $(1/\sqrt2,0,1/\sqrt2)$ | $(0,1/\sqrt2,1/\sqrt2)$ | $1/2$ |
+| 粗状态聚合 | $(1,0,0)$ | $(1,0,0)$ | 1 |
+
+看图前先判断：B 的一个负误差会不会写到 A？三种特征的当前状态范数都相同，区别在跨状态的内积。退出在另一动作块，继续动作的写入不改它。
+
+![相同走廊的转移奖励与解析真值；A和B在两套错位tiling中共享一个tile；三个单位范数特征图的活动分量和内积0、1/2、1。](../../assets/crl-figures/feature-control-walkthrough-features.svg)
+
+上方是读者的完整任务，真值仅供分析；下方条带是特征的激活区域，方块是实际向量分量。两套 tile 的键含网格编号。原创精确算例，依据 Sutton 与 Barto §§9.3、9.5.3–4；[计算核](https://yingwen.io/crl-code/figures/feature-control-walkthrough.mjs)与[逐事件数据](https://yingwen.io/crl-figures/feature-control-walkthrough-data.json)给出相同定义。
+
+原始二值 tile 仍可直接用于实现：不除 $\sqrt2$，改用 $\alpha=0.3$，便与归一化表示的 $\alpha=0.6$ 产生相同预测写入。这里的 $1/2$ 是两个归一化向量的内积，非零分量各为 $1/\sqrt2$。聚合无法同时表示 A 的 1 和 B 的 −1；另外两种表示能区分它们，但有限几步更新仍会有误差。
+
 <a id="features-global"></a>
 
 ## 3 · Fourier 特征、缩放与条件数
@@ -267,6 +313,20 @@ $$
 例如 x(A)=(1,0)、x(B)=(−1,1)，在 A 得到正误差1并用步长.1更新，A 的预测增加.1，B 的预测却减少.1。没有神经网络、没有离策略，也能发生干扰。神经网络还会让这两个梯度方向随每次更新改变，因此“先把网络当作固定特征提取器”的分析只适用于被冻结的表示阶段。
 
 这给出一个比“神经网络不稳定”更具体的研究问题：当前更新是否沿着会破坏重要旧预测的方向？固定一组探测状态，记录更新前后的预测及梯度内积，再逐项加入 bootstrap、旧数据和表示更新，就能区分静态泛化冲突与不断变化的更新几何。资格迹保存过去的梯度方向时，也会受到这种几何变化影响。
+
+<a id="features-scale-control"></a>
+
+### 3.1 · 同一特征图的尺度也会改变控制
+
+把走廊的 normalized tile 向量全乘 $c=10$。若初始权重同时除以 10，所有初始预测相同；零初值也满足这个对应。内积和范数平方却都乘了 100。同一份经验产生相同的旧误差，未补偿的第一次预测写入因此放大 100 倍。对固定线性特征，采用 $\alpha'=\alpha/c^2$ 才能在每步保持权重 $w'_t=w_t/c$，从而保持预测、动作和后续经验的对应。
+
+先预测第一步的变化：A 继续得到 +2，旧的 A、B 估计均为 0。同名义步长 0.6 下，原尺度的 A 估计变为 1.2，放大后的估计为 120。随后 B 真正终止，目标只有 −1；两种尺度又会收到不同大小的旧误差，第二次写入不能继续用一个固定的 100 倍比例猜测。
+
+![同一tile特征图在原尺度、乘10未改步长、乘10且步长除100的三种条件下，第一步写入值为1.2、120、1.2；B终止更新后A值为0.72、−1710、0.72。](../../assets/crl-figures/feature-control-walkthrough-scale.svg)
+
+条长按同一动作值轴画第一步写入，数字给出随后 B 的终止更新与再到 A 的选择。三种条件共用任务与零初值；原步长 0.6，补偿后 0.006。原创有限次实际更新，未补偿的巨大值来自特征范数与后续误差的联动；它解释一次控制改变，不构成渐近发散或训练性能的证据。
+
+具体地，放大后第一步还令 B 估计为 60，所以 B 的误差为 $-1-60=-61$。A 与 B 的内积为 50，A 接着变为 $120+0.6\times(-61)\times50=-1710$，再到 A 就会退出。补偿后整个两回合事件序列与原尺度相同。这个标量补偿要求统一缩放、固定线性特征及同样的动作选择规则；各坐标放大不同倍数时，一般需要相应的逐坐标步长或预条件，不能只除一个公共常数。
 
 <a id="lesson-derive"></a>
 
@@ -312,7 +372,7 @@ python3 implementations/extended_classic/semi_gradient_sarsa.py --steps 1200 --s
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/semi_gradient_sarsa/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：贪心策略精确折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 60 步，五条 Sarsa 曲线均达到最短路径回报 0.7774，MC 对照均值为 0.1910；第 600 步两者都达到 0.7774。后续主图饱和，无法判断价值预测是否还在变化。
 
@@ -321,6 +381,38 @@ python3 implementations/extended_classic/semi_gradient_sarsa.py --steps 1200 --s
 **继续实验。** 增加表格 Sarsa 与相同多项式表示的 Gradient MC control，构成表示和更新目标的二维对照。另画十个 Q 估值及实际 ε-greedy 回报，检查贪心成功是否掩盖估计误差或探索成本。
 
 [源码](../../implementations/extended_classic/semi_gradient_sarsa.py) · [逐种子记录](https://yingwen.io/crl-code/results/semi_gradient_sarsa/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/semi_gradient_sarsa/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/semi_gradient_sarsa/curves.json)
+
+<a id="features-sarsa-corridor"></a>
+
+### 4.1 · 在走廊里执行更新，再看它选出的经验
+
+回到三种单位范数特征图。这一次不等待回报，直接在线运行半梯度 Sarsa。初始权重全零，$\gamma=1,\alpha=0.6$；为得到可逐项检查的有限过程，取 $\epsilon=0$，A 的并列估计固定选继续。B 只有继续，因此第一回合三者都会实际经过 A→B→终点。一般探索策略的作用稍后单独计算。
+
+第一步在 A 执行继续，收到 +2 到达 B。先选定 B 的继续，保存其旧值 0，才计算 $\delta_0=2+0-0=2$。写入 $\Delta w_0=1.2\phi(A)$ 后，A 的继续值为 1.2，B 的估计为 $1.2g$，其中 $g=\phi(A)^\top\phi(B)$。B 的 −1 此时还没有收到，第一步目标也没有使用分析真值 1。
+
+执行已选定的 B 继续后，收到 −1 并真正终止。无需选择终点动作，bootstrap 为零；用更新后的旧权重算 $\delta_1=-1-1.2g$。这一步发生在 B，但它改变了暂未再次访问的 A：
+
+$$
+\begin{aligned}\hat q^+(A,\text{继续})&=1.2+0.6(-1-1.2g)g,\\ \hat q^+(B,\text{继续})&=1.2g+0.6(-1-1.2g).\end{aligned}
+$$
+
+先在 A 收到一条转移并写入，再在 B 收到下一条转移并写入；这是两个不同参数版本。A 的连带变化来自内积，B 的本地变化来自单位范数。退出动作块仍为 0。
+
+| 表示 | 首回合后 A 继续值 | 首回合后 B 值 | 下一次在 A 执行动作 | 随即实际收到 |
+| --- | --- | --- | --- | --- |
+| 分离特征 | 1.2 | −0.6 | 继续 | +2，到 B |
+| 两套 tile | 0.72 | −0.36 | 继续 | +2，到 B |
+| 粗状态聚合 | −0.12 | −0.12 | 退出 | 0，终止 |
+
+看图前先判断：如果只给三者重放相同的第二条走廊轨迹，会丢掉哪一个差别？下一回合要先让各自的估计选动作，再调用环境取得后果，才能看到粗聚合已经不去 B 的事实。
+
+![三个表示的A继续估计在B终止写入前后分别为1.2到1.2、0.72、−0.12；下一回合实际动作分成继续到B得2与退出终止得0。](../../assets/crl-figures/feature-control-walkthrough-control.svg)
+
+空圆是 A 第一次写入后，实圆是 B 终止写入后；三行采用同一价值轴。右侧或下方箭头是下一回合实际执行的动作及真实奖励，非预定重放轨迹。原创确定性有限次 Sarsa，首回合两次更新与下一回合真实事件均由[计算核](https://yingwen.io/crl-code/figures/feature-control-walkthrough.mjs)产生；[标准库教程](../../tutorials/feature-control-walkthrough.py)以独立的精确 Gram 空间递推逐事件复算。
+
+这个过程把控制中的信息次序接起来：特征图决定写入范围，B 的反馈改变 A 的未重访估计，A 的新排序决定动作，动作决定下一条经验。粗聚合的表示冲突与零探索共同让 B 暂时失去覆盖。这里的有限序列没有建立哪一种表示在一般控制任务中的性能排序。
+
+若改为 $\epsilon=0.2$ 的行为，保持上述首回合后的估计，粗聚合在 A 选继续的概率为 0.1，其余两种为 0.9。因此下一步奖励的条件期望分别是 0.2 与 1.8；这是对下一次动作的精确平均，还没有对重新更新后的整段学习求期望。探索使退出者仍有机会访问 B，但不会让聚合特征突然能够区分两个状态。
 
 <a id="lesson-example"></a>
 
@@ -393,6 +485,17 @@ def features_demo():
 python3 examples/approximation_textbook_lab.py features-control
 python3 examples/approximation_textbook_lab.py test
 ```
+
+走廊的[独立单文件教程](../../tutorials/feature-control-walkthrough.py)仅需 Python 3 标准库。下载并保存后，在仓库根目录运行下列命令；无需网站源码、安装包或训练数据。正常输出是 JSON，按事件读 state、action、reward、next，以及更新前后的 A/B 估计，特别比较三个 next_real_transition。
+
+两回合真实选择与十项独立精确检查
+
+```bash
+python3 tutorials/feature-control-walkthrough.py
+python3 tutorials/feature-control-walkthrough.py --test
+```
+
+网站计算核直接写浮点特征向量与权重；Python 教程用 $\Delta\hat q(u,a)=\alpha\delta\,K_{us}$ 在预测空间更新，以活动键的交集除以 tiling 数精确得到 Gram 内积。它还枚举完整奖励路径核对真值，检查终止目标、尺度补偿和原始二值 tile 的等效步长。这两种计算方式核对机制语义，不用这十项检查评价控制性能。
 
 <a id="lesson-branches"></a>
 
@@ -475,6 +578,12 @@ print("LTU matching identity checked for every binary input")
 - Fourier 阶数增加，能否保证控制收益提高？答案：不能。更高表达能力也增加估计难度，且价值误差与行为收益不同。
 - 将所有特征乘 10，只把权重除 10，为什么仍可能发散？答案：同名义步长下，预测变化会放大 100 倍；还应将步长除以 100。
 - Sarsa 的下一动作采样后又重新采样执行，会有什么问题？答案：更新评价的动作与实际后继动作不再是同一条 Sarsa 转移；必须明确改用其他估计器。
+- 把走廊首回合后粗聚合的退出初值改成 −0.2，会怎样？答案：继续的 −0.12 更高，下一次会继续到 B 得 +2；动作改变需要比较两个估计，单看继续值为负并不够。
+- 只看首回合后的 A/B 误差，能断言哪种表示终身收益最高吗？答案：不能。下一次选择已改变访问分布；需另定交互预算、探索与评价口径，真正运行闭环。
+
+## 从本章进入实践
+
+[预测与控制](https://yingwen.io/zh/continual-rl/code/#practice-prediction)：学会预测更多事情，什么时候会改变行动？
 
 
 
@@ -503,6 +612,8 @@ python3 examples/approximation_textbook_lab.py test
 
 - [Mahmood & Sutton · Online Representation Search and Its Interactions with Unsupervised Learning](https://www.eng.uwaterloo.ca/~jbergstr/files/nips_dl_2012/Paper%2019.pdf)：在线监督表示搜索；生成器和测试器的原始设置，不等同于深度 TD 稳定性结论。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-features-control#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-features-control#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-approximation-features-control)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -518,6 +629,12 @@ Bellman 方程先假定有足够的状态。表格为不同状态分别存值；
 持续学习中的研究问题：策略改变以后，原来的状态压缩是否仍能预测行动后果？构造状态的网络、运行时记忆、资格迹与优化器状态如何共同更新？
 
 [MDP 的状态条件](../tabular/mdps.md) → [表示与泛化](features-control.md) → [不完全可观测](../deep/partial-observability.md) → [智能体状态](../../textbook/state.md)
+
+
+### 可进一步检验的问题
+
+- [04 · 旧价值什么时候应该复用，什么时候应该快速改写？](../../docs/research-atlas.md#research-continual-control)：走廊中的共享特征让一次价值更新改变下一次选择，说明旧价值的复用还会改变随后得到的数据。
+- [12 · 怎样保留旧能力，而不把过时知识强加给新任务？](../../docs/research-atlas.md#research-retention-transfer)：共享特征使新经验同时改变未访问状态的预测，提供了检查旧能力受干扰以及何时可复用的最小情形。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

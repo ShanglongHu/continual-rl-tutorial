@@ -1,5 +1,7 @@
 # 模型学习与规划：MPC、短模型 rollout 和潜在想象
 
+现代深度强化学习 · 并列研究分支
+
 模型在哪里进入决策，预测误差又怎样变成控制误差？
 
 ## 本章内容
@@ -11,6 +13,14 @@
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [学习与规划：Dyna、优先扫描和执行时搜索](../tabular/planning.md)：理解模型查询、备份与真实交互的区别。
+- [深度价值学习：DQN、Double DQN 与目标的时间顺序](deep-value.md)：掌握可学习表示、价值尾项与目标版本。
+
 
 ### 条件概率与期望
 
@@ -166,6 +176,32 @@ $$
 
 如果规划本身每步消耗大量模型调用，真实交互样本少不等于总计算便宜。需要分别报告环境步、模型步、候选数、规划深度和墙钟时间。
 
+<a id="belief-planning-contingent"></a>
+
+### 3.1 · 从同一个 belief 出发，优化序列还是条件计划
+
+[部分观测章的仓库任务](partial-observability.md#belief-planning-task)留下一个规划问题。包裹位置在左、中央、右；路口观察相同，当前 belief 为 $(1/2,0,1/2)$。最多两个动作，$\gamma=1$；扫描扣 $0.4$、保持位置，标签正确概率 $0.8$、两种错误各 $0.1$。扫描后只能取件，成功 $4$、失败 $-2$，然后终止。模型 rollout 应传播这些可能后果，而非把位置均值零当成中央包裹。
+
+$$
+\hat Q_{\rm fixed}(b,j)=-c+\sum_{s,o}b(s)\hat O(o\mid s)r(s,j)=-c+\sum_s b(s)r(s,j)
+$$
+
+确定序列「scan，然后固定取 j」没有让后续动作依标签变化。利用每行观测概率和为一，扫描项可求和消去；最好固定取左或右，净值 $0.6$，低于直接取件的 $1$。
+
+$$
+\hat Q_{\rm contingent}(b)=-c+\sum_o\hat p_o\max_j\sum_s\hat b_o(s)r(s,j)=\max_{\pi:\{L,C,R\}\to\{L,C,R\}}\left[-c+\sum_{s,o}b(s)\hat O(o\mid s)r(s,\pi(o))\right]
+$$
+
+条件计划为每种未来标签指定一个动作。这里只有 $3^3=27$ 种，模型可以精确枚举；把选择放到收到标签之后，得到取左、左、右的净值 $2.7$。没有读取真实隐藏位置。
+
+![在模型内比较扫描的三条观察分支，再按实际标签执行一条取件分支](../../assets/crl-figures/belief-planning-walkthrough-plan.svg)
+
+本图复用同一取件任务：扫描前只知道 belief，模型树按 0.45、0.10、0.45 分支；部署收到标签后更新后验再选动作。虚线树是模型计算，不是实际采集了三个标签。确定序列净值 0.6、条件计划净值 2.7，由独立 Python 枚举与 JavaScript belief backup 核对。
+
+每次只执行首动作、收到观察后重新规划，可以让已发生的反馈影响下一动作。然而，若当前优化仍只评估固定动作序列，未来扫描信息没有进入现在的候选价值，它在本例就会选择立即取件，根本不会获得重规划机会。要在扫描前计入这项信息价值，需要条件计划，或能够表示扫描后决策价值的尾值；单写“会重规划”尚未改变这个目标。
+
+PETS [§3、§5](https://arxiv.org/html/1805.12114)用概率动力学评估候选动作序列，执行首动作后再次优化；它的粒子传播处理预测分布，却不能仅因用了概率模型就认定序列目标已经枚举未来观察分支。此处的条件计划形式来自 [Algorithms for Decision Making §20.2、算法20.2](https://algorithmsbook.com/)，两种规划对象要分别说明。
+
 <a id="lesson-error"></a>
 
 ## 4 · 为什么短模型 rollout 有时更可靠
@@ -206,7 +242,7 @@ python3 implementations/continual/learned_model_mpc.py --steps 1200 --seeds 0 1 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/learned_model_mpc/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：原始平均奖励冻结策略折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 奖励降低后的最终检查点，五步规划回报为0.37015，一步版本为−0.2；后者对应持续支付−0.01而不抵达终点的循环。五种子这里得到同样冻结策略，并不意味着其训练轨迹相同。
 
@@ -215,6 +251,32 @@ python3 implementations/continual/learned_model_mpc.py --steps 1200 --seeds 0 1 
 **继续实验。** 逐个增加搜索深度，找出首次能将终点收益传回起点的深度。然后冻结在变化前的奖励模型，重复搜索；解释为什么更多搜索无法自行发现第601步的新奖励。
 
 [源码](../../implementations/continual/learned_model_mpc.py) · [逐种子记录](https://yingwen.io/crl-code/results/learned_model_mpc/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/learned_model_mpc/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/learned_model_mpc/curves.json)
+
+<a id="belief-planning-model-error"></a>
+
+### 4.1 · 一个观测模型误差，怎样变成错过扫描的损失
+
+仍用同一个仓库，保持包裹转移与奖励完全不变，只改变规划器相信的扫描正确率 $\hat q$；另两个标签各占 $(1-\hat q)/2$。真实扫描器始终为 $q=0.8$。当 $\hat q\ge1/3$ 时，左、中央、右标签仍分别采用取左、左、右，扫描计划的值可以直接从联合后果概率算出。
+
+$$
+\begin{aligned}\hat p_{\rm correct}&=\hat q+\tfrac12\tfrac{1-\hat q}{2}=\tfrac14+\tfrac34\hat q,\\\hat Q_{\rm scan}&=-0.4+4\hat p_{\rm correct}-2(1-\hat p_{\rm correct})=-0.9+4.5\hat q.\end{aligned}
+$$
+
+正确标签总以概率 $\hat q$ 发生；中央误标签不区分左右，按左侧平局规则还能在左侧世界取对，贡献剩余项。此直线只用于已声明的 $\hat q\ge1/3$ 区间；教程在其他区间重新求分支动作。
+
+$$
+\hat Q_{\rm scan}>Q_{\rm direct}=1\ \Longleftrightarrow\ \hat q>\frac{19}{45}
+$$
+
+旧模型 $\hat q=0.4$ 计算扫描值 $0.9$，所以立即取左；在真实世界得到期望 $1$。正确模型 $q=0.8$ 会扫描并取得期望 $2.7$，错过扫描的机会损失为 $1.7$。
+
+模型拟合可以从一个有限记录集开始。教程给定每个隐藏位置十条带位置标签的构造校准记录：八条正确、另两种误标签各一条。对称传感器族的 log-likelihood 为 $24\log q+6\log[(1-q)/2]$，求导为零得到 $\hat q=24/30=0.8$。这些是给定教学计数，位置标签只用于校准；运行中的取件策略仍只见路口与扫描标签。此处比较错误模型与校准模型，不把校准标签当成部署观察。
+
+![扫描正确率的模型估计怎样越过动作排序阈值，改变首动作](../../assets/crl-figures/belief-planning-walkthrough-model.svg)
+
+横轴是给定扫描模型的正确率，纵轴是该模型下的精确候选期望。紫线评估条件扫描计划，橙虚线为直接取左；红点旧模型 0.4 把扫描算成 0.9，蓝点校准模型 0.8 算成 2.7。真实传感器保持 0.8，所以旧模型动作的实际期望为 1，损失 1.7。原创解析曲线与给定校准计数；没有神经训练或采样性能曲线。
+
+重复枚举同一个旧模型仍得到同一排序；缩短 rollout 也不会补回第一步观测核的错误。将模型失配、未来信息被序列目标遗漏和计算预算不足分别干预，才能知道哪个对象需要改。这里的模型误差影响行动选择；前面的长 rollout 递推则讨论误差怎样随深度传播，二者可以同时存在。
 
 <a id="lesson-latent"></a>
 
@@ -239,6 +301,10 @@ $$
 想象轨迹中的多步目标，末端使用 critic。奖励与继续概率由模型产生，因此目标同时受模型和价值误差影响。
 
 Dreamer 家族在学得的世界模型中训练 actor–critic，部署通常可直接执行 actor。MPC 则在当下选择动作时做序列优化。潜在模型不意味着完全无需观察重建，也不意味着任意 latent 就是控制充分状态；应查看具体版本训练哪些预测、哪些梯度流入模型。
+
+回到仓库，在线规划器可以每次拿当前 belief 枚举计划；也可以把“收到左标签取左、收到右标签取右”的映射保存为策略，部署时直接查询。求出一份小型条件计划仍是已知模型下的规划结果，教程没有训练策略参数。MBPO [§5、算法2](https://arxiv.org/html/1906.08253)将短模型样本交给 SAC 更新；DreamerV3 [Critic learning 与 Actor learning](https://arxiv.org/html/2301.04104)用想象轨迹训练 actor–critic，并从 actor 采样环境动作而不作前瞻规划。它们把模型计算用于改善可直接执行的策略，与此刻重新优化候选的使用位置不同。
+
+Dreamer 的模型状态包括确定性记忆和随机潜变量。一次潜变量样本、潜变量均值及完整 belief 是三种对象；网络训练得到潜在状态也不自动带来精确 belief 的充分性。仓库的均值反例说明，应检验表示能否保存不同未来行动的后果，不能只检查位置均值或重建损失。
 
 <a id="course-latent-coordinates"></a>
 
@@ -349,6 +415,8 @@ def imagined_lambda_return(rewards, values, gamma=.9, lam=.8):
 
 运行 demo 得到两步最优候选与误差曲线，运行 test 检查最小二乘、规划序列及 λ 的两个极端。它不是完整 PETS、MBPO 或 Dreamer 复现。PETS 与 MBPO 作者仓库提供原论文工程；danijar/dreamerv3 明确是作者维护的重实现，不能冒充原内部实验快照。
 
+同一取件任务使用 [belief-planning-walkthrough.py](../../tutorials/belief-planning-walkthrough.py)：下载单文件，运行 python3 tutorials/belief-planning-walkthrough.py 查看模型排序、三条观察分支与最优计划；加 --test 做精确分数和 27 种计划的检查。代码还对比固定序列、模型 belief backup 和给定计数的传感器拟合；它没有实现神经模型、PETS 采样规划、MBPO 的 SAC 更新或 Dreamer 的 actor–critic 训练。
+
 <a id="lesson-branches"></a>
 
 ## 9 · 持续变化中的模型寿命
@@ -404,6 +472,8 @@ python3 examples/extended_foundations_lab.py test
 
 - [Kapturowski et al. · Recurrent Experience Replay in Distributed Reinforcement Learning](https://openreview.net/forum?id=r1lyTjAqYX)：原论文分析 replay 中的参数延迟、表示漂移、recurrent state staleness，以及 stored state 和 burn-in 的取舍。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-model-based#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-model-based#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-model-based)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -419,6 +489,12 @@ python3 examples/extended_foundations_lab.py test
 持续学习中的研究问题：当表示、技能或环境改变时，哪些旧模型仍可复用？有限计算应优先用于收集真实经验、改进模型，还是在已有模型中规划？
 
 [Dyna 与搜索控制](../tabular/planning.md) → [神经模型与规划](model-based.md) → [Option 后果模型](../../textbook/models.md) → [规划与计算分配](../../textbook/planning.md)
+
+
+### 可进一步检验的问题
+
+- [10 · 模型需要预测什么，才能在变化后继续支持决策？](../../docs/research-atlas.md#research-reusable-models)：模型误差经过 rollout 和末端价值进入动作选择，因而模型应保留什么信息取决于它的决策消费者。
+- [11 · 什么时候值得规划，应该把计算花在哪里？](../../docs/research-atlas.md#research-planning-budget)：MPC、短模型 rollout 与潜在想象在不同阶段使用模型，比较规划预算时需同时记录模型误差与真实交互成本。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

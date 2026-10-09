@@ -1,16 +1,27 @@
 # 持续控制与平均奖励
 
+函数逼近与经典进阶方法 · 第 3 章
+
 智能体没有自然回合终点时，怎样定义和学习长期控制目标？
 
 ## 本章内容
 
 - 区分折扣价值、平均奖励率与差分价值。
 - 从 Poisson 方程得到差分 TD 和 Sarsa 的两组同步更新。
+- 在同一服务站中手算真实时钟下的奖励率、启动 bias 和一次时长归一化更新。
 - 说明 unichain、communicating 与函数逼近保证的边界。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [MDP、回报与价值：序列决策的数学对象](../tabular/mdps.md)：区分任务目标、回报和策略价值。
+- [特征、泛化与半梯度控制](features-control.md)：理解半梯度控制，再把折扣目标换为长期奖励率。
+
 
 ### 持续交互
 
@@ -97,7 +108,7 @@ $$
 
 仓储机器人一天接一天地执行任务，不一定存在一个自然终点。在这种问题中，可以继续采用折扣回报，也可以直接问“长期每单位时间完成多少工作”。后一问题引入平均奖励。它强调持续运行的速率，同时让有限的启动代价在无限时间平均中消失；因此选择这一目标之前，必须确认这种取舍符合任务。
 
-函数逼近使这个选择更重要。共享参数可能让一个状态的改善伴随另一状态的退步，不能只要求“每处都变好”就完成策略比较。我们必须说明：特别关心某个起点，还是按智能体长期经历的状态来评价？这两种加权方式，会给折扣带来不同的含义。
+函数逼近使这个选择更重要。共享参数可能让一个状态的改善伴随另一状态的退步，不能只要求“每处都变好”就完成策略比较。我们必须说明：特别关心某个起点，还是按智能体长期访问的状态来评价？这两种加权方式，会给折扣带来不同的含义。
 
 $$
 g_\pi(s)=\lim_{T\to\infty}\frac1T\mathbb E_\pi\!\left[\sum_{t=0}^{T-1}R_{t+1}\mid S_0=s\right].
@@ -119,7 +130,7 @@ $$
 
 ## 2 · 从长期速率到差分 Bellman 方程
 
-平均奖励率只描述长期斜率，无法区分获得同一速率但暂态体验不同的状态。差分价值补充这种信息。为避免在周期链上把一个不收敛的普通无限和当作定义，本章直接用 Poisson 方程定义差分价值，并固定一个参考值。
+平均奖励率只描述长期斜率，无法区分获得同一速率但暂态收益不同的状态。差分价值补充这种信息。为避免在周期链上把一个不收敛的普通无限和当作定义，本章直接用 Poisson 方程定义差分价值，并固定一个参考值。
 
 $$
 g_\pi\mathbf1+h_\pi=r_\pi+P_\pi h_\pi,\qquad h_\pi(s_{\rm ref})=0.
@@ -144,6 +155,71 @@ $$
 这条等式解释了 gain 与 bias 的分工。gain 是长期累计收益的斜率；bias 是由起点和到达过程造成的有界修正。gain-optimal 只要求最大化斜率。同样的长期率可以容许完全不同的前期损失。若要进一步比较这些策略，就需要偏差最优、有限寿命目标或另外给定的约束，而不是声称平均奖励已经评价了所有时间尺度。
 
 例如一个决策态可选择“立即获得1并进入每步奖励1的吸收循环”，也可“先付出10再进入同一循环”。两策略的 gain 都是1。令循环状态 h=0，则决策态的 bias 分别为0与−11。无论从哪一个较长但有限的时限看，后一策略都少11；单看极限奖励率则把它们并列。这个例子不需要非平稳性，就足以说明策略评价准则必须先说清。
+
+<a id="average-rate-cycles"></a>
+
+### 2.1 · 同一个服务站：决策次数与真实秒数
+
+先在一个持续运行的服务系统中把 gain 与 bias 都算出来。系统只在启动时从 E 进入服务站 H，耗时 2 秒、奖励 −3。以后每次回到 H，都能选择快环或慢环，分别经 A 或 B 完成作业；回站是世界自身的转移。所有奖励在对应动作结束时到账，执行途中没有额外奖励或决策。
+
+| 当前位置与选择 | 后继状态 | 累计奖励 R | 持续时间 τ（秒） |
+| --- | --- | --- | --- |
+| E：启动 | H | −3 | 2 |
+| H：快环 | A | 0 | 1 |
+| A：返回 | H | 4 | 1 |
+| H：慢环 | B | 0 | 1 |
+| B：返回 | H | 9 | 3 |
+
+一次快环需要两次转移、2 秒，获得 4；一次慢环同样需要两次转移，却要 4 秒，获得 9。固定策略 $\pi_F$ 每次选快环，$\pi_L$ 每次选慢环。启动只出现一次，所以它不改变无限时间平均的斜率：
+
+$$
+g_F=\frac{0+4}{1+1}=2,\qquad g_L=\frac{0+9}{1+3}=\frac94\quad\text{奖励/秒}.
+$$
+
+这是一种半马尔可夫描述：在决策时刻记录状态、总奖励与耗时。把长动作展开为每秒一次的倒计时状态，就能得到同一个真实过程的普通 MDP。
+
+看图前先预测：两条路线都恰好执行两次动作，按每次动作的奖励平均，能否直接得到每秒收益？再试一种看似已经修正时长的做法：先算每次动作的奖励除以秒数，再把这两个数等权平均。
+
+![启动E经两秒到H；快环H到A再到H为两秒得4，慢环H到B再到H为四秒得9，轨迹长度使用同一秒数坐标。](../../assets/crl-figures/average-rate-walkthrough-cycles.svg)
+
+沿横轴读真实秒数；每个实心小圆点代表 1 奖励，奖励在终点到账。两个循环的决策次数相同，真实耗时不同。原创确定性算例；[计算核](https://yingwen.io/crl-code/figures/average-rate-walkthrough.mjs)与[精确分数教程](../../tutorials/average_rate_walkthrough.py)使用同一转移表。
+
+$$
+\underbrace{\frac{0/1+4/1}{2}}_{\text{快环：逐次率平均}}=2,\qquad\underbrace{\frac{0/1+9/3}{2}}_{\text{慢环：逐次率平均}}=\frac32.
+$$
+
+后一种算法错误地偏爱快环。慢环的返回动作占了 3/4 的时间，却只得到 1/2 的平均权重。真实总奖励除以真实总时长，才得到 $9/4$。按动作平均奖励则为 2 和 9/2，单位是奖励/决策，也不是所需目标。
+
+随机选择两条路线时也要保留这个分母。每次到 H 各以 1/2 的概率选择，平均一圈奖励为 $(4+9)/2$，平均一圈时间为 $(2+4)/2$，所以 $g=13/6$；直接平均两条路线的率却是 $17/8$。较长路线在真实生命中占据更大的时间份额。
+
+<a id="average-rate-bias"></a>
+
+### 2.2 · 扣去等待期间本可获得的收益
+
+长期率已经知道，但从 A、B 或尚未完成启动的 E 出发，接下来会遇到不同的等待与奖励。令 $n$ 数高层转移，$T_n$ 数真实秒，$\tau_n=T_{n+1}-T_n$。在一次转移期间，基准收益应为 $g_\pi\tau_n$，因而单位时间的 Poisson 方程变为：
+
+$$
+h_\pi(s)=\mathbb E_\pi[R_n-g_\pi\tau_n+h_\pi(S_{n+1})\mid S_n=s],\qquad h_\pi(H)=0.
+$$
+
+$R_n$ 是这整个动作的奖励，不是每秒奖励；$h$ 的单位是奖励，$g$ 的单位是奖励/秒。这里以回站 H 为共同参考，用 Poisson 方程定义 bias。固定策略下的循环有周期，不假设普通无限中心化回报收敛。
+
+先评价快环。A 返回 H 得 4、花 1 秒，所以 $h_F(A)=4-2=2$；从 B 返回虽然得 9，但占用 3 秒，所以 $h_F(B)=9-2\times3=3$。E 启动要付出 3，并失去 2 秒按基准工作的机会，因此 $h_F(E)=-3-2\times2=-7$。把这些数代回 H 的方程，得到 $0=0-2+2$。
+
+| 固定策略 | g（奖励/秒） | h(E) | h(H) | h(A) | h(B) |
+| --- | --- | --- | --- | --- | --- |
+| 每次快环 | 2 | −7 | 0 | 2 | 3 |
+| 每次慢环 | 9/4 | −15/2 | 0 | 7/4 | 9/4 |
+
+第二行用同样四个方程求得。例如慢环的 H 方程为 $0=0-9/4+9/4$，B 方程为 $9/4=9-3\times9/4$。$h_L(E)$ 更负，是因为同样启动等待按更高的奖励率计入机会成本；单拿这个负数并不能断言慢环策略较差。每个策略自己的 gain 与 bias 必须一起读。
+
+$$
+\mathbb E_\pi\!\left[\sum_{n=0}^{N-1}R_n\right]-g_\pi\mathbb E_\pi[T_N]=h_\pi(S_0)-\mathbb E_\pi[h_\pi(S_N)],\qquad T_0=0.
+$$
+
+将 N 条方程相加，中间的价值相消。这是固定转移次数 N 的精确关系。启动后恰好回到 H 时，快环的累计奖励等于 $2T_N-7$，慢环等于 $9T_N/4-15/2$；两个式子各在自己的回站时刻成立。
+
+这也解释了启动状态的特殊地位。精确模型能算出 E 的价值，但一条没有外部重置的生命只经过 E 一次，在线学习器没有无限多次机会把这项估计学准。回站 H 会反复访问，启动 E 不会；算法的覆盖条件必须区分二者。
 
 <a id="average-algorithm"></a>
 
@@ -214,6 +290,35 @@ $$
 
 若错误地先令奖励率变为 0.6，再给价值计算误差，就会把误差变为 0.4，得到 $w_A^+=0.04$。这就是一项能区分实现时序的单步测试；仅看长时间曲线可能不容易发现。
 
+<a id="average-rate-backup"></a>
+
+### 4.1 · 在慢环上手算一次预测更新
+
+仍固定每次选慢环。取更新前估计 $\bar g=2,\hat h(B)=2,\hat h(H)=0$。观察到 B 返回 H，奖励为 9、耗时为 3。因为每个访问状态在固定策略下只有一个选定动作，可以把对应的动作价值记为 $\hat h$。采用 inter-option Differential Q-evaluation 的已知确定性时长特例，先只计算一次残差：
+
+$$
+\begin{gathered}\delta=9-2\times3+0-2=1,\qquad\Delta=\alpha\delta/L=\frac3{10}\frac13=\frac1{10},\\\hat h^+(B)=\frac{21}{10},\qquad\bar g^+=2+\frac12\Delta=\frac{41}{20}.\end{gathered}
+$$
+
+这里 $L=3$ 秒是已知的期望时长，$\alpha=0.3$ 秒、$\eta=0.5/\text{秒}$；增量为 $\Delta=\alpha\delta/L$，率更新为 $\eta\Delta$。把一秒作为时间单位后，可以直接使用这些数值。价值与率共用旧残差，随后才处理下一条转移。
+
+如果先将率改为 2.05，再重算残差，就得到 $9-2.05\times3-2=0.85$；价值因此变为 2.085，而非 2.1。若把全部价值加 100，正确残差仍为 1。这两个手算检查分别针对更新次序与常数规范。
+
+同一旧参数快照；一次确定性时长归一化备份
+
+```python
+rate, h_b, h_h, duration = 2.0, 2.0, 0.0, 3.0
+alpha, eta = 0.3, 0.5
+delta = 9.0 - rate * duration + h_h - h_b
+increment = alpha * delta / duration
+h_b, rate = h_b + increment, rate + eta * increment
+print(delta, h_b, rate)  # 1.0, 2.1, 2.05
+```
+
+上述更新对应 Wan、Naik 与 Sutton 的 options 论文 §3，式 (6)–(10)，这里仅演算一次。随机时长下应维护期望长度 L，不能把随机观测到的 τ 同时塞进分母并沿用原固定点结论；单步动作论文的收敛证明也不能直接覆盖任意半马尔可夫更新。
+
+接下来允许 H 的动作变化，就要比较两条路线在同一旧策略基准下的后果。第三册的[同一服务站控制与规划](../../textbook/average.md#average-rate-control)继续计算一次策略改善，并让时长模型过时，检查规划为什么会选错。
+
 <a id="average-objective"></a>
 
 ## 5 · 折扣目标为什么可能改变动作排序
@@ -236,7 +341,7 @@ $$
 
 这与前面的起点反例并不矛盾。固定初始分布 $\mu$ 下的 $J_\mu(\pi)=\mu^\top v_\gamma^\pi$ 仍是合法目标，折扣一般会影响排序；$d_\pi$ 则随策略改变，已经是另一种评价。在优化 $J_\gamma^{\rm stat}$ 时，不能冻结 $d_\pi$ 后只提高当前常见状态的价值，就声称仍在优化这个完整目标。
 
-因此，持续交互与函数逼近并未使所有折扣控制都失去意义。需要重新检查的是：所用状态加权是否对应我们想比较的生活经历，实际更新又是否改善那个目标。若目标已选为长期奖励率，求解方法中再使用折扣，则它承担估计或计算的作用；仅从上述恒等式，推不出某个折扣 TD 控制算法会优化奖励率。
+因此，持续交互与函数逼近并未使所有折扣控制都失去意义。需要重新检查的是：所用状态加权是否对应我们想比较的交互过程，实际更新又是否改善那个目标。若目标已选为长期奖励率，求解方法中再使用折扣，则它承担估计或计算的作用；仅从上述恒等式，推不出某个折扣 TD 控制算法会优化奖励率。
 
 平均奖励也有局限。有限生命期里付出巨额不可恢复成本可能不可接受，即使渐近奖励率更高。真正研究单生命期系统时，需要同时记录累计奖励、坏事件概率与恢复时间，不能只报告理论上的无限时域平均率。
 
@@ -278,6 +383,14 @@ python3 examples/approximation_textbook_lab.py average-control
 python3 examples/approximation_textbook_lab.py test
 ```
 
+服务站算例的[完整标准库教程](../../tutorials/average_rate_walkthrough.py)用分数高斯消元独立解五个方程，并按一秒一格展开真实奖励。仓库中的文件为 `tutorials/average_rate_walkthrough.py`，在仓库根目录运行：
+
+得到 gain/bias、一次备份、有限时间收益与模型改变后的动作比较
+
+```bash
+python3 tutorials/average_rate_walkthrough.py
+```
+
 <a id="experiment-differential_dyna"></a>
 
 ### 实验：实验 · 学得模型的五次规划值得多少真实经验
@@ -290,7 +403,7 @@ python3 examples/approximation_textbook_lab.py test
 
 **检验的机制。** 先做真实差分 Q 更新，再写入经验模型，再用 planning_update 更新 Q 和率。模型不能从未访问状态动作生成知识；模拟奖励不计入真实生命期奖励。
 
-**测量。** 主图是冻结当前贪心策略后，用真实模型精确解得的 gain。另看真实经历奖励率和总备份数：最终策略能力、学习过程所得收益和计算开销是三个量。
+**测量。** 主图是冻结当前贪心策略后，用真实模型精确解得的 gain。另看真实交互奖励率和总备份数：最终策略能力、学习过程所得收益和计算开销是三个量。
 
 ```bash
 python3 implementations/average_systems/differential_dyna.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
@@ -298,9 +411,24 @@ python3 implementations/average_systems/differential_dyna.py --steps 1200 --seed
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/differential_dyna/curves.svg)
+![实测学习曲线](../../assets/crl-figures/result-differential_dyna.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：冻结贪心策略的精确平均奖励。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 固定当前 Q 所选的贪心策略，在真实三状态模型上求其长期平均奖励。真实模型只用于评价。value 不是算法内部的 gain_estimate，也不是带探索的行为所收到的平均奖励。
+
+**step：怎样计时。** step 是真实交互数。两方法每步都直接更新 Q 和率；Differential Dyna 另做5次经验模型期望备份。environment_updates、model_backups、total_backups 分别记录这两类更新及其和，尚未计模型维护与求和的全部运行时间。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 全程行为奖励率另看 experienced_reward_rate：它已把从第1步开始的探索与学习成本纳入平均，不应再次平均各稀疏检查点。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算奖励率差 optimal_gain − value 和各更新计数。experienced_reward_rate × step 给出累计真实奖励；模型奖励不加入该总量。日志未保存 Q 表与每步奖励，不能仅凭冻结策略的 value 恢复策略或逐步行为轨迹。
+
+计算位置：[average_systems/differential_dyna.py](../../implementations/average_systems/differential_dyna.py) · [average_systems/differential_q_multistate.py](../../implementations/average_systems/differential_q_multistate.py) · [average_systems/_common.py](../../implementations/average_systems/_common.py)
+
+</details>
 
 **结果分析。** 第 300 步，Dyna 的冻结策略 gain 均值约 0.58763，对照约 0.42844；第 1200 步两者均为最优 0.59704。真实全程奖励率分别约 0.50207、0.45040，但总备份数分别为 7200 和 1200。相同交互不等于相同计算。
 
@@ -352,6 +480,10 @@ python3 examples/approximation_textbook_lab.py test
 
 - [Wan, Naik & Sutton · Learning and Planning in Average-Reward MDPs](https://proceedings.mlr.press/v139/wan21a.html)：Differential Q-learning 等算法的原始论文。其表格控制理论不应直接替代任意函数逼近的保证。
 
+- [Wan, Naik & Sutton · Average-Reward Learning and Planning with Options](https://arxiv.org/abs/2110.13855)：§2 的真实时间奖励率与半马尔可夫 Bellman 方程；§3 式 (6)–(10) 的期望时长归一化更新。本文服务站为原创确定性算例。
+
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-average-control#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-average-control#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-approximation-average-control)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -367,6 +499,11 @@ python3 examples/approximation_textbook_lab.py test
 持续学习中的研究问题：长期收益率忽略有限的启动损失；单生命期不能忽略。怎样同时报告生命期收益、适应成本和后期表现，并让预测、控制与模型使用一致的时间单位？
 
 [平均奖励控制基础](average-control.md) → [熵如何改变目标](../deep/entropy-control.md) → [平均奖励的预测、控制与规划](../../textbook/average.md) → [完整学习器的评价](../../textbook/control.md)
+
+
+### 可进一步检验的问题
+
+- [01 · 什么目标能够评价一个始终在学习的智能体？](../../docs/research-atlas.md#research-lifetime-objective)：周期链的奖励率与暂态价值说明长期极限会忽略有限前缀，由此可问适应成本何时改变实际部署期的排序。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

@@ -42,7 +42,7 @@ python3 examples/tabular_textbook_lab.py test
 
 [源码](../examples/tabular_textbook_lab.py)
 
-## [Monte Carlo：完整经历、重复访问与离策略评价](../foundations/tabular/monte-carlo.md)
+## [Monte Carlo：完整回报、探索控制与离策略评价](../foundations/tabular/monte-carlo.md)
 
 Python 3，仅标准库。下载完整文件后在其目录运行；页面展示核心区域。小环境和解析检验用于理解机制，不是论文基准复现。
 
@@ -164,7 +164,7 @@ python3 examples/deep_textbook_train.py dqn --steps 2000 --seed 0
 
 ## [策略梯度：从轨迹概率到 GAE 与 actor–critic](../foundations/deep/policy-gradient.md)
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 ```bash
 python3 examples/deep_textbook_lab.py test
@@ -174,7 +174,7 @@ python3 examples/deep_textbook_lab.py test
 
 ## [策略更新的尺度：TRPO 与 PPO](../foundations/deep/trust-region.md)
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 ```bash
 python3 examples/deep_textbook_lab.py test
@@ -184,7 +184,7 @@ python3 examples/deep_textbook_lab.py test
 
 ## [连续动作的价值优化：DDPG 与 TD3](../foundations/deep/deterministic-control.md)
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 ```bash
 python3 examples/deep_textbook_lab.py test
@@ -194,7 +194,7 @@ python3 examples/deep_textbook_lab.py test
 
 ## [最大熵连续控制：SAC 的价值、密度与温度](../foundations/deep/entropy-control.md)
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 ```bash
 python3 examples/deep_textbook_lab.py test
@@ -204,13 +204,24 @@ python3 examples/deep_textbook_lab.py test
 
 ## [深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 ```bash
 python3 examples/deep_textbook_lab.py test
 ```
 
 [源码](../examples/deep_textbook_lab.py)
+
+## [大规模训练：算法与系统怎样共同设计](../foundations/deep/systems.md)
+
+标准库精确核验：V-trace、队列年龄与分片概率。不启动训练，也不测量真实集群性能。
+
+```bash
+python3 examples/distributed_systems_lab.py test
+python3 examples/distributed_systems_lab.py demo
+```
+
+[源码](../examples/distributed_systems_lab.py)
 
 ## [不完全可观测：信念状态、信息行动与递归记忆](../foundations/deep/partial-observability.md)
 
@@ -283,9 +294,9 @@ python3 examples/marl_objectives_lab.py demo --out results/marl-objectives
 
 [源码](../examples/marl_objectives_lab.py)
 
-## [对手建模与递归推理：预测谁，回应什么？](../foundations/deep/multi-agent-reasoning.md)
+## [自对弈与开放式多智能体学习：评估、目标与策略种群](../foundations/deep/multi-agent-populations.md)
 
-下载本页配套脚本后运行。精确条件评分、虚拟博弈与零和 gap 的机制检查，不是 PR2/GR2 神经训练。
+精确有限游戏的评价与学习目标诊断；不是神经 PSRO、COLE 或 HOLA 的论文性能复现。
 
 ```bash
 python3 examples/marl_objectives_lab.py test
@@ -293,9 +304,9 @@ python3 examples/marl_objectives_lab.py test
 
 [源码](../examples/marl_objectives_lab.py)
 
-## [开放式多智能体学习：评估、目标构建与策略改善](../foundations/deep/multi-agent-populations.md)
+## [对手建模与递归推理：预测谁，回应什么？](../foundations/deep/multi-agent-reasoning.md)
 
-精确有限游戏的评价与学习目标诊断；不是神经 PSRO、COLE 或 HOLA 的论文性能复现。
+下载本页配套脚本后运行精确条件评分检查；本页另附软响应梯度的独立代码。均不是 PR2/GR2 神经训练。
 
 ```bash
 python3 examples/marl_objectives_lab.py test

@@ -1,5 +1,61 @@
 # 强化学习问题与大世界中的持续学习
 
+## 理解智能，构建人工心智
+
+<a id="intelligence-definition"></a>
+
+### 智能与心智：我们希望理解什么
+
+人工智能的一个基础目标，是理解智能怎样工作，并据此构建能够在世界中学习、思考和行动的人工心智。本书采用McCarthy提出、Sutton阐释的工作定义：智能是实现目标能力中的计算部分。它把问题指向一个系统怎样运用信息取得结果；同样回到充电座，更强的电机和更好的路线判断贡献不同，后者才是这里要解释的计算能力。定义讨论已有的能力，未要求它必须由学习获得；强化学习进一步研究这种能力怎样从经验形成和改善。
+
+“心智”在这里指组织感知、记忆、预测、学习与决策的计算过程。我们问这些过程怎样协作、在何种条件下足以支持有效行动。生物系统为这种研究提供现象与约束，人工系统则让机制能够被明确实现和检验；这种计算研究并不预先回答系统是否具有主观体验。
+
+用目标解释一个系统，是观察者依据其行为与后果采取的立场。房主用“保持温度”理解恒温器，维修者可能用电路机制解释同一设备。进入实验时仍须明确要评价的后果，以及奖励怎样对应它；目标的解释立场不使任意奖励都同样合适。
+
+[智能的定义（2020）](https://cis.temple.edu/tagit/publications/On-Defining-AI-Commentary.pdf#page=67)
+
+<a id="why-reinforcement-learning"></a>
+
+### 为什么从强化学习研究人工心智
+
+强化学习研究智能体如何从交互中获得经验，并据此改善行动。智能体收到观测，采取行动，再收到后果与奖励。奖励给出评价信号，观测让关于世界的预测接受实际后果的检验，行动又决定接下来能够获得哪些证据。要利用这些经验，智能体必须保留能影响未来判断和选择的信息。
+
+例如，移动机器人绕开障碍回到充电座，需要记住看不见的位置、预测路线的后果，并权衡绕路与继续探查的代价。只测预测误差还不够：预测是否改变选择、选择是否带来更好的后果，都能分别检查。强化学习由此为学习、记忆和规划提出共同的功能问题，而具体机制仍需推导与实验来判断。
+
+把目标表达为奖励后，还需分别研究目标表达和能力形成。前者问什么后果值得追求，后者问智能体怎样利用有限经验和计算取得这些后果。奖励设计、状态构造、预测、控制与规划由此各有明确的问题，又必须在同一个行动者中协同工作。
+
+[Reinforcement Learning: An Introduction · §§1.1、3.1–3.2](http://incompleteideas.net/book/the-book-2nd.html)
+
+<a id="intelligence-agent-perspective"></a>
+
+### 从智能体自身的经验理解大世界
+
+智能体并不直接得到研究者手中的世界全貌。它只能利用已经收到的信息，在自己的记忆、计算和行动时间内作决定。机器人转过拐角后，刚才看见的障碍不会继续出现在当前图像里；要让先前获得的经验影响后来的选择，必须说明什么被保留、怎样更新、由谁读取。
+
+大世界观点关注世界复杂性超过智能体资源的情形。在这种研究设定下，智能体无法预先学完世界中的一切。保留哪些知识、何时更新、把计算用在哪里，都会影响以后能做什么。即使外部规律保持不变，有限表示与不断获得的新经验仍会带来学习问题；外部规律变化又增加了适应的要求。
+
+[Insights into Intelligence · 讲座（2023）](https://ee.stanford.edu/event/03-17-2023/isl-colloquium-insights-intelligence)
+
+<a id="artificial-minds-design"></a>
+
+### 理解机制，走向人工心智的设计
+
+构建人工心智的意义，也在于把关于智能的解释变成能够运行的机制：如果认为某种记忆、预测或学习规则能支持一项能力，就让它在交互中接受检验。理解智能并据此创造智能，是这里的长期科学目标。为此，我们既研究获得和组织知识的方法，也研究这些方法怎样共同支持一个完整行动者。
+
+Age of Design（设计时代）描述更远的愿景：理解智能的工作原理后，人可以有意识地设计智能系统，而这些系统也可能进一步参与设计。这里“设计”的对象包括能从经验中形成知识的学习机制；它不意味着由人预先填好每个领域的答案。这是一项研究方向与未来设想，是否实现以及何时实现仍是开放问题。
+
+[理解智能的研究目标 · 讲座（2022）](https://www.amii.ca/updates-insights/richard-sutton-ai-week-keynote) · [Age of Design · 访谈（00:55:50起，2025）](https://www.dwarkesh.com/p/richard-sutton)
+
+<a id="from-simple-models-to-minds"></a>
+
+### 三册怎样从简化问题回到这项抱负
+
+为了辨认机制，第一册从bandit中孤立探索与利用，再用MDP研究行动的长期后果，由表格方法进入函数逼近。第二册集中讨论深度网络、学习表示与训练系统，检查这些方法怎样改变数据需求和更新的稳定性。第三册以有限资源下的长期交互为中心，追问状态、知识和学习能力怎样随经验形成并保持有用。三册研究的是同一个交互学习问题，区别在于突出哪些困难、暂时给定哪些条件。
+
+每一次简化都应说清替智能体解决了什么；每一次恢复复杂性，都应说明新增了哪个待学习对象。这样，手算、算法、完整实验和人工心智的研究愿景之间有一条可以检查的联系。下面从交互边界开始，明确谁提供目标和信息、谁学习、谁承担行动的后果。
+
+[Reinforcement Learning: An Introduction · §§1.1、3.1–3.2](http://incompleteideas.net/book/the-book-2nd.html)
+
 **三元：先把世界任务化**
 
 设计者构造实验环境，规定观测、动作、奖励、时限、重置与任务安排。
@@ -150,7 +206,7 @@ $$
 
 还有一种困难不属于优化。如果当前输入把后果不同的两段历史混在一起，再大的无记忆前馈网络也无法仅凭这个输入区分它们。此时需要重新考虑观测、记忆和状态构建，而不只是换优化器。后面的状态章节研究这个问题；函数逼近章节先研究在给定表示下能学到什么。
 
-因此，应分别检验预测误差、更新稳定性和实际控制收益。长期运行时还需要问：经历大量学习之后，这个表示和更新机制是否仍能学习新的有用区别？这一问题把函数逼近与持续学习联系起来。
+因此，应分别检验预测误差、更新稳定性和实际控制收益。长期运行时还需要问：经过大量学习之后，这个表示和更新机制是否仍能学习新的有用区别？这一问题把函数逼近与持续学习联系起来。
 
 <a id="why-world-is-difficult"></a>
 <a id="agent-perspective-closed-loop"></a>
@@ -174,7 +230,7 @@ $$
 | 子任务和可调用动作库 | 需要什么子目标？怎样学会实现它，并决定何时停止？ | 目标说明要实现什么；option 规定何处可启动、怎样行动、何时停止；其模型支持高层规划。 |
 | 可查询的模型与充足计算 | 哪些后果需要建模？把计算用在哪个预测或决策上？ | 模型必须跟随行为与表示的变化；更多规划可能降低采样成本，也可能放大模型偏差。 |
 | 适用于整段训练的更新规则 | 怎样分配延迟信用、调节更新，并保留继续适应的能力？ | 资格迹、元学习和可塑性处理不同环节，不能互相替代；它们也有信息和资源成本。 |
-| 可反复重启的独立训练过程 | 怎样评价同一个学习器的整个经历？ | 探索、恢复和计算成本影响终生收益；后期适应与旧能力保留不能由一个终点分数代表。 |
+| 可反复重启的独立训练过程 | 怎样评价同一个学习器在整个生命期中的表现？ | 探索、恢复和计算成本影响终生收益；后期适应与旧能力保留不能由一个终点分数代表。 |
 
 这些是相互约束的学习问题，不是必须依次训练完的流水线。控制改变后续样本；技能改变模型要预测的行为；表示改变已有预测的含义。因此，模块自身的误差下降不保证完整智能体改善，还需要沿着模块的实际使用关系检验后果。
 
@@ -382,7 +438,7 @@ $\mathcal L$ 是含初始化、行动、学习和记忆更新的可执行智能�
 
 若希望在未知环境中设计同一个学习器，还要规定跨环境的要求。例如给定环境先验 $\eta$，优化 $\mathbb E_{P\sim\eta}[J_P(\mathcal L)]$；或在环境族 $\mathcal E$ 中优化 $\inf_{P\in\mathcal E}J_P(\mathcal L)$。前者是先验平均，后者是最坏情形；它们一般选择不同学习器。单个真实环境的最优值可以作理论比较器，但不是学习器得到的额外信息。
 
-Sutton 与 Barto 从目标导向的交互学习出发定义强化学习。智能体选择动作，环境返回信息和奖励；学习依据是行动的后果，而非每一步的正确动作标签。强化学习既指这一类问题，也指研究它的方法，具体算法则是求解问题的一种选择。
+强化学习研究目标导向的交互学习问题。智能体选择动作，环境返回信息和奖励；学习依据是行动的后果，而非每一步的正确动作标签。强化学习既指这一类问题，也指研究它的方法，具体算法则是求解问题的一种选择。
 
 智能体与环境的边界由正在研究的决策者确定，可以跨越身体或设备的物理边界。环境包括接口外产生后果的部分，其中的规则可以已知：即使熟悉游戏规则，选择好动作仍可能很难。本文先用观测描述一般接口，再加入充分的 Markov 状态这一条件。
 
@@ -446,7 +502,7 @@ $$
 
 $Z_t$ 已包含对当前观测的处理结果。$F$ 是实现的更新规则，$\xi_{t+1}$ 表示内部随机性。该形式描述有限智能体如何执行，不保证 $S_t$ 或 $Z_t$ 使环境响应满足 Markov 性。
 
-Sutton 的 Common Model 将感知／状态构造、反应式策略、价值函数和转移模型作为相互联系的部件。状态构造从经验历史中提取当前有用的信息，价值与模型分别预测回报和后果，规划再使用这些预测比较行动。这是一种功能划分；具体算法可以隐式完成其中的功能，也可以采用别的架构。
+Common Model 将感知／状态构造、反应式策略、价值函数和转移模型作为相互联系的部件。状态构造从经验历史中提取当前有用的信息，价值与模型分别预测回报和后果，规划再使用这些预测比较行动。这是一种功能划分；具体算法可以隐式完成其中的功能，也可以采用别的架构。
 
 [Harutyunyan](https://anna.harutyunyan.net/wp-content/uploads/2020/09/What_is_an_agent.pdf) 区分当前的行动程序与形成、修订它的学习过程。固定网络权重后，记忆仍可利用新经验改变后续选择。要判断这种改变是否有用，可以声明停止了哪些更新，再用禁写或擦除相关记忆等对照，检验经验对以后预测或行动的贡献。
 
@@ -521,7 +577,7 @@ Bandit 省去动作对后续状态的控制，集中研究即时收益与探索�
 
 ## 4. 从一般强化学习到大世界中的持续学习
 
-Javed 与 Sutton 的大世界假设选择研究这样一类问题：环境的复杂性显著超过智能体可用于感知、表示和计算的资源。在这个假设下，研究重点由“保存整个问题的解”转向“在有限资源下维护当前有用的知识”；是否存在这种容量瓶颈，需要结合具体任务判断。
+大世界假设选择研究这样一类问题：环境的复杂性显著超过智能体可用于感知、表示和计算的资源。在这个假设下，研究重点由“保存整个问题的解”转向“在有限资源下维护当前有用的知识”；是否存在这种容量瓶颈，需要结合具体任务判断。
 
 即使环境规律固定，有限表示也可能无法同时精确表达所有相关情境。若相邻时刻的经验具有结构性关联，智能体可以跟踪当前相关的部分。保留什么、替换什么、何时规划，因而成为学习问题。持续适应的需求在这里来自容量限制与经验结构，环境核本身仍可平稳。
 
@@ -666,7 +722,7 @@ A Definition of Continual Reinforcement Learning（NeurIPS 2023）给出一套�
 
 ### Elelimy、Szepesvári、White 与 Bowling：如何评价持续适应的智能体
 
-从智能体实际经历的情况出发，研究基于偏离行为的比较，而不是只对照一条未必可实现的全局最优轨迹。
+从智能体实际获得的经验出发，研究基于偏离行为的比较，而不是只对照一条未必可实现的全局最优轨迹。
 
 Rethinking the Foundations for Continual Reinforcement Learning（RLC 2025）提出评价框架及实证估计方法。估计依赖可用数据与模型条件。
 
@@ -759,7 +815,11 @@ Continual Learning as Computationally Constrained Reinforcement Learning 研究�
 
 ## 原始参考
 
-- [Sutton 与 Barto · Reinforcement Learning: An Introduction，第二版，§1.1–1.4、§2.1、§3.1–3.6、§8.13、§9.1–9.3、§17.1–17.5](http://incompleteideas.net/book/the-book-2nd.html)：问题与方法的区别，奖励、策略、价值与模型，智能体—环境接口，以及从函数逼近到仍待解决的问题。上文两步任务与共享特征算例为独立编写。
+- [Sutton · John McCarthy’s Definition of Intelligence（JAGI 11(2):66–67，2020）](https://cis.temple.edu/tagit/publications/On-Defining-AI-Commentary.pdf#page=67)：McCarthy的目标实现与计算性定义；Sutton进一步讨论目标归属与观察者的解释立场。链接为合刊中该文起页。
+- [Sutton & Barto · Reinforcement Learning: An Introduction（第 1、3、9 章）](http://incompleteideas.net/book/the-book-2nd.html)：交互学习、智能体—环境接口、回报与函数逼近。
+- [Sutton · Insights into Intelligence（Stanford ISL，2023）](https://ee.stanford.edu/event/03-17-2023/isl-colloquium-insights-intelligence)：公开讲座摘要将智能、目标、大世界与计算架构相连；作者明确区分定义、洞见和仍待论证的主张。
+- [Sutton · AI Week Keynote（Amii，2022）](https://www.amii.ca/updates-insights/richard-sutton-ai-week-keynote)：以理解智能的原理、进而创造智能为研究愿景；这是研究抱负与观点，不是完成时间表或效能定理。
+- [Sutton · Dwarkesh Podcast访谈：Age of Design（00:55:50起，2025）](https://www.dwarkesh.com/p/richard-sutton)：此处只引用“理解智能的工作原理后设计智能，而所设计的智能也能设计”的观点。访谈其他议题不作为本节论据。
 - [温颖 · 从现代深度强化学习到持续强化学习](https://yingwen.io/zh/blog/from-modern-deep-rl-to-continual-rl/)：本书总览的研究主线：设计者职责、第一人称经验与内部学习对象的形成。
 - [Anna Harutyunyan · What is an agent?（2020）](https://anna.harutyunyan.net/wp-content/uploads/2020/09/What_is_an_agent.pdf)：策略与完整学习过程、智能体—环境边界的概念讨论；不提供任意架构的性能保证。
 - [Nan Jiang · On Value Functions and the Agent-Environment Boundary（2019；2020 修订）](https://arxiv.org/abs/1905.13341)：批量 FQI 的边界不变分析，依赖数据覆盖和函数类条件；不等于任意改变信息接口后算法均不变。
@@ -771,7 +831,6 @@ Continual Learning as Computationally Constrained Reinforcement Learning 研究�
 - [Procgen 原始论文（2019）](https://arxiv.org/abs/1912.01588)：同一环境家族内的样本效率和未见关卡泛化。
 - [D4RL 原始论文（2020）](https://arxiv.org/abs/2004.07219)：从固定数据学习，面对混合行为与覆盖不足。
 - [Continual World 原始论文（2021）](https://arxiv.org/abs/2105.10919)：机器人任务序列中的迁移、保留与资源权衡。
-- [Sutton & Barto · Reinforcement Learning: An Introduction（第 1、3、9 章）](http://incompleteideas.net/book/the-book-2nd.html)：交互学习、智能体—环境接口、回报与函数逼近。
 - [Sutton · The Quest for a Common Model of the Intelligent Decision Maker](https://arxiv.org/html/2202.13252v1)：观测、主观状态、策略、价值与模型之间的功能关系。
 - [Javed & Sutton · The Big World Hypothesis](https://oaklab.ai/posts/the-big-world-hypothesis)：有限智能体、跟踪和计算约束；文中明确说明它不是所有任务的共同性质。
 - [Sutton, Koop & Silver · On the Role of Tracking in Stationary Environments](https://doi.org/10.1145/1273496.1273606)：环境平稳与跟踪学习并不矛盾；需结合表示限制和经验结构。
@@ -779,7 +838,9 @@ Continual Learning as Computationally Constrained Reinforcement Learning 研究�
 - [Abel et al. · A Definition of Continual Reinforcement Learning](https://arxiv.org/html/2307.11046v2)：第 2 节从历史行为、环境和性能定义一般问题；第 3–4 节给出相对于 agent basis 的生成、到达与 CRL。
 - [Cassandra, Kaelbling & Littman · Acting Optimally in Partially Observable Stochastic Domains](https://cdn.aaai.org/AAAI/1994/AAAI94-157.pdf)：已知 POMDP 的状态信念与信息获取；表明隐藏状态问题可以有价值函数和控制目标。
 
-# 持续强化学习：正文阅读顺序
+# 持续强化学习：按问题索引
+
+顺序学习请使用[三册教材目录](learning-route.md)。以下按概念联系查阅；合订讲义保留各专题的完整正文。
 
 ## I · 强化学习问题与目标
 

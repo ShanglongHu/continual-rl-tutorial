@@ -8,7 +8,7 @@
 
 ## 1. 先用一个例子理解 CRL
 
-设想一个送货机器人：每天都在工作，货架位置、地面摩擦和配送目标会变化；它不能每次变化都重新训练，也不能无限保存全部经历。
+设想一个送货机器人：每天都在工作，货架位置、地面摩擦和配送目标会变化；它不能每次变化都重新训练，也不能无限保存全部经验。
 
 它至少面临三个不同问题：
 
@@ -130,7 +130,7 @@ python3 examples/crl_labs.py bandit --seeds 20 --steps 4000 --out bandit-first-r
 | 没有人安排任务时，下一步该学什么？ | [6. 探索、课程与开放式学习](https://yingwen.io/zh/continual-rl/reading/advanced/#track-6) | 喜欢内在动机和任务生成 |
 | 不允许随时重置，如何持续自主学习？ | [7. Single-life 与 reset-free](https://yingwen.io/zh/continual-rl/reading/advanced/#track-7) | 面向机器人或真实系统 |
 | “长期做得好”该怎么形式化？ | [8. 理论与长期目标](https://yingwen.io/zh/continual-rl/reading/advanced/#track-8) | 数学兴趣较强，愿意补概率与理论 |
-| 能否从过去经历中学会更快适应？ | [9. 元学习与快速适应](https://yingwen.io/zh/continual-rl/reading/advanced/#track-9) | 对双层优化和学习算法感兴趣 |
+| 能否从过去经验中学会更快适应？ | [9. 元学习与快速适应](https://yingwen.io/zh/continual-rl/reading/advanced/#track-9) | 对双层优化和学习算法感兴趣 |
 | 其他智能体也在变化，如何长期协作？ | [10. 持续多智能体学习](https://yingwen.io/zh/continual-rl/reading/advanced/#track-10) | 已有或愿意补 MARL 基础 |
 
 还没有偏好时，建议先选 **1 或 2**，做一个小而可解释的实验；对记忆和认知感兴趣则选 **3**。这是学习路径建议，不是方向重要性排名。

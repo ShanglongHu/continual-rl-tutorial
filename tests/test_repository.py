@@ -32,9 +32,20 @@ class Documentation(unittest.TestCase):
     def test_complete_textbook_and_prerequisites(self):
         inventory=json.loads((ROOT/'data/site-export.json').read_text())
         self.assertEqual(len(inventory['chapters']),23)
-        self.assertEqual(len(inventory['lessons']),28)
+        self.assertEqual(len(inventory['lessons']),29)
         self.assertIn('reward-design', {c['id'] for c in inventory['chapters']})
-        self.assertEqual(sum(l['track']=='deep' and l['order']>=7 for l in inventory['lessons']),9)
+        self.assertEqual({track:sum(l['track']==track for l in inventory['lessons'])
+                          for track in ('tabular','approximation','deep')},
+                         {'tabular':7,'approximation':6,'deep':16})
+        deep = [l for l in inventory['lessons'] if l['track']=='deep']
+        core = sorted((l for l in deep if l['kind']=='core'), key=lambda l:l['displayOrdinal'])
+        branches = [l for l in deep if l['kind']=='branch']
+        self.assertEqual([l['displayOrdinal'] for l in core],list(range(1,8)))
+        self.assertEqual(len(branches),9)
+        self.assertTrue(all(l['displayOrdinal'] is None for l in branches))
+        self.assertEqual(core[-1]['id'],'study-deep-systems')
+        self.assertEqual(core[-1]['path'],'foundations/deep/systems/')
+        self.assertEqual(core[-1]['file'],'distributed_systems_lab.py')
         marl = [l for l in inventory['lessons'] if '/multi-agent' in l['path']]
         self.assertEqual({l['path'] for l in marl}, {
             'foundations/deep/multi-agent/',

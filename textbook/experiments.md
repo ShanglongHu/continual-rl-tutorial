@@ -12,6 +12,13 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [持续控制：比较策略与学习智能体](control.md)：先规定要比较的完整学习器与目标。
+
+
 ### 随机变量与样本均值
 
 相同算法多次运行会产生不同收益。单次结果为 $X_i$，总体期望为 $\mu=\mathbb E[X]$，样本均值为 $\bar X=n^{-1}\sum_iX_i$。
@@ -280,7 +287,7 @@ $$
 
 **检验的机制。** 使用一个完整学习过程作为采样单位。不要将时间点当作独立种子；图中各时刻的均值与标准差均跨完整运行计算。
 
-**测量。** 纵轴是五个非终止状态对解析价值的等权 RMSE，不是训练 TD 误差。横轴包括所有真实转移，也包括 MC 尚未等到终点的经历。
+**测量。** 纵轴是五个非终止状态对解析价值的等权 RMSE，不是训练 TD 误差。横轴包括所有真实转移，也包括 MC 尚未等到终点的回合。
 
 ```bash
 python3 implementations/classic/td0.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
@@ -288,9 +295,24 @@ python3 implementations/classic/td0.py --steps 1200 --seeds 0 1 2 3 4 --out resu
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/td0/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-td0.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：五状态价值 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 当前价值估计与真实值 s/6 的误差。在五个非终止状态 s=1,…,5 上均匀平均平方误差后开方；权重不是训练访问频率。
+
+**step：怎样计时。** step 包含全部真实转移，也包含尚未完成的回合。MC 在自然终止后，对该回合首次访问的每个状态写一次回报均值；同回合重复访问不增加该状态的样本数。TD(0) 每个真实步写入；资格迹可同时影响多个状态。相同环境步不表示相同参数写入次数，预算结束也不产生额外终止反馈。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 各状态初值均为0。MC 用各状态已完成回合的首次访问计数决定步长；TD(0) 用常数步长0.1，比较不仅改变了是否自举。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算各记录时刻的跨种子均值、样本标准差和末点误差；没有保存全部预测向量，不能仅凭 value 重新计算状态权重或逐状态误差。 日志未保存回合边界、首次访问计数或逐步价值，曲线平台不能单独区分等待终止、零更新和稀疏记录漏掉变化。
+
+计算位置：[classic/_common.py](../implementations/classic/_common.py) · [classic/td0.py](../implementations/classic/td0.py) · [classic/td_lambda.py](../implementations/classic/td_lambda.py) · [classic/true_online_td.py](../implementations/classic/true_online_td.py) · [classic/mc_prediction.py](../implementations/classic/mc_prediction.py)
+
+</details>
 
 **结果分析。** 下表自动从原始五个种子汇总。曲线展示当前配置的学习过程；末点均值的高低不能替代对训练全程、逐种子差异和方法选择程序的检查。
 
@@ -304,7 +326,7 @@ python3 implementations/classic/td0.py --steps 1200 --seeds 0 1 2 3 4 --out resu
 
 ## 6 · 配对 bootstrap 与区间含义
 
-![三组成对生命期各自汇总为一个分数差，再按整对索引三、三、一进行重采样。](https://yingwen.io/crl-figures/concept-research-experiment-pairing.svg)
+![三组成对生命期各自汇总为一个分数差，再按整对索引三、三、一进行重采样。](../assets/crl-figures/concept-research-experiment-pairing.svg)
 
 每条点列代表一次完整运行，而不是八个独立样本。分数采用第 7 节可手算的三对数值；颜色标识配对。重采样改变整次运行的组成，不打散同一轨迹的时间点。图示一次重采样，没有由它计算置信区间。
 
@@ -536,7 +558,7 @@ $$
 
 ## 10 · 在线评价与冻结诊断
 
-在线主评价问：这个学习过程在真实经历中获得了多少回报？冻结诊断问：从同一个历史起点出发，接下来继续更新是否有帮助？在可复制模拟器中，可以复制学习器与环境状态，再分别保持更新和冻结参数。诊断交互不回灌主生命期。
+在线主评价问：这个学习过程在真实交互中获得了多少回报？冻结诊断问：从同一个历史起点出发，接下来继续更新是否有帮助？在可复制模拟器中，可以复制学习器与环境状态，再分别保持更新和冻结参数。诊断交互不回灌主生命期。
 
 | 需要隔离的对象 | 正确做法 | 改变它会引入的混杂 |
 | --- | --- | --- |
@@ -583,6 +605,10 @@ $$
 从精确测试到受控学习曲线，再到多运行基准。每一层支持不同强度的结论。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-experiments) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=experiments) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=experiments)
+
+## 从本章进入实践
+
+[策略梯度与控制](https://yingwen.io/zh/continual-rl/code/#practice-policy-control)：优化器确实降低了损失，为什么行动仍可能变差？
 
 ## 持续强化学习：近期研究与原始实现
 

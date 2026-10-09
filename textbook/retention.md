@@ -12,6 +12,14 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [持续控制：比较策略与学习智能体](control.md)：区分旧任务诊断与生命期收益。
+- [函数逼近预测：从回归到 TD 固定点](../foundations/approximation/prediction.md)：理解共享参数的误差与干扰。
+
+
 ### 训练分布与评价分布
 
 当前数据分布由环境和行为策略共同产生；评价可以关注当前环境、历史环境混合或整个生命期收益，需要事先指定。
@@ -123,6 +131,50 @@ $$
 
 先固定预算：参数、目标网络、教师网络、buffer 中的观测/动作/概率/价值、统计量都按字节计算；还要固定每个环境步允许的梯度更新数。一个方法多训练十次或保存整个历史，不能只与只用一条新样本的方法比较“算法更好”。
 
+<a id="lesson-shared-switch"></a>
+
+### 同一反转问题：忘得更多，也可能学得更快
+
+先把回报、探索和数据覆盖暂时拿开，只看一次目标反转。仪器给出左右线索 $x\in\{-1,+1\}$，两者等权；旧条件 A 的反馈为 $y=x$，新条件 B 为 $y=-x$。预测器是两层标量网络 $f_{u,v}(x)=v(ux)$，没有偏置或激活函数。它对输入仍是线性的，对两个待学习权重则是双线性的。本例给定已经准确预测 A 的检查点 $(u,v)=(1,1)$，不模拟其先前训练史。
+
+$$
+q=uv,\qquad L_A=\tfrac12\mathbb E_x[(qx-x)^2]=\tfrac12(q-1)^2,\qquad L_B=\tfrac12\mathbb E_x[(qx+x)^2]=\tfrac12(q+1)^2.
+$$
+
+每个期望都对完整的两个输入取等权平均。每次更新使用 B 的两个带标签输入；之后只读计算 A、B 的精确平均损失。没有抽样误差，也不以这个全支持评价估计未见数据上的泛化能力。
+
+比较两个副本。第一份保留 $(1,1)$；第二份在学习 B 前做一次保持函数不变的变换 $(u,v)\mapsto(2u,v/2)$，得到 $(2,1/2)$。二者的每个初始预测都相同，旧损失都是 0、新损失都是 2，参数个数也相同。另列固定 fresh 参照 $(1,0)$：它的初始预测为 0，新旧损失均为 $1/2$，所以不能假定它与旧检查点有相同起点。
+
+$$
+r_k=u_kv_k+1,\qquad u_{k+1}=u_k-\alpha r_kv_k,\qquad v_{k+1}=v_k-\alpha r_ku_k,\qquad \alpha=\tfrac14.
+$$
+
+这是对 $L_B$ 的普通梯度下降。两个右端都使用第 $k$ 次更新前的权重；$\alpha$ 按一次完整梯度更新计，不按环境交互步计。本例没有动量、归一化统计或随机状态。
+
+第一步就能看出分歧。$(1,1)$ 变为 $(1/2,1/2)$，因而 $q=1/4$、$L_B=25/32=0.78125$、$L_A=9/32=0.28125$。$(2,1/2)$ 则变为 $(7/4,-1/2)$，因而 $q=-7/8$、$L_B=1/128=0.0078125$、$L_A=225/128=1.7578125$。新目标学得更快的一份，此刻在旧目标上反而错得更多。
+
+看图前先预测：如果只展示旧目标损失，哪份副本看起来较好？再加入新目标损失，你会怎样解释这个排序？
+
+![相同左右线索的旧、新目标反号；两幅相同纵轴的损失轨迹分别显示新目标适应和旧目标误差。蓝实线对称旧解，橙虚线等预测重参数化，紫点线固定fresh参照。](../assets/crl-figures/retention-plasticity-walkthrough-losses.svg)
+
+原创确定性梯度算例。横轴是 B 上的更新次数，每步使用两个输入，步长 1/4；两个损失面板共用 0–2 的纵轴。蓝、橙两份初始预测相同，紫色 fresh 起始误差较小。橙线的新损失迅速下降，同时旧损失上升得更多；此图测量预测误差，不是深度 RL 训练回报。
+
+| 副本 | B 学习前的 $L_B$ | B 学习八步后的 $L_B$ | 同一检查点只读 $L_A$ |
+| --- | --- | --- | --- |
+| 对称旧解 (1,1) | 2 | 0.503174 | 0.496836 |
+| 等预测重参数化 (2,1/2) | 2 | 约 $1.08\times10^{-14}$ | 2.000000（约） |
+| 固定 fresh (1,0) | 0.5 | 0.00008165 | 1.974523 |
+
+旧损失由 0 上升，说明原有预测功能没有保持；新损失是否下降则回答另一问题。这里 A 与 B 要求相反预测，适应 B 本来就会改变 A 的输出。将这项改变称为需要防止的遗忘，还依赖 A 是否会再次有用。如果后来回到 A，还要测量重新学习的代价，不能从这个检查点的旧误差直接推断恢复速度。下一章沿用这两个副本解释它们为何走上不同轨迹。
+
+[下载单文件标准库脚本](../tutorials/retention_plasticity_walkthrough.py)，在仓库根目录运行下方命令，可重算两章全部轨迹；[逐步数值](https://yingwen.io/crl-figures/retention-plasticity-walkthrough-data.json)和[独立 JavaScript 计算核](https://yingwen.io/crl-code/figures/retention-plasticity-walkthrough.mjs)给出图中对应值。
+
+无需第三方库；输出 JSON，包含逐步参数、旧/新损失及副本上的重新学习轨迹
+
+```bash
+python3 tutorials/retention_plasticity_walkthrough.py
+```
+
 <a id="lesson-derive"></a>
 
 ## 2 · 经验重放与历史采样分布
@@ -171,7 +223,7 @@ python3 implementations/continual/reservoir_replay.py --steps 1200 --seeds 0 1 2
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/reservoir_replay/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：当前任务无噪声预测 MSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 末尾当前 MSE：回放 0.0660、在线 SGD 0.0000327。旧任务 MSE：回放 0.4428、在线 SGD 0.8069。回放确实更接近旧函数，却明显拖慢了新函数适应。两个指标共同显示折中，不能只取旧误差讲“全面改善”。
 
@@ -249,7 +301,7 @@ python3 implementations/continual/ewc.py --steps 1200 --seeds 0 1 2 3 4 --out re
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/ewc/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：当前任务无噪声预测 MSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 末尾当前 MSE 为 0.0978，在线 SGD 为 0.0000327；旧 MSE 为 0.3497，对照为 0.8069。约束保存了更多旧函数，却使新函数误差更大。这里没有证据说明基础线性学习器本身丧失了学习能力。
 
@@ -292,7 +344,7 @@ $$
 
 ## 6 · 稳定性与适应性的二次例子
 
-![新旧任务的两个抛物线损失，以及保留权重零、一、五对应的三个参数位置。](https://yingwen.io/crl-figures/concept-research-retention-conflict.svg)
+![新旧任务的两个抛物线损失，以及保留权重零、一、五对应的三个参数位置。](../assets/crl-figures/concept-research-retention-conflict.svg)
 
 上方两条曲线使用相同参数轴。下方每行标出一个加权联合目标的精确最小点；增加旧任务权重把参数拉向右侧。它改变的是优化目标，而不只是优化速度。计算脚本：research-mechanisms.mjs。
 
@@ -892,6 +944,10 @@ python examples/lifelong_algorithms_lab.py retention
 <a id="lesson-sources"></a>
 
 ## 参考文献与实现
+
+- [Sutton & Barto · Reinforcement Learning: An Introduction · §9.3–9.4](http://incompleteideas.net/book/the-book-2nd.html)：固定目标的梯度更新；线性函数逼近中的“线性”指相对于待学习权重。本章双线性参数算例为原创。
+
+- [Lyle et al. · Understanding Plasticity in Neural Networks · §2–3](https://proceedings.mlr.press/v202/lyle23b.html)：区分旧任务遗忘与后续任务学习能力；明确探针目标、优化器和固定更新预算。
 
 - [Rolnick et al. · Experience Replay for Continual Learning (CLEAR)](https://papers.nips.cc/paper_files/paper/2019/hash/fa7cdfad1a5aaf8370ebeda47a1ff1c3-Abstract.html)：新旧经验混合、off-policy 学习与行为/价值克隆的原论文。
 

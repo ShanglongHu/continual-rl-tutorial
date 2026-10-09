@@ -1817,6 +1817,213 @@
       "question": "模块之间的改进能否变成长生命期收益？"
     }
   ],
+  "foundationResearchLinks": [
+    {
+      "chapterId": "study-tabular-mdps",
+      "questionId": "reward-design",
+      "bridge": "先明确状态、奖励与回报的定义，再问设计者的偏好能否由这一状态上的奖励表达。"
+    },
+    {
+      "chapterId": "study-deep-constraints",
+      "questionId": "reward-design",
+      "bridge": "将回报目标与成本可行性分开，才能判断改变奖励是在表达偏好，还是只用惩罚近似另一项约束。"
+    },
+    {
+      "chapterId": "study-tabular-mdps",
+      "questionId": "lifetime-objective",
+      "bridge": "折扣和与有限期回报已经给出不同的比较对象；评价持续学习器时，还需把初始学习和恢复代价放回这些时间范围。"
+    },
+    {
+      "chapterId": "study-approximation-average-control",
+      "questionId": "lifetime-objective",
+      "bridge": "周期链的奖励率与暂态价值说明长期极限会忽略有限前缀，由此可问适应成本何时改变实际部署期的排序。"
+    },
+    {
+      "chapterId": "study-tabular-mdps",
+      "questionId": "agent-state",
+      "bridge": "Markov 条件规定状态需要支持哪些预测；当前观察不满足这一条件时，才需要研究内部状态应保留哪些历史。"
+    },
+    {
+      "chapterId": "study-deep-partial-observability",
+      "questionId": "agent-state",
+      "bridge": "精确信念更新与信息行动提供可检查的参照，进而可以辨认有限递归状态丢失的是哪项决策信息。"
+    },
+    {
+      "chapterId": "study-deep-practice",
+      "questionId": "agent-state",
+      "bridge": "将 recurrent 活动状态与跨时间参数梯度分开，才能区分线索没有被保存和保存机制没有学会。"
+    },
+    {
+      "chapterId": "study-approximation-prediction",
+      "questionId": "predictive-knowledge",
+      "bridge": "先理解固定预测问题下的误差、投影与半梯度答案，再研究有限预算应该用来维持哪些预测问题。"
+    },
+    {
+      "chapterId": "study-approximation-off-policy",
+      "questionId": "predictive-knowledge",
+      "bridge": "同一经验流学习多个策略条件预测时，覆盖与稳定性决定哪些答案可学；答案可学以后，还要寻找使用它的消费者。"
+    },
+    {
+      "chapterId": "study-tabular-temporal-difference",
+      "questionId": "continual-control",
+      "bridge": "区分 SARSA、Expected SARSA 与 Q-learning 的目标和实际行为，才能把变化后的估计滞后与探索不足分别检查。"
+    },
+    {
+      "chapterId": "study-approximation-features-control",
+      "questionId": "continual-control",
+      "bridge": "走廊中的共享特征让一次价值更新改变下一次选择，说明旧价值的复用还会改变随后得到的数据。"
+    },
+    {
+      "chapterId": "study-deep-deep-value",
+      "questionId": "continual-control",
+      "bridge": "Replay 中的样本年龄与目标网络的参数版本会延缓价值改写；环境变化后，需要判断这些滞后何时有益、何时妨碍适应。"
+    },
+    {
+      "chapterId": "study-tabular-multistep",
+      "questionId": "temporal-credit",
+      "bridge": "多步目标明确等待多少真实奖励、从哪里自举，为研究有限等待和计算下的延迟信用建立参照。"
+    },
+    {
+      "chapterId": "study-approximation-traces",
+      "questionId": "temporal-credit",
+      "bridge": "在线前向参考、荷兰迹和预测差修正说明精确等价依赖哪些版本条件，随后才能研究非线性与变动表示。"
+    },
+    {
+      "chapterId": "study-deep-policy-gradient",
+      "questionId": "temporal-credit",
+      "bridge": "GAE 将价值误差组成动作优势，其 bootstrap 与跨序列边界决定远处反馈怎样进入策略更新。"
+    },
+    {
+      "chapterId": "study-approximation-prediction",
+      "questionId": "streaming-stability",
+      "bridge": "共享参数的几何表明相同参数步长可能产生不同输出变化，为流式更新的尺度控制提供直接检查对象。"
+    },
+    {
+      "chapterId": "study-approximation-off-policy",
+      "questionId": "streaming-stability",
+      "bridge": "覆盖充分仍可能发生的 TD 发散说明，小步长或尺度归一化与修正期望更新方向是两项不同工作。"
+    },
+    {
+      "chapterId": "study-deep-deep-value",
+      "questionId": "streaming-stability",
+      "bridge": "DQN 的采样、回放与优化时钟明确了数据复用权限；撤掉 replay 后，需要重新检查相关性和每步更新幅度。"
+    },
+    {
+      "chapterId": "study-tabular-bandits",
+      "questionId": "learning-rules",
+      "bridge": "样本平均与常数步长在同一变化奖励流中的差别，先展示跟踪速度与噪声的取舍，再引出怎样从经验选择步长。"
+    },
+    {
+      "chapterId": "study-approximation-traces",
+      "questionId": "learning-rules",
+      "bridge": "资格迹规定本次误差怎样改变权重；学习步长或迹长度则要继续追踪这些更新怎样影响后续评价。"
+    },
+    {
+      "chapterId": "study-tabular-planning",
+      "questionId": "useful-options",
+      "bridge": "区分实际执行、模型预测与规划 backup 的用途，才能评价一个长行为节省的经验或计算是否抵偿其维护成本。"
+    },
+    {
+      "chapterId": "study-deep-exploration",
+      "questionId": "useful-options",
+      "bridge": "时间一致探索解释了长行为的一种用途，同时要求把覆盖改善与技能自身的执行成功率分别评价。"
+    },
+    {
+      "chapterId": "study-deep-exploration",
+      "questionId": "goal-construction",
+      "bridge": "内在奖励与学习进展改变智能体练习什么；研究目标构造时，还需检查这种练习是否改善后续外部任务。"
+    },
+    {
+      "chapterId": "study-deep-model-based",
+      "questionId": "reusable-models",
+      "bridge": "模型误差经过 rollout 和末端价值进入动作选择，因而模型应保留什么信息取决于它的决策消费者。"
+    },
+    {
+      "chapterId": "study-deep-distributional",
+      "questionId": "reusable-models",
+      "bridge": "相同回报均值可以对应不同的分布和风险排序，说明只预测平均后果何时不足以支持下游决策。"
+    },
+    {
+      "chapterId": "study-tabular-dynamic-programming",
+      "questionId": "planning-budget",
+      "bridge": "在准确模型上比较相同 backup 数量的更新次序，可先隔离计算分配，再引入模型也会出错的困难。"
+    },
+    {
+      "chapterId": "study-tabular-planning",
+      "questionId": "planning-budget",
+      "bridge": "前驱传播、优先扫描与执行时搜索把计算用于不同位置，由此可问下一次模型查询的净收益。"
+    },
+    {
+      "chapterId": "study-deep-model-based",
+      "questionId": "planning-budget",
+      "bridge": "MPC、短模型 rollout 与潜在想象在不同阶段使用模型，比较规划预算时需同时记录模型误差与真实交互成本。"
+    },
+    {
+      "chapterId": "study-deep-deep-value",
+      "questionId": "retention-transfer",
+      "bridge": "Replay 保存旧样本，目标网络保存较慢变化的函数副本；这些保存对象不同，不能用一个遗忘分数解释所有作用。"
+    },
+    {
+      "chapterId": "study-approximation-features-control",
+      "questionId": "retention-transfer",
+      "bridge": "共享特征使新经验同时改变未访问状态的预测，提供了检查旧能力受干扰以及何时可复用的最小情形。"
+    },
+    {
+      "chapterId": "study-deep-offline",
+      "questionId": "retention-transfer",
+      "bridge": "保留旧经验并不补齐新行为的数据支持，因而复用旧数据时还要检查价值外推和独立策略评价。"
+    },
+    {
+      "chapterId": "study-approximation-prediction",
+      "questionId": "plasticity",
+      "bridge": "固定特征与固定新目标提供简单的学习参照，帮助将表示不足、共享干扰与更新规则的困难分开。"
+    },
+    {
+      "chapterId": "study-deep-practice",
+      "questionId": "plasticity",
+      "bridge": "训练与评价协议中的参数、优化器和数据权限必须明确，才能比较老网络、新初始化及局部重置后是否还能学会新目标。"
+    },
+    {
+      "chapterId": "study-tabular-bandits",
+      "questionId": "experience-selection",
+      "bridge": "探索在当期收益与信息之间取舍；估计更准确却未必选择更好，说明取得的信息还需要任务用途。"
+    },
+    {
+      "chapterId": "study-deep-exploration",
+      "questionId": "experience-selection",
+      "bridge": "环境噪声与知识不足会产生不同的信息价值，时间一致探索进一步检验哪些经验值得为之连续行动。"
+    },
+    {
+      "chapterId": "study-deep-constraints",
+      "questionId": "experience-selection",
+      "bridge": "平均成本约束不等于逐步安全或长期可恢复性，选择探索经验时需要分别规定这些未来交互条件。"
+    },
+    {
+      "chapterId": "study-tabular-planning",
+      "questionId": "integrated-architecture",
+      "bridge": "Dyna 中同一经验的直接学习、模型学习和规划三种用途，构成检查模块接口与相互影响的最小闭环。"
+    },
+    {
+      "chapterId": "study-deep-systems",
+      "questionId": "integrated-architecture",
+      "bridge": "行为、学习与参数版本各有时间顺序；检查这些接口后，才能研究多个持续更新的模块能否协同改善行为。"
+    },
+    {
+      "chapterId": "study-tabular-bandits",
+      "questionId": "measurement",
+      "bridge": "同一奖励流中估计误差与选取动作的收益可以给出不同结论，要求评价指标先对应明确对象。"
+    },
+    {
+      "chapterId": "study-deep-practice",
+      "questionId": "measurement",
+      "bridge": "分开训练过程、冻结评价、随机重复和计算预算，才能判断一个机制改善了哪一段学习过程。"
+    },
+    {
+      "chapterId": "study-deep-offline",
+      "questionId": "measurement",
+      "bridge": "策略学习、超参数选择和独立离线评价使用不同数据角色，避免把用于选择的方法再次当作独立验证。"
+    }
+  ],
   "horizons": {
     "introduction": {
       "title": "跨场景检验：持续强化学习问题在不同世界中的表现",

@@ -13,6 +13,13 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [强化学习问题的形式化：交互、目标与持续学习](objectives.md)：先确定比较行为与学习过程的准则，再问奖励怎样表达这一目标。
+
+
 ### 历史与策略
 
 历史包含已经发生的观测和动作。策略或完整学习器诱导历史上的概率分布。设计者也可能观察智能体看不到的变量。
@@ -118,6 +125,20 @@ $A,B$ 是结果历史的概率分布，$\succeq$ 是设计者偏好，$U$ 是其
 | 奖励机制 | r 或 rψ | 程序或奖励模型输出的标量 | 能否被行为操纵？版本是否变化？ |
 | 学习用信号 | r̃ | 奖励加塑形或探索奖金 | 它是否保持原目标？ |
 
+把送货问题缩到一件包裹和三个动作。机器人从 S 接近门口 A，之后可以送达 G，也可以留在 A 等待；每个动作恰好耗时一步。送达立即结束，第三个动作后仍未送达也真正结束。状态必须包含时钟 $(t,x)$：$(2,A)$ 还可送达，$(3,A)$ 已超时。我们约定评价只关心折扣后的送达：送达奖励 1，其余 0，$\gamma=0.9$。本例用这项评价表达截止前尽早送达的目标。
+
+![包裹从 S 到门口 A，随后可送达或等待；时钟达到3便真正终止。图展开全部三条可行轨迹，并标出势值。](../assets/crl-figures/reward-design-walkthrough-task.svg)
+
+沿箭头可列出全部结果：第2步送达、第3步送达、等待至超时。双圈是终端，红色终端表示未送达。门口势在非终端为3、截止时为0；因此物理位置相同，带时钟的状态及边界条件不同。原创确定性算例；代码精确枚举这些有限路径。
+
+| 完整轨迹 | 逐步原奖励 | 原任务折扣回报 |
+| --- | --- | --- |
+| S → A → G | [0, 1] | 0.9 |
+| S → A → A → G | [0, 0, 1] | 0.81 |
+| S → A → A → A（超时） | [0, 0, 0] | 0 |
+
+现在给每次到达或停留门口的动作额外奖金 3，包括最后一次超时动作。这个传感器容易实现，却只检测位置。三条路径的训练回报变成 $3+0.9=3.9$、$3+0.9\times3+0.9^2=6.51$、$3+0.9\times3+0.9^2\times3=8.13$。知道全部转移的精确规划器会选择连续等待，实际送达数为0。它已找到代理奖励下的最优行为；继续提高求解精度无法修复这个规格错误。后面沿同一任务检查：怎样增加逐步信号，又保留尽早送达的排序？
+
 $$
 h_t=(o_0,a_0,\ldots,o_t),\qquad R_{t+1}=r_\psi(\bar h_{t+1}),\qquad J_U(L)=\mathbb E_{P_L}[U(\bar H)]
 $$
@@ -166,7 +187,7 @@ x 是原文中的一个转移符号，x·h 表示把它接在历史之前。不�
 
 ## 4. 一个两步反例：Markov 奖励依赖状态的选择
 
-![钥匙和门的两种动作顺序，以及未拿钥匙、已有钥匙、完成三个奖励记忆状态。](https://yingwen.io/crl-figures/concept-research-reward-memory.svg)
+![钥匙和门的两种动作顺序，以及未拿钥匙、已有钥匙、完成三个奖励记忆状态。](../assets/crl-figures/concept-research-reward-memory.svg)
 
 两个顺序都有一次 K 和一次 D。只数动作时无法分出先后；增加下方的记忆状态后，开门能否得奖取决于此前有没有拿钥匙。图中物理位置不变，变化的是奖励自动机状态。数值与正文两步例子一致。
 
@@ -216,7 +237,7 @@ $$
 
 原文在置换 EMNIST 字符序列上的触发词 fnord 检测达到 99.88%，但在 CIFAR26 编码上为 85.49% ± 1.59%。不能只用前者概括跨感知编码的结果。实验预先提供字符关系，进行 64 次随机重启以缓解局部最优，并用触发词出现概率设定阈值。它是一项接地问题的受控解法，不能据此宣称已解决人类价值对齐，也不是固定预算单生命期流式 RL 的实证。
 
-接回奖励设计，可以把任务写成两个待检查的映射：先从经历识别事件，再由事件计算奖励。下面的分解是教学用的接口，不是该论文提出的新 RL 算法。奖励权重可以保持不变，而事件识别器需要随传感器变化重新接地；反过来，识别正确而权重改变，才是在改变评价偏好。
+接回奖励设计，可以把任务写成两个待检查的映射：先从经验识别事件，再由事件计算奖励。下面的分解是教学用的接口，不是该论文提出的新 RL 算法。奖励权重可以保持不变，而事件识别器需要随传感器变化重新接地；反过来，识别正确而权重改变，才是在改变评价偏好。
 
 $$
 Z_{t+1}=g_{\eta_t}(H_{t+1}),\qquad R_{t+1}=\rho_\psi(Z_{t+1})
@@ -274,6 +295,16 @@ def shaping_residual(rewards, potentials, gamma):
     return lhs - rhs
 ```
 
+回到三步送货任务，取 $\Phi(0,S)=1$，所有非终端门口状态的势为3，送达与截止状态的势都为0。尽早送达的塑形奖励为 $[0.9\times3-1,\;1-3]=[1.7,-2]$，其折扣回报是 $1.7+0.9\times(-2)=-0.1$。延迟送达得到 $[1.7,-0.3,-2]$，回报 $-0.19$；超时得到 $[1.7,-0.3,-3]$，回报 $-1$。每条完整路径恰好比原回报少起点势1，所以尽早送达仍最好。
+
+$$
+(G_{\rm early},G_{\rm late},G_{\rm timeout})=(0.9,0.81,0),\qquad (\widetilde G_{\rm early},\widetilde G_{\rm late},\widetilde G_{\rm timeout})=(-0.1,-0.19,-1).
+$$
+
+负的塑形回报仍可对应正确行动：控制比较从同一状态出发的各动作，公共偏移不改变差值。这里用已知模型精确求解，尚未测量任何学习速度。
+
+这个结论也揭示塑形解决不了什么。若给刚才的错误代理奖励再加同一个合法势差，三个代理回报都减1，超时仍以7.13胜出。势差保持的是所提供奖励的排序；它不会把“门口停留”自动改写成“完成送达”。Ng、Harada 与 Russell 的原论文给出固定势的策略不变性及其条件；上面的带时钟有限任务通过逐轨迹边界恒等式直接核对。
+
 平均奖励下可用未折扣势差。若势有界，T 步平均塑形奖励为 [Φ(sT)−Φ(s0)]/T，极限为零。这里保持的是长期奖励率；暂态收益与差分价值可以改变。
 
 <a id="experiment-potential_shaping"></a>
@@ -298,7 +329,7 @@ python3 implementations/continual/potential_shaping.py --steps 1200 --seeds 0 1 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/potential_shaping/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：原始奖励贪心策略折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 1200 步塑形均值为 0.58193，未塑形基线为 0.77741；塑形标准差约 0.43711。现有结果不是正向成功案例，应保留为“策略集合保持不等于有限样本加速”的实例。
 
@@ -311,6 +342,28 @@ python3 implementations/continual/potential_shaping.py --steps 1200 --seeds 0 1 
 <a id="lesson-example"></a>
 
 ## 6. 三个会改变结论的细节
+
+先只改变送货代码中的一项约定。若程序在超时后停止，却仍把 $(3,A)$ 当作势为3的普通门口状态，最后一步塑形奖励就从 $-3$ 变成 $-0.3$。超时路径留下 $0.9^3\times3=2.187$ 的终点项，训练回报从 $-1$ 变为1.187，超过尽早送达的 $-0.1$。时间上限本身没有违背塑形恒等式；错误来自丢掉了恒等式中仍然存在的末项。
+
+![三步等待轨迹的累计折扣塑形回报：前两步重合，正确终点势的蓝线最后降至负1，保留门口势的红虚线终至1.187。](../assets/crl-figures/reward-design-walkthrough-boundary.svg)
+
+横轴是已执行动作数；纵轴是该前缀已经收到的累计折扣塑形奖励。两条线只在最后一笔奖励处分开，差额2.187恰为未消去的终点项。本任务的三步截止是规定的真正终止，后面没有补齐动作或隐藏奖励。
+
+另一个错误是沿用未折扣势差 $\Phi(s_{t+1})-\Phi(s_t)$，但仍以 $\gamma=0.9$ 累加回报，并正确处理终端势。此时尽早送达得 $[2,-2]$，回报0.2；延迟送达得 $[2,0,-2]$，回报0.38。等在高势的门口一拍，使负奖励更晚出现，规划器于是推迟送达，原任务回报降至0.81。折扣不仅出现在回报外层，还须进入塑形差分本身。
+
+| 交给规划器的信号 | 早送达 / 晚送达 / 超时：训练回报 | 真正执行 | 原任务回报 |
+| --- | --- | --- | --- |
+| 原任务奖励 | 0.9 / 0.81 / 0 | 第2步送达 | 0.9 |
+| 加门口占用奖金 | 3.9 / 6.51 / 8.13 | 等待至超时 | 0 |
+| 正确势差 | −0.1 / −0.19 / −1 | 第2步送达 | 0.9 |
+| 遗漏超时边界 | −0.1 / −0.19 / 1.187 | 等待至超时 | 0 |
+| 遗漏塑形折扣 | 0.2 / 0.38 / −0.43 | 第3步送达 | 0.81 |
+
+![五种奖励信号下，晚送达与超时相对早送达的训练回报差；各行同时列出所选行为和其原任务回报。](../assets/crl-figures/reward-design-walkthrough-decisions.svg)
+
+所有行共用差值坐标：0线代表尽早送达，向右的路径才比它有更高训练回报。正确塑形与原任务的两个差值完全相同。每行执行一条完整回合，真实动作数分别为2、3、2、3、3；这是一组已知模型的精确选择，未把它当作匹配训练预算的性能实验。
+
+若只是收集到第1步就截断数据，包裹其实还可送达，便不能把门口变成真正终端。继续立即送达的原尾值是 $V(1,A)=1$，塑形尾值是 $\widetilde V(1,A)=1-3=-2$。完整目标应为 $1.7+0.9\times(-2)=-0.1$；只保留前缀1.7会改变评价。上节的零终端势处理适用于本来就规定结束的任务；采样截止需要保留相应尾值。其他常见边界也可以用同一个检查方法辨认：
 
 | 操作 | 小例子 | 正确结论 |
 | --- | --- | --- |
@@ -393,7 +446,7 @@ python3 implementations/extended_knowledge/preference_reward.py --steps 1200 --s
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/preference_reward/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 preference_labels。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：preference_labels。纵轴：冻结偏好期望交叉熵。每种方法 1200 preference_labels；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 1200 个标签后，完整特征模型的平均交叉熵为 0.55666，单特征基线为 0.59108。完整模型第 600 步为 0.55282，后面略升，符合固定步长随机估计可能波动的现象。
 
@@ -460,7 +513,7 @@ python3 implementations/extended_knowledge/maxent_irl.py --steps 1200 --seeds 0 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/maxent_irl/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 gradient_updates。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：gradient_updates。纵轴：冻结专家分布轨迹交叉熵。每种方法 1200 gradient_updates；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 1200 次更新，完整模型的平均交叉熵为 2.19096，单特征基线为 2.24758；第 600 次已分别约 2.19095 和 2.24758。继续优化几乎不再改善当前评价，新增迭代不能替代新增示范。
 
@@ -580,7 +633,19 @@ def intrinsic_meta_gradient(theta, eta, alpha):
 
 ## 13. 运行、阅读原始代码与选择基准
 
-配套程序只依赖 Python 标准库。先运行 demo 看数值，再运行 test 检查反例和梯度。它不训练深度奖励网络，不宣称复现下面论文的完整实验。
+先用 [三步送货单文件程序](../tutorials/reward-design-walkthrough.py) 复算本章主线。下载该文件到任意空目录即可运行，无第三方依赖；`--test` 检查所有有限路径、边界恒等式及折扣退化情形，`--json` 输出每个信号下的三条路径和真正执行的选择。也可读取 [逐步数值 JSON](https://yingwen.io/crl-figures/reward-design-walkthrough-data.json)。
+
+输出按原奖励、位置奖金、正确势差、错误边界、错误折扣依次给出选择；预期为 early、timeout、early、timeout、late。
+
+```sh
+python3 tutorials/reward-design-walkthrough.py
+python3 tutorials/reward-design-walkthrough.py --test
+python3 tutorials/reward-design-walkthrough.py --json
+```
+
+网站的 [计算模块](https://yingwen.io/crl-code/figures/reward-design-walkthrough.mjs) 在带时钟的状态上做后向动态规划；下载版先枚举完整路径，再用 Fraction 有理数求和，并以闭式表达式核对。二者共享任务规格，求值路径不同。规划器获得全部转移与指定奖励；这项检查支持回报与选择的计算，不包含奖励模型学习、未知环境探索或持续学习效果的结论。
+
+原有配套程序 `reward_design_lab.py` 同样只依赖 Python 标准库。运行 `python3 examples/reward_design_lab.py demo` 看其余章节算例，再运行 `python3 examples/reward_design_lab.py test` 检查顺序反例和梯度。它不训练深度奖励网络，不宣称复现下面论文的完整实验。
 
 | 入口 | 读哪部分 | 怎样开始 |
 | --- | --- | --- |
@@ -608,6 +673,8 @@ def intrinsic_meta_gradient(theta, eta, alpha):
 <a id="lesson-check"></a>
 
 ## 15. 练习与可反驳的实验
+
+先遮住送货表格最后两列再作预测：把门口势由3改成0，哪些错误会消失，代理占用奖金的错误是否仍在？把折扣改为1，早、晚送达的原目标为何并列，漏写塑形折扣为何也变得无影响？最后在正确塑形下只收集第一步，分别用零尾值和 $1-\Phi(1,A)$ 作尾值，核对它们比较的是哪个任务。
 
 - 推导 γ<1 时，每步加常数 b 在无限持续任务中的价值偏移。解释为何同一推导不能直接用于可变长度终止回合。
 - 把 KD/DK 例子改为有时钟的状态。构造一个能区分顺序的奖励。指出新增的信息。
@@ -640,6 +707,10 @@ def intrinsic_meta_gradient(theta, eta, alpha):
 偏好、奖励机制、回报与辅助信号不是同一对象。保持最优策略、加快学习与符合设计者意图需要不同证据。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-reward-design) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=reward-design) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=reward-design)
+
+## 从本章进入实践
+
+[策略梯度与控制](https://yingwen.io/zh/continual-rl/code/#practice-policy-control)：优化器确实降低了损失，为什么行动仍可能变差？
 
 ## 持续强化学习：近期研究与原始实现
 
@@ -833,6 +904,8 @@ python3 examples/reward_design_lab.py test
 
 ## 参考文献与实现
 
+- [Sutton & Barto — Reinforcement Learning: An Introduction, 2nd ed., §§3.2, 17.4](http://incompleteideas.net/book/the-book-2nd.html)：目标与奖励信号的区别；稀疏奖励、先验引导与受限学习器的奖励设计。本章三步送货为原创算例。
+
 - [Singh, Lewis & Barto — Where Do Rewards Come From? (CogSci 2009)](https://web.eecs.umich.edu/~baveja/Papers/singh-lewis-barto-2009-cogsci.pdf)：内在奖励、外部评价与受限智能体。原文从最优奖励框架讨论奖励来源。
 
 - [Sorg, Lewis & Singh — Reward Design via Online Gradient Ascent (NeurIPS 2010)](https://proceedings.neurips.cc/paper_files/paper/2010/hash/168908dd3227b8358eababa07fcaf091-Abstract.html)：PGRD：奖励参数通过受限决策过程影响外层表现。
@@ -849,7 +922,7 @@ python3 examples/reward_design_lab.py test
 
 - [Abel et al. — On the Expressivity of Markov Reward (NeurIPS 2021)](https://arxiv.org/abs/2111.00876)：不同任务描述下的奖励表达限制。状态与奖励函数的允许输入非常关键。
 
-- [Ng, Harada & Russell — Policy Invariance under Reward Transformations (ICML 1999)](https://ai.stanford.edu/~ang/papers/shaping-icml99.pdf)：势函数塑形的原始论文。阅读时明确终止、折扣和保持最优策略的条件。
+- [Ng, Harada & Russell — Policy Invariance under Reward Transformations (ICML 1999)](https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf)：作者镜像，§§2–3、Theorem 1。有限状态折扣无限时域或满足 proper 条件的未折扣吸收任务；必要性是在未知转移和奖励下统一保证，不能解释为任一非势函数都会破坏每个给定任务。
 
 - [Toro Icarte et al. — Reward Machines：作者论文与代码](https://github.com/RodrigoToroIcarte/reward_machines)：作者仓库提供奖励结构、任务与算法。适合把顺序任务从文字变成状态机。
 

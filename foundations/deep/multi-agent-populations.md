@@ -1,21 +1,35 @@
-# 开放式多智能体学习：评估、目标构建与策略改善
+# 自对弈与开放式多智能体学习：评估、目标与策略种群
 
-怎样由交互评估构建每轮学习目标，使竞争或合作能力沿明确的评价准则持续改善？
+现代深度强化学习 · 并列研究分支
+
+自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？
 
 ## 本章内容
 
-- 沿竞争自对弈、策略种群与 PSRO 理解开放式多智能体学习。
-- 建立评估、目标构建、响应学习与重新评估的循环，并定义所追求的单调提升。
-- 理解 COLE 与 HOLA 怎样把这条思路扩展到合作伙伴与团队组合。
-- 区分固定对手回报、可利用度、种群安全价值与陌生伙伴泛化。
+- 从自对弈出发，分清最新响应、历史平均与搜索策略标签。
+- 用手算博弈树贯通 AlphaGo、AlphaGo Zero、AlphaZero 与 MuZero 的学习闭环。
+- 建立评估、目标构建、响应学习与重新评估的循环，区分循环克制与可检验进步。
+- 用 gamescape、DO/PSRO 与课程机制研究策略保留，再扩展到 COLE/HOLA 的合作组合。
+- 区分可利用度、种群安全价值、陌生伙伴泛化与全生命期收益。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [多智能体合作：结构化探索与信用分配](multi-agent.md)：区分联合策略、局部信息与集中训练，再研究对手和伙伴分布。
+
+
 ### 联合策略与局部信息
 
 各参与者按自己的观察历史行动。集中训练不等于执行时可获得所有信息。
+
+### 信息集与完美回忆
+
+信息集汇集当前不可区分的历史；完美回忆要求玩家不忘记曾获得的信息和自己的动作。
 
 ### 最佳响应
 
@@ -29,17 +43,18 @@
 
 ## 本章的问题定义
 
-开放式多智能体学习：多个参与者反复交互，学习系统依据已有策略的交互评估，不断产生下一轮对手、伙伴和响应目标。先沿竞争自对弈与种群学习建立框架，再研究合作场景中的兼容性与团队组合。主体采用固定奖励与动力学、可重置回合；生命期与有限资源问题另作扩展。
+多个参与者反复交互，自对弈产生新的对手与状态分布；历史平均或搜索将这些经验转成策略学习目标。再由交互评估决定保留哪些响应、下一轮训练谁，从竞争扩展到合作伙伴组合。主体采用固定奖励与动力学、可重置回合；开放的是学习问题的生成过程，不要求规则改变。
 
 ### 给定条件与符号
 
+- 游戏规则或可学习模型的交互接口，合法动作与奖励来源。
 - 各角色允许使用的观察、历史与通信。
 - 任务奖励、回合长度、初始分布与交互预算。
 - 初始策略池，以及明确的外部评价准则。
 
 ### 需要求解的对象
 
-构建能暴露当前能力缺口的学习目标，训练并保留有用响应，选择可提交的策略或组合；在固定评价定义下建立或检验逐轮改善。
+构造与信息权限一致的响应或搜索标签，训练并保留有用策略，再通过评价暴露当前能力缺口；选择可提交的策略或组合，在固定评价定义下检验逐轮改善。
 
 ### 信息与数据权限
 
@@ -87,15 +102,17 @@ $$
 
 用评估发现能力缺口，把缺口转成下一轮学习目标，再训练响应并重新评估。目标构建连接当前不足与下一步学习；保留旧解和选择新输出为建立单调改善提供可能。
 
-1. [定义进步并评估现状](multi-agent-populations.md#lesson-evaluation)：声明提交策略还是种群，固定 Gap、安全价值或测试伙伴回报的定义。
+1. [由自对弈产生课程](multi-agent-populations.md#lesson-self-play)：区分最新对手、历史平均与信息集上的响应学习。
 
-2. [把竞争弱点变成响应目标](multi-agent-populations.md#lesson-psro)：PSRO 用元策略构建训练对手；响应学习后扩池并重新评估。
+2. [由搜索构造训练标签](multi-agent-populations.md#lesson-search-policy)：同一博弈树上分开先验、访问计数与真实终局。
 
-3. [学习课程生成规则](multi-agent-populations.md#lesson-curricula)：NAC 将多轮训练后的评价反传给课程生成器，区分内外层时钟。
+3. [定义进步并评估现状](multi-agent-populations.md#lesson-evaluation)：声明提交策略还是种群，固定 Gap、安全价值或测试伙伴回报的定义。
 
-4. [将兼容性缺口转为伙伴分布](multi-agent-populations.md#lesson-cole)：COLE 的求解器评价策略间关系，训练器优化给定伙伴课程。
+4. [把竞争弱点变成响应目标](multi-agent-populations.md#lesson-psro)：PSRO 用元策略构建训练对手；响应学习后扩池并重新评估。
 
-5. [评价完整伙伴组合](multi-agent-populations.md#lesson-hola)：HOLA 用高阶组合表示两两关系无法表达的合作机会。
+5. [将兼容性缺口转为伙伴分布](multi-agent-populations.md#lesson-cole)：COLE 的求解器评价策略间关系，训练器优化给定伙伴课程。
+
+6. [评价完整伙伴组合](multi-agent-populations.md#lesson-hola)：HOLA 用高阶组合表示两两关系无法表达的合作机会。
 
 结论与条件：嵌套己方集合的最佳安全价值不下降；精确有限零和 DO 有相应终止证书。平均无遗憾界、局部偏好结果与实际神经训练分别有条件，均不自动给出全寿命或陌生伙伴回报单调改善。
 
@@ -110,11 +127,19 @@ $$
 
 <a id="lesson-setting"></a>
 
-## 1 · 开放式多智能体学习：评估怎样产生下一轮目标
+## 1 · 问题从哪里来：由交互产生学习目标
 
 给定对手与奖励，强化学习回答怎样改进策略。对手也在学习时，还要回答：下一轮应当回应谁，针对什么弱点学习，怎样判断整体能力提高了？开放式多智能体学习把这些问题纳入学习系统，以交互评估持续产生新的学习目标。
 
-这一方向的一条主流脉络来自竞争场景：自对弈用当前对手产生挑战；历史策略和种群保留已遇到的行为；PSRO 进一步把策略间评估、对手混合与响应训练组织成循环。竞争暴露的克制关系由此成为后续学习的材料。[PSRO 原文](https://arxiv.org/abs/1711.00832)
+Balduzzi 把前一个层次的问题称为“问题从哪里来”（the problem problem）：能优化一个给定目标，还没有说明下一轮应构造哪个有用目标。在两人竞争中，固定一个对手就得到一个目标函数；换对手，即使环境奖励完全不变，也改变了自己必须学会解决的问题。这给出从求解任务走向构造任务的一条具体路线。[Balduzzi 等，ICML 2019](https://arxiv.org/abs/1901.08106)
+
+$$
+\phi(v,w)=-\phi(w,v),\qquad J_w(v)=\phi(v,w),\qquad J_q(v)=\sum_{w\in\mathcal P}q(w)\phi(v,w).
+$$
+
+本节的竞争主例是两人对称零和游戏，双方策略来自同一集合。$\phi$ 为行方收益；$w$ 是固定对手，q 是对手混合。改变 q 就改变训练目标，外层仍须判断这个目标是否有助于既定评价。混合策略在回合开始抽取，参数平均不是这里的混合。
+
+先从最小闭环开始：双方用当前策略下棋，依据结果更新；新策略又产生新的对局。随后有两个具体问题：怎样保留已经遇到的行为，避免只追逐最新对手？怎样把落子前搜索形成的决策分布变成可学习标签？本章先把这两条路径推导完整，再研究单个最新策略为什么可能绕圈，以及策略种群如何把评估、目标与响应组织起来。
 
 合作也需要构建学习目标，但缺口从“被谁克制”变为“与谁不能配合”。温颖及合作者的 COLE 将这条思路扩展到合作兼容性：评估策略间关系，生成伙伴课程，再学习新的合作策略。HOLA 进一步处理多个伙伴的组合关系。[COLE](https://proceedings.mlr.press/v202/li23au.html) · [HOLA](https://arxiv.org/abs/2409.08767)
 
@@ -123,6 +148,12 @@ u_i(\pi_i,\pi_{-i})=\mathbb E\left[\sum_{t=0}^{H-1}\gamma^tR^i_{t+1}\right]
 $$
 
 $u_i$ 是固定环境、起点、回合长度和各方策略后的期望回报。策略可以依赖局部历史，不要求物理状态完全可见。
+
+$$
+\begin{aligned}J_i(\pi_i;q)&=\mathbb E_{\pi_{-i}\sim q}u_i(\pi_i,\pi_{-i}),\\\operatorname{BR}_i(q)&\in\arg\max_{\pi_i}J_i(\pi_i;q).\end{aligned}
+$$
+
+q 在每局开始抽取完整对手策略，局内冻结；BR 是对此分布的最佳响应。自对弈改变 q，搜索则可在当次决策中增加计算。两者都须遵守各自的信息权限。
 
 $$
 \widehat U_k=\operatorname{Evaluate}(\mathcal P_k),\quad \mu_k=\operatorname{Target}(\widehat U_k,\mathcal P_k),\quad \pi_{k+1}=\operatorname{Learn}(J_k),\quad \mathcal P_{k+1}=\operatorname{Retain}(\mathcal P_k,\pi_{k+1})
@@ -141,9 +172,220 @@ P 是策略档案；U 是交互评估；Target 将弱点或兼容性缺口转成
 
 这里专指 open-ended multi-agent learning。开放的是由交互结果不断构建后续学习问题的过程，不要求奖励函数或物理世界不断改变。它是开放式人工智能的一条具体研究线，不是整个 open-ended AI 的定义。它也不等同于 CRL：种群可在可重置回合中训练新策略；CRL 还需声明同一学习者的生命期、资源与知识更新。
 
+<a id="lesson-self-play"></a>
+
+## 2 · 自对弈：让参与者产生自己的课程
+
+$$
+\pi_i^{k+1}\approx\operatorname{BR}_i(q_{-i}^{k}),\qquad q_{-i}^{k}=\delta_{\pi_{-i}^{k}}
+$$
+
+最新策略自对弈用对手当前版本定义本轮目标。实际可只做少量梯度步，而非求完整 best response。
+
+每轮固定训练对手，采集对局，再更新策略。轮换与同时训练有不同数据分布。共享网络是对称任务中的一种实现，不是自对弈的定义；不对称游戏仍可为不同角色维护不同策略。
+
+石头—剪刀—布中，只回应最新纯策略会在石头、布、剪刀之间反复循环。每次响应都正确，最新策略却始终容易被利用。“战胜上一轮”因此不等于全局进步。
+
+$$
+\operatorname{Gap}(x,y)=\max_a(Ay)_a-\min_b(x^\top A)_b
+$$
+
+A 是有限双人零和游戏的行玩家收益矩阵，x、y 分别为行、列玩家的混合策略。gap 等于双方最优单方偏离收益之和；零 gap 才说明该策略对是均衡。
+
+收益回答“对这一分布表现如何”，gap 回答“还有哪些偏离能获利”。只报告相邻训练版本的胜率，会漏掉循环和未遇见的克制策略。
+
+自对弈还在选择下一批学习经验。对手改变，会使原本足够的防守失效，也会使某些状态更常出现；学习者于是面对新的预测与控制问题。固定规则的棋类因此同样可以产生课程，开放式学习并不要求另造新规则。但这个过程可能循环、遗忘旧弱点，或只在狭窄策略族内相互适应，所以“课程会改变”尚未回答“能力会怎样扩大”。先看一种保留历史的办法。
+
+<a id="lesson-fictitious"></a>
+
+### 2.1 · 虚拟博弈：回应历史平均
+
+$$
+\beta_i^{k+1}\in\operatorname{BR}_i(\bar\pi_{-i}^{k}),\qquad \bar\pi_i^{k+1}=\frac{k\bar\pi_i^{k}+\beta_i^{k+1}}{k+1}
+$$
+
+有限正规形游戏中，平均完整策略的概率分布；k 是已纳入平均的响应数。
+
+历史平均保留已经遇到的行为，避免只追逐最新对手。经典虚拟博弈在有限双人零和等游戏中有平均策略的收敛结论，不是一般和游戏或最新策略的普遍结论。
+
+序列游戏不能简单地对每个信息集的动作概率做等权平均。几乎不到达某处的策略，不应与经常到达的策略在该处获得相同权重。Fictitious Self-Play 用实现概率处理这个问题。
+
+$$
+\bar\pi_i(a\mid I)=\frac{\sum_k w_k r_i^{\pi_i^k}(I)\pi_i^k(a\mid I)}{\sum_k w_k r_i^{\pi_i^k}(I)}
+$$
+
+I 是信息集，r 是玩家自身动作对到达 I 的概率贡献。完美回忆下，它与先按 w 抽取完整策略的混合实现等价；分母为零处可任意定义。网络参数平均不能替代此式。
+
+两步手算：完整策略甲始终左，乙始终右，回合开始各半抽取，则路径 LL、RR 各有一半，LR、RL 不发生。若每一步都等权平均两种动作，四条路径各有四分之一。完美回忆的第二步信息集记住自己先前选了左还是右：到达左分支时甲的自身实现概率为一、乙为零，上式便在该分支只取甲的左动作；右分支反之。由此恢复完整策略混合的路径分布，而不是独立重抽。
+
+FSP 接着把“求响应”和“保存平均”拆成两个可学习问题：用强化学习从对局中近似求响应，用监督学习从响应者的行为流拟合平均策略。监督数据的产生方式承担了上述实现权重的工作，不是先平均网络参数。原文先给出 extensive-form fictitious play 的精确关系，再引入采样和函数近似；后一层不能继承前一层的所有保证。
+
+这里还有采样条件：为无偏地拟合等权历史响应，原文要求各响应提供相同数量的对局，并面对同一个固定且有覆盖的采样对手。实际 FSP 改用逐渐变化的平均对手以聚焦相关状态，这会引入额外偏差。Reservoir 可以保留行为流，却不能自动消除行为流本身的分布偏移。
+
+<a id="lesson-nfsp"></a>
+
+### 2.2 · NFSP：响应学习与平均策略学习
+
+NFSP 用 Q 网络近似响应，用另一网络拟合自己的历史响应行为。前者学习怎样获胜，后者保留已经采用过什么。平均策略网络不是用来拟合对手动作的。
+
+$$
+\sigma_i=(1-\eta)\bar\pi_i+\eta\beta_i,\qquad 0<\eta<1
+$$
+
+完整策略层面的 anticipatory mixture；原算法在每局开始选择平均或响应模式，不是每一步重新抽模式。
+
+$$
+L_{\rm SL}(\vartheta)=\mathbb E_{(I,a)\sim\mathcal M_{\rm SL}}[-\log\bar\pi_\vartheta(a\mid I)]
+$$
+
+只将执行响应模式时的自身行为写入监督记忆。Reservoir sampling 使有限记忆近似保留整段行为流，不保证精确保存全部策略。
+
+**算法：两种记忆的对象、采样方式和用途不同。**
+
+1. 每局开始，以概率 η 执行近似响应 β，否则执行平均策略。
+1. 所有转移写入 RL replay。
+1. 仅将响应模式下的自身 (信息集, 动作) 写入 SL reservoir。
+1. 用 Q-learning 更新响应；用交叉熵更新平均策略。
+1. 冻结平均策略，独立计算或估计可利用性。
+
+改用最近窗口会改变所拟合的平均对象。非线性逼近、有限记忆与不精确响应也会改变理论条件。NFSP 是 FSP 的可扩展近似，不是“给 DQN 加一个网络就保证 Nash”。
+
+NFSP 的实际对手也在按上述混合行动，因此 Q 学到的是对这一 anticipatory 行为分布的近似响应，而非一个始终冻结的精确历史平均。小比例响应行为让数据包含平均策略正在改变的方向。η 调整这两类经验的占比，不是自动保证稳定的学习率。评价时要说明用的是平均网络、响应网络还是混合行为；三者不同。
+
+<a id="lesson-cfr"></a>
+
+### 2.3 · CFR：从反事实遗憾组织自对弈
+
+历史平均还可以由另一种更新过程产生。CFR 问：在自己能够决策的信息集，若换一个动作，累计会少后悔多少？它据此组织下一轮策略，而非像 FSP 那样显式训练一个完整最佳响应。COMA 的反事实 baseline 服务于策略梯度的方差缩减；二者不是同一种更新。
+
+$$
+v_i^\sigma(I,a)=\sum_{h\in I}\rho_{-i}^\sigma(h)\sum_{z\succeq ha}\rho^\sigma(ha,z)u_i(z)
+$$
+
+h 是信息集内历史，z 是终局。第一个权重含对手与 chance 到达 h 的贡献，排除自身到达概率；之后强制选 a，再按 σ 继续。此值不是归一化的条件期望。
+
+$$
+\begin{aligned}r_i^k(I,a)&=v_i^{\sigma^k}(I,a)-\sum_b\sigma_i^k(b\mid I)v_i^{\sigma^k}(I,b),\\R_i^K(I,a)&=\sum_{k=1}^K r_i^k(I,a),\\\sigma_i^{K+1}(a\mid I)&=\frac{[R_i^K(I,a)]_+}{\sum_b[R_i^K(I,b)]_+}.\end{aligned}
+$$
+
+分母为零时取均匀分布。这是原始累计遗憾的 regret matching；CFR+ 的逐轮截断是另一更新。
+
+有限、完美回忆的双人零和游戏中，局部反事实遗憾控制整体外部遗憾，再由双方平均遗憾界控制平均策略的均衡误差。采样、神经近似和游戏抽象各有额外条件；局部指标小不能独立证明任意深度策略达到均衡。
+
+<a id="lesson-search-policy"></a>
+
+## 3 · 搜索响应：一个状态，两种标签
+
+历史平均和遗憾更新利用多轮对局积累策略。另一条自对弈路线则在每次落子前花计算量改善当前决策。先限定问题：两位玩家轮流行动，完整局面可见，规则和合法动作已知，终局收益互为相反数。玩家 1 在根状态选 L 或 R，玩家 2 看见这一步后选 a 或 b；终局给玩家 1 的收益分别为 L→a：+1、L→b：−1、R→a：0、R→b：+1。
+
+若能看完这棵小树，玩家 2 会在每个分支最小化玩家 1 的收益，故 L 的保底值为 −1，R 为 0，根状态应选 R。直接把四个终局取最大值会把对手当成帮助自己的人。大树无法穷尽时，网络给出动作先验与叶节点价值，搜索用有限预算逐渐修正局部决策。
+
+$$
+\begin{aligned}(p_\theta(s),v_\theta(s))&=f_\theta(s),\\ \pi(a\mid s)&=\frac{N(s,a)^{1/\tau}}{\sum_bN(s,b)^{1/\tau}}.\end{aligned}
+$$
+
+p 是网络给搜索的先验，v 估计当前行动玩家的后续终局收益，N 是本次搜索的根边访问次数。τ>0 控制按计数行动的温度；这里 π 是搜索输出，不是网络输出。
+
+![同一两层零和博弈树产生搜索动作分布与实际终局标签。先验偏向 L，32 次给定搜索使访问计数偏向 R；给定实际路径 L→b 的玩家标签为 −1 与 +1。](../../assets/crl-figures/concept-selfplay-search-labels.svg)
+
+原创精确机制算例。圆中 1、2 标行动玩家，终局方格统一写玩家 1 收益；蓝实线仅标给定实际对局，紫虚线为规则模拟。概率柱来自 [确定性计算](https://yingwen.io/crl-code/figures/selfplay-search-labels.mjs)：无训练、无随机采样、无 Dirichlet 噪声，模拟均走到终局，不是完整 AlphaZero 实现。桌面与手机使用相同数据。
+
+为使每一步可核对，配套程序取根先验 p=(0.8,0.2)，两处对手先验均为 (0.5,0.5)，每条未访问边的 Q 初始化为零。每次沿下面的教学评分选最大项，同分取第一项，一直走到真实终局。回传时，根边累计玩家 1 收益，对手边累计其相反数。这省去了扩展叶的网络评价，只隔离访问计数与标签的机制。
+
+$$
+\begin{aligned}\operatorname{score}(s,a)&=Q(s,a)+U(s,a),\\U(s,a)&=p(a\mid s)\frac{\sqrt{1+\sum_bN(s,b)}}{1+N(s,a)}.\end{aligned}
+$$
+
+PUCT 型教学评分，探索系数固定为一。Q 始终采用该节点行动玩家的视角。加一的初始计数约定、无噪声和终局模拟均已给定，不声称逐行复现论文搜索。
+
+第一次选 L→a，根获得 +1；对手从该动作看到 −1，所以第二次改试 L→b，根得到 −1。前三次根访问 L，第四次转向 R。32 次后根计数为 (6,26)，τ=1 给 π=(3/16,13/16)。根边的样本均值却为 (−2/3,1/13)，既不是 π，也不等于精确 minimax 值 (−1,0)。若只给一次模拟，搜索反而输出纯 L；有限预算没有逐状态改善保证。
+
+现在固定一次实际对局为 L→b，它仍是按上述 π 行动时可能发生的路径。根状态的策略标签是整向量 π，不只是实际选中的 L；等对局结束，根状态价值标签 z=−1，而玩家 2 所见后继状态的 z=+1。胜负来自真实完成的对局，不是把搜索中最乐观的模拟结果当成事实。
+
+$$
+\begin{aligned}\ell(\theta)&=(z-v_\theta(s))^2\\&\quad-\sum_a\pi(a\mid s)\log p_\theta(a\mid s)\\&\quad+c\lVert\theta\rVert_2^2.\end{aligned}
+$$
+
+AlphaGo Zero / AlphaZero 的联合训练形式。一次拟合中 π 和 z 是给定标签；通过网络求梯度，不反传穿过访问计数或真实对局。c 为权重正则系数。
+
+若 p 是 softmax，策略交叉熵对 logits 的梯度就是 p−π。算例根状态为 (49/80,−49/80)，梯度下降因而降低 L、提高 R，即使这局实际下了 L。取根价值预测为零，价值平方误差对 v 的导数为 2；在玩家 2 的状态则为 −2。把所有状态都贴同一个符号的终局标签，会把一方的成功训练成另一方的成功。
+
+闭环至此才完整：网络提供先验和评价，搜索分配计算得到 π，双方据此产生新局面与终局 z，再用这些标签改网络。网络改变后，搜索访问和自对弈状态分布也改变。π 是当次搜索的改进目标，NFSP 的平均策略则是在保留历史响应，两者虽都用监督损失，却在学习不同对象。
+
+<a id="lesson-alphago-lineage"></a>
+
+### 3.1 · AlphaGo 到 AlphaZero：改变的是学习闭环
+
+AlphaGo（2016）并非从零开始的上述单网络闭环。它先用人类棋谱训练监督策略，再以该策略初始化强化学习策略，用自对弈胜负做策略梯度；训练对手从较早策略版本中抽取。另一个价值网络回归强化学习策略对局的结果。最终搜索结合监督策略先验、价值网络和快速 rollout；人类动作、强化学习胜负与搜索分别承担不同角色，不能把它追述成“用搜索计数直接训练所有策略”。
+
+AlphaGo Zero（2017）取消人类棋谱和快速 rollout，把策略与价值放到同一网络。规则仍由程序准确提供；搜索以网络评价叶节点，根访问分布成为策略标签，真实自对弈结果成为价值标签。它把当次昂贵搜索得到的决策信息压缩进网络，再用改后的网络支持未来搜索。原训练流程会评价新版本，达到对当前最好版本 55% 胜率的门槛才替换自对弈者；这是一项版本管理规则，不是对所有对手的均衡证明。
+
+AlphaZero（2018）把同类闭环用于围棋、国际象棋和将棋，适应平局与不同规则、动作编码；不再依赖围棋旋转反射对称的数据增强，也不使用上述最好版本替换门槛，自对弈持续使用最新网络。论文分别训练三个实例，而非一个共享网络连续学会三种棋并保留旧知识。因此“同一算法跨游戏”与“单一智能体持续积累能力”必须区分。
+
+| 方法 | 策略训练信号 | 搜索读取什么 | 仍然给定什么 |
+| --- | --- | --- | --- |
+| AlphaGo 2016 | 先人类动作监督；再对局胜负的策略梯度 | 监督策略先验、独立价值网络、rollout | 棋谱、围棋规则、合法动作与终局判定 |
+| AlphaGo Zero 2017 | 搜索访问分布；价值学终局结果 | 单网络的 policy / value | 围棋规则与状态、动作编码 |
+| AlphaZero 2018 | 搜索访问分布；价值学含平局的结果 | 同类单网络、已知规则搜索 | 每个游戏的规则与表示；分别训练 |
+| MuZero 2020 | 搜索分布、价值目标与实际奖励 | 学得的隐状态转移及其预测 | 真实交互与奖励、动作接口；根合法动作 |
+
+这些方法的共同点，是由对手与搜索生成局面课程，而任务规则、输赢和动作接口已经给定。非零和奖励、同时行动或私有信息会改变问题本身；把隐藏牌当作搜索可见状态，或给对手也最大化自己的价值，都不是合法迁移。下一节的学习模型也不会消除这些信息条件。
+
+<a id="lesson-muzero"></a>
+
+### 3.2 · MuZero：搜索需要预测什么
+
+前面的树搜索知道走一步会得到哪个真实棋盘。MuZero 改为学习一个供规划使用的隐状态模型：先从真实观察历史得到根表示，再在隐空间按候选动作展开。预测器只需为控制提供奖励、价值与动作分布，不要求隐状态等于真实棋盘，也不以重建每个像素作为原算法的必需目标。
+
+$$
+\begin{aligned}h_t^0&=h_\theta(o_{\le t}),\\(\widehat r_t^{k+1},h_t^{k+1})&=g_\theta(h_t^k,a_{t+k}),\\(p_t^k,v_t^k)&=f_\theta(h_t^k).\end{aligned}
+$$
+
+h 是表示函数，g 是学得的动力学，f 是预测函数；上标 k 数隐空间展开步，不是新的真实观察。r̂ 预测走该动作产生的奖励。这里用 h 表示隐状态以免与真实状态混淆。
+
+沿真实数据记录的动作序列展开模型，每一层预测与相应时间的实际奖励、价值目标和搜索策略标签对齐。棋类价值目标可用最终胜负；Atari 使用带 bootstrap 的多步回报，不能把两个实验都写成只学终局 ±1。搜索在学得模型内试算候选行动，真正落子后仍须从环境接收新的观察与奖励。
+
+回到两层树：若模型把 L→b 的 −1 错预测为 +1，增加搜索预算只会更深入利用这个错误模型，不能靠“想得更多”把错误奖励变正确。真实 L→b 经验能为模型提供纠错目标；但尚未访问分支的误差与搜索选择又相互影响。这使覆盖、模型失配和控制相关预测成为核心问题，而不是把 model-free 网络前面加一棵树。
+
+“不使用已知转移规则规划”不等于没有环境接口。原文 Appendix A 明确：MuZero 在搜索根部仍由环境提供合法动作掩码，内部模拟节点不做同样的规则合法性过滤；终局通过吸收式预测学习处理。作者公开伪代码也把 Environment.step、Game.legal_actions 和网络函数留作待实现接口。读者不能把这份伪代码称为可直接运行的完整复现。
+
+至此已看到怎样从当次交互、历史行为或搜索产生训练目标。仍有一个共同缺口：局部响应学得更好，不等于最新策略对所有对手更强。下面回到完整策略之间的收益关系，用[循环与 gamescape](multi-agent-populations.md#lesson-gamescape)说明为什么应保留多个回应方向，再定义可比较的评价和下一轮目标。MuZero 的棋类与 Atari 结果不提供一般不完全信息博弈的均衡保证，也不保证课程永不停止。
+
+<a id="lesson-gamescape"></a>
+
+## 4 · 循环与 gamescape：保留哪些回应方向
+
+先看何时固定对手就够用。若 $\phi(v,w)=f(v)-f(w)$，对手只贡献与 v 无关的常数，因此所有对手都要求提高同一个评分 f。稍广的情形是 $\phi(v,w)=\sigma(f(v)-f(w))$，其中 $\sigma$ 为奇函数且单调递增。排序仍由 f 决定，但遇到太弱或太强的对手时，饱和响应可能使梯度很小，自对弈可以提供较合适的挑战。这是对一种博弈结构的分析，不是断言棋类只含单一技能轴。
+
+第二节的剪刀石头布循环正好违反这个前提。现在不只观察“石头→布→剪刀→石头”的版本序列，而要记录每个版本对所有参考对手的收益。最后策略仍能被评价：规定对手分布后，其期望回报很明确；缺少的是一个脱离对手仍适用的“普遍更强”排序。保留旧策略，则能形成最后一个网络不具有的混合与回应选择。
+
+$$
+A=\begin{pmatrix}0&-1&1\\1&0&-1\\-1&1&0\end{pmatrix},\qquad a(v)=\bigl(u(v,R),u(v,P),u(v,S)\bigr).
+$$
+
+行列次序均为石头 R、布 P、剪刀 S，行方胜得 1、负得 −1。固定布作对手，就只优化第二列；固定剪刀则优化第三列，两个目标偏好的策略不同。
+
+把一个策略对各参考对手的收益排成向量，就看见它能应对什么。每回合以权重 x 抽取策略时，收益向量是这些行向量的加权平均。所有可得平均组成凸包：经验 gamescape（经验博弈空间）。它保留的是对一组对手的响应关系，不是神经参数之间的距离。
+
+$$
+\mathcal G(\mathcal P;\mathcal R)=\operatorname{conv}\!\left\{\bigl(u(\pi,r)\bigr)_{r\in\mathcal R}:\pi\in\mathcal P\right\},\qquad a(x)=\sum_{\pi\in\mathcal P}x(\pi)a(\pi).
+$$
+
+$\mathcal P$ 是可选策略池，$\mathcal R$ 是固定参考对手集合。原文 EGS 取 $\mathcal R=\mathcal P$；为比较不同轮的几何图，这里先固定参考坐标。若参考对手也变了，要补测旧策略在新列上的收益后再比较。
+
+先预测：复制十个石头策略，会扩大这个集合吗？加入一个此前没有的剪刀，为什么可能扩大它？图中只画对石头与布的两个坐标；这个特定游戏的第三个坐标始终等于前两者之和取负，因此没有丢失信息。一般博弈的二维投影则可能遮住新的战略方向。
+
+![上方是剪刀石头布的收益矩阵与只回应前任产生的循环。下方在对石头、对布的共同收益坐标中，石头是一个点，石头加布是线段，加入剪刀形成三角形。复制石头仍在同一点，均匀混合在原点。](../../assets/crl-figures/marl-population-gamescape.svg)
+
+由正文给定矩阵精确计算的原创图。蓝色点、紫色线段、青色三角形对应逐渐扩大的可选策略池；原点是三个纯策略的均匀混合。坐标是期望收益，不是 Elo、参数距离或训练轨迹。灵感与术语见 [Balduzzi 等（2019）§2–3](https://arxiv.org/abs/1901.08106)。[计算代码](https://yingwen.io/crl-code/figures/marl-population-geometry.mjs)。
+
+功能 gamescape 则把有限参考坐标换成整个策略空间上的收益函数，描述所有潜在对手与目标。这说明经验图的缺口：在当前池里看似多余的策略，可能能抵挡一个尚未发现的对手；在当前池里占优的策略，也可能只是循环的一部分。判断冗余必须说明相对于哪些对手。完整函数上的等价比有限矩阵行相同强得多。
+
+传递与循环还可在有限矩阵中明确拆开。对 n 个策略采用均匀参考测度，令 $r_i=\frac1n\sum_j A_{ij}$，则 $A^{\rm trans}_{ij}=r_i-r_j$，$A^{\rm cyc}=A-A^{\rm trans}$，且 $A^{\rm cyc}\mathbf1=0$。剪刀石头布的 r 全为零，所以全部留在循环项中。这个分解依赖参考测度；传递子类的行凸包是一条线段，退化时为一点。非线性单调变换保留共同技能排序，却不保证任意经验矩阵仍为一维。
+
 <a id="lesson-evaluation"></a>
 
-## 2 · 评价策略，与评价一个种群，不是同一问题
+### 4.1 · 评价策略，与评价一个种群
 
 单调提升是本章希望建立的性质。先把第 $k$ 轮提交的对象记为 $\mathcal O_k$，并固定越大越好的评价函数 $\mathcal E$。对象可以是一个策略、一个混合，或一个允许重新选择混合的种群。逐轮改善要求 $\mathcal E(\mathcal O_{k+1})\ge\mathcal E(\mathcal O_k)$；它比仅要求最终一轮更好更强。
 
@@ -173,9 +415,27 @@ $$
 
 普通剪刀石头布中，双方池里只有石头时，池内 Gap 为零；完整游戏中双方都出石头的 Gap 为二。另一个加权游戏甚至允许“加入精确响应后，受限均衡的完整 Gap 变大”，下一节给出手算。
 
+Balduzzi 等还定义了直接比较两个种群的相对表现。两边可以大小不同：先计算一个 m×n 的交叉收益矩阵，再允许双方各自在自己的池中选混合，取这个有限零和游戏的值。它衡量两池交手的可保证收益；不用先选出各自一个所谓冠军。
+
+$$
+v(\mathcal P,\mathcal Q)=\max_{x\in\Delta(\mathcal P)}\min_{y\in\Delta(\mathcal Q)}x^\top A_{\mathcal P,\mathcal Q}y.
+$$
+
+有限零和游戏的所有 Nash 均衡给出同一个游戏值，因此均衡可能不唯一并不使这个值含糊。它不是双方任取一个池内 Nash 再交手；这里求解的是两池之间的交叉游戏。
+
+例如，小池 $\mathcal P=\{R,P\}$ 与大池 $\mathcal Q=\{S,S,S\}$ 的交叉矩阵是 $\left(\begin{smallmatrix}1&1&1\\-1&-1&-1\end{smallmatrix}\right)$。小池选 R 可保证 1，故 $v(\mathcal P,\mathcal Q)=1$。大池的三份剪刀没有增加选择能力。把参考对手改成完整的 $\{R,P,S\}$，小池最佳混合却是 $(1/3,2/3)$，最坏收益为 −1/3；加入 S 后可以用均匀混合把安全值提高到 0。
+
+$$
+\mathcal G(\mathcal P;\mathcal R)\subseteq\mathcal G(\mathcal P';\mathcal R)\quad\Longrightarrow\quad v(\mathcal P,\mathcal Q)\le v(\mathcal P',\mathcal Q),\quad\mathcal Q\subseteq\mathcal R.
+$$
+
+同一参考收益坐标下，旧混合的收益向量仍可行，因此面对固定对手池 Q 的最优安全值弱单调。对完整策略空间作此断言，需要函数层面的包含或直接保留全部旧策略。
+
+凸包严格变大，也可能只是不下降：上例加入剪刀后，对三份剪刀的游戏值仍为 1。这个性质沿包含链成立，不把任意种群都排成传递的优劣次序；只含一个纯策略的三个种群仍然剪刀石头布相克。相对种群表现、完整可利用度与种群能利用哪些特定弱点，是三个需要分别报告的量。
+
 <a id="lesson-psro"></a>
 
-## 3 · DO 与 PSRO：评价、生成反例、扩张策略集合
+## 5 · DO 与 PSRO：评价、生成反例、扩张集合
 
 竞争中的目标构建有一个直接依据：当前策略仍能被什么行为利用？用这样的对手组织响应学习，再把学到的行为纳入种群，可以逐步补齐战略覆盖。DO 与 PSRO 将这个直觉变成可执行的评估—响应循环。
 
@@ -212,9 +472,41 @@ $$
 
 令 $\hat B=u(\hat p,y)$、$\hat C=u(x,\hat q)$ 是找到的响应的真实期望收益。若已知行方响应距完整最大值至多 $\epsilon_1$，列方响应距完整最小值至多 $\epsilon_2$，便得到上下界。未知 oracle 误差时只有左边，找不到获利偏离不构成上界证书；若 $\hat B,\hat C$ 也来自有限评价，还需计入其误差。
 
+<a id="lesson-rectified-nash"></a>
+
+### 5.1 · 不怕被利用以后，为什么继续学习？
+
+回应受限 Nash 的意义可以从几何中证明。对称零和池的均衡值为零，若一个新策略对该池的 Nash 混合获得严格正收益，它的旧对手收益向量就不可能在旧凸包内：旧池中的任何混合都不能对这个均衡获利。因此，正收益证据给出了严格扩大经验 gamescape 的充分条件。前提是收益和均衡已按所用精度核对；搜索没有找到正收益则不构成反证。
+
+但是，拥有一种安全的混合，还没有描述能怎样利用不同对手。考虑一个连续的循环博弈：策略是单位圆盘里的二维向量，收益为两个向量的有向面积。三点等距放在半径 0.5 的圆上，均匀混合的均值为原点；它对任意对手都得零。此时回应这个混合的目标对所有候选策略都相同，无法指出向哪个方向继续学习。三点却仍各有能击败和会输给的对手。
+
+$$
+\phi(v,w)=v_1w_2-v_2w_1,\quad \|v\|_2,\|w\|_2\le1,\qquad \mathbb E_{w\sim q}\phi(v,w)=\phi(v,\mathbb E_qw)=0\ \text{当 }\mathbb E_qw=0.
+$$
+
+这是受原文 disc game 启发的给定连续博弈。原点/零均值混合为完整游戏的均衡；每个边缘点有正负收益的对手，所以安全性与对特定对手的利用能力分开。
+
+Rectified Nash response 先求当前 Nash 混合，再从其中权重为正的各个成员出发创建候选。固定这个混合后，各成员优化的是同一个正部收益目标；起点不同，当前能战胜的对手便不同，因而局部响应方向不同。它试图从各自已有专长出发扩展能力，再把候选加入原池。原文称之为 game-theoretic niching。这里不是为每个成员任意定义一个不同的函数，也不是为整个种群挑同一个最难对手。
+
+$$
+L(v)=\sum_j q_j[\phi(v,w_j)]_+,\qquad [z]_+=\max(z,0),\qquad \nabla_vL\big|_{v=w_i}=\sum_{j:\phi(w_i,w_j)>0}q_j\nabla_v\phi(w_i,w_j).
+$$
+
+从每个 $q_i>0$ 的成员 $w_i$ 出发优化；式中零收益处采用零次梯度，仅为本页算例约定。梯度因此由当前可战胜的对手贡献。原文算法写的是正部收益目标；若工程实现先固定筛选对手并重新归一化，再训练很多步，需要说明它与边训练边改变正部区域的区别。
+
+先预测：对零均值 Nash 混合做一步梯度上升，会移动圆盘中的点吗？改用正部目标以后，每个点朝哪个方向移动？下图只计算一次给定步长的更新，不调用 RL 训练。
+
+![左图三点在半径0.5圆上，均匀Nash目标处处为零，三个梯度均为零。右图对正部收益目标作一步更新，三个新点伸出旧三角形。两组三点的均匀混合仍是原点，因此相对种群游戏值仍为零。](../../assets/crl-figures/marl-population-rectified.svg)
+
+原创确定性计算：初始角度为 0、120、240 度，Nash 权重各 1/3，步长 0.6，零收益处取零次梯度。旧三角形用灰线、新候选用紫线，箭头为解析梯度更新，非人类数据或论文性能曲线。保留旧点后的并集扩大了可选收益函数；图中相对值仍为 0，显示几何扩大不保证每个评价严格提高。[Balduzzi 等（2019）§4、图 3](https://arxiv.org/abs/1901.08106) · [计算代码](https://yingwen.io/crl-code/figures/marl-population-geometry.mjs)。
+
+原文还用 $d(\mathcal P,q)=q^\top[A_{\mathcal P}]_+q$ 描述 Nash 支持成员之间相互利用的强度，称为有效多样性。普通剪刀石头布的均匀 q 给出 1/3，而收益全零的池给出 0；两者的对称零和游戏值都是 0。该指标以所选 Nash 权重为条件，衡量的对象不同于策略数、任意参数距离或完整可利用度。
+
+正部目标也可能追逐不能泛化的局部克制，生成大量狭窄专家。原文在 Blotto 与可微 Lotto 上比较了这类方法，计算预算主要按响应 oracle 调用计数，未计入随种群增长的交叉评估成本。其观察支持这两类资源分配游戏中的方法比较；用于更大种群或持续系统时，应把评估、存储、选择混合和删除旧成员的成本一并计入。保留旧解保证的是候选集合不缩小，有限优化器是否找到并提交更有用的回应仍要检验。
+
 <a id="lesson-epsro"></a>
 
-## 4 · EPSRO：响应与对手混合共同更新
+### 5.2 · EPSRO：响应与对手混合共同更新
 
 标准 PSRO 分开进行元游戏评估和冻结混合上的响应训练。EPSRO 使用 unrestricted–restricted game，简称 URR：一方搜索完整策略类，另一方只在旧池中混合，两者共同更新。URR 是问题设定，不是另一篇独立算法论文。[EPSRO](https://arxiv.org/abs/2202.00633)
 
@@ -242,7 +534,7 @@ $$
 
 <a id="lesson-diversity"></a>
 
-## 5 · 多样性：去过哪里，与能应对谁
+### 5.3 · 多样性：去过哪里，与能应对谁
 
 两个策略可以走不同路线，却输给同一类对手；也可以只有一个关键动作不同，却克制不同对手。参数距离、占据分布和响应向量不是同一种多样性。Diverse-PSRO 研究 payoff 表征上的 DPP 指标；BD/RD 区分行为与响应两个层面。[Diverse-PSRO](https://proceedings.mlr.press/v139/perez-nieves21a.html) · [BD/RD](https://arxiv.org/abs/2106.04958)
 
@@ -264,7 +556,7 @@ $$
 
 <a id="lesson-curricula"></a>
 
-## 6 · NAC：直接学习怎样安排下一轮课程
+### 5.4 · NAC：学习怎样安排下一轮课程
 
 如果响应训练只有有限预算，最适合学习的对手混合未必是当前受限 Nash。NAC 参数化元求解器，再根据若干轮后的可利用度训练它。[Neural Auto-Curricula](https://arxiv.org/abs/2106.02745)
 
@@ -278,9 +570,19 @@ $$
 
 固定外部评价仍然存在。自动学习的是为它服务的课程规则，不是凭空创造最终好坏标准。展开长度、训练游戏分布和响应质量限定了结论。[作者代码](https://github.com/waterhorse1/NAC)
 
+构造目标还可以改变什么？NAC 改的是与谁交互；温颖参与的 Learning to Design Games 将可改变对象推进到环境转移。以迷宫为例，玩家努力缩短抵达终点的路程，设计者在允许的地图集合内安排墙，让最优玩家也要走得更远。固定玩家时，原问题的状态—动作对可作为新状态，下一状态作为新动作；于是原转移分布成为一个待优化的策略。[IJCAI 2018 原文 §3、图 1–2](https://www.ijcai.org/Proceedings/2018/0426.pdf)
+
+$$
+\min_{\theta\in\Theta_{\rm allowed}}\max_\varphi\mathbb E[G\mid\pi_\varphi,M_\theta],\qquad s^{E}=(s,a),\quad a^{E}=s',\quad\pi^{E}_\theta(s'\mid(s,a))=P_\theta(s'\mid s,a).
+$$
+
+左式为论文的对抗环境设计目标，显式写出允许的环境集合；右式是固定玩家策略时的 dual MDP 对应。它说明怎样优化转移，不保证交替近似训练找到全局鞍点。
+
+连续可调的转移概率可用转移梯度；离散墙体则由另一个生成过程逐步产生合法地图，不能直接对墙是否存在求同样的梯度。迷宫可达性等约束必须在可行集合中声明。更低的当前回报不自动等于更多未来学习进展：若目标是课程，应另测学习后的收益、可解性及生成和求响应的总成本。运行复现前，还需确认作者实现与依赖；通用 RL 库不能代替这个环境生成过程。
+
 <a id="lesson-composition"></a>
 
-## 7 · 策略生成：继承、融合与信息状态级组合
+### 5.5 · 策略生成：继承、融合与局内组合
 
 | 方法 | 改变哪个环节 | 必须保留的边界 |
 | --- | --- | --- |
@@ -304,7 +606,7 @@ XDO/NXDO 由 McAleer 等提出，不属于温颖共同作者系列。它在信�
 
 <a id="lesson-cole"></a>
 
-## 8 · COLE：把合作不兼容转成下一轮伙伴课程
+## 6 · COLE：把合作不兼容转成伙伴课程
 
 前面的竞争主线通过评估寻找克制关系，再据此构建训练目标。转向合作后，核心循环保留，评价关系改变：需要发现哪些约定或伙伴组合尚不能兼容，并使后续策略学会配合。这是 COLE 扩展开放式多智能体学习的出发点。
 
@@ -326,7 +628,7 @@ COLE-SV 的 graphic Shapley value 评价策略在合作图中的作用，以构�
 
 <a id="lesson-hola"></a>
 
-## 9 · HOLA：伙伴组合具有两两关系之外的结构
+### 6.1 · HOLA：评价完整的伙伴组合
 
 COLE 说明怎样从两方合作关系构建课程。多个伙伴同时参与时，目标构建还需知道“哪些组合”值得学习；不能只把所有两两评价分别提高。HOLA 将评估单元扩展为整个团队组合，再用评估结果形成下一轮课程。
 
@@ -346,7 +648,7 @@ HOLA-Drone 用超图及偏好关系组织评估，生成下一轮伙伴课程，
 
 <a id="lesson-test-distribution"></a>
 
-## 10 · 独立评价：训练课程不能同时充当考卷
+### 6.2 · 独立评价：课程不能同时充当考卷
 
 训练分布由方法选择，测试分布应由研究问题确定。若每种方法挑自己的容易伙伴，平均回报不能比较。即便共用伙伴，不同伙伴能实现的最佳团队收益也可能不同。
 
@@ -360,11 +662,15 @@ ZSC-Eval 通过行为偏好奖励生成候选伙伴，按所需最佳响应的�
 
 参考响应并不等于真实最优。BR-Prox 分母近零、收益可正可负或参考训练不足时，不能机械套用比值。必须同时报告原始回报、分伙伴结果、区间和参考训练预算。测试生成过程也只是部署分布的代理。
 
+AT-Drone 将独立伙伴评价落实到无人机追逃：任务中有 N 个可学习追踪者、M 个不受学习者控制的陌生伙伴，以及逃逸者与障碍物。四组配置改变逃逸者和障碍物数量；训练与评价须声明哪些策略能更新、是否显式建模伙伴，以及测试伙伴来自哪里。§3.3 的三个测试池分别为 Greedy 伙伴、两种水平的 IPPO 自博弈伙伴及二者的混合；文中还讨论 VICSEK 伙伴，但不能把候选生成方式与这三个具体测试池混写。[AT-Drone，CoRL 2025](https://proceedings.mlr.press/v305/li25a.html) · [方法版本 §3.1–3.3](https://arxiv.org/html/2502.09762v2)
+
+它将成功率 SUC、碰撞率 COL、成功回合的平均步数 AST、平均奖励 REW 分开记录。前两者分别回答是否完成追逐、是否发生碰撞，AST 只回答成功以后花了多久。因此，失败增加也可能伴随更短的 AST；这是条件平均的数学边界，不是该论文报告的方法结论。追踪系统支持的有限场地验证也不是任意部署环境的安全保证。[作者项目页](https://sites.google.com/view/at-drone)提供任务说明与演示，但尚未列出公开训练代码；使用时需另行确认复现入口。
+
 人类会主动迁就 AI。首次与重复配合、角色和沟通权限、主观负担都应记录，以区分 AI 适应、人类适应和共同适应。短期人机高分不直接证明长期协作稳定。
 
 <a id="lesson-series"></a>
 
-## 11 · 扩展同一条主线：数据限制、团队结构与一般和目标
+## 7 · 扩展问题：数据、团队结构与一般和目标
 
 开放式多智能体学习不只面临“再增加一个策略”的问题。无法继续采样时，响应必须受已有数据约束；双方各有一支团队时，需要声明能否相关地选择联合策略；利益不完全对立时，则要改变解概念。以下作品分别扩展评估、目标构建或响应学习的条件。
 
@@ -388,7 +694,7 @@ Off-FSP 属于数据受限的竞争学习，不能因为使用历史经验就称
 
 <a id="lesson-branches"></a>
 
-## 12 · 开放式多智能体学习与 CRL：评价整个学习过程
+### 7.1 · 与 CRL 相连：评价整个学习过程
 
 开放式多智能体学习研究怎样由交互生成新的学习目标，并沿明确准则改善能力。把它放入 CRL 的生命期设定后，还要把形成能力的过程本身纳入评价。最终档案更强与同一智能体一生获得更高收益，是相关但不同的目标。
 
@@ -399,13 +705,69 @@ Off-FSP 属于数据受限的竞争学习，不能因为使用历史经验就称
 | 冻结策略零样本适应 | 状态、记忆和参数是不同更新载体 | 分别冻结各载体，不把活动变化当作无适应。 |
 | 只测最终 checkpoint | 探索、更新和错误在生命中有成本 | 全寿命回报、适应损失、失败与恢复代价。 |
 
-合作结构化探索决定一次经历发现什么；种群课程决定下一轮遇到什么；持续学习还要决定保留哪些知识、何时更新和付出多少代价。三层相连，但一层的成功不能代替其他层的证据。
+合作结构化探索决定一次交互发现什么；种群课程决定下一轮遇到什么；持续学习还要决定保留哪些知识、何时更新和付出多少代价。三层相连，但一层的成功不能代替其他层的证据。
 
 可以先固定物理规则，只让伙伴约定变化；再固定伙伴，改变动力学。最后组合二者，研究有限记忆下的状态、预测和控制学习，避免把所有困难笼统归为非平稳。
 
 <a id="lesson-code"></a>
 
-## 13 · 可运行的评价反例，与原始工程入口
+## 8 · 算例与原始工程：从标签到种群评价
+
+先运行 [selfplay_search_labels.py](../../tutorials/selfplay_search_labels.py)：python3 tutorials/selfplay_search_labels.py 打印 32 次确定性搜索的逐步轨迹、计数、π、价值标签和交叉熵梯度；加 test 运行五项断言。只依赖标准库，没有网络训练、随机自对弈或棋类工程。把预算改为 1，可以立刻检查“搜索必然改善”的反例。
+
+matrix_value、minimax_2x2 与 zero_sum_gap 检验矩阵评价；没有训练 PR2、GR2 或 NFSP 网络。
+
+```python
+def matrix_value(matrix, row_policy, column_policy):
+    probabilities(row_policy); probabilities(column_policy)
+    return sum(row_policy[i]*column_policy[j]*matrix[i][j]
+               for i in range(len(row_policy)) for j in range(len(column_policy)))
+
+
+def minimax_2x2(matrix):
+    """Row maximizes, column minimizes. Optimize the lower envelope of two lines."""
+    a, b = matrix[0]
+    c, d = matrix[1]
+    candidates = [0., 1.]
+    denominator = a-c-b+d
+    if denominator != 0:
+        crossing = (d-c)/denominator
+        if 0 <= crossing <= 1:
+            candidates.append(crossing)
+    lower = lambda p: min(p*a+(1-p)*c, p*b+(1-p)*d)
+    p = max(candidates, key=lower)
+    return [p, 1-p], lower(p)
+
+
+def zero_sum_gap(matrix, row_policy, column_policy):
+    row_best = max(dot(row, column_policy) for row in matrix)
+    column_best = min(sum(row_policy[i]*matrix[i][j] for i in range(len(matrix)))
+                      for j in range(len(matrix[0])))
+    return row_best-column_best
+
+
+def counterfactual_advantage(matrix, row_action, column_action, row_policy):
+    probabilities(row_policy)
+    baseline = sum(row_policy[i]*matrix[i][column_action] for i in range(len(row_policy)))
+    return matrix[row_action][column_action]-baseline
+
+
+def monotone_joint_greedy(local_values, weights):
+    if len(local_values) != len(weights) or any(w < 0 for w in weights):
+        raise ValueError('nonnegative mixing weights required')
+    local_choice = tuple(max(range(len(q)), key=q.__getitem__) for q in local_values)
+    joint = list(itertools.product(*(range(len(q)) for q in local_values)))
+    value = lambda acts: sum(w*q[a] for w, q, a in zip(weights, local_values, acts))
+    return local_choice, value(local_choice), max(map(value, joint))
+```
+
+| 自对弈实现入口 | 阅读位置 | 实现边界 |
+| --- | --- | --- |
+| OpenSpiel NFSP / CFR | python/pytorch/nfsp.py；python/algorithms/cfr.py | 平台实现，不标作原论文当年实验快照 |
+| OpenSpiel AlphaZero | alpha_zero.py 的 _play_game 与 collect_trajectories | 对照根访问计数、温度、对局回报和训练标签；平台实现，不是作者实验发布包 |
+| MuZero 作者伪代码 | play_game、store_search_statistics、make_target、update_weights | 对照真实交互、搜索标签、展开目标和梯度；环境与网络接口未实现 |
+
+实现细节必须读到损失处。所核对的 OpenSpiel NFSP 版本在响应模式的 reservoir 中存动作概率向量，再做交叉熵；这与论文 Algorithm 1 写出的采样动作记录不是逐字段相同。OpenSpiel AlphaZero 的当前实现还采用固定玩家 1 的训练价值视角，并在搜索 evaluator 中转换双方收益；本章手算采用当前行动玩家视角。两种约定都需全链条一致，不能只复制一个负号。
 
 精确小博弈：fictitious play 的平均混合与最新响应、完整 gap、伙伴分布变化，以及精确最佳响应扩池后的反例。不是神经 PSRO 复现。
 
@@ -485,7 +847,16 @@ EPSRO、BD/RD、Fusion-PSRO、Conflux-PSRO 与 HOLA 的原文见参考。这里�
 
 <a id="lesson-check"></a>
 
-## 14 · 练习：同一结果为什么会有不同解读
+### 8.1 · 练习：同一结果为什么会有不同解读
+
+- 问：自对弈必须共享网络吗？答：不需要。各角色的奖励和信息可以不同。
+- 练习：两个策略各自连续两步总选左或总选右。比较每局抽一次策略和每步混合动作可产生的轨迹。
+
+- 练习：只做一次两层树模拟，比较先验与计数策略的保底收益，说明有限搜索为什么没有逐状态改善保证。
+- 练习：实际对局 L→b 后，写出根状态的 π 和 z；解释为什么策略梯度仍可提高未执行的 R。
+- 练习：若把对手节点也按玩家 1 收益最大化，指出哪条分支和哪项任务假设被改变。
+- 问：AlphaZero 的三棋结果证明持续学习与不遗忘吗？答：没有；原文分别训练三个实例。
+- 问：MuZero 的搜索更深就能修复错误模型吗？答：不能；需真实反馈提供纠错依据，并检验未覆盖分支。
 
 - 问：扩池后仍提交旧混合，实际表现一定提高吗？答：不一定。最佳安全价值不下降，实际输出可以完全不变。
 - 问：新 payoff 向量离旧凸包很远，一定有用吗？答：不一定，它可能在所有参考对手上更差。
@@ -512,6 +883,34 @@ python3 examples/marl_objectives_lab.py test
 
 ## 参考文献与实现
 
+- [Heinrich、Lanctot、Silver · Fictitious Self-Play（ICML 2015）](https://proceedings.mlr.press/v37/heinrich15.html)：阅读实现等价的行为平均与 XFP/FSP，注意到达概率权重。
+
+- [Heinrich、Silver · Neural Fictitious Self-Play（2016）](https://arxiv.org/abs/1603.01121)：Algorithm 1 的按局模式抽样、两种记忆与平均策略评价。
+
+- [Silver 等 · AlphaGo（Nature 2016）](https://storage.googleapis.com/deepmind-media/alphago/AlphaGoNaturePaper.pdf)：Figure 1、强化学习策略与价值训练、MCTS；监督先验与 rollout 不可追述成 Zero 的单网络闭环。
+
+- [Silver 等 · AlphaGo Zero（Nature 2017）](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf)：第 1 节、公式 1：网络、搜索计数、当前玩家终局标签与联合损失。
+
+- [Silver 等 · AlphaZero（Science 2018，作者开放稿）](https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphazero-shedding-new-light-on-chess-shogi-and-go/alphazero_preprint.pdf)：正文公式 1、与 Zero 的区别及三个分别训练实例；区分 2017 预印本与最终评估。
+
+- [Schrittwieser 等 · MuZero（Nature 2020）](https://arxiv.org/abs/1911.08265)：第 3 节及 Appendix A：表示、动力学、预测；根合法动作与内部隐模型的界限。
+
+- [MuZero 作者公开伪代码](https://arxiv.org/src/1911.08265v1/anc/pseudocode.py)：记录搜索分布、构建展开目标与模型训练；带未实现接口，不是完整软件包。
+
+- [OpenSpiel · AlphaZero 数据生成与学习](https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/alpha_zero/alpha_zero.py)：_play_game 存访问计数分布；collect_trajectories 接终局回报。平台版本可能演化。
+
+- [OpenSpiel · AlphaZero 价值视角转换](https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/alpha_zero/evaluator.py)：evaluate 将固定玩家价值转成双方收益；与训练标签约定一起阅读。
+
+- [Zinkevich 等 · Regret Minimization in Games with Incomplete Information（2007）](https://poker.cs.ualberta.ca/publications/NIPS07-cfr.pdf)：反事实价值、局部到整体遗憾界与完美回忆条件。
+
+- [OpenSpiel · NFSP](https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/pytorch/nfsp.py)：公开平台实现；阅读按局策略抽样、reservoir 和监督损失。
+
+- [OpenSpiel · CFR](https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/cfr.py)：对照 counterfactual reach、regret matching 和 average_policy。
+
+- [David Balduzzi · 作者主页与公开讲义入口](https://sites.google.com/site/dbalduzzi/)：主页列出 Open-ended learning in games（2019）与 Designing learning dynamics（NeurIPS tutorial，2020）。讲义用于理解问题脉络；下面的 ICML 2019 论文提供正式定义、算法和证明。本页原创图不转载整套讲义。
+
+- [Balduzzi et al. · Open-ended Learning in Symmetric Zero-sum Games](https://arxiv.org/abs/1901.08106)：ICML 2019。按 §2 的对手→目标、§3 的 FGS/EGS 与相对种群值、§4 的 Nash/rectified Nash、Appendix E 的包含与严格扩张证明阅读。弱单调沿集合包含链成立，不给任意种群全序；§5 的预算未计交叉评估。
+
 - [Albrecht、Christianos、Schäfer · Multi-Agent Reinforcement Learning](https://www.marl-book.com/)：先读博弈与解概念，再读深度算法和实现；官网提供教材、讲义与代码。
 
 - [Lanctot et al. · A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning](https://arxiv.org/abs/1711.00832)：PSRO 元博弈、元策略与学习响应接口；框架和具体解概念分开。
@@ -524,6 +923,8 @@ python3 examples/marl_objectives_lab.py test
 
 - [Feng et al. · Neural Auto-Curricula](https://arxiv.org/abs/2106.02745)：依据后续可利用度训练课程生成器，连接种群学习与元学习。
 
+- [Zhang et al. · Learning to Design Games: Strategic Environments in Reinforcement Learning](https://www.ijcai.org/Proceedings/2018/0426.pdf)：IJCAI 2018，§3.1–3.3、式 2、Definition 1 与图 1–2：对抗环境目标、dual MDP、连续转移梯度与离散生成。难度或轨迹等价不是持续学习与全局优化保证；实现入口须另行确认。
+
 - [Lian et al. · Fusion-PSRO](https://doi.org/10.3233/FAIA251106)：Nash 加权参数融合用于 response 初始化，不等于概率混合。
 
 - [Huang et al. · Conflux-PSRO](https://arxiv.org/abs/2410.22776)：状态级路由复用子策略，再蒸馏；机制说明不等于无条件性能排序。
@@ -531,6 +932,8 @@ python3 examples/marl_objectives_lab.py test
 - [McAleer et al. · XDO: A Double Oracle Algorithm for Extensive-Form Games](https://arxiv.org/abs/2103.06426)：信息状态级组合及 NXDO；相邻团队研究，表格界与神经近似分开。
 
 - [Li et al. · Cooperative Open-ended Learning Framework for Zero-shot Coordination](https://proceedings.mlr.press/v202/li23au.html)：ICML 2023 原始 COLE：图评价、兼容性课程与局部偏好目标。
+
+- [Li et al. · AT-Drone: Benchmarking Adaptive Teaming in Multi-Drone Pursuit](https://proceedings.mlr.press/v305/li25a.html)：CoRL 2025 / PMLR 305。方法详见 arXiv v2 §3.1–3.3：多学习者与陌生伙伴、三个具体测试池、SUC/COL/AST/REW。项目页未提供公开训练仓库；不外推有限物理场地结果。
 
 - [Li et al. · Tackling Cooperative Incompatibility for Zero-Shot Human-AI Coordination](https://doi.org/10.1613/jair.1.15884)：JAIR 2024 扩展，含 COLE-SV、COLE-R 与人机研究。
 
@@ -584,6 +987,8 @@ python3 examples/marl_objectives_lab.py demo --out results/marl-objectives
 
 仅依赖Python标准库，含15项机制检查。图不用于排序大型算法。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-marl-populations#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-marl-populations#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-marl-populations)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -610,4 +1015,4 @@ python3 examples/marl_objectives_lab.py demo --out results/marl-objectives
 - [实验设计、统计与算法测试](../../textbook/experiments.md)
 - [持续学习的智能体架构](../../textbook/architectures.md)
 
-对应原始材料：MARL book 第 3–6 章：博弈、解概念与博弈学习；MARL book 第 9–11 章：深度算法、实现与环境；PSRO、EPSRO、COLE 与 HOLA 原文。本文为原创讲解，原书、论文与上游代码保留各自许可。
+对应原始材料：Fictitious Play、FSP、NFSP 与 CFR；AlphaGo、AlphaGo Zero、AlphaZero 与 MuZero；MARL book 第 3–6 章：博弈、解概念与博弈学习；MARL book 第 9–11 章：深度算法、实现与环境；PSRO、EPSRO、COLE 与 HOLA 原文。本文为原创讲解，原书、论文与上游代码保留各自许可。

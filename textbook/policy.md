@@ -1,16 +1,24 @@
 # 策略梯度、Actor–Critic 与 PPO
 
-策略梯度直接优化参数化策略的期望回报。REINFORCE 使用采样回报估计梯度；actor–critic 引入价值预测以分配信用；PPO 在旧策略采集的数据上优化一个局部代理目标。
+策略梯度和 PPO 的一次更新以什么行为分布、价值版本与评价目标为参照？把这些更新连成持续学习过程后，哪些结论还需要重新检验？
 
 ## 本章内容
 
-- 从轨迹概率推出策略梯度与 baseline 的零期望。
-- 由 TD error 递推计算 GAE，正确处理终止、截断和 rollout 边界。
-- 手算 PPO 的正负 advantage 裁剪，并运行有真实采样循环的最小实现。
+- 沿轨迹概率与 baseline 恒等式，区分当前策略目标和完整学习器目标。
+- 核对 GAE 的旧价值、bootstrap 与跨序列边界。
+- 用保留的 PPO 算例检查批内冻结量，再说明 rollout 与更新预算怎样进入生命期比较。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [策略梯度、基线与 Actor–Critic](../foundations/approximation/policy-gradient.md)：从轨迹概率到策略梯度的推导在第一册。
+- [策略更新的尺度：TRPO 与 PPO](../foundations/deep/trust-region.md)：批内代理目标与策略更新尺度在第二册。
+
 
 ### 一条经验
 
@@ -110,15 +118,17 @@ $\theta$ 为策略参数，$p_\theta$ 为策略诱导的轨迹分布，$T$ 为�
 
 <a id="lesson-setting"></a>
 
-## 1 · 先用有限时域把梯度推清楚
+## 1 · 先明确求导的是哪一种未来行为
 
-设轨迹 $\tau$=($S_{0}$,$A_{0}$,$R_{1}$,…,$S_T$)，环境动力学和初始状态分布不依赖策略参数 $\theta$。先取有限时域不折扣总回报。策略产生数据，因此 $\theta$ 改变的不只是预测，还会改变访问哪些状态与轨迹。网络 loss 的下降不是环境回报上升的直接证据。
+第一册的[策略梯度](../foundations/approximation/policy-gradient.md)建立占用分布与梯度定理，第二册的[actor–critic 与 GAE](../foundations/deep/policy-gradient.md)和 [TRPO/PPO](../foundations/deep/trust-region.md)完成估计器与训练循环。本章回顾其中的固定量，连接到持续控制：一次局部更新的方向，与长期执行这些更新所得的收益，需要分别定义。
+
+设轨迹 $\tau$=($S_{0}$,$A_{0}$,$R_{1}$,…,$S_T$)，环境动力学与初始分布不依赖策略参数 $\theta$。先取有限 $T$、不折扣总回报，并在生成一条轨迹时使用同一套 $\theta$。即使参数固定，动作仍会改变后续状态分布；下一节的 score-function 推导已经计入这条作用路径。
 
 $$
 J(\theta)=\mathbb E_{\tau\sim p_\theta}[\sum_{t=0}^{T-1}R_{t+1}],\qquad p_\theta(\tau)=p_0(s_0)\prod_t\pi_\theta(a_t\mid s_t)p(s_{t+1},r_{t+1}\mid s_t,a_t)
 $$
 
-目标是对自己诱导的数据分布求期望。接下来对该分布求导，而不是把采到的奖励当作可对 $\theta$ 直接反向传播的环境函数。
+这里求导的是这一固定参数策略诱导的回报期望。若在轨迹中按 $\theta_{t+1}=U(\theta_t,\ldots)$ 继续学习，未来动作还受更新规则影响；不能把上式中的同一个 $\theta$ 悄悄换成每步变化的参数，再声称已经求出了对初始化或学习规则的生命期梯度。
 
 <a id="lesson-derive"></a>
 
@@ -130,7 +140,7 @@ $$
 
 使用 ∇p=p∇log p；环境项与 $\theta$ 无关，只有策略项留下。连续空间将求和换积分，还需要可交换求导与积分等正则条件。
 
-![两步共享 Bernoulli 策略的四条轨迹概率，以及解析目标曲线上的一次梯度更新。](https://yingwen.io/crl-figures/concept-classic-policy-gradient.svg)
+![两步共享 Bernoulli 策略的四条轨迹概率，以及解析目标曲线上的一次梯度更新。](../assets/crl-figures/concept-classic-policy-gradient.svg)
 
 分支宽度是动作概率，末端数字是完整轨迹概率。这个独立例子不给策略阶段信息，仅动作 1 后接动作 0 的序列获奖；折扣为 0.5。参数从 0.7 沿精确期望梯度更新到约 0.513553，使动作 1 概率从 0.668 降到 0.626。曲线是解析目标，不是采样训练表现。
 
@@ -176,7 +186,22 @@ python3 implementations/deep/vpg.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/deep-vpg/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：训练环境步（独立评估交互另计）。纵轴：冻结策略的外部回报。每种方法 1200 训练环境步；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 actor，在独立 DeadlineChain 中按 argmax 动作重复12次完整回合，取未折扣外部回报的平均。每次都从位置0、剩余12步开始；到位置4奖励1，其余步奖励−.02。评价环境和动作选择都确定，同一网络的12次回合相同，不能当成12个训练种子。
+
+**step：怎样计时。** step 只数训练环境转移，包含未完成回合的 pending_samples；评价交互另计。到位置4或用尽任务的12步时，VPG用该完整回合做一次actor梯度和一次critic梯度，updated_batches因此是已更新回合数。预算末尾未完成回合不作Monte Carlo更新，不能把预算截断当成终止。A2C对照每60步更新一批，1200步有20次actor和20次critic梯度，相同环境预算没有对齐更新次数。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 第0步评价尚未更新的网络；后续每60步记录当前网络，可能仍在等待下一完整回合。VPG用γ=1的reward-to-go减去采样时的价值基线，没有优势归一化；A2C用一步自举。图中argmax回报与随机行为策略的期望回报分别定义，两方法还改变了等待长度与优化时钟。这是单环境教学实现，不是论文基准复现。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结回报均值和样本标准差；updated_batches给出VPG的actor、critic各自梯度次数，samples−pending_samples给出已用于完整回合更新的转移数。已知确定性任务下，成功时回合长度L=1+(1−value)/.02，失败时L=12；12×L给本检查点额外评价转移数。未保存训练奖励、回合回报、基线、优势或策略概率，不能恢复训练累计收益、随机行为策略回报或完整梯度。policy_loss和value_loss来自最近完成回合（A2C为最近批次），不是检查点间的平均。
+
+计算位置：[deep/vpg.py](../implementations/deep/vpg.py) · [deep/a2c.py](../implementations/deep/a2c.py) · [deep/_common.py](../implementations/deep/_common.py)
+
+</details>
 
 **结果分析。** 第 600 步 VPG 均值为 0.94，A2C 为 0.704，后者 seed 标准差约 0.528；第 1200 步两者都为 0.94。本配置说明 critic 引入后不必更早学好，但两者最终都达到最短路径行为。
 
@@ -191,14 +216,16 @@ python3 implementations/deep/vpg.py --steps 1200 --seeds 0 1 2 3 4 --out results
 ## 3 · GAE 把多步 advantage 写成反向递推
 
 $$
-\hat A_t=\delta_t+\gamma_{t+1}\lambda b_t\hat A_{t+1},\qquad \hat R_t=\hat A_t+V_{\mathrm{old}}(S_t)
+\hat A_t=\delta_t+\gamma_{t+1}\lambda c_t\hat A_{t+1},\qquad \hat R_t=\hat A_t+V_{\mathrm{old}}(S_t)
 $$
 
-$b_{t}$ 表示后继样本是否仍在同一条轨迹内；真实终止、reset 或采样块边界时置 0，避免把新轨迹的误差接回来。它与控制 bootstrap 的 $\gamma_{t+1}$ 分开。从末尾向前算即可。$\lambda$=0 只用一步 TD，$\lambda$ 接近 1 更多依赖真实后续奖励；终止后 tail 为零。value target 是优势加旧 value，不要把更新中的新 value 混进去。
+$c_t$ 表示后继样本是否仍在本次可用的同一条轨迹内；真实终止、reset 或采样块边界时置 0。沿用第二册的 c 作为跨序列 mask；其 bootstrap mask $b_t$ 在这里并入 $\gamma_{t+1}=\gamma b_t$。所有 TD residual 使用同一旧 critic。从末尾向前算即可，$\lambda$=0 只用一步 TD；value target 是原始优势加旧 value。
 
 三个边界必须拆开：真实终止：bootstrap=0 且 trace 停；time-limit 截断：若原任务继续，bootstrap 使用最终观测 value，但 trace 不跨进 reset 的新轨迹；rollout 采样块结束：bootstrap 使用块尾状态 value，未采到的 GAE tail 截断为 0。这些不是一个 done 布尔变量能无歧义表达的。
 
-训练 actor 前，advantage、旧 log-prob 和 critic target 都冻结。本章不强制标准化 advantage；若采用标准化，负正号与尺度可能改变，必须在实现说明中写清。
+第 1 节先用不折扣目标说明 score 推导；这里保留通用折扣 critic 的 GAE 写法。若要估计起点折扣目标的梯度，actor 仍需上一节说明的时间权重或相应采样分布。训练 actor 前固定原始 advantage、旧 log-prob 和 critic target；标准化若只用于 actor，不能再把它加回旧 value 作为 critic 标签。
+
+这个反向递推在一批已经收到的数据上生成固定权重。[时间信用分配章](credit.md)改为让误差到来时立即影响过去的参数用途，须重新规定参数版本和在线等价条件。仅因两种计算都含 λ，就把批量 GAE 与逐条 TD(λ) 当作同一更新，会遗漏这些差别。
 
 <a id="policy-ppo"></a>
 
@@ -257,7 +284,22 @@ python3 implementations/deep/ppo.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/deep-ppo/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：训练环境步（独立评估交互另计）。纵轴：冻结策略的外部回报。每种方法 1200 训练环境步；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 actor，在独立 DeadlineChain 中按 argmax 动作重复12次完整回合，取未折扣外部回报的平均。每次都从位置0、剩余12步开始；到位置4奖励1，其余步奖励−.02。评价环境和动作选择都确定，同一网络的12次回合相同，不能当成12个训练种子。
+
+**step：怎样计时。** step 只数训练环境转移，评价交互另计。旧记录每60步用新批次更新，1200步有20批；每批最多4次全批策略梯度和固定4次 critic 梯度。策略更新前的样本近似 KL 大于.03时停止余下策略更新，实际策略梯度次数没有写入CSV；updated_batches 计批次，不能直接当成梯度次数。采样截止不重置环境，真实终止才关闭自举。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 第0步评价尚未更新的网络；其余点在本批更新后评价。训练用γ=1、λ=.95的GAE和批内归一化优势，旧 log-prob、优势与回报在多轮优化中冻结；图中 argmax 回报与随机采样策略的期望回报、PPO代理目标分别定义。这是单环境、全批次教学实现，不是论文基准复现。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结回报均值和样本标准差，samples 核对真实预算，updated_batches×4给出critic梯度数（末点80）。已知确定性任务下，成功时回合长度L=1+(1−value)/.02，失败时L=12；12×L给本检查点额外评价转移数。日志没有逐步训练奖励、旧概率、优势、KL、clip fraction或actor更新计数；不能恢复训练累计收益、随机策略回报、实际信赖域变化或策略梯度总数。policy_loss和value_loss是最近批次中最后一次优化所用损失，不能跨方法直接比较其数值。
+
+计算位置：[deep/ppo.py](../implementations/deep/ppo.py) · [deep/vpg.py](../implementations/deep/vpg.py) · [deep/_common.py](../implementations/deep/_common.py)
+
+</details>
 
 **结果分析。** 第 600 步和第 1200 步，PPO 与 VPG 的平均冻结回报均为 0.94，五个 seed 在这些检查点也相同。这里没有实测终点优势；小链可能无法区分两套训练程序。
 
@@ -332,7 +374,7 @@ def train_ppo_bandit(rounds=100, seed=7):
 
 <a id="lesson-branches"></a>
 
-## 7 · 为什么这些不是一条“后者替代前者”的序列
+## 7 · 将局部更新放回持续运行的学习器
 
 | 方法 | 主要改变 | 关键边界 |
 | --- | --- | --- |
@@ -344,7 +386,11 @@ def train_ppo_bandit(rounds=100, seed=7):
 | streaming actor–critic | 每条新经验立即更新 | 尺度、迹、近似梯度时序 |
 | SAC | 离策略熵正则控制 | 目标与数据协议都改变 |
 
-CRL 中固定 rollout 收集长短、更新 epoch 数和每步延迟可能决定适应速度。增加 epochs 得到更低旧数据 loss，却可能更不适应变化后的分布；同时报告环境互动与优化计算。
+这些方法分别改变估计器、更新幅度或数据协议，可以成为同一个持续学习器的内部步骤。PPO 在一轮优化中固定旧概率与优势，下一轮仍会收集新经验、重算 critic 与更新参数。因此“批内固定”与“部署时冻结学习”有不同含义；前者并没有排除长期适应。
+
+持续比较时，rollout 长度决定等多久才能使用新反馈，epoch 数与每步延迟决定付出多少计算。增加 epochs 能更充分拟合旧批次，却不保证及时响应后来发生的变化。[流式学习](streaming.md)研究撤掉批量等待后的状态与计算限制；[元学习](meta.md)进一步对更新规则的影响求导。这些问题需要新的时序与梯度路径，不能由一次 PPO surrogate 改善直接回答。
+
+最后按[持续控制的比较对象](control.md#lesson-branches)评价完整闭环：算法设计和预算保持一致，内部参数继续学习，行动可以生成不同经验。若只冻结一份 rollout 比较优化器，得到的是更新机制诊断；允许更新改变下一批行动后，才测到它对实际交互收益的作用。
 
 <a id="lesson-check"></a>
 
@@ -374,7 +420,7 @@ CRL 中固定 rollout 收集长短、更新 epoch 数和每步延迟可能决定
 
 从 REINFORCE 到 actor–critic，评论家提供低方差学习信号。PPO 的批量多轮更新与严格流式协议不同。
 
-[分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-policy) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=policy) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=policy)
+[分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-policy) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=policy) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=policy)
 
 ## 持续强化学习：近期研究与原始实现
 

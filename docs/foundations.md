@@ -1,10 +1,10 @@
-# 强化学习基础分册
+# 强化学习基础：按工具查阅
 
-这些分册按教学先修关系组织，不把经典 RL、深度 RL 与 CRL 当作互斥的问题类。表格与函数逼近描述表示和更新方式；深度方法使用神经网络；持续学习关注完整学习器在长期交互中的表现。它们可以同时用于同一智能体。
+表格方法与函数近似属于第一册，深度方法属于第二册。完整阅读顺序见[三册教材](learning-route.md)。这里按工具组织索引，不把经典 RL、深度 RL 与 CRL 当作互斥的问题类。表格与函数逼近描述表示和更新方式；深度方法使用神经网络；持续学习关注完整学习器在长期交互中的表现。它们可以同时用于同一智能体。
 
 运行时，智能体与世界交互；设计者在外层选择奖励、初始化、数据权限和预算。先用[领域总览](field-framework.md)定位问题，再按需补基础。目标问题见[奖励假设与设计](../textbook/reward-design.md)，算法比较见[持续控制](../textbook/control.md)。
 
-基础共 28 章。表格方法与 Part II 提供预测、控制、函数逼近、信用分配和策略梯度工具。深度分册先给核心算法，再并列展开研究分支；无需学完全部分支才进入 CRL 研究。
+基础共 29 章。表格方法与 Part II 提供预测、控制、函数逼近、信用分配和策略梯度工具。深度分册先给核心算法，再并列展开研究分支；无需学完全部分支才进入 CRL 研究。
 
 ## 表格强化学习
 
@@ -16,15 +16,15 @@
 
 按先修关系组织。已有基础的读者可用各章练习定位缺口，不必逐章重读。
 
-#### [多臂老虎机：估计、探索与直接策略学习](../foundations/tabular/bandits.md)
+#### [第 1 章 · 多臂老虎机：估计、探索与直接策略学习](../foundations/tabular/bandits.md)
 
 没有状态转移时，仍需一边估计动作收益，一边决定下一次尝试什么。这个最小问题把估计误差、探索代价和策略更新分开。
 
 - 推导样本平均和常数步长，解释历史奖励的权重。
-- 理解 ε-greedy、UCB 和 gradient bandit 的不同学习对象。
-- 运行随机奖励采样，区分实现正确性与有限样本性能。
+- 区分 ε-greedy、乐观初值、UCB 与 gradient bandit 改变的量。
+- 运行逐步反馈与随机奖励采样，区分机制检查与有限样本性能。
 
-#### [MDP、回报与价值：序列决策的数学对象](../foundations/tabular/mdps.md)
+#### [第 2 章 · MDP、回报与价值：序列决策的数学对象](../foundations/tabular/mdps.md)
 
 动作会改变后续状态时，需要评价整个未来。本章从随机交互过程推导价值与 Bellman 方程，明确后续算法共同使用的数学对象。
 
@@ -32,7 +32,7 @@
 - 从回报推导状态价值、动作价值与 Bellman 方程。
 - 解释 Markov、平稳、终止和截断条件。
 
-#### [动态规划：评价、改善与最优递推](../foundations/tabular/dynamic-programming.md)
+#### [第 3 章 · 动态规划：评价、改善与最优递推](../foundations/tabular/dynamic-programming.md)
 
 已知环境模型时，怎样通过局部计算得到长期价值和策略？本章将 Bellman 方程转化为迭代，并证明评价与改善之间的联系。
 
@@ -40,15 +40,15 @@
 - 证明策略改善，区分策略迭代、价值迭代和 GPI。
 - 对照解析求解，理解计算预算与模型误差。
 
-#### [Monte Carlo：完整经历、重复访问与离策略评价](../foundations/tabular/monte-carlo.md)
+#### [第 4 章 · Monte Carlo：完整回报、探索控制与离策略评价](../foundations/tabular/monte-carlo.md)
 
-不知道模型时，可以将完整回报作为样本。需要规定重复访问如何计数、数据由谁生成，以及目标策略能否被行为覆盖。
+不知道模型时，可以将完整回报作为样本。估计还会改变下一次行动：需要看清回报来自哪一版策略、探索怎样影响收益，以及长回合怎样消耗有效覆盖。
 
-- 实现 first-visit、every-visit 和 ε-soft MC 控制。
+- 实现 first-visit、every-visit、ε-soft 与加权离策略 MC 控制。
 - 推导轨迹与逐决策重要性采样，区分 ordinary IS 与 weighted IS。
 - 识别终止、覆盖、方差和策略变化的边界。
 
-#### [TD 预测与控制：SARSA、Expected SARSA、Q-learning 和 Double Q](../foundations/tabular/temporal-difference.md)
+#### [第 5 章 · TD 预测与控制：SARSA、Expected SARSA、Q-learning 和 Double Q](../foundations/tabular/temporal-difference.md)
 
 如何在完整回报尚不可用时学习？TD 用下一预测补足未来；控制算法再根据不同的下一动作处理方式，形成不同的学习目标。
 
@@ -56,7 +56,7 @@
 - 区分四种控制 target、行为策略和更新顺序。
 - 理解 maximization bias、Double 选择评价分离及表格收敛条件。
 
-#### [多步学习：n-step、Tree Backup 与 Q(σ)](../foundations/tabular/multistep.md)
+#### [第 6 章 · 多步学习：n-step、Tree Backup 与 Q(σ)](../foundations/tabular/multistep.md)
 
 学习目标可以在一步 bootstrap 与完整回报之间选择，也可以在动作采样与动作期望之间选择。这是两条不同的设计维度。
 
@@ -64,7 +64,7 @@
 - 理解 Tree Backup 的已采样分支和未采样分支。
 - 从两端推导 on-policy Q(σ)，检查终止与退化条件。
 
-#### [学习与规划：Dyna、优先扫描和执行时搜索](../foundations/tabular/planning.md)
+#### [第 7 章 · 学习与规划：Dyna、优先扫描和执行时搜索](../foundations/tabular/planning.md)
 
 真实经验既能直接改进价值，也能训练后果模型。规划使用这个模型继续计算，关键是模型语义、backup 的成本以及计算应分配到哪里。
 
@@ -82,7 +82,7 @@
 
 按先修关系组织。已有基础的读者可用各章练习定位缺口，不必逐章重读。
 
-#### [函数逼近预测：从回归到 TD 固定点](../foundations/approximation/prediction.md)
+#### [第 1 章 · 函数逼近预测：从回归到 TD 固定点](../foundations/approximation/prediction.md)
 
 共享少量参数以后，MC、TD 和最小二乘方法究竟在求解什么？
 
@@ -90,31 +90,32 @@
 - 推导线性 TD 的平均更新、投影 Bellman 方程与 LSTD。
 - 用同一个二状态例子计算不同解，并检查半梯度的含义。
 
-#### [特征、泛化与半梯度控制](../foundations/approximation/features-control.md)
+#### [第 2 章 · 特征、泛化与半梯度控制](../foundations/approximation/features-control.md)
 
 特征怎样改变学习行为，Sarsa 又怎样在共享参数下改善策略？
 
-- 比较局部 tile coding 与全局 Fourier 特征的泛化。
-- 推导动作分块表示和半梯度 Sarsa，说明动作采样与更新顺序。
+- 在同一走廊比较状态聚合、局部 tile coding 与分离特征，并理解全局 Fourier 特征的泛化。
+- 推导动作分块表示和半梯度 Sarsa，沿一次共享更新追踪动作与下一条真实经验。
 - 手算特征缩放的步长效应，并辨别预测保证与控制保证。
 
-#### [持续控制与平均奖励](../foundations/approximation/average-control.md)
+#### [第 3 章 · 持续控制与平均奖励](../foundations/approximation/average-control.md)
 
 智能体没有自然回合终点时，怎样定义和学习长期控制目标？
 
 - 区分折扣价值、平均奖励率与差分价值。
 - 从 Poisson 方程得到差分 TD 和 Sarsa 的两组同步更新。
+- 在同一服务站中手算真实时钟下的奖励率、启动 bias 和一次时长归一化更新。
 - 说明 unichain、communicating 与函数逼近保证的边界。
 
-#### [离策略函数逼近：覆盖、发散与稳定更新](../foundations/approximation/off-policy.md)
+#### [第 4 章 · 离策略函数逼近：覆盖、发散与稳定更新](../foundations/approximation/off-policy.md)
 
 行为数据足够覆盖目标策略，为什么 TD 仍可能发散，又能怎样修复？
 
-- 区分动作重要性修正与状态加权带来的稳定性。
-- 推导 MSPBE 及 GTD2、TDC 的辅助权重更新。
-- 理解 emphatic weighting 的目的、时间索引和线性理论条件。
+- 用同一二状态例子区分动作校正、当前状态权重和目标占据。
+- 从投影几何推导 MSPBE，手算 GTD2、TDC 的样本方向与辅助量。
+- 算出 emphatic 强调质量，并区分稳定更新、投影固定点与真实价值。
 
-#### [多步回报、资格迹与 True-online TD](../foundations/approximation/traces.md)
+#### [第 5 章 · 多步回报、资格迹与 True-online TD](../foundations/approximation/traces.md)
 
 当前到来的奖励怎样更新过去的预测，同时保留正确的在线更新语义？
 
@@ -122,7 +123,7 @@
 - 解释普通累积迹与 true-online 的差别，推导 Dutch trace。
 - 用重复状态和独立前向实现检查每个轨迹前缀。
 
-#### [策略梯度、基线与 Actor–Critic](../foundations/approximation/policy-gradient.md)
+#### [第 6 章 · 策略梯度、基线与 Actor–Critic](../foundations/approximation/policy-gradient.md)
 
 直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？
 
@@ -140,33 +141,34 @@
 
 先掌握价值学习、策略梯度、批内策略更新、连续控制和训练检查。它们是工具基础，不要求在所有研究问题中同时使用。
 
-#### [深度价值学习：DQN、Double DQN 与目标的时间顺序](../foundations/deep/deep-value.md)
+#### [第 1 章 · 深度价值学习：DQN、Double DQN 与目标的时间顺序](../foundations/deep/deep-value.md)
 
 把表格 Q-learning 换成网络后，损失、数据与目标为什么都需要重新组织？
 
-- 写出 DQN 与 Double DQN 的不同目标。
+- 在同一个共享特征算例中算出预测、动作与旧经验标签的变化。
+- 写出 DQN 与 Double DQN 的不同目标，区分冻结副本与停止梯度。
 - 区分环境终止、采样截断和目标网络更新。
-- 通过 autograd 检查停止梯度和张量形状。
-- 运行含真实交互、replay、优化与评估的 CPU 小实验。
+- 把标准库手算对应到完整 PyTorch 交互与训练循环。
 
-#### [策略梯度：从轨迹概率到 GAE 与 actor–critic](../foundations/deep/policy-gradient.md)
+#### [第 2 章 · 策略梯度：从轨迹概率到 GAE 与 actor–critic](../foundations/deep/policy-gradient.md)
 
-不对环境求导，怎样从采样动作计算策略梯度？价值网络和优势各自做什么？
+延迟奖励怎样改变动作概率？有限 rollout、critic 与停止梯度分别改变哪一项估计？
 
-- 推导 score-function 梯度与 baseline 消去。
-- 区分真实目标、优势估计和实现 surrogate。
-- 给 GAE 设置独立的 bootstrap 与跨序列 mask。
-- 正确使用 log_prob、detach 和 actor/critic loss。
+- 从完整轨迹 score 推到 reward-to-go 与 baseline。
+- 分清回合目标、有限 rollout 权重和实现 surrogate。
+- 解释 critic 误差怎样进入有限 GAE，并设置两类 mask。
+- 追踪 actor/critic 的固定量与求导路径，再进入 PPO。
 
-#### [策略更新的尺度：TRPO 与 PPO](../foundations/deep/trust-region.md)
+#### [第 3 章 · 策略更新的尺度：TRPO 与 PPO](../foundations/deep/trust-region.md)
 
-同一批数据可以重复使用多少次？为什么 clipping 不是一个性能保证？
+旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？
 
-- 由性能差分恒等式解释 surrogate 的来源。
+- 由性能差分恒等式定位旧状态分布替代的近似。
 - 求解局部 KL 约束，理解 Fisher、共轭梯度与回溯。
 - 按优势符号解释 PPO，并固定旧策略、优势与 critic target。
+- 区分批次、优化步和交互步，评价冻结策略与持续学习器。
 
-#### [连续动作的价值优化：DDPG 与 TD3](../foundations/deep/deterministic-control.md)
+#### [第 4 章 · 连续动作的价值优化：DDPG 与 TD3](../foundations/deep/deterministic-control.md)
 
 不能枚举连续动作时，如何用 critic 的梯度改进 actor？
 
@@ -174,7 +176,7 @@
 - 推导确定性 actor 的链式梯度。
 - 写出 TD3 双 critic、延迟更新与平滑目标的完整次序。
 
-#### [最大熵连续控制：SAC 的价值、密度与温度](../foundations/deep/entropy-control.md)
+#### [第 5 章 · 最大熵连续控制：SAC 的价值、密度与温度](../foundations/deep/entropy-control.md)
 
 随机 actor 不只是加噪声：熵如何进入 Bellman 方程与自动微分？
 
@@ -182,13 +184,22 @@
 - 计算 tanh 与动作缩放后的概率密度。
 - 区分 actor、critic、温度三类梯度与停止梯度位置。
 
-#### [深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)
+#### [第 6 章 · 深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)
 
 改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？
 
 - 由 Bellman 算子解释模型误差的放大。
 - 区分 recurrent hidden state 与跨时间参数梯度。
 - 识别离线外推问题，并设计可解释的 CRL 对照。
+
+#### [第 7 章 · 大规模训练：算法与系统怎样共同设计](../foundations/deep/systems.md)
+
+环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？
+
+- 沿一段经验追踪行为策略、传输、排队和梯度更新。
+- 区分 A3C 的过期梯度、IMPALA 的离策略目标与 PPO 的重复优化。
+- 解释 OpenAI Five、SEED RL 和 GEAR 怎样分配计算与移动数据。
+- 用数据年龄、采样概率、资源预算和达到目标性能的时间共同评价系统。
 
 ### 并列研究分支
 
@@ -201,6 +212,7 @@
 - 从历史条件分布推导 Bayes filter。
 - 把信息获取的价值纳入 Bellman 决策。
 - 区分精确信念、学习的 recurrent state 和训练时的隐状态权限。
+- 逐版本计算 recurrent replay 的状态、TD 标签与截断梯度。
 
 #### [探索与不确定性：后验、乐观估计和时间一致行动](../foundations/deep/exploration.md)
 
@@ -252,22 +264,24 @@
 - 区分 HAPPO 的顺序参数更新、A2PO 的评价修正与 MAT 的顺序动作生成。
 - 核对理论中的精确优势与信赖域条件，不把 PPO 裁剪或网络结构当成回报保证。
 
+#### [自对弈与开放式多智能体学习：评估、目标与策略种群](../foundations/deep/multi-agent-populations.md)
+
+自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？
+
+- 从自对弈出发，分清最新响应、历史平均与搜索策略标签。
+- 用手算博弈树贯通 AlphaGo、AlphaGo Zero、AlphaZero 与 MuZero 的学习闭环。
+- 建立评估、目标构建、响应学习与重新评估的循环，区分循环克制与可检验进步。
+- 用 gamescape、DO/PSRO 与课程机制研究策略保留，再扩展到 COLE/HOLA 的合作组合。
+- 区分可利用度、种群安全价值、陌生伙伴泛化与全生命期收益。
+
 #### [对手建模与递归推理：预测谁，回应什么？](../foundations/deep/multi-agent-reasoning.md)
 
-给定合作或竞争的评价目标，怎样利用他者模型和有限递归改善响应，并检验其是否真的有用？
+给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？
 
-- 区分外层评价与目标构建、内层行为预测与响应学习。
-- 理解自对弈、历史平均、FSP、NFSP 和反事实遗憾。
-- 推导 PR2 的变分响应与 GR2 的有限递归，辨明理论和实现边界。
-
-#### [开放式多智能体学习：评估、目标构建与策略改善](../foundations/deep/multi-agent-populations.md)
-
-怎样由交互评估构建每轮学习目标，使竞争或合作能力沿明确的评价准则持续改善？
-
-- 沿竞争自对弈、策略种群与 PSRO 理解开放式多智能体学习。
-- 建立评估、目标构建、响应学习与重新评估的循环，并定义所追求的单调提升。
-- 理解 COLE 与 HOLA 怎样把这条思路扩展到合作伙伴与团队组合。
-- 区分固定对手回报、可利用度、种群安全价值与陌生伙伴泛化。
+- 区分真实信息、行为相关与模型假设的响应。
+- 推导 PR2 的软响应、普通期望与软价值的不同梯度。
+- 理解 GR2 的有限递归、ROMMEO 的经验约束与 GSCU 的模型使用选择。
+- 分别检验预测、控制收益与模型失配，保留理论及实现条件。
 
 <a id="foundation-continuity"></a>
 
@@ -303,7 +317,7 @@
 
 研究问题：单一行为流怎样支持许多预测和技能？在固定内存下，怎样权衡覆盖、样本年龄、更新方差与适应速度，而不把离策略修正当作完整稳定性保证？
 
-[离策略稳定性](../foundations/approximation/off-policy.md) → [数据与训练接口](../foundations/deep/practice.md) → [离线数据的覆盖](../foundations/deep/offline.md) → [流式更新](../textbook/streaming.md)
+[离策略稳定性](../foundations/approximation/off-policy.md) → [数据与训练接口](../foundations/deep/practice.md) → [大规模系统与策略滞后](../foundations/deep/systems.md) → [离线数据的覆盖](../foundations/deep/offline.md) → [流式更新](../textbook/streaming.md)
 
 ### 怎样把较晚的反馈归给较早的计算？
 

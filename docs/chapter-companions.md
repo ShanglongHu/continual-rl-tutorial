@@ -376,3 +376,272 @@ Procgen / MiniGrid 分离训练关卡和测试关卡；加入不可学习噪声�
 - Patrick M. Pilarski｜预测知识、人机共适应与身体：交互价值与使用者负担
 - Matthew E. Taylor｜迁移、教学与人类输入：计入教师与源任务成本
 - Dieter Büchler｜高动态机器人中的在线适应：恢复、损耗和外部干预
+
+## 经典与深度强化学习：按正文查阅
+
+### 经典强化学习
+
+#### [多臂老虎机：估计、探索与直接策略学习](../foundations/tabular/bandits.md)
+
+没有状态转移时，仍需一边估计动作收益，一边决定下一次尝试什么。这个最小问题把估计误差、探索代价和策略更新分开。
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-tabular-bandits) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-tabular-bandits) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-tabular-bandits)
+
+#### [MDP、回报与价值：序列决策的数学对象](../foundations/tabular/mdps.md)
+
+动作会改变后续状态时，需要评价整个未来。本章从随机交互过程推导价值与 Bellman 方程，明确后续算法共同使用的数学对象。
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-tabular-mdps) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-tabular-mdps) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-tabular-mdps)
+
+#### [动态规划：评价、改善与最优递推](../foundations/tabular/dynamic-programming.md)
+
+已知环境模型时，怎样通过局部计算得到长期价值和策略？本章将 Bellman 方程转化为迭代，并证明评价与改善之间的联系。
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-tabular-dynamic-programming) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-tabular-dynamic-programming) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-tabular-dynamic-programming)
+
+#### [Monte Carlo：完整回报、探索控制与离策略评价](../foundations/tabular/monte-carlo.md)
+
+不知道模型时，可以将完整回报作为样本。估计还会改变下一次行动：需要看清回报来自哪一版策略、探索怎样影响收益，以及长回合怎样消耗有效覆盖。
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-tabular-monte-carlo) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-tabular-monte-carlo) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-tabular-monte-carlo)
+
+#### [TD 预测与控制：SARSA、Expected SARSA、Q-learning 和 Double Q](../foundations/tabular/temporal-difference.md)
+
+如何在完整回报尚不可用时学习？TD 用下一预测补足未来；控制算法再根据不同的下一动作处理方式，形成不同的学习目标。
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-tabular-temporal-difference) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-tabular-temporal-difference) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-tabular-temporal-difference)
+
+#### [多步学习：n-step、Tree Backup 与 Q(σ)](../foundations/tabular/multistep.md)
+
+学习目标可以在一步 bootstrap 与完整回报之间选择，也可以在动作采样与动作期望之间选择。这是两条不同的设计维度。
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-tabular-multistep) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-tabular-multistep) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-tabular-multistep)
+
+#### [学习与规划：Dyna、优先扫描和执行时搜索](../foundations/tabular/planning.md)
+
+真实经验既能直接改进价值，也能训练后果模型。规划使用这个模型继续计算，关键是模型语义、backup 的成本以及计算应分配到哪里。
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-tabular-planning) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-tabular-planning) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-tabular-planning)
+
+#### [函数逼近预测：从回归到 TD 固定点](../foundations/approximation/prediction.md)
+
+共享少量参数以后，MC、TD 和最小二乘方法究竟在求解什么？
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-prediction) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-prediction) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-approximation-prediction)
+
+#### [特征、泛化与半梯度控制](../foundations/approximation/features-control.md)
+
+特征怎样改变学习行为，Sarsa 又怎样在共享参数下改善策略？
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-features-control) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-features-control) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-approximation-features-control)
+
+#### [持续控制与平均奖励](../foundations/approximation/average-control.md)
+
+智能体没有自然回合终点时，怎样定义和学习长期控制目标？
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-average-control) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-average-control) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-approximation-average-control)
+
+#### [离策略函数逼近：覆盖、发散与稳定更新](../foundations/approximation/off-policy.md)
+
+行为数据足够覆盖目标策略，为什么 TD 仍可能发散，又能怎样修复？
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-off-policy) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-off-policy) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-approximation-off-policy)
+
+#### [多步回报、资格迹与 True-online TD](../foundations/approximation/traces.md)
+
+当前到来的奖励怎样更新过去的预测，同时保留正确的在线更新语义？
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-traces) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-traces) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-approximation-traces)
+
+#### [策略梯度、基线与 Actor–Critic](../foundations/approximation/policy-gradient.md)
+
+直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：与 Barto 合著教材；从本章对应的定义、推导与例子开始阅读。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：与 Sutton 合著教材；把本章算法放回预测、控制与经验学习的问题中。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-policy-gradient) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-policy-gradient) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-approximation-policy-gradient)
+
+### 深度强化学习
+
+#### [深度价值学习：DQN、Double DQN 与目标的时间顺序](../foundations/deep/deep-value.md)
+
+把表格 Q-learning 换成网络后，损失、数据与目标为什么都需要重新组织？
+
+- [Hado van Hasselt](https://yingwen.io/zh/continual-rl/resource/S61/)：Double Q-learning 与 Double DQN：区分动作选择和动作评价。
+- [David Silver](https://yingwen.io/zh/continual-rl/resource/S62/)：深度价值学习与强化学习课程；对照数据、目标与策略的时间顺序。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-deep-value) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-deep-value) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-deep-value)
+
+#### [策略梯度：从轨迹概率到 GAE 与 actor–critic](../foundations/deep/policy-gradient.md)
+
+延迟奖励怎样改变动作概率？有限 rollout、critic 与停止梯度分别改变哪一项估计？
+
+- [Richard S. Sutton](https://yingwen.io/zh/continual-rl/resource/S01/)：策略梯度定理与 actor–critic 的基础。
+- [Andrew G. Barto](https://yingwen.io/zh/continual-rl/resource/S02/)：演员—评论家的基本结构及其教材论述。
+- [Pieter Abbeel](https://yingwen.io/zh/continual-rl/resource/S51/)：策略优化与深度强化学习课程。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-policy-gradient) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-policy-gradient) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-policy-gradient)
+
+#### [策略更新的尺度：TRPO 与 PPO](../foundations/deep/trust-region.md)
+
+旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？
+
+- [Sergey Levine](https://yingwen.io/zh/continual-rl/resource/S49/)：TRPO 的共同作者；从代理目标与状态分布近似理解更新。
+- [Pieter Abbeel](https://yingwen.io/zh/continual-rl/resource/S51/)：TRPO 的共同作者；区分理论约束、数值求解和 PPO 近似。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-trust-region) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-trust-region) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-trust-region)
+
+#### [连续动作的价值优化：DDPG 与 TD3](../foundations/deep/deterministic-control.md)
+
+不能枚举连续动作时，如何用 critic 的梯度改进 actor？
+
+- [David Silver](https://yingwen.io/zh/continual-rl/resource/S62/)：确定性策略梯度；连续动作的价值导数。
+- [Hado van Hasselt](https://yingwen.io/zh/continual-rl/resource/S61/)：双估计器与价值估计偏差，为比较 actor 所依赖的 critic 提供背景。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-deterministic-control) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-deterministic-control) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-deterministic-control)
+
+#### [最大熵连续控制：SAC 的价值、密度与温度](../foundations/deep/entropy-control.md)
+
+随机 actor 不只是加噪声：熵如何进入 Bellman 方程与自动微分？
+
+- [Sergey Levine](https://yingwen.io/zh/continual-rl/resource/S49/)：SAC 的共同作者；最大熵目标、随机 actor 与离策略更新。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-entropy-control) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-entropy-control) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-entropy-control)
+
+#### [深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)
+
+改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？
+
+- [Rishabh Agarwal](https://yingwen.io/zh/continual-rl/resource/S109/)：深度 RL 的统计可靠性；从运行与采样单位理解结果比较。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-practice) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-practice) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-practice)
+
+#### [大规模训练：算法与系统怎样共同设计](../foundations/deep/systems.md)
+
+环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？
+
+- [David Silver](https://yingwen.io/zh/continual-rl/resource/S62/)：A3C 的共同作者；并行采样与异步更新的算法接口。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-systems) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-systems) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-systems)
+
+#### [不完全可观测：信念状态、信息行动与递归记忆](../foundations/deep/partial-observability.md)
+
+当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？
+
+- [Leslie Pack Kaelbling](https://yingwen.io/zh/continual-rl/resource/S43/)：POMDP 中的状态不确定性、信念更新与规划。
+- [Michael L. Littman](https://yingwen.io/zh/continual-rl/resource/S42/)：POMDP 的求解与学习；对照历史、信念和行动条件。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-partial-observability) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-partial-observability) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-partial-observability)
+
+#### [探索与不确定性：后验、乐观估计和时间一致行动](../foundations/deep/exploration.md)
+
+为什么每一步都随机，并不等于有效获取长期有用的信息？
+
+- [Ian Osband](https://yingwen.io/zh/continual-rl/resource/S64/)：后验采样与深度探索；时间一致的探索行为。
+- [Benjamin Van Roy](https://yingwen.io/zh/continual-rl/resource/S46/)：信息、后验采样与不确定决策。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-exploration) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-exploration) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-exploration)
+
+#### [分布强化学习：Bellman 分布、分位数与风险目标](../foundations/deep/distributional.md)
+
+学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？
+
+- [Marc G. Bellemare](https://yingwen.io/zh/continual-rl/resource/S39/)：分布强化学习；回报分布与 Bellman 更新。
+- [Will Dabney](https://yingwen.io/zh/continual-rl/resource/S65/)：分位数回归及价值分布的表示。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-distributional) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-distributional) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-distributional)
+
+#### [离线强化学习：数据支持、策略评估与保守改进](../foundations/deep/offline.md)
+
+不能补采数据时，怎样判断策略好坏，怎样避免利用没有证据的高价值动作？
+
+- [Sergey Levine](https://yingwen.io/zh/continual-rl/resource/S49/)：CQL、IQL 等离线 RL 工作；数据支持与策略改进。
+- [Nan Jiang](https://yingwen.io/zh/continual-rl/resource/S55/)：离策略评价及其信息和统计条件。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-offline) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-offline) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-offline)
+
+#### [模型学习与规划：MPC、短模型 rollout 和潜在想象](../foundations/deep/model-based.md)
+
+模型在哪里进入决策，预测误差又怎样变成控制误差？
+
+- [Danijar Hafner](https://yingwen.io/zh/continual-rl/resource/S104/)：Dreamer 系列；潜在动力学中的行为学习与想象。
+- [Sergey Levine](https://yingwen.io/zh/continual-rl/resource/S49/)：PETS、MBPO 等模型控制工作；模型误差与数据使用。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-model-based) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-model-based) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-model-based)
+
+#### [约束强化学习：占据测度、拉格朗日与可行策略](../foundations/deep/constraints.md)
+
+“回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？
+
+- [Pieter Abbeel](https://yingwen.io/zh/continual-rl/resource/S51/)：Constrained Policy Optimization 的共同作者；约束、近似和实际策略更新。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-constraints) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-constraints) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-constraints)
+
+#### [多智能体合作：结构化探索与信用分配](../foundations/deep/multi-agent.md)
+
+团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？
+
+- [温颖 Ying Wen](https://yingwen.io/zh/continual-rl/resource/S110/)：合作决策与 MAT 等工作；联合动作结构与学习目标。
+- [汪军 Jun Wang](https://yingwen.io/zh/continual-rl/resource/S111/)：多智能体合作学习与联合决策。
+- [Jakob Foerster](https://yingwen.io/zh/continual-rl/resource/S58/)：反事实基线与合作信用分配。
+- [Shimon Whiteson](https://yingwen.io/zh/continual-rl/resource/S59/)：价值分解和合作多智能体学习。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-multi-agent) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-multi-agent) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-multi-agent)
+
+#### [自对弈与开放式多智能体学习：评估、目标与策略种群](../foundations/deep/multi-agent-populations.md)
+
+自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？
+
+- [温颖 Ying Wen](https://yingwen.io/zh/continual-rl/resource/S110/)：开放式多智能体学习及合作、竞争场景。
+- [汪军 Jun Wang](https://yingwen.io/zh/continual-rl/resource/S111/)：种群学习与博弈中的评估和目标构建。
+- [Michael Bowling](https://yingwen.io/zh/continual-rl/resource/S17/)：博弈评估与不完全信息决策。
+- [David Silver](https://yingwen.io/zh/continual-rl/resource/S62/)：AlphaGo 系列：自对弈、搜索和策略价值学习。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-marl-populations) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-marl-populations) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-marl-populations)
+
+#### [对手建模与递归推理：预测谁，回应什么？](../foundations/deep/multi-agent-reasoning.md)
+
+给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？
+
+- [温颖 Ying Wen](https://yingwen.io/zh/continual-rl/resource/S110/)：PR2、GR2 等递归策略推理工作。
+- [汪军 Jun Wang](https://yingwen.io/zh/continual-rl/resource/S111/)：相互影响与递归博弈建模。
+- [Stefano V. Albrecht](https://yingwen.io/zh/continual-rl/resource/S68/)：其他智能体的行为模型与适应。
+
+[配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-marl-reasoning) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-marl-reasoning) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-marl-reasoning)

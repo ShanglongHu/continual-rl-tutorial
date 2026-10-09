@@ -1,5 +1,7 @@
 # 最大熵连续控制：SAC 的价值、密度与温度
 
+现代深度强化学习 · 第 5 章
+
 随机 actor 不只是加噪声：熵如何进入 Bellman 方程与自动微分？
 
 ## 本章内容
@@ -11,6 +13,14 @@
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [连续动作的价值优化：DDPG 与 TD3](deterministic-control.md)：掌握连续动作的actor–critic循环。
+- [策略梯度：从轨迹概率到 GAE 与 actor–critic](policy-gradient.md)：区分动作采样分布、策略目标与估计梯度。
+
 
 ### Bellman 递推
 
@@ -102,6 +112,8 @@ $$
 
 ## 1 · 熵是目标的一部分
 
+继续上一章的两步定位器：状态 $(x,h)$、动作 $[-2,2]$、$x'=x+a$、奖励 $-(x'-1)^2-0.1a^2$，$h=0$ 时终止。仍查看经验 $(0,2)\xrightarrow{a=.25,r=-.56875}(.25,1)$。确定性 actor 为每个状态给一个动作；现在让 actor 给出一个有界动作分布，并把这个分布的熵写进目标。末步的 $Q$ 仍等于即时奖励，因而可以先使用精确的 $q(a)=-(a-.75)^2-.1a^2$，单独看清随机 actor 的梯度。
+
 SAC 优化奖励和策略熵的加权和。$\alpha>0$ 称为温度。它控制奖励与随机性之间的权衡，不是 actor 的学习率。这里动作连续，熵指微分熵；它依赖坐标单位，也可以为负。确定性评估动作与训练时的随机策略需要分别记录。
 
 $$
@@ -163,7 +175,7 @@ $$
 
 先看一维动作。Gaussian 可以采到任意实数，但执行器只允许一个有限区间。tanh 把两端的样本压到边界附近；同一批概率挤进更短的区间，密度就要变高。随后把动作范围放大二倍，同一份概率分布到二倍宽度，密度又要减半。动作变了坐标，概率没有凭空增加或消失。
 
-![标准高斯、tanh有界动作及二倍物理动作的概率密度和等概率着色区间](https://yingwen.io/crl-figures/concept-deep3-sac-density.svg)
+![标准高斯、tanh有界动作及二倍物理动作的概率密度和等概率着色区间](../../assets/crl-figures/concept-deep3-sac-density.svg)
 
 取 $u\sim\mathcal N(0,1)$。三块着色区间由同一事件 $-0.5\le u\le0.5$ 逐次映射而来，概率相同。横轴分别是三个坐标，都按相同数值比例绘制；纵轴是对应密度，范围相同。因此三块着色面积也相同。在零点 tanh 导数为一，所以前两行密度相等；二倍缩放后密度减半，log-density 再减 $\log2$。这是 SAC Appendix C 的变量变换加上本章物理动作缩放算例，不是训练所得动作分布。
 
@@ -247,7 +259,7 @@ actor loss 中 critic 参数固定，动作路径保持可微；温度作为常�
 
 **检验的机制。** sac.py 的 critic target 使用当前随机策略和目标双 Q；actor 更新冻结 Q 参数但保留 Q 对动作的导数。_common.py 的 GaussianActor 在 tanh 后校正 log-prob。对照 DDPG 使用确定性 actor、单 critic 和标准差 0.15 的动作噪声。
 
-**测量。** 每 60 步用固定评价种子 991 的 12 个回合评价。SAC 执行 tanh(mean)，不是随机动作；纵轴是未折扣的外部奖励总和，不含熵项。
+**测量。** 初始化及之后每 60 个训练步，用独立环境 seed 991 产生的同一组 12 个初态各评价 40 步。SAC 执行 tanh(mean)，不是随机动作；纵轴为未折扣外部回报，不含熵。21 次评估使每个训练 seed 额外使用 10080 个环境步，不进入 replay，也不计入横轴。曲线不能还原训练中随机行为获得的奖励。
 
 ```bash
 python3 implementations/deep/sac.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
@@ -255,13 +267,28 @@ python3 implementations/deep/sac.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/deep-sac/curves.svg)
+![实测学习曲线](../../assets/crl-figures/result-deep-sac.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：训练环境步（独立评估交互另计）。纵轴：冻结策略的外部回报。每种方法 1200 训练环境步；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 actor，在种子991生成的同一组12个初态上各跑40步，平均未折扣外部回报。SAC 此处执行 tanh(mean)，没有抽样动作，也不把熵奖励加入评估。
+
+**step：怎样计时。** step 只数训练环境转移；评估交互另计。critic、actor 和 target 的更新数保存在独立字段，相同 step 不保证相同计算量。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结评估曲线并读取更新计数；没有逐步训练奖励，不能重建行为策略的生命期收益。12个初态的平均先在单次运行内完成。
+
+计算位置：[deep/ddpg.py](../../implementations/deep/ddpg.py) · [deep/td3.py](../../implementations/deep/td3.py) · [deep/sac.py](../../implementations/deep/sac.py) · [deep/_common.py](../../implementations/deep/_common.py)
+
+</details>
 
 **结果分析。** SAC 的平均评价回报从初始化 −21.609 变为第 600 步 −21.157，再到第 1200 步 −0.690；DDPG 对应为 −5.967、−4.474、−2.353。初期 SAC 明显更差，后期均值更高；DDPG 末端 seed 标准差约 2.350，不能只报两个终点数字。
 
-**结论边界。** actor 架构和初始行为分布不同，即使 seed 相同也不是完全同参数对照。这是两个完整方法的短任务比较，不隔离熵、双 Q 或随机策略的单项作用；也不覆盖自动温度和单次生命持续任务。
+**结论边界。** actor 架构和初始行为分布不同，即使 seed 相同也不是完全同参数对照。1200 步内各有 1169 轮 critic 与 actor 更新，但 SAC 每轮更新两个 Q，DDPG 只更新一个。这是完整方法比较，不能单独归因于熵、双 Q 或随机策略，也未检验自动温度或整个学习过程的行为收益。
 
 **继续实验。** 在同一网络、replay 和数据预算下比较固定温度的多个取值。分别报告随机行为外部收益、确定性评价和含熵目标，解释三者为何可能不同。
 
@@ -270,6 +297,37 @@ python3 implementations/deep/sac.py --steps 1200 --seeds 0 1 2 3 4 --out results
 <a id="lesson-example"></a>
 
 ## 6 · soft target 与密度手算
+
+在同一后继状态 $(.25,1)$，令 Gaussian 输出均值 $m=.3$、对数标准差 $\ell=-.7$；固定一个基础噪声 $\epsilon=.4$。依次得到 $\sigma=e^\ell\approx.496585$、$u=m+\sigma\epsilon\approx.498634$、$z=\tanh u\approx.461042$、物理动作 $a=2z\approx.922085$。固定这次噪声让我们能用中心差分检查单样本路径；它不是整条策略分布的评价。
+
+$$
+\begin{gathered}\log p_u(u)=-\tfrac12\epsilon^2-\ell-\tfrac12\log(2\pi)\approx-.298939\\\log(1-z^2)\approx-.238968\\\log\pi_{\rm norm}(z)\approx-.059970,\quad\log\pi_{\rm env}(a)\approx-.753118\end{gathered}
+$$
+
+最后一步减 log 2。以下 actor loss、soft target、温度样本都使用物理动作密度；q 接收同一物理动作。
+
+取 $\alpha=.2$，末步精确 $q(a)\approx-.114637$。这条旧经验的单样本 soft target 为 $-.56875+.9[-.114637-.2(-.753118)]\approx-.536362$。它是当前策略样本产生的标签，整个数值在 critic 回归时停止梯度；下一次标签可以重新采样。
+
+$$
+\begin{gathered}L(m,\ell;\epsilon)=\alpha\log\pi_{\rm env}(2\tanh u)-q(2\tanh u)\\\partial_m L=2\alpha z-q'(a)\,2(1-z^2)\\\partial_\ell L=\alpha(-1+2z\sigma\epsilon)-q'(a)\,2(1-z^2)\sigma\epsilon\end{gathered}
+$$
+
+这里 $\epsilon$、状态、温度和 critic 固定；$m$ 与 $\ell$ 均参与求导。Gaussian 的 log-density 在代入重参数化后为 $-\epsilon^2/2-\ell-\log(2\pi)/2$，所以对 $\ell$ 的导数仍有 $-1$。
+
+| 参数 | 熵项导数 | 负 Q 项导数 | actor loss 导数 |
+| --- | --- | --- | --- |
+| 均值 m | 0.184417 | 0.832460 | 1.016877 |
+| 对数标准差 ℓ | −0.163369 | 0.165355 | 0.001986 |
+
+梯度下降让本次样本对应的均值向较小动作移动；对数标准差的两项几乎抵消。只看 entropy loss 或只看 Q loss 都会漏掉这个合成关系。若把动作 detach，负 Q 的两项导数被删除，有限差分就不再匹配完整的 $L$。当 critic 已有前章那样的斜率误差，SAC 的 Q 路径也会承接它。
+
+![固定同一个基础噪声，展示Gaussian样本、tanh动作、物理动作和log-density，随后将SAC均值与log标准差的熵及价值导数分开相加。](../../assets/crl-figures/continuous-control-sac-pathwise.svg)
+
+原创单样本解析计算；有符号横条共用导数轴，紫色为熵项、橙色为负 Q 项。任务与前章相同，固定 $m=.3,\ell=-.7,\epsilon=.4,\alpha=.2$，末步 Q 使用精确奖励。两项参数导数由[标准库中心差分](../../tutorials/continuous_control_walkthrough.py)核验，没有进行随机训练。重参数化依据 [SAC Algorithms and Applications §4.2](https://arxiv.org/html/1812.05905v2#S4.SS2)。
+
+再用这个样本检查温度。选择归一化目标熵 $.1$，物理目标须是 $.1+\log2\approx.793147$。于是 $\log\pi_{\rm env}+\bar{\mathcal H}_{\rm env}=\log\pi_{\rm norm}+.1\approx.040030$，对 $\beta=\log\alpha$ 的精确梯度为 $-.008006$，下降会小幅增加温度。若密度已换成物理单位却把目标误留在 $.1$，梯度变成 $+.130624$，方向反转。这是一个样本的约束残差；平均熵须对策略动作与选定状态分布取期望。
+
+下面两个更简短的数值检查分别隔离 soft target 的加法和零点密度，方便先用纸笔核验各算子：
 
 取奖励一、$\gamma=0.9$、两个 target Q 的最小值二、$\log\pi=-0.5$、$\alpha=0.2$。soft value 为 $2-0.2(-0.5)=2.1$，target 为 $1+0.9\times2.1=2.89$。相比同一数值下 TD3 的 2.8，多出的不是环境奖励，而是目标内的熵项。
 
@@ -325,9 +383,13 @@ def sac_update(actor, q1, q2, target_q1, target_q2, log_alpha,
             'alpha': float(log_alpha.exp().detach())}
 ```
 
-执行 python3 examples/deep_textbook_lab.py test 检查 tanh 密度、动作缩放、soft target 与温度有限差分；执行 python3 examples/deep_textbook_train.py test 检查动作与 log-probability shape、可微采样路径和实际 SAC 更新。此处只提供更新核，没有完整连续环境采样、replay 训练和 benchmark。
+执行 python3 examples/deep_textbook_lab.py test 检查 tanh 密度、动作缩放、soft target 与温度有限差分；执行 python3 examples/deep_textbook_train.py test 检查动作与 log-probability shape、可微采样路径和自动温度 SAC 更新。下载 [continuous_control_walkthrough.py](../../tutorials/continuous_control_walkthrough.py)后执行 --test，还可独立检查本页物理动作算例的两个 actor 导数、概率积分和坐标一致的温度方向。
+
+另见 [SAC 完整教学实现](https://yingwen.io/zh/continual-rl/code/deep-sac/)：它在一维 BoundedLQ 中执行完整交互、replay 和独立评价，使用固定 α=.1、τ=.02。这里的旧深度核和新解析算例演示自动温度；完整教学实现中的固定温度结果不能当成自动调温的实验证据。它们和本页两步定位器也不是同一个环境。
 
 Spinning Up 的 SAC 教学实现使用固定 alpha，适合对照核心损失和停止梯度；自动温度见 SAC Algorithms and Applications。作者早期 sac 仓库与后续 softlearning 仓库所处算法版本不同，不能认为所有源码都应含有相同网络。
+
+作者团队的 [softlearning/algorithms/sac.py（固定版本 13cf187）](https://github.com/rail-berkeley/softlearning/blob/13cf187cc93d90f7c217ea2845067491c3c65464/softlearning/algorithms/sac.py) 中，target 使用双 Q 的最小值，actor 却对双 Q 取均值；其温度损失使用 exp(log_alpha) 的精确链式导数。本页和配套深度核选用 min-Q actor。因此核对实现时应逐项查看聚合算子、采样时机和温度参数化，不能只凭“SAC”这个名字认定更新相同。
 
 <a id="lesson-branches"></a>
 
@@ -349,13 +411,17 @@ Spinning Up 的 SAC 教学实现使用固定 alpha，适合对照核心损失和
 - 问：连续动作的目标熵为负是否错误？答：不错误，微分熵可为负并依赖动作单位。
 - 实验：将动作尺度从一改为二，确认 log-density 减少 log2；保持目标熵不变时观察温度梯度如何变化，再讨论怎样平移目标以保持同等约束。
 
+## 从本章进入实践
+
+[策略梯度与控制](https://yingwen.io/zh/continual-rl/code/#practice-policy-control)：优化器确实降低了损失，为什么行动仍可能变差？
+
 
 
 <a id="chapter-code"></a>
 
 ## 下载与运行
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 [下载 deep_textbook_lab.py](../../examples/deep_textbook_lab.py)
 
@@ -381,6 +447,8 @@ python3 examples/deep_textbook_lab.py test
 
 - [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：§9–11：函数逼近与离策略；§12：资格迹；§13.1 的短走廊与 §13.2–13.5 的策略梯度。对照各结论采用的策略类、采样分布与函数表示。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-entropy-control#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-entropy-control#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-entropy-control)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接

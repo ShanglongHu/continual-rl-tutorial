@@ -1,16 +1,27 @@
 # 对手建模与递归推理：预测谁，回应什么？
 
-给定合作或竞争的评价目标，怎样利用他者模型和有限递归改善响应，并检验其是否真的有用？
+现代深度强化学习 · 并列研究分支
+
+给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？
 
 ## 本章内容
 
-- 区分外层评价与目标构建、内层行为预测与响应学习。
-- 理解自对弈、历史平均、FSP、NFSP 和反事实遗憾。
-- 推导 PR2 的变分响应与 GR2 的有限递归，辨明理论和实现边界。
+- 区分真实信息、行为相关与模型假设的响应。
+- 推导 PR2 的软响应、普通期望与软价值的不同梯度。
+- 理解 GR2 的有限递归、ROMMEO 的经验约束与 GSCU 的模型使用选择。
+- 分别检验预测、控制收益与模型失配，保留理论及实现条件。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [多智能体合作：结构化探索与信用分配](multi-agent.md)：明确他人的策略怎样进入自己的决策问题。
+- [最大熵连续控制：SAC 的价值、密度与温度](entropy-control.md)：理解随机策略、熵和软响应。
+
 
 ### 随机博弈与信息集
 
@@ -54,7 +65,7 @@ q 每局抽取完整对手策略，局内冻结。无限时域取 0≤γ<1、奖
 
 - 策略遵守既定信息结构；历史摘要的充分性需独立论证。
 - 矩阵算例使用已知收益；神经实验还存在采样和逼近误差。
-- 精确响应、无遗憾和收敛结论保留其博弈类别与优化条件。
+- 软备份、局部动力学和有限递归保留各自的博弈与优化条件。
 
 判断准则：分别检查预测误差、固定对手收益、交叉对战与偏离收益，不能彼此替代。
 
@@ -62,7 +73,7 @@ q 每局抽取完整对手策略，局内冻结。无限时域取 0≤γ<1、奖
 
 - 不从条件相关推断因果影响。
 - 不把内部递归层数当作真实对手的心理层次。
-- 不声称深度 PR2、GR2、NFSP 在任意游戏中收敛。
+- 不声称深度 PR2、GR2 在任意游戏中收敛。
 
 ### 与其他问题的关系
 
@@ -86,7 +97,7 @@ q 每局抽取完整对手策略，局内冻结。无限时域取 0≤γ<1、奖
 
 先固定评价对象，再分开数据生成、模型推断与策略响应。
 
-1. [明确对谁学习](multi-agent-reasoning.md#lesson-self-play)：区分最新对手和历史平均。
+1. [固定问题与信息权限](multi-agent-reasoning.md#lesson-setting)：先规定响应谁、能观测什么以及怎样评价。
 
 2. [定义模型](multi-agent-reasoning.md#lesson-opponent-model)：区别行为拟合、假设响应与真实信息权限。
 
@@ -98,22 +109,22 @@ q 每局抽取完整对手策略，局内冻结。无限时域取 0≤γ<1、奖
 
 ### 相关方法改变了什么
 
-- NFSP：用历史平均构造训练分布，不必显式预测候选动作的响应。
+- 不显式建模的响应学习：直接从对局优化行为；少了模型失配，也少了对未执行候选的显式推断。
 
-- CFR：在信息集上累计反事实遗憾，不拟合条件对手模型。
+- 无条件行为预测：只按可用历史拟合动作，不能据此表达候选自身动作对应的模型响应。
 
-- PSRO：评价并扩充完整策略种群，不等于增加内部推理层数。
+- 固定保守策略：避免利用错误模型，但可能放弃针对当前参与者的可利用机会。
 
 
 <a id="lesson-setting"></a>
 
-## 1 · 他者建模在多智能体学习中的位置
+## 1 · 给定参与者，先弄清模型应预测什么
 
-本章讨论合作与开放式多智能体学习的支撑方法：预测其他参与者，并据此改善自己的响应。这里的“对手模型”也可用于伙伴；建模对象的名称不决定双方的奖励关系。
+给定本轮将遇到的参与者，学习者仍须判断对方会怎样行动，以及自己的候选动作会得到什么结果。只从回报优化行为是一种办法；显式预测对方、在模型内比较响应，是另一种办法。本章研究后一条路线。这里的“对手模型”也可用于伙伴；建模对象的名称不决定双方的奖励关系。
 
 在[合作多智能体学习](multi-agent.md)中，核心问题包括怎样发现有效的联合行为，以及怎样把共同结果归因于各自行动。预测伙伴能帮助组织探索和控制，但不会自动解决联合探索或信用分配。在[开放式多智能体学习](multi-agent-populations.md)中，竞争与开放合作还需评价现有策略、构建下一轮对手或伙伴分布，再检查策略改善。更准确的模型可以提高内层响应质量，却不替代外层评价和目标构建，也不保证整体性能单调提高。
 
-面对另一个学习者，先问评价时对手是谁，再问对其行为知道什么，最后问下一轮应训练什么策略。三个问题分别决定回报分布、预测模型与改善算子。
+固定对手分布以后，模型也有三种不同职责：拟合已经看见的行为，预测未执行动作下的结果，或构造一个供优化使用的假设响应。第一种有监督标签；第二种需要覆盖或模型假设；第三种还要说明对手为何会遵循该响应。把三者混在一起，可能得到预测分数不错、实际决策却很差的策略。
 
 | 对象 | 输入与输出 | 边界 |
 | --- | --- | --- |
@@ -123,103 +134,11 @@ q 每局抽取完整对手策略，局内冻结。无限时域取 0≤γ<1、奖
 
 对手固定、全状态可见且各方使用 Markov 策略时，可以积分掉对手动作，得到单智能体 MDP。若对手依赖私有历史，或每局抽取未知类型，当前观察通常仍非 Markov。冻结对手消除了参数更新，不会消除隐藏信息。
 
-以下先用矩阵游戏隔离学习动力学，再扩展到序列决策。随机博弈、局部信息和联合价值的共同设定见[合作多智能体学习](multi-agent.md)；这里在这些设定之上明确模型预测什么、响应优化什么。
-
-<a id="lesson-self-play"></a>
-
-## 2 · 自对弈也在产生训练问题
-
-$$
-\pi_i^{k+1}\approx\operatorname{BR}_i(q_{-i}^{k}),\qquad q_{-i}^{k}=\delta_{\pi_{-i}^{k}}
-$$
-
-最新策略自对弈用对手当前版本定义本轮目标。实际可只做少量梯度步，而非求完整 best response。
-
-每轮固定训练对手，采集对局，再更新策略。轮换与同时训练有不同数据分布。共享网络是对称任务中的一种实现，不是自对弈的定义；不对称游戏仍可为不同角色维护不同策略。
-
-石头—剪刀—布中，只回应最新纯策略会反复经历石头、布、剪刀。每次响应都正确，最新策略却始终容易被利用。“战胜上一轮”因此不等于全局进步。
-
-$$
-\operatorname{Gap}(x,y)=\max_a(Ay)_a-\min_b(x^\top A)_b
-$$
-
-A 是有限双人零和游戏的行玩家收益矩阵。gap 等于双方最优单方偏离收益之和；零 gap 才说明该策略对是均衡。
-
-收益回答“对这一分布表现如何”，gap 回答“还有哪些偏离能获利”。只报告相邻训练版本的胜率，会漏掉循环和未遇见的克制策略。
-
-<a id="lesson-fictitious"></a>
-
-## 3 · 虚拟博弈：回应历史平均
-
-$$
-\beta_i^{k+1}\in\operatorname{BR}_i(\bar\pi_{-i}^{k}),\qquad \bar\pi_i^{k+1}=\frac{k\bar\pi_i^{k}+\beta_i^{k+1}}{k+1}
-$$
-
-有限正规形游戏中，平均完整策略的概率分布；k 是已纳入平均的响应数。
-
-历史平均保留已经遇到的行为，避免只追逐最新对手。经典虚拟博弈在有限双人零和等游戏中有平均策略的收敛结论，不是一般和游戏或最新策略的普遍结论。
-
-序列游戏不能简单地对每个信息集的动作概率做等权平均。几乎不到达某处的策略，不应与经常到达的策略在该处获得相同权重。Fictitious Self-Play 用实现概率处理这个问题。
-
-$$
-\bar\pi_i(a\mid I)=\frac{\sum_k w_k r_i^{\pi_i^k}(I)\pi_i^k(a\mid I)}{\sum_k w_k r_i^{\pi_i^k}(I)}
-$$
-
-I 是信息集，r 是玩家自身动作对到达 I 的概率贡献。完美回忆下，它与先按 w 抽取完整策略的混合实现等价；分母为零处可任意定义。网络参数平均不能替代此式。
-
-两步手算：完整策略甲始终左，乙始终右，回合开始各半抽取，则路径 LL、RR 各有一半，LR、RL 不发生。若每一步都等权平均两种动作，四条路径各有四分之一。完美回忆的第二步信息集记住自己先前选了左还是右：到达左分支时甲的自身实现概率为一、乙为零，上式便在该分支只取甲的左动作；右分支反之。由此恢复完整策略混合的路径分布，而不是独立重抽。
-
-<a id="lesson-nfsp"></a>
-
-## 4 · NFSP：响应学习与平均策略学习
-
-NFSP 用 Q 网络近似响应，用另一网络拟合自己的历史响应行为。前者学习怎样获胜，后者保留已经采用过什么。平均策略网络不是用来拟合对手动作的。
-
-$$
-\sigma_i=(1-\eta)\bar\pi_i+\eta\beta_i,\qquad 0<\eta<1
-$$
-
-完整策略层面的 anticipatory mixture；原算法在每局开始选择平均或响应模式，不是每一步重新抽模式。
-
-$$
-L_{\rm SL}(\vartheta)=\mathbb E_{(I,a)\sim\mathcal M_{\rm SL}}[-\log\bar\pi_\vartheta(a\mid I)]
-$$
-
-只将执行响应模式时的自身行为写入监督记忆。Reservoir sampling 使有限记忆近似保留整段行为流，不保证精确保存全部策略。
-
-**算法：两种记忆的对象、采样方式和用途不同。**
-
-1. 每局开始，以概率 η 执行近似响应 β，否则执行平均策略。
-1. 所有转移写入 RL replay。
-1. 仅将响应模式下的自身 (信息集, 动作) 写入 SL reservoir。
-1. 用 Q-learning 更新响应；用交叉熵更新平均策略。
-1. 冻结平均策略，独立计算或估计可利用性。
-
-改用最近窗口会改变所拟合的平均对象。非线性逼近、有限记忆与不精确响应也会改变理论条件。NFSP 是 FSP 的可扩展近似，不是“给 DQN 加一个网络就保证 Nash”。
-
-<a id="lesson-cfr"></a>
-
-## 5 · CFR：从反事实遗憾组织自对弈
-
-CFR 问：在自己能够决策的信息集，若换一个动作，累计会少后悔多少？它据此组织下一轮策略。COMA 的反事实 baseline 则服务于策略梯度的方差缩减；二者不是同一种更新。
-
-$$
-v_i^\sigma(I,a)=\sum_{h\in I}\rho_{-i}^\sigma(h)\sum_{z\succeq ha}\rho^\sigma(ha,z)u_i(z)
-$$
-
-h 是信息集内历史，z 是终局。第一个权重含对手与 chance 到达 h 的贡献，排除自身到达概率；之后强制选 a，再按 σ 继续。此值不是归一化的条件期望。
-
-$$
-\begin{aligned}r_i^k(I,a)&=v_i^{\sigma^k}(I,a)-\sum_b\sigma_i^k(b\mid I)v_i^{\sigma^k}(I,b),\\R_i^K(I,a)&=\sum_{k=1}^K r_i^k(I,a),\\\sigma_i^{K+1}(a\mid I)&=\frac{[R_i^K(I,a)]_+}{\sum_b[R_i^K(I,b)]_+}.\end{aligned}
-$$
-
-分母为零时取均匀分布。这是原始累计遗憾的 regret matching；CFR+ 的逐轮截断是另一更新。
-
-有限、完美回忆的双人零和游戏中，局部反事实遗憾控制整体外部遗憾，再由双方平均遗憾界控制平均策略的均衡误差。采样、神经近似和游戏抽象各有额外条件；局部指标小不能独立证明任意深度策略达到均衡。
+下面先辨认行为相关与真实响应，再用两动作价值推导 PR2 的软响应及其梯度。GR2 接着问模型中可以展开几层回应；ROMMEO 和 GSCU 则分别约束模型想象的行为，以及决定何时使用模型。每一步都要回到同一个检验：在允许的信息和相同评价对手下，它是否改善了真实控制。
 
 <a id="lesson-opponent-model"></a>
 
-## 6 · 行为预测不等于真实因果响应
+## 2 · 行为预测不等于真实因果响应
 
 $$
 L_{\rm pred}(\phi)=-\mathbb E_{(H_i,A_{-i})\sim D}\log\rho_\phi(A_{-i}\mid H_i)
@@ -247,7 +166,7 @@ actor 可能选择数据未覆盖的动作，利用模型虚构的有利回应�
 
 <a id="lesson-pr2"></a>
 
-## 7 · PR2：从价值构造变分响应
+## 3 · PR2：从价值构造变分响应
 
 PR2 使用条件对手模型与概率推断近似响应，再改进自身策略。重点不是把对手网络拼到输入，而是规定响应分布怎样从价值和正则项产生。下面在有限动作上推导其软响应核。
 
@@ -283,7 +202,7 @@ $$
 
 <a id="lesson-response-gradient"></a>
 
-## 8 · 回应模型时，对什么求导？
+## 3.1 · 回应模型时，对什么求导？
 
 $$
 \nabla_a\widetilde Q(a)=\sum_b\rho_\phi(b\mid a)\nabla_aQ(a,b)+\sum_bQ(a,b)\nabla_a\rho_\phi(b\mid a)
@@ -312,7 +231,7 @@ PR2-Q 与 PR2-Actor-Critic 分别使用价值控制与 actor–critic。原算�
 
 <a id="lesson-gr2"></a>
 
-## 9 · GR2：有限递归与层次混合
+## 4 · GR2：有限递归与层次混合
 
 模型还可以假设：对手正在回应一个关于我的模型。递归必须从 level-0 行为假设开始，并在有限深度停止。零层可以是均匀行为或学习到的基础策略，不是未经定义的“不会思考”。
 
@@ -336,7 +255,7 @@ GR2 实践使用确定性内部展开、跨层参数共享与辅助层间改善�
 
 <a id="lesson-rommeo"></a>
 
-## 10 · ROMMEO：有利响应不能脱离经验依据
+## 5 · ROMMEO：有利响应不能脱离经验依据
 
 PR2 之后的一个自然问题是：模型偏向有利行为时，怎样防止它想象一个现实中不存在的合作伙伴？Tian、Wen 等的 ROMMEO 从合作决策的概率推断出发，用观测到的行为分布约束对手模型。它不是简单地提高行为预测准确率，而是在协调收益与经验依据之间建立明确目标。
 
@@ -356,7 +275,7 @@ $$
 
 <a id="lesson-gscu"></a>
 
-## 11 · GSCU：何时利用模型，何时保守行动？
+## 6 · GSCU：何时利用模型，何时保守行动？
 
 另一个问题不在递归深度，而在于是否应相信模型。Fu、Tian、Wen 等的 GSCU 先离线学习对手策略的连续嵌入，并训练一个条件化该嵌入的近似响应。线上根据已经完成的对局更新嵌入后验，再在实时利用策略与固定保守策略之间做 bandit 选择。
 
@@ -374,7 +293,7 @@ $$
 
 <a id="lesson-limits"></a>
 
-## 12 · 理论边界：稳定的是哪个过程？
+## 7 · 理论边界：稳定的是哪个过程？
 
 PR2 软价值迭代的结论具有对称性、特定均衡和价值算子条件，不能外推到任意一般和游戏及非线性 actor–critic。GR2 的均衡存在性涉及构造的推理博弈，不等于学习必然找到它。
 
@@ -403,7 +322,7 @@ $$
 
 <a id="lesson-code"></a>
 
-## 13 · 先验证响应核，再阅读神经工程
+## 8 · 先验证响应核，再阅读神经工程
 
 在完全给定的两动作任务上，比较条件响应与其边缘分布如何改变动作排序。没有拟合模型或运行 PR2 优化器。
 
@@ -422,52 +341,6 @@ def conditional_response():
             "marginal_values": [sum(x*y for x, y in zip(r, marginal)) for r in q],
             "conditional_values": [sum(x*y for x, y in zip(r, p))
                                    for r, p in zip(q, rho)]}
-```
-
-matrix_value、minimax_2x2 与 zero_sum_gap 检验矩阵评价；没有训练 PR2、GR2 或 NFSP 网络。
-
-```python
-def matrix_value(matrix, row_policy, column_policy):
-    probabilities(row_policy); probabilities(column_policy)
-    return sum(row_policy[i]*column_policy[j]*matrix[i][j]
-               for i in range(len(row_policy)) for j in range(len(column_policy)))
-
-
-def minimax_2x2(matrix):
-    """Row maximizes, column minimizes. Optimize the lower envelope of two lines."""
-    a, b = matrix[0]
-    c, d = matrix[1]
-    candidates = [0., 1.]
-    denominator = a-c-b+d
-    if denominator != 0:
-        crossing = (d-c)/denominator
-        if 0 <= crossing <= 1:
-            candidates.append(crossing)
-    lower = lambda p: min(p*a+(1-p)*c, p*b+(1-p)*d)
-    p = max(candidates, key=lower)
-    return [p, 1-p], lower(p)
-
-
-def zero_sum_gap(matrix, row_policy, column_policy):
-    row_best = max(dot(row, column_policy) for row in matrix)
-    column_best = min(sum(row_policy[i]*matrix[i][j] for i in range(len(matrix)))
-                      for j in range(len(matrix[0])))
-    return row_best-column_best
-
-
-def counterfactual_advantage(matrix, row_action, column_action, row_policy):
-    probabilities(row_policy)
-    baseline = sum(row_policy[i]*matrix[i][column_action] for i in range(len(row_policy)))
-    return matrix[row_action][column_action]-baseline
-
-
-def monotone_joint_greedy(local_values, weights):
-    if len(local_values) != len(weights) or any(w < 0 for w in weights):
-        raise ValueError('nonnegative mixing weights required')
-    local_choice = tuple(max(range(len(q)), key=q.__getitem__) for q in local_values)
-    joint = list(itertools.product(*(range(len(q)) for q in local_values)))
-    value = lambda acts: sum(w*q[a] for w, q, a in zip(weights, local_values, acts))
-    return local_choice, value(local_choice), max(map(value, joint))
 ```
 
 可复制为独立 Python 文件运行；检查软值恒等式和有限差分，不是学习实验。
@@ -503,15 +376,14 @@ print("soft-value gradient:", finite)
 | ying-wen/gr2 | code/maci/get_agents.py；learners/mavb_ac.py | joint critic、SVGD 粒子、soft backup、replay 和 target；旧 TensorFlow 依赖需独立配置 |
 | MultiLevelPolicy | policies/level_k_policy.py 的 actions_for | 交替自身/对手策略；部分对手分支 stop_gradient |
 | GeneralizedMultiLevelPolicy | level_distribution 与 actions_for | 对 1…k 层确定动作加权；动作平均不同于先随机选一个策略 |
-| OpenSpiel NFSP / CFR | python/pytorch/nfsp.py；python/algorithms/cfr.py | 平台实现，不标作原论文当年实验快照 |
 
 复现应记录提交、依赖、实际输入权限、层数、粒子数、replay 预算与更新顺序。先在小型游戏验证数据路径，再做高维任务。能导入旧工程并不说明已经复现论文结果。
 
 <a id="lesson-branches"></a>
 
-## 14 · 从内部模型到持续适应与策略种群
+## 9 · 从内部模型到持续适应
 
-对手模型可在局内依据历史推断，也可跨局积累参数或记忆。前者可能只是状态推断，后者涉及持久改变；应分别说明。固定网络增加内部推理深度，增加的是当次计算，不自动产生跨经历的持续学习。
+对手模型可在局内依据历史推断，也可跨局积累参数或记忆。前者可能只是状态推断，后者涉及持久改变；应分别说明。固定网络增加内部推理深度，增加的是当次计算，不自动产生跨交互的持续学习。
 
 长期面对新参与者，还需处理模型失配后的可塑性、身份未知时的状态构建、历史保留与资源预算。“对手总比自己少想一层”只是可检验假设。
 
@@ -519,22 +391,50 @@ print("soft-value gradient:", finite)
 
 <a id="lesson-check"></a>
 
-## 15 · 检查理解
+## 10 · 检查理解
 
-- 问：自对弈必须共享网络吗？答：不需要。各角色的奖励和信息可以不同。
 - 问：$\rho(a_{-i}\mid s,a_i)$ 证明对手看到本步动作吗？答：不能。真实权限由环境协议决定。
 - 问：F 大于最大 Q 违反回报上界吗？答：不违反。F 包含正则项，不是原始奖励期望。
 - 问：level-3 必然战胜 level-2 吗？答：不必然；模型失配、响应近似与资源成本都影响结果。
 - 练习：将算例 α 改为 0.1 和 10。分别计算普通期望与软值，解释二者差异。
-- 练习：两个策略各自连续两步总选左或总选右。比较每局抽一次策略和每步混合动作可产生的轨迹。
 
 
+
+## 相关主题：自对弈与开放式学习
+
+<a id="lesson-self-play"></a>
+
+[自对弈与历史策略](multi-agent-populations.md#lesson-self-play)
+
+<a id="lesson-fictitious"></a>
+
+[虚拟对弈与最佳响应平均](multi-agent-populations.md#lesson-fictitious)
+
+<a id="lesson-nfsp"></a>
+
+[NFSP 的两类记忆](multi-agent-populations.md#lesson-nfsp)
+
+<a id="lesson-search-policy"></a>
+
+[搜索怎样产生策略与价值标签](multi-agent-populations.md#lesson-search-policy)
+
+<a id="lesson-alphago-lineage"></a>
+
+[AlphaGo、AlphaGo Zero 与 AlphaZero](multi-agent-populations.md#lesson-alphago-lineage)
+
+<a id="lesson-muzero"></a>
+
+[MuZero 的学得模型](multi-agent-populations.md#lesson-muzero)
+
+<a id="lesson-cfr"></a>
+
+[不完全信息下的 CFR](multi-agent-populations.md#lesson-cfr)
 
 <a id="chapter-code"></a>
 
 ## 下载与运行
 
-下载本页配套脚本后运行。精确条件评分、虚拟博弈与零和 gap 的机制检查，不是 PR2/GR2 神经训练。
+下载本页配套脚本后运行精确条件评分检查；本页另附软响应梯度的独立代码。均不是 PR2/GR2 神经训练。
 
 [下载 marl_objectives_lab.py](../../examples/marl_objectives_lab.py)
 
@@ -545,12 +445,6 @@ python3 examples/marl_objectives_lab.py test
 <a id="lesson-sources"></a>
 
 ## 参考文献与实现
-
-- [Heinrich、Lanctot、Silver · Fictitious Self-Play（ICML 2015）](https://proceedings.mlr.press/v37/heinrich15.html)：阅读实现等价的行为平均与 XFP/FSP，注意到达概率权重。
-
-- [Heinrich、Silver · Neural Fictitious Self-Play（2016）](https://arxiv.org/abs/1603.01121)：Algorithm 1 的按局模式抽样、两种记忆与平均策略评价。
-
-- [Zinkevich 等 · Regret Minimization in Games with Incomplete Information（2007）](https://poker.cs.ualberta.ca/publications/NIPS07-cfr.pdf)：反事实价值、局部到整体遗憾界与完美回忆条件。
 
 - [Wen、Yang、Luo、Wang、Pan · PR2（ICLR 2019）](https://arxiv.org/abs/1901.09207)：条件响应的变分推断、Theorem 1/2 和 PR2-Q/PR2-AC；保留定理假设。
 
@@ -569,10 +463,6 @@ python3 examples/marl_objectives_lab.py test
 - [GR2 · 递归与层次混合实现](https://github.com/ying-wen/gr2/blob/master/code/maci/policies/level_k_policy.py)：检查 stop_gradient 与确定动作加权，勿称精确随机层次混合。
 
 - [GR2 · 条件响应与 actor–critic](https://github.com/ying-wen/gr2/blob/master/code/maci/learners/mavb_ac.py)：检查 critic、SVGD、粒子软聚合与 replay 字段；仍需独立运行验证兼容性。
-
-- [OpenSpiel · NFSP](https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/pytorch/nfsp.py)：公开平台实现；阅读按局策略抽样、reservoir 和监督损失。
-
-- [OpenSpiel · CFR](https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/cfr.py)：对照 counterfactual reach、regret matching 和 average_policy。
 
 - [Lanctot 等 · Policy-Space Response Oracles（2017）](https://arxiv.org/abs/1711.00832)：将训练对手与新增响应组织为种群循环，和内部递归是不同维度。
 
@@ -598,6 +488,8 @@ python3 examples/marl_objectives_lab.py demo --out results/marl-objectives
 
 仅依赖Python标准库，含15项机制检查。图不用于排序大型算法。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-marl-reasoning#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-marl-reasoning#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-marl-reasoning)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -622,4 +514,4 @@ python3 examples/marl_objectives_lab.py demo --out results/marl-objectives
 - [实验设计、统计与算法测试](../../textbook/experiments.md)
 - [持续学习的智能体架构](../../textbook/architectures.md)
 
-对应原始材料：Fictitious Play 与 Fictitious Self-Play；NFSP 与 CFR；PR2（ICLR 2019）；GR2（IJCAI 2020）。本文为原创讲解，原书、论文与上游代码保留各自许可。
+对应原始材料：PR2（ICLR 2019）；GR2（IJCAI 2020）；ROMMEO（IJCAI 2019）；GSCU（ICML 2022）。本文为原创讲解，原书、论文与上游代码保留各自许可。

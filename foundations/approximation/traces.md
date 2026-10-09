@@ -1,5 +1,7 @@
 # 多步回报、资格迹与 True-online TD
 
+函数逼近与经典进阶方法 · 第 5 章
+
 当前到来的奖励怎样更新过去的预测，同时保留正确的在线更新语义？
 
 ## 本章内容
@@ -11,6 +13,14 @@
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [多步学习：n-step、Tree Backup 与 Q(σ)](../tabular/multistep.md)：知道多步回报由哪些奖励和尾值组成。
+- [函数逼近预测：从回归到 TD 固定点](prediction.md)：知道梯度对应哪个参数版本，哪些状态共享参数。
+
 
 ### 前向与后向视图
 
@@ -98,39 +108,47 @@ $$
 
 ## 1 · 一步 TD 的信用传播瓶颈
 
-在一条长轨迹中，奖励可能很晚才出现。一步 TD 只更新当前预测，过去状态要等到再次访问后才逐渐得到影响。多步回报直接包含更多实际反馈，资格迹则让刚到来的误差同时影响近期相关特征。它们解决时间信用分配，不负责决定保存哪些旧任务能力。
+在一条长轨迹中，奖励可能很晚才出现。表格一步 TD 只更新当前状态的条目，过去状态要等到再次访问后才逐渐得到影响。多步回报直接包含更多实际反馈，资格迹则让刚到来的误差同时影响近期相关特征。它们解决时间信用分配，不负责决定保存哪些旧任务能力。
 
-考虑回合终点 $T$、固定折扣 $\gamma$ 和线性预测 $v_t=w^\top x_t$。真正终止状态的特征取零。报告窗口结束但环境未终止时，不能自动将下一预测清零。资格迹重置的位置也必须与任务的历史边界一致。
+函数逼近还带来另一条传播路径。函数逼近预测章的走廊 A 到 B 到终点使用重叠特征，更新 B 本来就会连带改变 A；资格迹额外保留的是过去出现过的梯度方向。我们将沿用这条奖励为 +2、−1 的轨迹，分清“当前特征已经共享的影响”与“随时间保存下来的信用”，再检查第一步参数变化怎样影响第二步。
+
+先区分目标与执行时序。设回合在 $T$ 真正终止，特征 $x_t=x(S_t)$ 固定，$x_T=0$；冻结一份参数 $\bar w$，记 $\bar v_t=\bar w^\top x_t$。为先推导回报关系，下面的所有尾值都用这份参数。报告窗口结束而环境未终止时仍保留尾值；迹的重置也应对应实际历史边界。
 
 $$
-G_t^{(n)}=\sum_{k=0}^{n-1}\gamma^kR_{t+k+1}+\gamma^n\hat v(S_{t+n}),
+G_t^{(n)}(\bar w)=\sum_{j=0}^{n-1}\gamma^jR_{t+j+1}+\gamma^n\bar v_{t+n},\qquad 1\le n\le T-t.
 $$
 
-n 步目标将前 n 个真实奖励与后续预测结合；若提前到达真正终止，则在终止处截断且没有 bootstrap。
+n 步目标纳入前 n 个实际奖励并预测剩余尾部；$n=T-t$ 时尾特征为零，得到完整回报 $G_t$。有限回合允许 $\gamma=1$，仍需所用回报具有适当矩。等待 n 步决定何时目标可用，尚未规定何时、按什么参数执行回归。
 
 <a id="lesson-derive"></a>
 
 ## 2 · Lambda-return 与 TD 误差的展开
 
 $$
-\begin{gathered}G_t^\lambda=(1-\lambda)\sum_{n=1}^{T-t-1}\lambda^{n-1}G_t^{(n)}+\lambda^{T-t-1}G_t,\\ 0\le\lambda\le1.\end{gathered}
+\begin{gathered}G_t^\lambda(\bar w)=(1-\lambda)\sum_{n=1}^{T-t-1}\lambda^{n-1}G_t^{(n)}(\bar w)+\lambda^{T-t-1}G_t,\\ 0\le\lambda\le1.\end{gathered}
 $$
 
-有限回合的最后一项保留全部剩余权重，所以各项系数和为 1。$\lambda=0$ 给一步目标，$\lambda=1$ 给完整回报。
+有限回合的最后一项保留全部剩余权重，所以各项系数和为 1。$\lambda=0$ 给一步目标，$\lambda=1$ 给完整回报；只剩最后一步时，两者本来就是同一目标，按端点的连续约定处理 $0^0$。
 
 $$
-\begin{aligned}G_t^\lambda-v_t&=\sum_{k=t}^{T-1}(\gamma\lambda)^{k-t}\delta_k,\\ \delta_k&=R_{k+1}+\gamma v_{k+1}-v_k.\end{aligned}
+\begin{aligned}G_t^\lambda(\bar w)-\bar v_t&=\sum_{k=t}^{T-1}(\gamma\lambda)^{k-t}\bar\delta_k,\\ \bar\delta_k&=R_{k+1}+\gamma\bar v_{k+1}-\bar v_k.\end{aligned}
 $$
 
-在全部预测使用同一组冻结权重时，展开右侧并消去相邻价值项，就得到左侧。这个代数恒等式解释了为什么后来的 TD 误差可以按衰减系数更新过去特征。
+展开右侧并消去相邻价值项，就得到左侧。所有残差使用同一份冻结参数；这一步给出从前向混合回报到后向误差传播的代数关系。
 
 $$
-\begin{gathered}\sum_t\alpha(G_t^\lambda-v_t)x_t=\alpha\sum_k\delta_k e_k,\\ e_k=\sum_{t=0}^k(\gamma\lambda)^{k-t}x_t=\gamma\lambda e_{k-1}+x_k.\end{gathered}
+\begin{gathered}\sum_{t=0}^{T-1}\alpha[G_t^\lambda(\bar w)-\bar v_t]x_t=\alpha\sum_{k=0}^{T-1}\bar\delta_k e_k,\\ e_{-1}=0,\qquad e_k=\sum_{t=0}^k(\gamma\lambda)^{k-t}x_t=\gamma\lambda e_{k-1}+x_k.\end{gathered}
 $$
 
-交换两重求和的次序，得到累积资格迹。不需要保存全部过去特征，只保存它们的衰减和。
+交换两重求和次序，得到累积资格迹。左侧各增量都在冻结参数处算出，最后相加；它尚未执行每次回归之后立即改变参数的顺序算法。
 
-冻结权重的批量等价并不证明在线逐步更新时的精确等价。在线更新会改变后续出现的预测值；相同状态重复出现时，差异尤其明显。普通 TD(lambda) 是重要的有效方法，但不能忽略这个条件就声称它严格实现某个在线前向过程。
+普通在线 TD(lambda) 保留这条迹递推，但在每步计算当前参数下的 TD 误差并立即写入权重。后续预测因而可能改变。它实现了即时信用传播；与冻结参数下增量总和的精确等式，则是另一个命题。
+
+$$
+\delta_t=R_{t+1}+\gamma w_t^\top x_{t+1}-w_t^\top x_t,\qquad e_t=\gamma\lambda e_{t-1}+x_t,\qquad w_{t+1}=w_t+\alpha\delta_t e_t.
+$$
+
+普通累积迹的执行顺序：先用 $w_t$ 保存当前预测、尾预测与残差，用旧迹形成 $e_t$，再更新权重；真正终止时仍使用最后奖励，尾值为零。相同状态重复或特征重叠时，早期写入更容易影响后续目标。
 
 ![确定性五步链首回合的多步目标与普通累积资格迹更新，末步资格为 (γλ) 的不同次幂。](https://yingwen.io/crl-figures/learning-classic-credit.svg)
 
@@ -140,18 +158,214 @@ $$
 
 这一次相等有特别原因：反馈出现前没有发生任何参数变化，而且状态特征互不重叠。若中途已有非零误差，或同一参数参与多个位置，在线预测就可能与冻结推导不同。下一节把前向参照改为每个已见前缀，后面的重复状态算例则展示为什么还需要 Dutch trace 和预测变化修正。
 
+<a id="traces-online"></a>
+
+## 3 · 在线前向视图究竟指什么
+
+要讨论在线等价，先把前向算法也定义为只使用当前可见经验的过程。时刻 $h$ 已看到 $S_0,R_1,S_1,\ldots,R_h,S_h$；对每个 $0\le k<h$，只能组合已经可见的 n 步目标，最长项吸收剩余权重。每次抵达一个状态时，保存用更新前参数算出的尾预测，以后扩展前缀时沿用这个数：
+
+$$
+\begin{aligned}G_k^{(n)}&=\sum_{j=0}^{n-1}\gamma^jR_{k+j+1}+\gamma^n w_{k+n-1}^\top x_{k+n},\quad 1\le n\le h-k,\\ G_k^{\lambda\mid h}&=(1-\lambda)\sum_{n=1}^{h-k-1}\lambda^{n-1}G_k^{(n)}+\lambda^{h-k-1}G_k^{(h-k)}.\end{aligned}
+$$
+
+这里 $w_j$ 是此前在线算法在前缀 j 结束后的实际参数，$w_{k+n-1}^\top x_{k+n}$ 在第 k+n 步更新之前保存。它与上一节使用冻结 $\bar w$ 的 n 步目标不同；真正终点的特征仍为零。
+
+现在定义重算。用 $w_k^{[h]}$ 表示在前缀 h 的这一次回归扫描中，处理第 k 个访问位置之前的参数。每个新前缀都从同一个回合初始参数 $w_0$ 开始，目标已由上面的实际在线预测确定；扫描内部的当前预测则随这次回归逐项变化：
+
+$$
+\begin{aligned}w_0^{[h]}&=w_0,\\ w_{k+1}^{[h]}&=w_k^{[h]}+\alpha[G_k^{\lambda\mid h}-(w_k^{[h]})^\top x_k]x_k,\quad 0\le k<h,\\ w_h&=w_h^{[h]}.\end{aligned}
+$$
+
+两种下标分别回答“正在重算哪一个前缀”和“已经回归到哪个访问位置”。第 h 次扫描的末态才是实际在线参数 $w_h$；扫描中的中间权重用于当前预测，不替换先前保存的 bootstrap。
+
+这便是在线 lambda-return 的前向参照：每次多看到一步，就修订目标并重做整个已见前缀。它没有使用未来经验，但重算开销随已见轨迹增长。True-online 在线性固定特征下只维护固定大小的递归状态，逐前缀得到同一个参数序列；代码用慢速前向扫描核对这项算法等价。
+
+<a id="traces-dutch"></a>
+
+## 4 · Dutch trace 与预测变化修正
+
+在线前向扫描为什么不能用普通相加的迹压缩？先沿原书 §12.6 和课堂的同一简化问题推导：依次观察 $x_0,\ldots,x_{T-1}$，最后得到这些预测共同要预测的标量结果 $G$。等 $G$ 可用后按原顺序做线性回归，一次写入为 $w^+=(I-\alpha xx^\top)w+\alpha xG$。后一个回归会继续变换前一个增量；这正是冻结增量求和丢掉的关系。
+
+$$
+\begin{aligned}a_{-1}&=w_0,\quad z_{-1}=0,\\a_t&=a_{t-1}-\alpha x_t(x_t^\top a_{t-1}),\\z_t&=z_{t-1}+\alpha[1-x_t^\top z_{t-1}]x_t,\\w_T&=a_{T-1}+z_{T-1}G.\end{aligned}
+$$
+
+对“当前权重=与 G 无关的部分+G 的系数”作归纳即可得到递推。这里只讨论共同的最终结果 G，不是任意奖励序列的通用 MC 公式。z 是已把步长吸收进去的 Dutch 型迹。
+
+每次只需两个向量和若干内积，内存与每步计算都是 $O(d)$，不随等待 $G$ 的时间 $T$ 增长。不要显式构造 $d\times d$ 矩阵：先算 $x^\top a$ 或 $x^\top z$，再乘 $x$。最终获得 $G$ 时也只做 $O(d)$ 合并。重复特征 $x=1$、$\alpha=.5$、$w_0=0$ 时，$z$ 依次为.5、.75；$G=1$ 后最终参数为.75，与逐次回归相同。
+
+这里直到最终结果 G 到来才合成新参数，但等待期间已经均匀地完成了必要计算。span-independent 指每步资源需求不随延迟跨度增长。这个回归推导给出了资格迹作为计算机制的一个精确等价，无须先引入 TD。
+
+回到在线 TD。新前缀会修订前向目标，同时还要沿原顺序重新回归；把这两种变化一起递归压缩，在线性固定特征与常数步长下得到 Dutch trace：
+
+$$
+e_t=\gamma\lambda e_{t-1}+[1-\alpha\gamma\lambda e_{t-1}^\top x_t]x_t.
+$$
+
+等价写法 $e_t=\gamma\lambda(I-\alpha x_tx_t^\top)e_{t-1}+x_t$ 保留了刚才回归中的变换，再加入时间衰减。步长出现在迹里，是因为迹压缩的是实际回归更新的作用，而非仅记录访问次数。
+
+$$
+\begin{aligned}v_t&=w_t^\top x_t,\qquad \delta_t=R_{t+1}+\gamma w_t^\top x_{t+1}-v_t,\\ w_{t+1}&=w_t+\alpha\delta_t e_t+\alpha(v_t-v_{\rm old})(e_t-x_t).\end{aligned}
+$$
+
+对 $t\ge1$，$v_{\rm old}=w_{t-1}^\top x_t$ 是上一步在更新前保存的当前状态旧预测；回合起点设为零，此时 $e_0=x_0$，修正项仍为零。$v_t-v_{\rm old}$ 衡量刚才参数写入造成的预测变化。Dutch 迹与这项权重修正共同构成完整 true-online 算法。
+
+**算法：常数步长 True-online TD(lambda)**
+
+1. 回合开始：初始化 $e=0,v_{\rm old}=0$；保留待学习权重
+1. 用旧权重计算 $v=w^\top x,v'=w^\top x'$，再计算 $\delta$
+1. 用旧 trace 的内积计算 Dutch 修正，然后写入新 trace
+1. 执行 $w\leftarrow w+\alpha\delta e+\alpha(v-v_{\rm old})(e-x)$
+1. 保存更新前已算出的 $v_{\rm old}\leftarrow v'$；推进到 $x'$
+1. 真正终止保留末步更新，再清除回合 trace
+
+本页精确等价使用常数步长。逐时间改变步长时，需使用相匹配的缩放迹和前向定义。它证明的是给定经验序列上每个前缀的参数一致；随机收敛、预测误差或控制回报仍各自需要条件与证据。
+
+另一种旧方法是替换迹（replacing trace）。它为表格或二值特征定义：当前激活分量设为 1，其余分量按 $\gamma\lambda$ 衰减。累积迹则在激活处再加 1；Dutch 迹依据实际步长与已有迹修正当前方向。因此重复访问时，三种迹保存的量不同。
+
+$$
+e_{i,t}^{\rm rep}=\begin{cases}1,&x_{i,t}=1,\\\gamma\lambda e_{i,t-1}^{\rm rep},&x_{i,t}=0.\end{cases}
+$$
+
+这个逐分量规则要求二值输入。走廊中的特征含 0.8、0.6，不能直接使用此二分定义；对任意连续特征截断或重设数值，要另说明算法。替换迹也不承担上面 true-online 与在线前向扫描的精确等价。
+
+<a id="experiment-true_online_td"></a>
+
+### 实验：实验 · True-online 的“精确”，不表示误差始终最小
+
+Dutch trace 与预测变化修正为什么是等价性要求，却不是性能保证？
+
+**环境与可用信息。** 五个非终止状态的等概率随机游走，左终点奖励 0、右终点奖励 1，γ=1。每回合从中间状态开始，价值从零开始。代码用五维 one-hot 线性表示，表格只是该线性情形的特例。
+
+**设置。** 种子 0–4，各 1200 个真实转移，α=0.1。True-online TD 使用 λ=0.8，初始 Dutch 迹与旧预测均为零；对照为相同表格、相同轨迹的 TD(0)。终点奖励先更新所有有资格的参数，再清迹和旧预测。
+
+**检验的机制。** Dutch 迹校正有限步长下重复访问的影响；另一个参数修正处理相邻时刻预测已经变化的事实。两项共同对应在线前向视图。它没有取消 λ 带来的偏差、方差和传播速度折中。
+
+**测量。** 纵轴是五状态相对于解析真值的 RMSE。该误差曲线检验学习过程，不检验前后向等价本身；等价必须通过逐前缀参数对照或严格推导验证。
+
+```bash
+python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](../../assets/crl-figures/result-true_online_td.svg)
+
+横轴：environment_steps。纵轴：五状态价值 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 当前价值估计与真实值 s/6 的误差。在五个非终止状态 s=1,…,5 上均匀平均平方误差后开方；权重不是训练访问频率。
+
+**step：怎样计时。** step 包含全部真实转移，也包含尚未完成的回合。MC 在自然终止后，对该回合首次访问的每个状态写一次回报均值；同回合重复访问不增加该状态的样本数。TD(0) 每个真实步写入；资格迹可同时影响多个状态。相同环境步不表示相同参数写入次数，预算结束也不产生额外终止反馈。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 各状态初值均为0。MC 用各状态已完成回合的首次访问计数决定步长；TD(0) 用常数步长0.1，比较不仅改变了是否自举。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算各记录时刻的跨种子均值、样本标准差和末点误差；没有保存全部预测向量，不能仅凭 value 重新计算状态权重或逐状态误差。 日志未保存回合边界、首次访问计数或逐步价值，曲线平台不能单独区分等待终止、零更新和稀疏记录漏掉变化。
+
+计算位置：[classic/_common.py](../../implementations/classic/_common.py) · [classic/td0.py](../../implementations/classic/td0.py) · [classic/td_lambda.py](../../implementations/classic/td_lambda.py) · [classic/true_online_td.py](../../implementations/classic/true_online_td.py) · [classic/mc_prediction.py](../../implementations/classic/mc_prediction.py)
+
+</details>
+
+**结果分析。** 第 300 步，True-online TD 的平均 RMSE 为 0.0791，TD(0) 为 0.2368，长程传播在早期有利；第 1200 步却为 0.0772 对 0.0465。早期较快不意味着固定 λ=0.8 在整个预算上都更准确。
+
+**结论边界。** 这里只用 one-hot 特征，尚未通过此实验展示重叠线性特征的优势，也没有与普通累积 TD(λ) 作同 λ 对照。更不能把线性 true-online 等价性直接移植到非线性网络。
+
+**继续实验。** 先令 λ=0，逐条核对它退化为 TD(0)。再选择含重复状态的短轨迹，以在线前向视图逐前缀核对 Dutch 更新；最后在相同 λ 下对照普通累积迹，避免把 λ 的效果误认为修正项的效果。
+
+[源码](../../implementations/classic/true_online_td.py) · [逐种子记录](https://yingwen.io/crl-code/results/true_online_td/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/true_online_td/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/true_online_td/curves.json)
+
+<a id="traces-corridor"></a>
+
+## 走廊算例 · 共享方向怎样跨步保留
+
+回到 A 到 B 到终点的同一固定策略任务：$\gamma=1,\lambda=0.5,\alpha=0.5$，$x_A=(1,0),x_B=(0.8,0.6)$，初始参数和迹为零。第一步得到奖励 2；更新前两个预测都是 0，所以 $\delta_0=2,e_0=x_A,w_1=(1,0)$。A 的新预测为 1，B 已被共享更新推到 0.8。下一步尚未发生，算法已经保存下来的下一状态旧预测却仍是 0。
+
+$$
+\begin{gathered}e_1^{\rm acc}=0.5x_A+x_B=(1.3,0.6),\qquad
+\delta_1=-1-\hat v(B,w_1)=-1.8,\\
+w_2^{\rm acc}=(1,0)+0.5(-1.8)(1.3,0.6)=(-0.17,-0.54).\end{gathered}
+$$
+
+第二步当前预测与终点目标均用更新前的参数计算。真正终止保留奖励 −1，尾值取零。
+
+这条迹的两个坐标对应两个参数，不是分别给 A、B 存一份资格。用当前误差更新后，A 的预测变化为 $\alpha\delta_1 x_A^\top e_1^{\rm acc}$，其中内积为 1.3：来自保留 A 的 0.5，也来自当前 B 特征共享的 0.8。B 的内积为 1.4：来自历史 A 的 $0.5\times0.8=0.4$，加上自身的 1。时间衰减与状态间共享通过同一个内积相遇。
+
+![同一坐标尺度下，衰减的 A 特征与 B 特征首尾相接，分别构成累积迹 (1.3,0.6) 和 Dutch 迹 (1.14,0.48)。](../../assets/crl-figures/concept-shared-gradient-memory.svg)
+
+灰线是从上一时刻留下的 $0.5x_A$，青线是当前特征的贡献，虚线是合成向量。Dutch 图将 B 的系数改为 $1-\alpha\gamma\lambda x_A^\top x_B=0.8$。虚线表示向量合成关系。原创精确计算，沿用本节轨迹与参数；[逐步数值](https://yingwen.io/crl-figures/shared-gradient-data.json)。
+
+现在独立执行在线前向定义。只见第一步时，A 的目标是 $2+\hat v(B,w_0)=2$，所以前缀结果也是 $(1,0)$。见到第二步后，A 的 interim λ-return 变成 $0.5\times2+0.5\times(2-1)=1.5$；B 的目标为 −1。从原始 $w_0=0$ 重做两次回归：先得到 $(0.75,0)$，再用 B 当前的预测 0.6 得到 $(0.11,-0.48)$。累积迹与这个明确定义的在线过程已经不同。
+
+$$
+\begin{aligned}
+e_1^{\rm Dutch}&=0.5(1,0)+(1-0.5\times0.5\times0.8)(0.8,0.6)=(1.14,0.48),\\
+\alpha\delta_1 e_1^{\rm Dutch}&=(-1.026,-0.432),\\
+\alpha(v_1-v_{\rm old})(e_1^{\rm Dutch}-x_B)
+&=0.5(0.8-0)(0.34,-0.12)=(0.136,-0.048),\\
+w_2^{\rm true}&=(1,0)+(-1.026,-0.432)+(0.136,-0.048)=(0.11,-0.48).
+\end{aligned}
+$$
+
+Dutch 迹修正方向，最后一项补偿 B 在第一步之后已经发生的预测变化。保存的旧预测必须仍为 0；若把它提前覆盖成 0.8，这一项就会错误消失。
+
+![同一首步参数出发，普通累积迹、仅替换 Dutch 迹、加入完整预测变化修正的三个参数终点。](../../assets/crl-figures/concept-shared-gradient-online.svg)
+
+蓝线是共同的第一步；红线使用累积迹，紫线只用 Dutch 迹的 TD 增量，橙线加入预测变化修正。坐标是两个参数，箭头是实际更新，不是环境动作。完整修正的终点等于独立在线前向重算；它与另两个终点的距离用于检查更新语义，不表示性能排名。原创精确计算。
+
+本例连一个状态都没有重复访问，两个时刻仍因重叠特征而耦合。下面再把表示压缩为一个重复特征，可以用一个标量看清相同问题；它不是资格迹只对重复状态才必要的理由。
+
+<a id="lesson-example"></a>
+
+## 5 · 重复状态的两步手算
+
+只有一个非终止状态，特征为 1。轨迹是“该状态、该状态、终止”，奖励依次为 0、1。取 $w_0=0,\gamma=\lambda=1,\alpha=0.5$。第一步没有误差，权重仍为 0，trace 为 1。
+
+第二步，普通累积 trace 变为 2，误差为 1，因此权重变为 1。Dutch trace 则是 $1+[1-0.5\times1]\times1=1.5$；本例预测变化修正为零，得到权重 0.75。
+
+$$
+\begin{aligned}w^{\rm forward}_1&=0+0.5(1-0)=0.5,\\ w^{\rm forward}_2&=0.5+0.5(1-0.5)=0.75.\end{aligned}
+$$
+
+完整前缀的前向过程对两个出现位置依次作目标为 1 的监督更新，因此得到 0.75，与 true-online 相同。普通累积迹把两次误差都按旧预测累加，得到不同答案。
+
+这不是说普通 TD 在这个小问题一定无法学习。例子只区分有限步长下的更新语义。把步长减小，两个结果更接近；把状态换成互不重叠的独立特征，也可能降低差异。
+
+上例中的预测变化修正恰好为零。现在仍让同一特征出现两次，但将奖励改为 1、2，取 $\lambda=0.5$，其余保持 $\alpha=0.5,\gamma=1,w_0=0$。第一步就改变了预测，于是能分别看到 Dutch trace 与权重修正的作用。
+
+![同一特征两次出现；首步已更新权重，第二步Dutch迹为1.25，TD增量0.9375之外还需0.0625的预测变化修正，最终权重1.5。](../../assets/crl-figures/concept-credit3-dutch-correction.svg)
+
+灰段是保留下来的量，蓝段是 TD 增量，橙段是预测变化修正。底部从回合初始权重 0 重算同一已见前缀，两个更新目标都是 2，得到相同终点 1.5。两个方法此时都只使用已发生的两步经验。原创精确计算；公式对应 Sutton 与 Barto §12.5 及 van Seijen 等 Algorithm 2。
+
+第一步后 $w_1=0.5,e_0=1$，保存的下一状态旧预测仍为 0，因为它在权重更新前计算。第二步的当前预测为 0.5，所以 $v_1-v_{\rm old}=0.5$。Dutch 迹为 $e_1=0.5\times1+[1-0.5\times0.5\times1]=1.25$，TD 误差为 $2-0.5=1.5$。
+
+$$
+w_2=0.5+\underbrace{0.5\times1.5\times1.25}_{0.9375}+\underbrace{0.5\times(0.5-0)\times(1.25-1)}_{0.0625}=1.5.
+$$
+
+最后一项是 $\alpha(v_t-v_{\rm old})(e_t-x_t)$。只改 Dutch 迹却删去这项，得到 1.4375；普通累积迹为 1.5，对应参数结果 1.625。三个数的区别是算法语义，不是三个方法的性能排序。
+
+独立检查使用在线前向定义。第二步到达后，第一个出现位置的 interim λ-return 为 $0.5\times1+0.5\times(1+2)=2$，第二个位置的目标也为 2。从原始 $w_0=0$ 顺序回归，两次参数更新是 $0\to1\to1.5$。附带测试还用不同的非二值特征、步长与 λ，逐前缀核对两种计算，而不只比较最后一步。
+
 <a id="rlss-trace-error-bound"></a>
 
 ## λ 改变什么：预测误差、信用跨度与表示不足
 
-固定策略、固定特征和常数折扣 $0\leq\gamma<1$。令 $T$ 是该策略的 Bellman 算子，先研究期望目标算子，而非随机在线权重迭代。对 $0\leq\lambda<1$，把各个 n 步目标按几何权重混合。
+前面的走廊与重复特征比较了每个前缀怎样写入参数。现在回到函数逼近预测章的另一问题：学习稳定后会得到哪个近似？以下先分析普通累积迹 TD(λ) 的冻结参数平均更新，再看已有的采样诊断；逐前缀算法等价与长期固定点在这里分开。固定策略、固定特征和常数折扣 $0\leq\gamma<1$，令 $T_\pi v=r_\pi+\gamma P_\pi v$。对 $0\leq\lambda<1$，把各个 n 步目标按几何权重混合。
 
 $$
-T_\lambda v=(1-\lambda)\sum_{n=1}^{\infty}\lambda^{n-1}T^n v,\qquad
+T_\lambda v=(1-\lambda)\sum_{n=1}^{\infty}\lambda^{n-1}T_\pi^n v,\qquad
 \|T_\lambda v-T_\lambda u\|_\infty\leq \frac{\gamma(1-\lambda)}{1-\gamma\lambda}\|v-u\|_\infty.
 $$
 
-把每项的 γⁿ 误差界提出，再求几何级数，就得到这个系数。λ 越接近一，目标对旧预测的依赖越弱。它不表示一个随机长回报的方差也更小。
+把每项的 γⁿ 误差界提出，再求几何级数，得到这个系数。λ 越接近一，期望目标对旧预测的依赖越弱；回报样本的方差则需另算。
+
+$$
+\begin{aligned}T_\lambda v&=(I-\gamma\lambda P_\pi)^{-1}[r_\pi+\gamma(1-\lambda)P_\pi v],\\ \Phi w_\lambda&=\Pi_{D_\pi}T_\lambda(\Phi w_\lambda).\end{aligned}
+$$
+
+第一式把混合目标的几何级数求和；$\gamma<1$ 时也可用它定义 $\lambda=1$ 的端点。第二式沿用预测章的投影：$\Pi_{D_\pi}=\Phi(\Phi^\top D_\pi\Phi)^{-1}\Phi^\top D_\pi$，假定特征 Gram 矩阵可逆。$\lambda=0$ 恢复一步投影 Bellman 方程；$\lambda=1$ 时 $T_1v=v_\pi$，回到价值回归投影。下一节从稳态累积迹独立推导这个固定点。
 
 $$
 \|v_{w_\lambda}-v_\pi\|_{D_\pi}^{2}\leq
@@ -369,129 +583,20 @@ python3 examples/rlss_trace_diagnostics.py run --output results.json
 
 [下载独立实验代码](../../examples/rlss_trace_diagnostics.py) · [查看全部结果与运行协议](https://yingwen.io/crl-code/diagnostics/rlss-traces/results.json)。test 核对稳态、Bellman 真值、λ=1 投影、矩阵逆与 400 项几何展开的一致性，以及逐步 trace 和更新范数恒等式；它们是实现检查，不是学习性能证据。
 
-最后一个问题：若表示和策略也在持续变化，哪个“固定点”还固定？本实验首先冻结这些对象，才使三种作用能够分离。转向深度或持续学习时，应分别记录特征变化、旧迹方向与当前梯度的失配、目标漂移和真实更新范数。不能仅凭 λ 较大就断言长期记忆更好，也不能把固定线性表示的收敛结论移植到非线性网络。
-
-<a id="traces-online"></a>
-
-## 3 · 在线前向视图究竟指什么
-
-在只看到前缀 $0,\ldots,h$ 时，构造每个过去状态的 interim lambda-return：只能组合已经可见的 n 步目标，最长项保留剩余权重。随着 $h$ 增长，过去状态的目标不断修订。
-
-$$
-G_k^{\lambda\mid h}=(1-\lambda)\sum_{n=1}^{h-k-1}\lambda^{n-1}G_k^{(n)}+\lambda^{h-k-1}G_k^{(h-k)}.
-$$
-
-这里 n 步 bootstrap 在抵达 $S_{k+n}$ 之前的在线权重上计算，即使用 $w_{k+n-1}^\top x_{k+n}$。预测参数的时间索引是定义的一部分。
-
-独立参考实现对每个新前缀都从回合初始权重开始，按时间顺序重做过去所有状态的监督更新，并使用上述已修订目标。这样定义清楚，但计算开销随轨迹增长，不适合长期流式使用。True-online 方法用固定大小的递归状态计算相同的最终权重。
-
-这个前向算法是一个用来定义和核对更新含义的参照。它允许概念性地重算前缀，不意味着真实在线学习器获得了未来经验。代码仅在测试中运行这个慢版本，并逐前缀比较结果。
-
-<a id="traces-dutch"></a>
-
-## 4 · Dutch trace 与预测变化修正
-
-$$
-e_t=\gamma\lambda e_{t-1}+[1-\alpha\gamma\lambda e_{t-1}^\top x_t]x_t.
-$$
-
-把它写成 $e_t=\gamma\lambda(I-\alpha x_tx_t^\top)e_{t-1}+x_t$，可以看出当前监督更新会改变既有信用方向，不能只是继续相加。这是 Dutch trace 的线性修正。
-
-$$
-\begin{gathered}\delta_t=R_{t+1}+\gamma w_t^\top x_{t+1}-w_t^\top x_t,\\ w_{t+1}=w_t+\alpha(\delta_t+v_t-v_{\rm old})e_t-\alpha(v_t-v_{\rm old})x_t.\end{gathered}
-$$
-
-$v_{\rm old}$ 保存上一时刻在当前状态上作出的旧预测。后两项的组合补偿在线权重变化；只有换成 Dutch trace 而保留普通 TD 更新，并不构成完整 true-online 算法。
-
-**算法：常数步长 True-online TD(lambda)**
-
-1. 回合开始：初始化 $e=0,v_{\rm old}=0$；保留待学习权重
-1. 用旧权重计算 $v=w^\top x,v'=w^\top x'$，再计算 $\delta$
-1. 用旧 trace 的内积计算 Dutch 修正，然后写入新 trace
-1. 执行完整的 true-online 权重更新
-1. 保存 $v_{\rm old}\leftarrow v'$；真正终止后清除回合 trace
-
-本页公式使用常数步长。逐时间改变步长时，原论文给出另外的缩放 trace 形式，不应在未核对的情况下随意替换。线性精确等价也是有限轨迹的算法等价，不等于在所有任务上都保证更高回报。
-
-为什么 Dutch trace 会含步长？可以先完全去掉 TD，考虑更简单的监督问题：依次观察 $x_0,\ldots,x_{T-1}$，最后才得到所有预测共同要预测的标量结果 $G$。概念算法等到 $G$ 可用，再按原顺序执行线性回归更新。一次更新可写为 $w^+=(I-\alpha xx^\top)w+\alpha xG$；过去的更新会被后来的更新继续变换，所以不能仅累加 $\alpha x$。
-
-$$
-\begin{aligned}a_{-1}&=w_0,\quad z_{-1}=0,\\a_t&=a_{t-1}-\alpha x_t(x_t^\top a_{t-1}),\\z_t&=z_{t-1}+\alpha[1-x_t^\top z_{t-1}]x_t,\\w_T&=a_{T-1}+z_{T-1}G.\end{aligned}
-$$
-
-对“当前权重=与 G 无关的部分+G 的系数”作归纳即可得到递推。这里只讨论共同的最终结果 G，不是任意奖励序列的通用 MC 公式。z 是已把步长吸收进去的 Dutch 型迹。
-
-每次只需两个向量和若干内积，内存与每步计算都是 $O(d)$，不随等待 $G$ 的时间 $T$ 增长。不要显式构造 $d\times d$ 矩阵：先算 $x^\top a$ 或 $x^\top z$，再乘 $x$。最终获得 $G$ 时也只做 $O(d)$ 合并。重复特征 $x=1$、$\alpha=.5$、$w_0=0$ 时，$z$ 依次为.5、.75；$G=1$ 后最终参数为.75，与逐次回归相同。
-
-这个推导说明资格迹不限于 TD：它也能是对一个清楚但昂贵的前向算法做精确递归压缩。span-independent 指资源需求不随延迟跨度增长，不指反馈提前到达。非线性网络更新不再具有上述关于 G 的仿射形式，因此不能原封不动地继承这组精确等价。
-
-<a id="experiment-true_online_td"></a>
-
-### 实验：实验 · True-online 的“精确”，不表示误差始终最小
-
-Dutch trace 与预测变化修正为什么是等价性要求，却不是性能保证？
-
-**环境与可用信息。** 五个非终止状态的等概率随机游走，左终点奖励 0、右终点奖励 1，γ=1。每回合从中间状态开始，价值从零开始。代码用五维 one-hot 线性表示，表格只是该线性情形的特例。
-
-**设置。** 种子 0–4，各 1200 个真实转移，α=0.1。True-online TD 使用 λ=0.8，初始 Dutch 迹与旧预测均为零；对照为相同表格、相同轨迹的 TD(0)。终点奖励先更新所有有资格的参数，再清迹和旧预测。
-
-**检验的机制。** Dutch 迹校正有限步长下重复访问的影响；另一个参数修正处理相邻时刻预测已经变化的事实。两项共同对应在线前向视图。它没有取消 λ 带来的偏差、方差和传播速度折中。
-
-**测量。** 纵轴是五状态相对于解析真值的 RMSE。该误差曲线检验学习过程，不检验前后向等价本身；等价必须通过逐前缀参数对照或严格推导验证。
-
-```bash
-python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
-```
-
-在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
-
-![实测学习曲线](https://yingwen.io/crl-code/results/true_online_td/curves.svg)
-
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
-
-**结果分析。** 第 300 步，True-online TD 的平均 RMSE 为 0.0791，TD(0) 为 0.2368，长程传播在早期有利；第 1200 步却为 0.0772 对 0.0465。早期较快不意味着固定 λ=0.8 在整个预算上都更准确。
-
-**结论边界。** 这里只用 one-hot 特征，尚未通过此实验展示重叠线性特征的优势，也没有与普通累积 TD(λ) 作同 λ 对照。更不能把线性 true-online 等价性直接移植到非线性网络。
-
-**继续实验。** 先令 λ=0，逐条核对它退化为 TD(0)。再选择含重复状态的短轨迹，以在线前向视图逐前缀核对 Dutch 更新；最后在相同 λ 下对照普通累积迹，避免把 λ 的效果误认为修正项的效果。
-
-[源码](../../implementations/classic/true_online_td.py) · [逐种子记录](https://yingwen.io/crl-code/results/true_online_td/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/true_online_td/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/true_online_td/curves.json)
-
-<a id="lesson-example"></a>
-
-## 5 · 重复状态的两步手算
-
-只有一个非终止状态，特征为 1。轨迹是“该状态、该状态、终止”，奖励依次为 0、1。取 $w_0=0,\gamma=\lambda=1,\alpha=0.5$。第一步没有误差，权重仍为 0，trace 为 1。
-
-第二步，普通累积 trace 变为 2，误差为 1，因此权重变为 1。Dutch trace 则是 $1+[1-0.5\times1]\times1=1.5$；本例预测变化修正为零，得到权重 0.75。
-
-$$
-\begin{aligned}w^{\rm forward}_1&=0+0.5(1-0)=0.5,\\ w^{\rm forward}_2&=0.5+0.5(1-0.5)=0.75.\end{aligned}
-$$
-
-完整前缀的前向过程对两个出现位置依次作目标为 1 的监督更新，因此得到 0.75，与 true-online 相同。普通累积迹把两次误差都按旧预测累加，得到不同答案。
-
-这不是说普通 TD 在这个小问题一定无法学习。例子只区分有限步长下的更新语义。把步长减小，两个结果更接近；把状态换成互不重叠的独立特征，也可能降低差异。
-
-上例中的预测变化修正恰好为零。现在仍让同一特征出现两次，但将奖励改为 1、2，取 $\lambda=0.5$，其余保持 $\alpha=0.5,\gamma=1,w_0=0$。第一步就改变了预测，于是能分别看到 Dutch trace 与权重修正的作用。
-
-![同一特征两次出现；首步已更新权重，第二步Dutch迹为1.25，TD增量0.9375之外还需0.0625的预测变化修正，最终权重1.5。](https://yingwen.io/crl-figures/concept-credit3-dutch-correction.svg)
-
-灰段是保留下来的量，蓝段是 TD 增量，橙段是预测变化修正。底部从回合初始权重 0 重算同一已见前缀，两个更新目标都是 2，得到相同终点 1.5。两个方法此时都只使用已发生的两步经验。原创精确计算；公式对应 Sutton 与 Barto §12.5 及 van Seijen 等 Algorithm 2。
-
-第一步后 $w_1=0.5,e_0=1$，保存的下一状态旧预测仍为 0，因为它在权重更新前计算。第二步的当前预测为 0.5，所以 $v_1-v_{\rm old}=0.5$。Dutch 迹为 $e_1=0.5\times1+[1-0.5\times0.5\times1]=1.25$，TD 误差为 $2-0.5=1.5$。
-
-$$
-w_2=0.5+\underbrace{0.5\times1.5\times1.25}_{0.9375}+\underbrace{0.5\times(0.5-0)\times(1.25-1)}_{0.0625}=1.5.
-$$
-
-最后一项是 $\alpha(v_t-v_{\rm old})(e_t-x_t)$。只改 Dutch 迹却删去这项，得到 1.4375；普通累积迹为 1.5，对应参数结果 1.625。三个数的区别是算法语义，不是三个方法的性能排序。
-
-独立检查使用在线前向定义。第二步到达后，第一个出现位置的 interim λ-return 为 $0.5\times1+0.5\times(1+2)=2$，第二个位置的目标也为 2。从原始 $w_0=0$ 顺序回归，两次参数更新是 $0\to1\to1.5$。附带测试还用不同的非二值特征、步长与 λ，逐前缀核对两种计算，而不只比较最后一步。
+这些已有结果使用固定表示、固定策略与普通累积迹。它们把最佳可达误差、固定点偏差和有限经验误差分开，却没有测量 true-online 在该任务上的效果。下一节用两个独立实现逐前缀检查 true-online 的更新语义；之后再撤掉固定特征条件，观察旧梯度怎样失配。若表示或环境改变，需相应记录目标漂移、梯度方向与真实更新，才知道哪条固定点分析仍可使用。
 
 <a id="lesson-code"></a>
 
 ## 6 · 两个独立实现逐前缀对照
+
+先运行[走廊标准库脚本](../../tutorials/shared_gradient_walkthrough.py)：它打印每步旧预测、迹、TD 增量与预测变化修正，并另写一个完全不使用资格迹的前向重算。比较每个前缀，再尝试 λ=0 的退化情形，能够定位时序错误。
+
+两步固定轨迹；无训练或外部依赖
+
+```sh
+python3 tutorials/shared_gradient_walkthrough.py
+python3 tutorials/shared_gradient_walkthrough.py --json
+```
 
 True-online 更新与慢速在线前向参照
 
@@ -569,6 +674,10 @@ $$
 
 这是普通非线性梯度迹实际保存的对象：每个历史状态在当时参数下的梯度。它通常不等于把所有历史状态在当前参数 $w_t$ 下重新求导后再相加。
 
+仍用走廊的奖励与时间顺序，只换成一个非线性预测器：$\hat v(A,\theta)=\theta^2,\hat v(B,\theta)=\theta$，初值 $\theta_0=0.5$。第一步 $\delta_0=2+0.5-0.25=2.25$，A 的梯度为 1，步长 0.5 使 $\theta_1=1.625$。到 B 时，普通梯度迹是 $0.5\times1+1=1.5$；若把历史 A 用当前参数重新求导，会得到 $0.5\times(2\times1.625)+1=2.625$。环境没有变化，迹的差别已由参数变化产生。这次替换也改变了函数类，所以该数字只检查旧梯度与当前梯度的含义。
+
+在线性走廊中，特征不随权重改变，两个向量和一个旧预测就能精确压缩前向重算。非线性例子要重新获得 A 的当前梯度，通常需要再次取得 A 的输入并计算导数；长轨迹下重算全部历史会失去固定资源的优点。持续流中的问题因而更具体了：给定每步时间与内存，多久以前的梯度仍适合承担当前信用？可先固定轨迹与奖励，分别记录旧梯度和当前梯度的夹角、预测变化及每步代价，再加入环境变化，避免把表示变化与任务变化混为一谈。
+
 当表示变化缓慢时，旧梯度方向可能仍有用；变化快速时，当前误差沿旧方向更新可能已不能改变当初那项预测，甚至改变相反。较长迹同时扩大信用范围与梯度陈旧程度。缩短 λ、限制更新量或重新计算历史梯度处理的是不同折中；后者又会引入存储和计算成本。不能仅在代码中把线性 x 换成自动微分梯度，就宣称保留 true-online 的精确前向等价。
 
 持续变化时，较长 trace 可以更快传递延迟反馈，也可能跨越动力学变化而把新误差作用于旧情境。实验需要改变奖励延迟和环境变化频率，记录恢复速度与 trace 范数，不能只在固定短回合中选一个 lambda。
@@ -581,6 +690,10 @@ $$
 - 能否把 $v_{\rm old}$ 存成更新后对下一状态的预测？答案：不能；true-online 修正需要更新前计算的下一预测。
 - 普通累积迹与冻结权重前向更新相等，为何在线仍不同？答案：冻结权重推导中所有价值和梯度不变，在线更新破坏了这一前提。
 - $\lambda=0$ 时 Dutch trace 和修正如何退化？答案：$e_t=x_t$，两个预测变化修正相抵，剩下普通 TD(0)。
+
+## 从本章进入实践
+
+[预测与控制](https://yingwen.io/zh/continual-rl/code/#practice-prediction)：学会预测更多事情，什么时候会改变行动？
 
 
 
@@ -601,12 +714,14 @@ python3 examples/approximation_textbook_lab.py test
 
 ## 参考文献与实现
 
-- [Sutton & Barto · Reinforcement Learning: An Introduction, 2nd edition](http://incompleteideas.net/book/the-book-2nd.html)：Part II 第 9–13 章。原书建立函数逼近预测、控制、离策略稳定性、资格迹与策略梯度的共同框架。
+- [Sutton & Barto · Reinforcement Learning: An Introduction, 2nd edition](http://incompleteideas.net/book/the-book-2nd.html)：本章前后向定义对应 §§12.1–12.4；完整 true-online、Dutch 与二值 replacing trace 对应 §12.5；共同末端目标的 MC 递归压缩对应 §12.6。在策略动作价值扩展见 §12.7。
 
 - [van Seijen et al. · True Online Temporal-Difference Learning](https://jmlr.org/papers/v17/15-599.html)：在线前向定义、Dutch trace 和精确等价的原始期刊论文；Algorithm 2 对应本文的常数步长更新。
 
 - [Mahmood · True-online TD random MDP experiments](https://github.com/armahmood/totd-rndmdp-experiments)：论文作者的随机 MDP 实验代码，包含 accumulating、replacing 与 true-online 对照。先读 pysrc 和 pysrctest，再查看完整实验脚本。本文没有重跑这些大批量实验。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-traces#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-traces#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-approximation-traces)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -622,6 +737,12 @@ python3 examples/approximation_textbook_lab.py test
 持续学习中的研究问题：在每步计算有界的条件下，保留多少过去影响才有用？替换特征时，怎样处理与旧特征绑定的资格迹、优化器动量和元梯度？
 
 [多步回报](../tabular/multistep.md) → [资格迹与等价条件](traces.md) → [GAE 与 actor–critic](../deep/policy-gradient.md) → [在线信用分配](../../textbook/credit.md)
+
+
+### 可进一步检验的问题
+
+- [05 · 远处的反馈应该怎样更新早先的决策与内部计算？](../../docs/research-atlas.md#research-temporal-credit)：在线前向参考、荷兰迹和预测差修正说明精确等价依赖哪些版本条件，随后才能研究非线性与变动表示。
+- [07 · 哪些学习参数应当适应，怎样评价学出来的更新规则？](../../docs/research-atlas.md#research-learning-rules)：资格迹规定本次误差怎样改变权重；学习步长或迹长度则要继续追踪这些更新怎样影响后续评价。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

@@ -13,6 +13,14 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [模型与后果预测：学什么，才能用于下一次决策？](models.md)：明确模型预测的对象、时长和当前版本。
+- [持续控制：比较策略与学习智能体](control.md)：把计算成本和实际行动放回同一评价问题。
+
+
 ### 规划的操作性定义
 
 用模型得到的后果，而非新发生的一次真实转移，改善价值、策略或当前动作选择。模型可以是已知模拟器，也可以是从经验学来的；“有网络”不意味着“有模型”。
@@ -115,7 +123,7 @@ $\hat P,\hat r$ 为当前模型，$H$ 为规划时域，$\hat V$ 为尾值，$\g
 
 ## 1. 用已有的后果知识改善决策
 
-一条走廊尽头的奖励由 1 变成 10。只做一步表格 TD、没有资格迹或经验重放时，前面状态通常要等再次访问才获得新价值的影响。资格迹可以更新近期经历过的状态；已学模型则还允许查询未在近期经历的前驱。规划的价值是利用已有后果知识重新计算决策。它没有创造新的环境证据：如果门已经关上但模型仍说门开着，更多想象仍在求解错误的路线。
+一条走廊尽头的奖励由 1 变成 10。只做一步表格 TD、没有资格迹或经验重放时，前面状态通常要等再次访问才获得新价值的影响。资格迹可以更新近期访问过的状态；已学模型则还允许查询未在近期访问的前驱。规划的价值是利用已有后果知识重新计算决策。它没有创造新的环境证据：如果门已经关上但模型仍说门开着，更多想象仍在求解错误的路线。
 
 | 算法线 | 模型用于什么 | 主要修改对象 |
 | --- | --- | --- |
@@ -127,6 +135,44 @@ $\hat P,\hat r$ 为当前模型，$H$ 为规划时域，$\hat V$ 为尾值，$\g
 | Dreamer 式想象学习 | 在潜在模型中产生 rollout | 可直接部署的 actor 和 critic |
 
 先从确定、平稳的有限 MDP 开始，允许环境重置和表格存储。进入持续学习以后，模型与目标可能一起变化，规划还会通过动作选择影响后续数据。因此，除了评价模型上的计算结果，也要记录每步计算预算、知识更新时间和真实环境回报。
+
+<a id="lesson-replanning"></a>
+
+### 1.1 模型已经修正，起点何时改选路线
+
+运输小世界给出一个可以逐次看清的例子。目标 X、折扣 0.9；旧模型中，上路 S→A→X 的值为 0.9，下路 S→B→C→X 为 0.81。关闸使 A 转而通向物理终点 Y。智能体沿 S→A→Y 得到两条新观察，将模型 A 的出口从 X 覆盖为 Y；此时价值表仍是旧值。模型更新与价值更新发生在两个不同对象上。
+
+$$
+Q_{k+1}(s,a)=\widehat r_g(s,a)+\gamma\bigl(1-\widehat d_g(s,a)\bigr)\max_bQ_k(\widehat s',b)
+$$
+
+本例用同步全备份：一轮中五个有效状态—动作对均读取同一份旧 $Q_k$，各查询一次模型，完成后一起替换为 $Q_{k+1}$。$k$ 是规划轮数，不是环境时间。
+
+以旧模型的固定点暖启动。第 1 轮，新模型把 $Q(A,\mathrm{cross})$ 从 $1$ 置为 $0$；S 的上路仍读取旧一轮的 A，所以保持 $0.9$。第 2 轮，S 才读到 A 的零值，上路变为 $0$，下路仍为 $0.81$，于是改走下路。从后往前的异步顺序可以在同一轮内传播，但那已经改变了调度；比较时应数实际模型调用，不能只比较名称都叫“一轮”的计算。
+
+![修正模型后的同步备份先改变A再改变S，上路价值第二轮降为零，真实回报同时从零升为0.81；旧模型曲线保持错误选择。](../assets/crl-figures/goal-model-planning-walkthrough-backups.svg)
+
+上图显示起点两个动作的值；下图用当前真实道路精确计算对应贪心策略的回报，未另采样评估轨迹。模型修正前后的分支共享旧 $Q$。每轮五次模型调用，新增真实数据始终是两步；修正分支在十次模型调用后改选下路，旧模型继续计算仍选上路。
+
+| 资源或信息 | 本例的明确计数 | 由谁使用 |
+| --- | --- | --- |
+| 历史真实转移 | $5$ 步，两条指定路线 | 只用于建立旧模型 |
+| 变化后真实转移 | $2$ 步：$S\to A\to Y$ | 其中一行给出新的出口后果 |
+| 回到起点 | 总计 $2$ 次允许的 reset | 数据协议；未计作动作或奖励 |
+| X 任务规划 | $5$ 次模型调用／轮；修正传播需 $10$ 次 | 更新持久保存的 $Q$ |
+| 当前真实回报 | 按完整道路精确计算；采样评估轨迹为 $0$ 条 | 只读诊断，不反馈给学习器 |
+
+继续调用旧模型，只会保持它对上路的错误偏好。这组暖启动对照中，更多规划并未让回报继续下降；它揭示的是计算不能替代缺失的环境证据。相反，拿到一条有信息的新后果也不等于计划立即更新完：还需要把变化传到实际作选择的位置。[Sutton 与 Barto 第 8 章 §8.1、§8.3](http://incompleteideas.net/book/the-book-2nd.html)分别讨论模型计算与错误模型；本例用固定记录把两种成本分开。
+
+可以先不运行新的训练，改一次调度练习：只允许两次模型调用，先备份 A，再备份 S 的上路，是否已经够改变起点决策？已有下路值保持 0.81 时答案是够；若下路模型或价值尚未学得，这个结论就需要额外数据与计算。由此可把下一研究问题写清：预算有限时，怎样识别最需要真实验证的模型条目，再把验证得到的变化送到最相关的决策？
+
+下载 [goal_model_planning_walkthrough.py](../tutorials/goal_model_planning_walkthrough.py)，在仓库根目录运行下列命令。它输出目标 A/X 的逐轮值和旧／修正模型两分支，并用有理数检验 0.9、0.81 与传播时序；没有随机训练或完整 Dyna 性能实验。
+
+Python 标准库；一个文件即可运行
+
+```sh
+python3 tutorials/goal_model_planning_walkthrough.py
+```
 
 <a id="lesson-derive"></a>
 
@@ -179,9 +225,24 @@ python3 implementations/average_systems/differential_dyna.py --steps 1200 --seed
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/differential_dyna/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-differential_dyna.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：冻结贪心策略的精确平均奖励。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 固定当前 Q 所选的贪心策略，在真实三状态模型上求其长期平均奖励。真实模型只用于评价。value 不是算法内部的 gain_estimate，也不是带探索的行为所收到的平均奖励。
+
+**step：怎样计时。** step 是真实交互数。两方法每步都直接更新 Q 和率；Differential Dyna 另做5次经验模型期望备份。environment_updates、model_backups、total_backups 分别记录这两类更新及其和，尚未计模型维护与求和的全部运行时间。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 全程行为奖励率另看 experienced_reward_rate：它已把从第1步开始的探索与学习成本纳入平均，不应再次平均各稀疏检查点。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算奖励率差 optimal_gain − value 和各更新计数。experienced_reward_rate × step 给出累计真实奖励；模型奖励不加入该总量。日志未保存 Q 表与每步奖励，不能仅凭冻结策略的 value 恢复策略或逐步行为轨迹。
+
+计算位置：[average_systems/differential_dyna.py](../implementations/average_systems/differential_dyna.py) · [average_systems/differential_q_multistate.py](../implementations/average_systems/differential_q_multistate.py) · [average_systems/_common.py](../implementations/average_systems/_common.py)
+
+</details>
 
 **结果分析。** 第600步Dyna为0.5970，纯真实更新为0.5320±0.0958；第1200步二者均为0.5970。规划帮助这个有限任务更早找到较好策略，没有提高其最终可达到的最优奖励率。
 
@@ -307,9 +368,24 @@ python3 implementations/extended_knowledge/option_value_iteration.py --steps 120
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/option_value_iteration/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-option_value_iteration.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 model_backups。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：model_backups。纵轴：冻结精确最优价值最大误差。每种方法 1200 model_backups；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 七个状态的当前规划值与已知模型下的最优值逐项相减，取最大绝对误差。终止状态的参照值为0。
+
+**step：怎样计时。** step 是一次状态最大化备份，不是环境交互。同一次状态备份评估多少原始动作和 option，另见 primitive_backups、option_backups；模型预计算也不含在 step 中。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算各记录时刻的跨种子均值、样本标准差和末点误差；没有保存全部预测向量，不能仅凭 value 重新计算状态权重或逐状态误差。
+
+计算位置：[extended_knowledge/option_value_iteration.py](../implementations/extended_knowledge/option_value_iteration.py) · [extended_knowledge/primitive_value_iteration.py](../implementations/extended_knowledge/primitive_value_iteration.py) · [extended_knowledge/_common.py](../implementations/extended_knowledge/_common.py)
+
+</details>
 
 **结果分析。** 40次状态备份时，有option的平均最大误差为0.0854，原始动作版本为0.2580；600次时两者都达到数值零误差。它展示传播速度差异，而不是最终策略质量差异。
 
@@ -387,7 +463,7 @@ python3 implementations/continual/learned_model_mpc.py --steps 1200 --seeds 0 1 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/learned_model_mpc/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：原始平均奖励冻结策略折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 奖励降低后的最终检查点，五步规划回报为0.37015，一步版本为−0.2；后者对应持续支付−0.01而不抵达终点的循环。五种子这里得到同样冻结策略，并不意味着其训练轨迹相同。
 
@@ -788,6 +864,10 @@ $$
 训练时想象与决策时搜索不是同一算法接口。比较时要同时限定模型调用和环境交互。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-planning) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=planning) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=planning)
+
+## 从本章进入实践
+
+[技能与规划](https://yingwen.io/zh/continual-rl/code/#practice-skills)：一个多步行为怎样成为可学习、可预测、可规划的动作？
 
 ## 持续强化学习：近期研究与原始实现
 

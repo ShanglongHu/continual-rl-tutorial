@@ -1,16 +1,23 @@
 # 最大熵控制与 Soft Actor–Critic
 
-把多样性纳入目标，会怎样改变 Bellman 方程、策略改善和实际训练？先用离散精确解推清楚，再给出连续 SAC 的完整接口。
+持续运行 SAC 时，温度改变的是哪个优化问题？怎样区分 soft 价值、外部任务收益，以及长期学习中保留随机性的实际作用？
 
 ## 本章内容
 
-- 从带熵约束的最优化推导 softmax 与 log-sum-exp。
-- 辨认 soft Q、策略熵、双 critic 和自动温度分别起什么作用。
-- 实现离散熵正则 actor 更新，并能检查连续 SAC 的 log-prob 和梯度路径。
+- 从给定 Q 的 softmax 改善，区分固定温度目标与自动温度的约束目标。
+- 核对 critic、actor、温度三类更新各自的固定量和梯度路径。
+- 沿既有离散算例说明 soft value 的含义，并将 SAC 训练循环接到持续控制评价。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [最大熵连续控制：SAC 的价值、密度与温度](../foundations/deep/entropy-control.md)：完整soft目标、密度、温度与SAC循环在第二册。
+
 
 ### 一条经验
 
@@ -106,15 +113,17 @@ $\gamma<1$ 是折扣，$\tau>0$ 是熵温度，$\mathcal H$ 为离散熵或明�
 
 <a id="lesson-setting"></a>
 
-## 1 · 熵正则化控制目标
+## 1 · 温度属于目标，学习率属于更新
+
+第二册的 [SAC：价值、密度与温度](../foundations/deep/entropy-control.md)完整推导连续动作密度、重参数化与温度更新。本章保留精确离散改善和三类梯度的接口，进一步区分：熵正则规定希望采取怎样的行为，自动温度规定怎样适应约束，生命期评价则规定这种行为和学习付出的代价如何计分。
 
 $$
 J_\tau(\pi)=\mathbb E_\pi[\sum_{t\ge0}\gamma^t(R_{t+1}-\tau\log\pi(A_t\mid S_t))]
 $$
 
-期望下 −log$\pi$ 就是熵。$\tau$ 大更愿意保留动作多样性；$\tau$→0 才回到普通奖励最大化的相应极限。用 entropy bonus 改变了优化问题，而不仅是修复梯度。
+先固定平稳 MDP、$0\le\gamma<1$ 与 $\tau>0$，并假设回报可积。对离散动作，期望下 $-\log\pi$ 就是熵。$\tau$ 调整奖励和熵的相对权重；参数学习率则决定靠近这个目标的速度。改变前者会改变最优策略问题。
 
-先假设离散动作、已知一组当前 Q(s,a)，求一个状态上最好的概率分布。之后再将这个策略改善步与从 replay 学 Q 交替。soft Q 的常见约定包含当前外部奖励与未来熵，但不包含当前动作自身的 −$\tau$log$\pi$；soft V 才在该状态对 Q−$\tau$log$\pi$ 求期望。
+给定当前 Q(s,a)，先解一个状态上的概率分布；再将这个改善步与学习 Q 交替。soft Q 包含当前外部奖励与未来熵，不含当前动作自身的 −$\tau$log$\pi$；soft V 在该状态对 Q−$\tau$log$\pi$ 求期望。固定温度的精确分析为后续近似更新提供参照；自动温度还需另行声明目标熵与约束。
 
 <a id="lesson-derive"></a>
 
@@ -126,7 +135,7 @@ $$
 
 这是期望价值加熵的优化。对正概率的内部解加乘子 $\eta$，令导数 $Q_a$−$\tau$(log $p_a$+1)+$\eta$=0。
 
-![三个固定动作价值下，三种温度对应的精确 softmax 策略。](https://yingwen.io/crl-figures/concept-research-soft-policy.svg)
+![三个固定动作价值下，三种温度对应的精确 softmax 策略。](../assets/crl-figures/concept-research-soft-policy.svg)
 
 每行价值均为 (0,1,2)，仅温度改变。较高温度使动作概率更均匀；它增加目标中的熵权重，不意味着每个随机动作都有较高信息价值。计算脚本 research-mechanisms.mjs。
 
@@ -134,7 +143,7 @@ $$
 p_a^*=\frac{\exp(Q_a/\tau)}{\sum_b\exp(Q_b/\tau)},\qquad V^*(s)=\tau\log\sum_a\exp(Q(s,a)/\tau)
 $$
 
-先解出 p∝exp(Q/$\tau$)，再归一化。把 logp=Q/$\tau$−logZ 代回目标，Q 项抵消，剩下 $\tau$logZ。$\tau$>0 下解严格正；计算时减掉最大 Q 防止溢出。
+这里的星号只表示给定这一组 Q 时的最优状态内分布与目标值；Q 尚未必是真实最优价值。先解出 p∝exp(Q/$\tau$)，再归一化。把 logp=Q/$\tau$−logZ 代回目标，Q 项抵消，剩下 $\tau$logZ。$\tau$>0 下解严格正；计算时减掉最大 Q 防止溢出。
 
 $$
 Q^\pi(s,a)=\mathbb E[R_{t+1}+\gamma V^\pi(S_{t+1})],\quad V^\pi(s)=\mathbb E_{a\sim\pi}[Q^\pi(s,a)-\tau\log\pi(a\mid s)]
@@ -208,7 +217,7 @@ $$
 
 **检验的机制。** sac.py 的 critic target 使用当前随机策略和目标双 Q；actor 更新冻结 Q 参数但保留 Q 对动作的导数。_common.py 的 GaussianActor 在 tanh 后校正 log-prob。对照 DDPG 使用确定性 actor、单 critic 和标准差 0.15 的动作噪声。
 
-**测量。** 每 60 步用固定评价种子 991 的 12 个回合评价。SAC 执行 tanh(mean)，不是随机动作；纵轴是未折扣的外部奖励总和，不含熵项。
+**测量。** 初始化及之后每 60 个训练步，用独立环境 seed 991 产生的同一组 12 个初态各评价 40 步。SAC 执行 tanh(mean)，不是随机动作；纵轴为未折扣外部回报，不含熵。21 次评估使每个训练 seed 额外使用 10080 个环境步，不进入 replay，也不计入横轴。曲线不能还原训练中随机行为获得的奖励。
 
 ```bash
 python3 implementations/deep/sac.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
@@ -216,13 +225,28 @@ python3 implementations/deep/sac.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/deep-sac/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-deep-sac.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：训练环境步（独立评估交互另计）。纵轴：冻结策略的外部回报。每种方法 1200 训练环境步；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 actor，在种子991生成的同一组12个初态上各跑40步，平均未折扣外部回报。SAC 此处执行 tanh(mean)，没有抽样动作，也不把熵奖励加入评估。
+
+**step：怎样计时。** step 只数训练环境转移；评估交互另计。critic、actor 和 target 的更新数保存在独立字段，相同 step 不保证相同计算量。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结评估曲线并读取更新计数；没有逐步训练奖励，不能重建行为策略的生命期收益。12个初态的平均先在单次运行内完成。
+
+计算位置：[deep/ddpg.py](../implementations/deep/ddpg.py) · [deep/td3.py](../implementations/deep/td3.py) · [deep/sac.py](../implementations/deep/sac.py) · [deep/_common.py](../implementations/deep/_common.py)
+
+</details>
 
 **结果分析。** SAC 的平均评价回报从初始化 −21.609 变为第 600 步 −21.157，再到第 1200 步 −0.690；DDPG 对应为 −5.967、−4.474、−2.353。初期 SAC 明显更差，后期均值更高；DDPG 末端 seed 标准差约 2.350，不能只报两个终点数字。
 
-**结论边界。** actor 架构和初始行为分布不同，即使 seed 相同也不是完全同参数对照。这是两个完整方法的短任务比较，不隔离熵、双 Q 或随机策略的单项作用；也不覆盖自动温度和单次生命持续任务。
+**结论边界。** actor 架构和初始行为分布不同，即使 seed 相同也不是完全同参数对照。1200 步内各有 1169 轮 critic 与 actor 更新，但 SAC 每轮更新两个 Q，DDPG 只更新一个。这是完整方法比较，不能单独归因于熵、双 Q 或随机策略，也未检验自动温度或整个学习过程的行为收益。
 
 **继续实验。** 在同一网络、replay 和数据预算下比较固定温度的多个取值。分别报告随机行为外部收益、确定性评价和含熵目标，解释三者为何可能不同。
 
@@ -290,7 +314,7 @@ def train_soft_bandit(temperature=0.5, iterations=2000):
 
 <a id="lesson-branches"></a>
 
-## 7 · 熵正则、探索与持续学习的关系
+## 7 · 从 soft 改善到持续控制评价
 
 | 概念 | 和 SAC 的关系 | 必须分开的问题 |
 | --- | --- | --- |
@@ -300,7 +324,11 @@ def train_soft_bandit(temperature=0.5, iterations=2000):
 | 内在奖励 / RND | 在外部奖励之外增加学习信号 | 新奇不等于策略熵 |
 | CRL replay / plasticity | 影响长期训练数据与可训练能力 | SAC 本身不保证长期适应与保留 |
 
-在持续环境中，陈旧 critic 会让 actor 追逐过时值；自动温度只能调整随机性，不能识别哪部分世界已改变。先用固定数据测试价值跟踪，再分析策略诱导分布，能避免把所有失败归因于熵系数。
+两个动作的例子已经显示：soft value 可以超过最大的外部 Q，因为它还包含熵。若持续任务按外部奖励总和评价，训练时的熵项是一项算法选择，评价仍须单独累计真实奖励；若任务本身要求最小平均熵，就要共同声明该约束及其满足程度。Haarnoja 等的自动温度由后者的对偶问题导出，并非对任意变化任务自动找到最佳探索策略。
+
+因此应先决定共同的评价问题，再比较固定温度与自动温度的完整学习器。Replay、critic、actor、温度和优化器都按各自规则继续更新，探索损失与计算预算进入同一生命期。若每种算法事后改用自己的熵权重给自己计分，soft return 的差异就混合了行为变化与评分变化。
+
+回到变化后的世界，陈旧 critic 可能让 actor 追逐旧后果；熵约束满足也不会指出哪条预测错了。固定数据上的 critic 检查可以定位更新问题，闭环收益才能进一步判断动作带来的新经验是否有用。[探索章](../textbook/exploration.md)继续区分动作随机性、信息获得与任务收益，[持续控制章](../textbook/control.md)则规定比较对象和预算。
 
 <a id="lesson-check"></a>
 
@@ -330,7 +358,7 @@ actor 更新时冻结 critic，是不是要对 min Q detach？不是。冻结的
 
 连续动作中，策略承担动作搜索。熵、双评论家与回放各有作用，不能合并为一个“稳定化技巧”。
 
-[分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-soft-control) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=soft-control) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=soft-control)
+[分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-soft-control) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=soft-control) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=soft-control)
 
 ## 持续强化学习：近期研究与原始实现
 

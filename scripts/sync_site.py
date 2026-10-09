@@ -25,24 +25,74 @@ def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def foundation_groups(lessons: list[dict], track: str) -> list[tuple[str, list[dict]]]:
+    """Use exported editorial roles, never infer roles or numbers from sort keys."""
+    rows = sorted((lesson for lesson in lessons if lesson["track"] == track), key=lambda lesson: lesson["order"])
+    for lesson in rows:
+        if lesson.get("kind") not in {"core", "branch"} or "displayOrdinal" not in lesson:
+            raise ValueError("Stale lesson metadata; rebuild site export with kind/displayOrdinal: " + lesson["id"])
+        ordinal = lesson["displayOrdinal"]
+        if lesson["kind"] == "branch" and ordinal is not None:
+            raise ValueError("Research branches must not have chapter numbers: " + lesson["id"])
+        if lesson["kind"] == "core" and (type(ordinal) is not int or ordinal < 1):
+            raise ValueError("Core chapter numbers must be positive integers: " + lesson["id"])
+    core = [lesson for lesson in rows if lesson["kind"] == "core"]
+    branches = [lesson for lesson in rows if lesson["kind"] == "branch"]
+    if [lesson["displayOrdinal"] for lesson in core] != list(range(1, len(core) + 1)):
+        raise ValueError("Core chapter numbers must be consecutive within track: " + track)
+    return [("核心算法与训练系统" if track == "deep" else "建议的基础阅读顺序", core), ("并列研究分支", branches)]
+
+
+def foundation_links(lessons: list[dict], prefix: str = "") -> str:
+    def entry(lesson):
+        label = (f"第 {lesson['displayOrdinal']} 章 · " if lesson["kind"] == "core" else "") + lesson["title"]
+        return f"- [{label}]({prefix}{lesson['path'].rstrip('/').split('/')[-1]}.md)"
+    return "\n".join(entry(lesson) for lesson in lessons)
+
+
 def safe_target(value: str) -> str:
     path = PurePosixPath(value)
-    if not path.parts or path.is_absolute() or ".." in path.parts or path.parts[0] not in {"examples", "docs", "data", "textbook", "tutorials", "foundations", "algorithms"}:
+    if not path.parts or path.is_absolute() or ".." in path.parts or path.parts[0] not in {"examples", "docs", "data", "textbook", "tutorials", "foundations", "algorithms", "assets"}:
         raise ValueError("Unsafe generated target: " + value)
+    if path.parts[0] == "assets" and not re.fullmatch(r"assets/crl-figures/[A-Za-z0-9_-]+(?:\.mobile)?\.svg", value):
+        raise ValueError("Unsafe figure target: " + value)
     if not (ROOT/path).resolve().is_relative_to(ROOT.resolve()):
         raise ValueError("Generated target escapes repository: " + value)
     return path.as_posix()
 
 
-def rewrite_markdown(text: str, source: str, target: str, links: dict[str, str], programs: set[str], anchors: dict[str, set[str]] | None = None) -> str:
+def rewrite_markdown(text: str, source: str, target: str, links: dict[str, str], programs: set[str], anchors: dict[str, set[str]] | None = None, published_tutorials: set[str] | None = None, published_figures: dict[str, str] | None = None) -> str:
+    # Manifest-declared sources may not exist until the first sync completes.
+    # Confinement still applies if an existing ancestor is an external symlink.
+    published_tutorials = published_tutorials or set()
+    published_figures = published_figures or {}
     def rewrite(match):
         href = match.group(1)
         absolute = urljoin(SITE + "download/" + source, href)
+        original = urlsplit(href)
+        # Chapter prose can carry links relative to its HTML page rather than
+        # the download endpoint (including inside combined chapter exports).
+        # Recover only a page explicitly declared by the export manifest.
+        if not original.scheme and not original.netloc and original.path.startswith("../"):
+            page = re.sub(r"^(?:\.\./)+", "", unquote(original.path))
+            if page in links and not page.startswith("download/"):
+                absolute = urljoin(SITE, page)
+                absolute = urlsplit(absolute)._replace(query=original.query, fragment=original.fragment).geturl()
         parts = urlsplit(absolute)
         if parts.netloc != "yingwen.io" or parts.scheme not in {"http", "https"}:
             return match.group(0)
         if parts.path.startswith("/crl-figures/"):
-            # Figures and their data remain website assets, not repository files.
+            # Only manifest-declared original SVGs become offline repo assets.
+            # Third-party, old unbundled figures and data keep online semantics.
+            try:
+                original_path = unquote(urlsplit(href).path, errors="strict")
+                destination = published_figures.get(original_path)
+                if destination and not parts.query and re.fullmatch(r"/crl-figures/[A-Za-z0-9_-]+(?:\.mobile)?\.svg", original_path):
+                    destination = safe_target(destination)
+                    relative = posixpath.relpath(destination, posixpath.dirname(target))
+                    return "](" + relative + ("#" + parts.fragment if parts.fragment else "") + ")"
+            except (OSError, RuntimeError, ValueError, UnicodeError):
+                pass
             return "](" + parts._replace(scheme="https").geturl() + ")"
         if parts.path.startswith("/crl-code/"):
             # Only inspect published Python source roots. Download bundles,
@@ -54,14 +104,14 @@ def rewrite_markdown(text: str, source: str, target: str, links: dict[str, str],
                     decoded = unquote(parts.path[len("/crl-code/"):], errors="strict")
                     asset = PurePosixPath(decoded)
                     safe = (not asset.is_absolute() and bool(asset.parts)
-                            and asset.parts[0] in {"implementations", "tests"}
+                            and asset.parts[0] in {"implementations", "tests", "tutorials"}
                             and asset.suffix == ".py"
                             and not any(piece in {".", ".."} for piece in original_path.split("/"))
                             and ".." not in asset.parts
                             and not any(char in decoded for char in ("\\", "\x00")))
                     if safe:
                         resolved = (ROOT / asset).resolve()
-                        if resolved.is_relative_to(ROOT.resolve()) and resolved.is_file():
+                        if resolved.is_relative_to(ROOT.resolve()) and (resolved.is_file() or asset.as_posix() in published_tutorials):
                             relative = posixpath.relpath(asset.as_posix(), posixpath.dirname(target))
                             return "](" + quote(relative, safe="/.-_~") + ("#" + parts.fragment if parts.fragment else "") + ")"
                 except (OSError, RuntimeError, ValueError, UnicodeError):
@@ -81,10 +131,62 @@ def rewrite_markdown(text: str, source: str, target: str, links: dict[str, str],
         return "](" + absolute + ")"
 
     text = re.sub(r"\]\(([^\s)]+)\)", rewrite, text)
+    rewritten_tutorials = set()
     def command(match):
-        name = match.group(2)
-        return match.group(1) + ("examples/" if name in programs else "") + name
-    return re.sub(r"\b(python(?:3)?\s+)([A-Za-z0-9_]+\.py)\b", command, text).replace('-r deep_requirements.txt','-r examples/deep_requirements.txt')
+        script = match.group(2)
+        name = script.removeprefix("public/crl-code/tutorials/")
+        if script == name and name in programs:
+            return match.group(1) + "examples/" + name
+        # Website readers download these single files; repository readers run
+        # from ROOT. Rewrite an existing or manifest-declared tutorial, never
+        # an unknown filename or a symlink escaping the checkout.
+        try:
+            tutorial = (ROOT / "tutorials" / name).resolve()
+            if tutorial.is_relative_to(ROOT.resolve()) and (tutorial.is_file() or 'tutorials/'+name in published_tutorials):
+                rewritten_tutorials.add(name)
+                return match.group(1) + "tutorials/" + name
+        except (OSError, RuntimeError, ValueError):
+            pass
+        return match.group(0)
+    text = re.sub(r"\b(python(?:3)?\s+)((?:public/crl-code/tutorials/)?[A-Za-z0-9_-]+\.py)\b", command, text)
+    # A website reader downloads one file; a checkout reader runs from ROOT.
+    # Adapt only the prose attached to a rewritten tutorial command or its
+    # repository-relative link, not unrelated author-project instructions.
+    paragraphs = text.split('\n\n')
+    for index, paragraph in enumerate(paragraphs):
+        next_paragraph = paragraphs[index + 1] if index + 1 < len(paragraphs) else ''
+        for name in rewritten_tutorials:
+            local_link = re.search(r'\]\((?:\.\./)*tutorials/' + re.escape(name) + r'\)', paragraph)
+            has_command = 'tutorials/' + name in paragraph and re.search(r'\bpython3?\s', paragraph)
+            next_command = next_paragraph.startswith('```') and 'tutorials/' + name in next_paragraph
+            if local_link or has_command or next_command:
+                paragraph = paragraph.replace('在文件所在目录', '在仓库根目录').replace('在保存文件的目录', '在仓库根目录')
+                paragraph = paragraph.replace('保存到空目录后运行', '在仓库根目录运行')
+                paragraph = paragraph.replace('将这个单文件保存为 ' + name, '仓库中的文件为 `tutorials/' + name + '`')
+        paragraphs[index] = paragraph
+    text = '\n\n'.join(paragraphs)
+    # This parity check needs a website-only JSON, not a bundled repo asset.
+    # Keep that source boundary explicit while making the checkout command run.
+    comparison_block = (
+        '```bash\npython3 tutorials/offline_support_walkthrough.py --test\n'
+        'python3 tutorials/offline_support_walkthrough.py\n'
+        '# 在网站仓库根目录核对公开图中的数据：\n'
+        'python3 tutorials/offline_support_walkthrough.py \\\n'
+        '  --compare public/crl-figures/offline-support-data.json\n```')
+    if 'offline_support_walkthrough.py' in rewritten_tutorials and comparison_block in text:
+        text = text.replace(
+            '第一、二行在保存教程文件的目录运行；第三个命令在仓库根目录运行。',
+            '以下命令在教程仓库根目录运行。')
+        text = text.replace(comparison_block,
+            '```bash\npython3 tutorials/offline_support_walkthrough.py --test\n'
+            'python3 tutorials/offline_support_walkthrough.py\n```\n\n'
+            '如需核对公开图中的数据，先从[网站公开图数据]'
+            '(https://yingwen.io/crl-figures/offline-support-data.json)下载 JSON，'
+            '保存为教程仓库根目录的 `offline-support-data.json`，再运行下面的命令。'
+            '该 JSON 由网站提供，不随教程仓库分发。\n\n'
+            '```bash\npython3 tutorials/offline_support_walkthrough.py '
+            '--compare offline-support-data.json\n```')
+    return text.replace('-r deep_requirements.txt','-r examples/deep_requirements.txt')
 
 
 def expected_files(directory: Path) -> tuple[dict[str, bytes], dict]:
@@ -106,7 +208,15 @@ def expected_files(directory: Path) -> tuple[dict[str, bytes], dict]:
     for entry in entries:
         if entry["file"].startswith("intro-"):
             links["start/" + entry["file"][6:-3] + "/"] = entry["target"]
-    programs = {e["file"] for e in entries if e["file"].endswith(".py")}
+    programs = {e["file"] for e in entries if e["target"] == 'examples/'+e["file"] and e["file"].endswith(".py")}
+    published_tutorials = {safe_target(e["target"]) for e in entries if re.fullmatch(r'tutorials/[A-Za-z0-9_-]+\.py',e["target"])}
+    published_figures = {}
+    for entry in entries:
+        if entry['file'].startswith('figure--'):
+            name = entry['file'][len('figure--'):]
+            if not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.mobile)?\.svg', name) or entry['target'] != 'assets/crl-figures/'+name:
+                raise ValueError('Invalid figure declaration: '+entry['file'])
+            published_figures['/crl-figures/'+name] = safe_target(entry['target'])
     anchors = {}
     for entry in entries:
         if entry['file'].endswith('.md') and re.fullmatch(r'[A-Za-z0-9_.-]+', entry['file']):
@@ -122,7 +232,7 @@ def expected_files(directory: Path) -> tuple[dict[str, bytes], dict]:
         if digest(raw) != entry["sha256"]:
             raise ValueError("Source checksum mismatch: " + filename)
         target = safe_target(entry["target"])
-        content = rewrite_markdown(raw.decode("utf-8"), filename, target, links, programs, anchors).encode("utf-8") if filename.endswith(".md") else raw
+        content = rewrite_markdown(raw.decode("utf-8"), filename, target, links, programs, anchors, published_tutorials, published_figures).encode("utf-8") if filename.endswith(".md") else raw
         output[target] = content
         source_hashes[target] = entry["sha256"]
 
@@ -130,7 +240,7 @@ def expected_files(directory: Path) -> tuple[dict[str, bytes], dict]:
     for index, (chapter, slug) in enumerate(zip(LEGACY, LEGACY_SLUGS), 1):
         target = f"algorithms/{index:02d}-{slug}.md"
         raw = (directory / f"chapter-{chapter}.md").read_text(encoding="utf-8")
-        output[target] = rewrite_markdown(raw, f"chapter-{chapter}.md", target, links, programs, anchors).encode()
+        output[target] = rewrite_markdown(raw, f"chapter-{chapter}.md", target, links, programs, anchors, published_tutorials, published_figures).encode()
 
     def put(target, body):
         output[target] = (body.strip() + "\n").encode("utf-8")
@@ -138,15 +248,16 @@ def expected_files(directory: Path) -> tuple[dict[str, bytes], dict]:
     put("textbook/README.md", "# CRL 教材与算法\n\n[基础分册](../foundations/README.md) · [实验手册](../docs/experiment-handbook.md) · [研究问题](../docs/research-atlas.md)\n\n" + "\n".join(f"- [{c['title']}]({c['id']}.md)" for c in chapters))
     foundation_parts=[]
     for track, title in [("tabular", "表格强化学习 · Sutton Part I"), ("approximation", "函数逼近与经典进阶 · Sutton Part II"), ("deep", "现代深度强化学习 · 核心算法与并列研究分支")]:
-        rows=[l for l in lessons if l["track"] == track]
-        lines="\n".join(f"- [{l['title']}]({l['path'].rstrip('/').split('/')[-1]}.md)" for l in rows)
+        groups=foundation_groups(lessons, track)
+        rows=[lesson for _, group in groups for lesson in group]
+        lines=foundation_links(rows)
         if track == "deep":
             sections=[]
-            for label, group in [("核心算法", [l for l in rows if l['order']<=6]), ("并列研究分支", [l for l in rows if l['order']>=7])]:
-                sections.append("## "+label+"\n\n"+"\n".join(f"- [{l['title']}]({l['path'].rstrip('/').split('/')[-1]}.md)" for l in group))
+            for label, group in groups:
+                sections.append("## "+label+"\n\n"+foundation_links(group))
             lines="先掌握核心更新，再按信息、数据和目标条件选择分支。分支可以交叉组合，不是必须依次完成的关卡。\n\n"+"\n\n".join(sections)
         put(f"foundations/{track}/README.md", f"# {title}\n\n{lines}\n\n[全部基础分册](../README.md) · [进入 CRL](../../textbook/README.md)")
-        foundation_parts.append(f"## [{title}]({track}/README.md)\n\n" + "\n".join(f"- [{l['title']}]({track}/{l['path'].rstrip('/').split('/')[-1]}.md)" for l in rows))
+        foundation_parts.append(f"## [{title}]({track}/README.md)\n\n" + foundation_links(rows, track+"/"))
     put("foundations/README.md", "# 强化学习基础：表格方法、函数逼近与深度学习\n\n每章给出设定、推导、执行顺序、手算、代码、边界与练习。Part II 不是可跳过的附录：共享参数、半梯度、离策略稳定性、资格迹和策略梯度是后续方法的共同基础。\n\n" + "\n\n".join(foundation_parts) + "\n\n[CRL 教材](../textbook/README.md)")
     put("algorithms/README.md", "# 算法阅读入口\n\n[完整 CRL 教材](../textbook/README.md) · [经典与深度 RL 基础](../foundations/README.md)\n\n下面保留原有十三个链接，其正文与当前教材同步：\n\n" + "\n".join(f"- [{next(c['title'] for c in chapters if c['id']==chapter)}]({i:02d}-{slug}.md)" for i,(chapter,slug) in enumerate(zip(LEGACY,LEGACY_SLUGS),1)))
     all_rows=[]

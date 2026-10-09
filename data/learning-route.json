@@ -108,9 +108,9 @@
       {
         "id": "sample-prediction",
         "title": "3 · 未知模型：Monte Carlo 与 TD 预测",
-        "problem": "不知道转移概率时，一条经历能够教会价值函数什么？",
+        "problem": "不知道转移概率时，一条经验能够教会价值函数什么？",
         "explanation": [
-          "现在模型未知，但暂时仍固定策略。Monte Carlo 等一次经历结束后，把观测到的完整回报作为训练目标。TD 不等完整结果，而用一步奖励加下一状态的价值估计作为目标。这就是 bootstrap：用已有预测帮助学习另一个预测。",
+          "现在模型未知，但暂时仍固定策略。Monte Carlo 等一个回合结束后，把观测到的完整回报作为训练目标。TD 不等完整结果，而用一步奖励加下一状态的价值估计作为目标。这就是 bootstrap：用已有预测帮助学习另一个预测。",
           "在适当采样条件下，MC 的完整回报是当前策略价值的无偏样本，但方差可能较大。TD 的单步目标受当前估计误差影响，却能较早更新。表格 on-policy TD 的收敛需要访问覆盖、合适步长和固定环境等条件。单次 TD 误差衡量的是样本目标与当前预测之差，真实价值误差还要用策略的期望回报来判断。",
           "MC 与 TD 都可以逐样本实现，也都可以使用表格或神经网络。区别在于学习目标：MC 等待完整回报，TD 接上已有价值估计。先在一条两步轨迹上手算，再观察多次重复后两种方法如何接近相同答案。"
         ],
@@ -138,8 +138,8 @@
           "boundary": "这是固定策略的预测实验，没有策略改善或探索性能结论。"
         },
         "selfTest": {
-          "question": "初值全零、α = 0.1、γ = 0.9。第一条 A→B→终点经历后，MC 与按时间顺序执行的 TD 各是什么值？",
-          "answer": "MC 得到 A=0.09、B=0.1。在线 TD 在访问 A 时尚不知道 B 的价值，因此 A=0、B=0.1。后续经历会把 B 的信息传播到 A。"
+          "question": "初值全零、α = 0.1、γ = 0.9。第一个 A→B→终点回合后，MC 与按时间顺序执行的 TD 各是什么值？",
+          "answer": "MC 得到 A=0.09、B=0.1。在线 TD 在访问 A 时尚不知道 B 的价值，因此 A=0、B=0.1。后续经验会把 B 的信息传播到 A。"
         }
       },
       {
@@ -590,7 +590,7 @@
         "problem": "当前图像一样，最优动作却不同，网络应当学什么？",
         "explanation": [
           "环境状态 $S_t$ 与智能体收到的观测 $O_t$ 不一定相同。若过去线索影响现在的动作，必须从历史构造内部状态 $h_t$。已知模型时可以维护对隐藏状态的 belief；模型未知时，可用循环网络学习一个压缩历史。这个状态是行动所需信息的表示，不是价值函数的别名。",
-          "循环活动和参数有不同生命周期。活动记录当前经历中的情境，参数记录如何根据经历更新活动及行动。仅让 hidden state 持续变化，并不能说明算法在长期积累知识；反过来，频繁清空活动也可能破坏任务所需的记忆。",
+          "循环活动和参数有不同生命周期。活动记录当前交互中的情境，参数记录如何根据经验更新活动及行动。仅让 hidden state 持续变化，并不能说明算法在长期积累知识；反过来，频繁清空活动也可能破坏任务所需的记忆。",
           "BPTT 沿展开的计算图传播参数对后续状态的影响。截断 BPTT 节省内存，却会删去截断点之前的梯度路径；前向记忆仍可保留，因此“记住了信息”和“能学会记住信息”必须分开。RTRL 用前向敏感度维护这些导数，但一般计算代价很高。"
         ],
         "tex": "h_t=f_\\theta(h_{t-1},O_t,A_{t-1}),\\qquad \\frac{\\partial h_t}{\\partial\\theta}=\\left.\\frac{\\partial f_\\theta}{\\partial\\theta}\\right|_{h_{t-1}}+\\frac{\\partial f_\\theta}{\\partial h_{t-1}}\\frac{\\partial h_{t-1}}{\\partial\\theta}",
@@ -623,13 +623,62 @@
         }
       },
       {
+        "id": "distributed-systems",
+        "title": "8 · 大规模训练：数据、算法与硬件共同决定效率",
+        "problem": "增加环境与 GPU 后，更多计算怎样成为更快的策略改善？",
+        "explanation": [
+          "先区分环境推进、动作推理、轨迹存储与参数更新。A3C 让 worker 提交本地梯度，IMPALA 让 actor 提交轨迹，再在 learner 用当前参数求梯度；两者分别面临过期梯度与行为策略失配。",
+          "V-trace 把本步误差校正与后续误差传播分开。集中推理则把许多环境的请求组成批次。OpenAI Five 和 SEED RL 展示了采样、推理与优化器分工，GEAR 进一步处理大模型训练中的经验选择与搬运。",
+          "样本年龄、样本复用、推理延迟与吞吐不是同一个量。先用固定数据核验估计器，再测数据管线，最后按墙钟、交互与硬件成本比较策略学习。"
+        ],
+        "tex": "r_{\\mathrm{reuse}}=\\frac{B\\,U}{F},\\qquad \\Delta\\tau=\\tau_{\\mathrm{use}}-\\tau_{\\mathrm{action}}",
+        "formulaExplanation": "F 为每秒新增转移数，U 为每秒 learner 更新数，B 为每次更新参与 loss 的转移数。复用率与数据年龄要分开记录。",
+        "chapterIds": [
+          "deep-value",
+          "policy",
+          "credit",
+          "streaming",
+          "experiments"
+        ],
+        "readings": [
+          {
+            "title": "大规模训练系统：A3C、IMPALA、OpenAI Five、SEED RL 与 GEAR",
+            "path": "foundations/deep/systems/"
+          }
+        ],
+        "sources": [
+          {
+            "title": "IMPALA",
+            "url": "https://proceedings.mlr.press/v80/espeholt18a.html",
+            "note": "actor–learner 解耦与 V-trace。"
+          },
+          {
+            "title": "GEAR",
+            "url": "https://proceedings.mlr.press/v202/wang23aj.html",
+            "note": "轨迹分片、索引一致性与 GPU-centric 数据收集。"
+          }
+        ],
+        "practice": {
+          "file": "distributed_systems_lab.py",
+          "command": "python3 distributed_systems_lab.py demo\npython3 distributed_systems_lab.py test",
+          "check": "两步 V-trace 标签为 1.6 与 2；有界队列减小数据年龄但丢弃部分经验。",
+          "boundary": "标准库确定性核验，不是集群训练吞吐测量。"
+        },
+        "selfTest": {
+          "question": "为何学习 GPU 利用率升高，策略改善反而变慢？",
+          "answer": "可能重复消费更多过期经验、训练分布改变、裁剪比例升高，或只是在处理更多 padding。必须把有效数据、算法更新和端到端策略表现分别测量。"
+        }
+      },
+      {
         "id": "multi-agent-learning",
-        "title": "8 · 多智能体：合作的探索与信用，开放式学习的评估与目标",
+        "title": "9 · 多智能体：合作的探索与信用，开放式学习的评估与目标",
         "problem": "合作如何发现并学会配合？竞争和开放式合作又怎样确定每一轮该学什么，以形成可检验的策略改善？",
         "explanation": [
           "合作多智能体强化学习的主线是结构化探索和信用分配：前者发现有效的联合行为，后者把共同反馈转成各个策略的学习信号。Q-DPP、COMA、价值分解与联合策略优化分别处理这些环节。",
           "顺序优化与顺序行动是不同操作。HATRPO/HAPPO、A2PO研究更新时如何考虑前序策略的变化；MAT用条件序列生成联合动作。PR2/GR2则研究对手会如何响应，以及怎样建模不同推理层次。每种方法都必须声明训练和执行可见的信息。",
-          "竞争与开放式合作的核心是评估并构建每轮学习目标，以实现有条件、可检验的单调改善。这里的开放式学习特指开放式多智能体学习：代表性脉络主要从竞争自对弈、PSRO与竞争多样性发展，温颖及合作者以COLE、HOLA拓展合作伙伴课程。先定义评价对象，再说明构建什么目标能够改善它。"
+          "自对弈至少有两条不同的学习逻辑。FSP/NFSP 回应并保留历史策略；AlphaGo Zero / AlphaZero 用当次搜索的访问分布训练策略，用实际对局结果训练价值。MuZero 再把已知规则搜索中的转移替换为学得的模型。先用一棵两层博弈树区分搜索、真实行动和训练标签，才能理解这些方法怎样构成闭环。",
+          "竞争与开放式合作的核心是评估并构建每轮学习目标。希望获得怎样的改善，必须先由评价对象规定。固定参照下扩张自身可行策略集合，可以保留旧解的最优值；这不等于每轮训练出的策略都更好。这里的开放式学习特指开放式多智能体学习：代表性脉络从竞争自对弈、PSRO 与竞争多样性发展，温颖及合作者以 COLE、HOLA 拓展合作伙伴课程。",
+          "Balduzzi 的 gamescape 给出了理解这一外层问题的几何语言：一个策略的坐标是它对不同对手的收益，种群的混合形成这些坐标的凸包。剪刀石头布说明击败前任仍可绕回原处；增加不同回应方向则可能扩大可选能力。几何扩大、固定参照下的种群价值和完整游戏的可利用性需要分别评价。"
         ],
         "tex": "J_k(\\pi)=\\mathbb E_{\\xi\\sim\\mu_k}u(\\pi,\\xi),\\qquad \\mu_{k+1}=\\mathcal M(\\mathcal P_{k+1},\\widehat U_{k+1})",
         "formulaExplanation": "μ 是当前对手或伙伴分布；u 是明确规定的交互收益。外层根据策略档案 P 与评价 U 构造下一轮目标，内层学习对当前目标作响应。不同轮的目标可能不同。",
@@ -646,12 +695,12 @@
             "path": "foundations/deep/multi-agent/"
           },
           {
-            "title": "支撑方法：对手建模与递归推理",
-            "path": "foundations/deep/multi-agent-reasoning/"
+            "title": "自对弈与开放式多智能体学习：评估、目标与策略种群",
+            "path": "foundations/deep/multi-agent-populations/"
           },
           {
-            "title": "开放式多智能体学习：评估、目标构建与策略改善",
-            "path": "foundations/deep/multi-agent-populations/"
+            "title": "对手建模与递归推理：怎样学习响应",
+            "path": "foundations/deep/multi-agent-reasoning/"
           }
         ],
         "sources": [

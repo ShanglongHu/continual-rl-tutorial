@@ -16,6 +16,13 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [多步回报、资格迹与 True-online TD](../foundations/approximation/traces.md)：以线性前后向视图为基准，再讨论非线性和在线变化。
+
+
 ### 价值预测
 
 固定策略的价值 $v_\pi(s)$ 是未来回报的条件期望。网络 $v_w$ 只是估计。以下先讨论固定策略的预测问题。
@@ -220,7 +227,7 @@ $$
 
 得到 $(0.078713856,0.1093248,0.1)$，与前向按访问时刻加总的结果一致。若 $\lambda=0$，这里只有 C 获得末步更新；若使用 replacing trace，重复访问时置 1，得到的是另一条更新规则。
 
-这条路线还解释了迹的存储用途。三个分量足以回答“这次误差怎样分给旧预测”，但其中没有每条转移的动作、奖励和下一状态，无法据此重新播放 A 到 B 的经历。未访问的 D 在独立表格表示中也不会更新。若希望之后重新训练旧转移，应保存样本；若希望当前决策知道过去提示，应构造保留提示的 agent state。资格向量为当前学习规则服务。
+这条路线还解释了迹的存储用途。三个分量足以回答“这次误差怎样分给旧预测”，但其中没有每条转移的动作、奖励和下一状态，无法据此重新播放 A 到 B 的轨迹。未访问的 D 在独立表格表示中也不会更新。若希望之后重新训练旧转移，应保存样本；若希望当前决策知道过去提示，应构造保留提示的 agent state。资格向量为当前学习规则服务。
 
 积累资格时保存的是输出梯度；当前 $\delta_k$ 到来后，才把它乘到整条迹上。Momentum 保存的则是各时刻已经乘上各自误差的更新。因此，末步出现一个新误差时，两者会把它分配到不同的历史计算中。
 
@@ -371,7 +378,7 @@ python3 implementations/streaming_composition/neural_gradient_mc.py --steps 1200
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/neural_gradient_mc/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：全状态预测 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 最终MC为0.0440±0.0309，TD(0.8)为0.0478±0.0203，差异不足以说明前者更优。独立TD(0)对照最终为0.0509±0.0265，且在600步曾低于带迹版本。这个任务没有呈现“更长信用必定更好”的规律。
 
@@ -518,9 +525,24 @@ python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/true_online_td/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-true_online_td.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：五状态价值 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 当前价值估计与真实值 s/6 的误差。在五个非终止状态 s=1,…,5 上均匀平均平方误差后开方；权重不是训练访问频率。
+
+**step：怎样计时。** step 包含全部真实转移，也包含尚未完成的回合。MC 在自然终止后，对该回合首次访问的每个状态写一次回报均值；同回合重复访问不增加该状态的样本数。TD(0) 每个真实步写入；资格迹可同时影响多个状态。相同环境步不表示相同参数写入次数，预算结束也不产生额外终止反馈。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 各状态初值均为0。MC 用各状态已完成回合的首次访问计数决定步长；TD(0) 用常数步长0.1，比较不仅改变了是否自举。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算各记录时刻的跨种子均值、样本标准差和末点误差；没有保存全部预测向量，不能仅凭 value 重新计算状态权重或逐状态误差。 日志未保存回合边界、首次访问计数或逐步价值，曲线平台不能单独区分等待终止、零更新和稀疏记录漏掉变化。
+
+计算位置：[classic/_common.py](../implementations/classic/_common.py) · [classic/td0.py](../implementations/classic/td0.py) · [classic/td_lambda.py](../implementations/classic/td_lambda.py) · [classic/true_online_td.py](../implementations/classic/true_online_td.py) · [classic/mc_prediction.py](../implementations/classic/mc_prediction.py)
+
+</details>
 
 **结果分析。** 第615步true-online为0.0835、TD(0)为0.1069；到1200步分别为0.0772与0.0465，后者更低。早期与终点排序不同，说明不应只挑一个有利检查点讲故事。
 
@@ -594,6 +616,37 @@ True-online 第二步的荷兰迹为 $1+(1-0.5\times1)=1.5$。当前预测为 0.
 | True-online TD(1) | 0.5 | 1.75 | 用荷兰迹与修正高效实现同一在线参考。 |
 
 同一条短轨迹已经区分出三种更新时序。配套测试逐个比较观察前缀，并继续检查非零初始化、稠密特征和非终止窗口，以免最终数值偶然相同掩盖中途差异。学习效果则要在重复采样的预测或控制任务中另外比较。
+
+<a id="lesson-prefix-walkthrough"></a>
+
+## 从两步到三步：同一经验流上的预测版本
+
+把刚才的重复特征例子扩成两维，就能同时看见重访与共享。给定已观察到的三条转移 $A\xrightarrow{1}B\xrightarrow{0}A\xrightarrow{2}\bot$，取 $x(A)=(1,0)$、$x(B)=(1,1)$、$x(\bot)=0$，初值 $w_0=(0,0)$，$\gamma=1$、$\lambda=\alpha=1/2$。这里只规定这一条经验记录，不用它推断状态的全部转移规律。先预测：第二条转移的奖励为零，是否意味着两种在线方法都不再更新？
+
+| 已到达的前缀 | 传统 TD(λ) 的权重 | 在线前向参考的权重 | True-online 的权重 |
+| --- | --- | --- | --- |
+| 初始 | (0, 0) | (0, 0) | (0, 0) |
+| A → B，奖励 1 | (1/2, 0) | (1/2, 0) | (1/2, 0) |
+| 再到 A，奖励 0 | (1/2, 0) | (9/16, −1/16) | (9/16, −1/16) |
+| 再到终点，奖励 2 | (29/16, 3/8) | (97/64, 7/32) | (97/64, 7/32) |
+
+第一步的误差为 1，两种方法都把第一坐标改成 $1/2$。因此第二步更新前，当前 B 与后继 A 的预测都为 $1/2$，当前 TD 误差恰好为零。传统 TD 的资格已变成 $(3/2,1)$，但乘上零以后没有参数增量。True-online 还保存着第一次转移对 B 的旧预测 0；当前预测与它相差 $1/2$。这个差异来自上一条经验已经改变权重。
+
+$$
+\begin{aligned}z_1^{\rm Dutch}&=\tfrac12(1,0)+\left(1-\tfrac12\cdot\tfrac12\right)(1,1)=(\tfrac54,\tfrac34),\\\Delta w_1&=\tfrac12(0+\tfrac12)(\tfrac54,\tfrac34)-\tfrac12\cdot\tfrac12(1,1)=(\tfrac1{16},-\tfrac1{16}).\end{aligned}
+$$
+
+第二坐标变成负值，并不是接收了负奖励；它在补偿共享特征上的旧更新。B 的预测仍为 1/2，A 的预测则变成 9/16。
+
+从在线前向目标独立检查这一步。在前缀 $h=2$，首次 A 的一步目标为 1，两步目标为 $1+0+w_1^\top x(A)=3/2$，各占一半，因此 $G_0^{\lambda\mid2}=5/4$；B 的目标为 $G_1^{\lambda\mid2}=1/2$。从零重新更新 A，临时权重先到 $(5/8,0)$，再更新 B，得到 $(9/16,-1/16)$。这里 B 更新前的临时预测是 $5/8$，而 bootstrap 仍来自真实历史权重 $w_1$；两个参数版本各有用途。
+
+第三条转移到来后，前向目标依次是 $(13/8,5/4,2)$。从初值顺序重算得到 $(13/16,0)\to(33/32,7/32)\to(97/64,7/32)$。True-online 只推进一次荷兰迹和修正就得到相同末值；传统 TD 则用自己的权重、误差 $3/2$ 与累积迹 $(7/4,1/2)$，得到 $(29/16,3/8)$。比较的是三种算法在同一记录上的参数序列。
+
+![同一A B A终止轨迹的两个权重逐前缀变化，以及各自更新前TD误差；在线前向的菱形与true-online圆点重合。](../assets/crl-figures/credit-meta-prefixes.svg)
+
+上方奖励与特征确定共同数据流；中间两图分别读两个权重，下图读各方法实际使用的 TD 误差。$t=1$ 的误差都为零，预测版本修正仍使权重不同。数值为原创精确计算，线段只连接前缀。[完整数据](https://yingwen.io/crl-figures/credit-meta-data.json)、[有理数 Python](../tutorials/credit_meta_walkthrough.py)与[独立 JavaScript](https://yingwen.io/crl-code/figures/credit-meta-walkthrough.mjs)分别用多步求和和后向目标递推核对。等价条件见 [van Seijen 与 Sutton §3–4](https://proceedings.mlr.press/v32/seijen14.pdf)。
+
+这些资格决定一个误差怎样改变预测权重。若进一步问“把三次更新共同使用的 $\alpha$ 稍微增大，后续预测会怎样变化”，需要对整个更新程序求导。即使特征完全固定，这个导数也不等于资格向量：[元学习章的同一数据流](meta.md#lesson-trace-sensitivity)将继续算出两者。
 
 <a id="lesson-control"></a>
 
@@ -1118,7 +1171,7 @@ python3 implementations/extended_classic/gradient_eligibility_traces.py --steps 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/gradient_eligibility_traces/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 episodes。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：episodes。纵轴：两状态非线性价值 RMSE。每种方法 1200 episodes；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 1200回合后的两条平均RMSE均为0.0237377；差约为浮点舍入量，5种子的对应曲线重合。可见后向实现没有丢失该冻结参数参考中的项，但这不是深度控制有效性的证据。
 
@@ -1234,7 +1287,7 @@ RTU的“trace”指递归状态对参数的敏感度。两维实值旋转块实
 
 ## 14. 实验入口与原始实现
 
-本章三幅图共用 [独立计算模块](https://yingwen.io/crl-code/figures/concept-options-credit.mjs)，[完整数值](https://yingwen.io/crl-figures/concept-options-credit-data.json) 保存每一步资格、前向混合项、共享特征和梯度版本。先把重复访问删掉，再将 λ 改成 0 或 1，能直接检查哪些分量来自衰减、哪些来自重新激活。下面的 Python 实验进一步覆盖在线更新、控制和离策略情形。
+前面的冻结轨迹、资格与共享梯度三幅图共用 [独立计算模块](https://yingwen.io/crl-code/figures/concept-options-credit.mjs)，[完整数值](https://yingwen.io/crl-figures/concept-options-credit-data.json) 保存每一步资格、前向混合项、共享特征和梯度版本。先把重复访问删掉，再将 λ 改成 0 或 1，能直接检查哪些分量来自衰减、哪些来自重新激活。三步在线案例另有[标准库脚本](../tutorials/credit_meta_walkthrough.py)，运行 python3 tutorials/credit_meta_walkthrough.py 即可打印前缀、目标和元敏感度。下面的 Python 实验进一步覆盖在线更新、控制和离策略情形。
 
 Python 3.10+，仅标准库；每个入口对应正文中的一个可检查问题。
 
@@ -1338,7 +1391,7 @@ python3 examples/credit_assignment_lab.py test
 
 先分开前向目标、后向计算与离策略校正，再比较 Expected Traces 和梯度迹的估计对象。RTRL 传播递归敏感度；元学习传播更新规则的敏感度。
 
-[分册导读](../docs/learning-route-classic-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-credit) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=credit) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=credit)
+[分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-credit) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=credit) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=credit)
 
 ## 持续强化学习：近期研究与原始实现
 
@@ -1523,7 +1576,7 @@ Stream-X 把信号归一化、表示初始化、资格迹和受控更新尺度�
 
 #### 证据
 
-2026 年第三版扩展到 Atari、控制与机器人等实验，并包含持续变化设置。论文和代码经历过版本变化，比较结果时需要同时标明论文版本和算法实现。
+2026 年第三版扩展到 Atari、控制与机器人等实验，并包含持续变化设置。论文和代码都有过版本变化，比较结果时需要同时标明论文版本和算法实现。
 
 #### 条件与限制
 

@@ -4,7 +4,7 @@
 
 从智能体与世界的持续交互出发，区分外部设计者提供的奖励、任务与资源。表格算法、函数逼近和深度 RL 提供工具；持续学习研究完整学习器怎样长期有效地适应。它们不是互相替代的问题类别。
 
-**28 章基础分册 · 23 章 CRL 教材 · 8 课导论 · 配套实现、数值检查与实验手册**
+**经典 RL · 现代深度 RL · 持续 RL：三册教材与配套算例、实现和实验手册**
 
 [在线阅读](https://yingwen.io/zh/continual-rl/) · [基础目录](foundations/README.md) · [CRL 教材](textbook/README.md) · [实验与代码](docs/experiments.md) · [研究问题](docs/research-atlas.md)
 
@@ -27,9 +27,26 @@ Part II 不是可选的深度学习附录。状态共享参数之后，表格方
 
 每章按问题设定、必要符号、推导、执行顺序、数值例、实现、限制和练习组织。原论文与作者代码放在正文之后，供进一步核对。正文为原创解释，不是 Sutton 教材或 Spinning Up 的翻译复制。
 
-深度分册含六章核心算法与七条并列分支：部分可观测、探索、价值分布、离线数据、模型、约束和多智能体。按研究需要选择，不必全部依次学完。
+深度分册的核心路线依次讲深度价值、策略梯度、信任域、确定性控制、最大熵控制、训练循环和大规模训练系统。部分可观测、探索、价值分布、离线数据、模型、约束，以及合作、种群与递归推理三个多智能体方向作为并列分支。按研究问题选择，不必全部依次学完。
 
 [奖励假设与奖励设计](textbook/reward-design.md) 区分表达能力、塑形、偏好学习与安全约束。[持续控制](textbook/control.md) 进一步区分固定策略价值与整个学习生命期的评价。[近期研究](docs/recent-research.md) 按问题连接原论文、条件和作者实现。
+
+## 从一段手算开始
+
+[逐步算例目录](docs/walkthroughs.md)按三册教材和补充阅读组织。每份脚本对应正文中的具体问题、图片和推导。先预测一次更新会改变什么，再运行脚本核对。
+
+```bash
+# 在仓库根目录列出章节与脚本；这里只列目录，不运行实验。
+python3 scripts/run_walkthrough.py --list
+python3 scripts/run_walkthrough.py monte-carlo-walkthrough.py
+python3 scripts/run_walkthrough.py architecture-walkthrough.py
+```
+
+运行入口核对脚本与教材导出的SHA-256，再把单个脚本放在独立临时目录执行。数值和解释打印到终端。运行提示使用标准错误输出，不混入脚本的JSON结果。默认限时30秒；不安装依赖、不启动全部训练。章节中提供的直接命令仍可使用，例如 `python3 tutorials/monte-carlo-walkthrough.py --test`。
+
+修改脚本做练习后，请直接运行所改文件；版本核对入口会拒绝把修改版当成原算例，但不会覆盖你的改动。临时目录用于检查单文件约定，不是运行不可信代码的安全沙箱。需要保存文件或制作新实验时，在自己的工作目录直接运行脚本。
+
+正文使用的模板原创SVG保存在 [`assets/crl-figures/`](assets/crl-figures/)，Markdown通过相对路径显示。其他图片、论文和数据的在线入口保持原样，见[同步范围](docs/site-sync.md)。
 
 ## 每个算法一个文件：从源码到学习曲线
 
@@ -74,6 +91,7 @@ python3 scripts/run_all.py --quick --out results/first-run
 
 | 层次 | 入口 | 范围 |
 |---|---|---|
+| 逐步算例 | [按章找脚本](docs/walkthroughs.md) | 具体任务中的有限记录、解析计算与更新步骤；不依赖其他算法文件 |
 | 表格方法 | [tabular_textbook_lab.py](examples/tabular_textbook_lab.py) | 小 MDP、bandit、DP、MC、TD、多步与规划；解析或有限轨迹核对 |
 | 函数逼近 | [approximation_textbook_lab.py](examples/approximation_textbook_lab.py) | 线性特征、半梯度、投影、离策略、平均奖励、迹和策略梯度的受控例子 |
 | 深度更新核 | [deep_textbook_lab.py](examples/deep_textbook_lab.py) | DQN、GAE、TRPO/PPO、TD3、SAC 的目标、数值与时序检查 |

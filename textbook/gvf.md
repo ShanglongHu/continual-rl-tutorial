@@ -12,6 +12,14 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [Agent state：部分可观测性、递归记忆与在线信用分配](state.md)：理解预测输入是智能体能维护的状态。
+- [函数逼近预测：从回归到 TD 固定点](../foundations/approximation/prediction.md)：掌握固定预测问题下的TD目标与近似误差。
+
+
 ### 价值函数与条件期望
 
 $v_\pi(s)$ 是在状态 s 出发、以后按 $\pi$ 行动时，一个指定未来累计量的条件期望。改变后续行为或累计信号，就改变了问题，即使物理状态相同。
@@ -114,13 +122,13 @@ $C$ 是由信号规则 $c$ 生成的累计信号，$\gamma$ 为转移延续因�
 
 ## 先分开两个问题：什么值得做，什么会发生？
 
-先沿用 Agent state 章的 T 形网格：从 C 经 M 到 J，在 J 选左或右；每回合一个门成功、另一个失败。入口提示有 80% 准确率，后续只看得到当前位置。选择成功门的外部奖励是 1，失败是 0，其余转移为 0。我们先问四个具体问题，看看“预测什么”怎样改变地图上的数字，再转到持续送货机器人。
+先沿用 Agent state 章的 T 形网格：从 C 经 M 到 J，在 J 选左或右；每回合一个门成功、另一个失败，左右门成功的先验概率各为一半，并在本回合保持不变。入口提示在左门成功时以 80% 概率指左，在右门成功时以 80% 概率指右。提示只在 C 可见，之后的位置观测不再提供关于成功门的信息。选择成功门的外部奖励是 1，失败是 0，其余转移为 0。我们先问四个具体问题，看看“预测什么”怎样改变地图上的数字，再转到持续送货机器人。
 
-收到左提示后，递归状态保存 $b=P(Z=L\mid H)=0.8$。固定策略 $\pi_L$ 在 C、M 向上，在 J 向左；$\pi_R$ 只将最后的选择换成向右。任务价值先评价 $\pi_L$，使用折扣 0.9。另三个问题分别预测 $\pi_L$ 的成功概率、$\pi_R$ 的成功概率和 $\pi_L$ 的剩余步数。
+本图条件是已经观察到左提示，而不是已知左门会成功。令 Z 表示成功门，Bayes 公式给出 $b=P(Z=L\mid\text{左提示})=(0.8\times0.5)/(0.8\times0.5+0.2\times0.5)=0.8$；经过 M、J 时没有新证据，递归状态继续保存 b。固定策略 $\pi_L$ 在 C、M 向上，在 J 向左；$\pi_R$ 只将最后的选择换成向右。任务价值先评价 $\pi_L$，使用折扣 0.9。另三个问题分别预测 $\pi_L$ 的成功概率、$\pi_R$ 的成功概率和 $\pi_L$ 的剩余步数。
 
-![同一T形网格左提示历史下的任务VF、向左成功、向右成功和剩余步数四张精确值图。](https://yingwen.io/crl-figures/concept-gvf-four-question-maps.svg)
+![同一左提示历史下的四张T形网格值图。任务VF用蓝色奖励单位色标，两张成功概率图共用青色0至1色标，步数图用橙色0至3步色标；所有终点未来值为零。](../assets/crl-figures/concept-gvf-four-question-maps.svg)
 
-逐栏读问题的策略、累积信号与延续系数，再读每格答案。后验 0.8，任务折扣 0.9；进任一门后都置延续为 0。箭头是问题给定的策略。原创精确计算；不是训练过程快照。
+地图自下而上是 C、M、J，箭头表示给定目标策略。各图先读累积信号 c、非终点延续 γ 和单位，再读数值；任务 VF 的 0–1 是本例奖励范围，不能当作成功概率。进任一门都收到最后信号，再以 γ=0 去掉余项，双框内的 0 是终点之后的未来值。原创有限模型精确计算，非训练性能；[纯解析计算](https://yingwen.io/crl-code/figures/gvf-grid-predictions.mjs)与[数值规格](https://yingwen.io/crl-figures/gvf-grid-predictions-data.json)可核对。
 
 $$
 \begin{gathered}v_{\pi_L,R,\gamma_R}(C)=0+0.9[0+0.9(0.8)]=0.648,\\v_{\pi_L,\mathbf1_{\rm success},\gamma_{\rm hit}}(C)=0.8,\\v_{\pi_L,1,\gamma_{\rm end}}(C)=1+1+1=3.\end{gathered}
@@ -208,7 +216,7 @@ T 形网格中的问题由教材设计者给定。成功 cumulant 读取已经�
 
 先观察一次转移，再计算这次转移对每个问题提供的信号。传感器给出耗电量。充电接触开关给出到达事件。计时器给出经过了一个原始时间步。这些信号不需要一个知道未来答案的教师；但选择预测哪个信号、在哪个事件停止、假设哪种行为，仍然需要一个定义问题的过程。这个过程可以是手写函数，也可以是另一个学习系统。
 
-![右路三步能耗1、2、1，同一经验生成能耗和到达两个累计信号；各自学得4和1。结合另行采集的左路答案，比较两路线的任务回报3和1。](https://yingwen.io/crl-figures/concept-depth-gvf-question-answer.svg)
+![右路三步能耗1、2、1，同一经验生成能耗和到达两个累计信号；各自学得4和1。结合另行采集的左路答案，比较两路线的任务回报3和1。](../assets/crl-figures/concept-depth-gvf-question-answer.svg)
 
 先看传感器读数，再看两个问题读取哪一行信号。两者都采用右路策略，并在到达 G 时置延续为 0，因此最后一步的能耗 1 和到达信号 1 都计入答案。图中以完整轨迹的 Monte Carlo 更新学习起点值，步长为 1。第三幅另有左路的独立经验，不能仅用右路数据得出它的答案。
 
@@ -462,7 +470,7 @@ $$
 
 这是充分条件，不是必要条件。仅有“几乎必然最终停止”还不保证有限期望停止时间。若采用累计折扣而非显式随机停止，类似条件是绝对加权回报可积。
 
-常数延续概率 $\gamma<1$、到达后决定是否继续、至少经历一步的约定给 $\mathbb E[\tau]=1/(1-\gamma)$。取 $C=1,Z=0$，答案正是这个数，而不是某个事件发生概率。用事件指示反复累计，得到的是折扣事件计数；只在首次事件停止并设置相应终端信号，才得到另一个“首次到达”问题。单位和停止顺序决定解释。
+常数延续概率 $\gamma<1$、到达后决定是否继续、至少经过一步的约定给 $\mathbb E[\tau]=1/(1-\gamma)$。取 $C=1,Z=0$，答案正是这个数，而不是某个事件发生概率。用事件指示反复累计，得到的是折扣事件计数；只在首次事件停止并设置相应终端信号，才得到另一个“首次到达”问题。单位和停止顺序决定解释。
 
 | 对象 | 它改变什么 | 若改变，原答案还有效吗 |
 | --- | --- | --- |
@@ -547,9 +555,24 @@ python3 implementations/continual/gvf_td.py --steps 1200 --seeds 0 1 2 3 4 --out
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/gvf_td/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-gvf_td.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：两个 GVF 四状态分量 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 两个 GVF × 两个状态共四个分量，与当前 cumulant 幅度对应的精确值作均匀 RMSE。中点后的参照也改用新幅度。
+
+**step：怎样计时。** step 是真实交替转移数。四个预测分量共用同一条经验，不计作四个环境步。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算各记录时刻的跨种子均值、样本标准差和末点误差；没有保存全部预测向量，不能仅凭 value 重新计算状态权重或逐状态误差。
+
+计算位置：[continual/gvf_td.py](../implementations/continual/gvf_td.py) · [continual/gvf_gtd_lambda.py](../implementations/continual/gvf_gtd_lambda.py) · [continual/_common.py](../implementations/continual/_common.py)
+
+</details>
 
 **结果分析。** TD在第600步RMSE为0.0813，变化后第615步升到0.8009，随后在第1200步降到0.0369；GTD(λ)最终为0.0720。五个种子完全重合，因为数据和初始化均确定。该图呈现追踪过程，不构成TD普遍优于GTD的证据。
 
@@ -784,7 +807,7 @@ python3 implementations/streaming_composition/gvf_shared_td0.py --steps 1200 --s
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/gvf_shared_td0/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：固定主问题的全状态预测 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第1200步，λ=0的RMSE为0.1323±0.0691，λ=0.6为0.0754±0.0221；数值为5种子的均值±样本标准差。在这些固定超参数下带迹版本误差更小。这里没有独立调参集，也没有推断总体排名。
 
@@ -890,7 +913,7 @@ python3 implementations/streaming_composition/gvf_shared_trace.py --steps 1200 -
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/gvf_shared_trace/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：固定主问题的全状态预测 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 最终共享可训练表示为0.0754±0.0221，冻结表示为0.0946±0.0405。另一个已运行的分离网络对照为0.0753±0.0277，几乎相同。这个小任务未给出“共享必然伤害主问题”的证据，也没有显示分离网络有明确收益。
 
@@ -1020,7 +1043,7 @@ $$
 
 F 用上一动作的 $\rho_{t-1}$；e 用当前动作的 $\rho_{t}$。第一次没有前驱，置 $\gamma_t$=0、F=0；i=1 是常用起点。$\lambda$=1 时 M=i，i=1 下退化为相应 IS-TD(1) 迹；$\lambda$=0 时 M=F。
 
-![只在A设置interest1，沿实际前缀A到B到C，follow-on使用上一动作比率得到1、1、2；当前特征更新系数则分别为2、4、2。](https://yingwen.io/crl-figures/concept-credit3-emphatic-flow.svg)
+![只在A设置interest1，沿实际前缀A到B到C，follow-on使用上一动作比率得到1、1、2；当前特征更新系数则分别为2、4、2。](../assets/crl-figures/concept-credit3-emphatic-flow.svg)
 
 每列对应一个时刻，状态下方的 $c_{t+1}$ 是执行本列动作后收到的信号；第三列之后返回 A，故 $c_3=0$。这是一条由行为策略采样的实际路径，水平箭头以目标/行为比率修正上一转移；随后再以当前比率乘 F。λ=0 且采用单热特征，柱高是各时刻当前特征的系数。原创算例，时间索引对应 [Mahmood 等式 (10)–(13)](https://arxiv.org/html/1507.01569)。
 
@@ -1403,6 +1426,10 @@ $$
 标量奖励价值是 GVF 的一种特例。定义多个问题不等于已经学出有用状态或控制策略。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-gvf) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=gvf) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=gvf)
+
+## 从本章进入实践
+
+[预测与控制](https://yingwen.io/zh/continual-rl/code/#practice-prediction)：学会预测更多事情，什么时候会改变行动？
 
 ## 持续强化学习：近期研究与原始实现
 

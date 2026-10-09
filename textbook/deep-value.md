@@ -1,16 +1,23 @@
 # 深度价值学习：DQN 与 Double DQN
 
-DQN 用神经网络近似动作价值。在共享参数下，一次更新会影响多个状态；自举目标又依赖当前估计。经验回放与目标网络分别调整数据使用方式和目标变化速度，Double DQN 则分开动作选择与动作评估。
+把 DQN 放进长期运行的学习器后，哪些量只是为一次更新而固定，哪些旧经验、目标和特征会继续影响未来行动？
 
 ## 本章内容
 
-- 能从 Bellman 最优方程写出 DQN / Double DQN 的 target 与半梯度。
-- 实现两层 ReLU Q 网络及其反向传播。
-- 知道 buffer、更新比率、目标滞后和非平稳环境之间的冲突。
+- 核对 DQN / Double DQN 的标签、梯度与目标副本各在什么时刻固定。
+- 沿两层网络和既有小任务，区分回归检查、闭环学习与变化后诊断。
+- 说明 replay、目标滞后、特征干扰与生命期收益之间还缺哪些比较。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [深度价值学习：DQN、Double DQN 与目标的时间顺序](../foundations/deep/deep-value.md)：完整DQN训练循环在第二册；这里回顾其持续使用条件。
+
 
 ### 一条经验
 
@@ -106,26 +113,28 @@ $R,S'$ 是真实条件后果，$0\le\gamma<1$。这是理想最优价值固定�
 
 <a id="lesson-setting"></a>
 
-## 1 · 学习对象仍然是最优动作价值
+## 1 · 从训练循环追踪学习器的持久状态
 
-先讨论离散动作、固定 MDP、折扣回报。$Q_\theta(s,a)$ 输出每个动作的值。参数共享使一次更新能泛化到未访问输入，但也会改变过去已经正确的值。环境经验来自当前 $\epsilon$-greedy 策略，训练 minibatch 来自 replay 分布，目标又来自另一个滞后的参数快照 $\theta^-$。三种时间尺度同时存在。
+第二册的 [DQN 与目标的时间顺序](../foundations/deep/deep-value.md)完成 Bellman 目标、共享特征、Double DQN 与完整训练循环的推导。本章回顾其中会跨步保存的量，随后用它们定位持续学习中的问题：旧经验是否仍对应当前后果，目标是否滞后，网络是否还学得动，以及这些差异怎样改变下一次行动。
 
-![真实交互、经验回放、在线 Q 网络和目标网络的分离，以及一次更新的梯度边界。](https://yingwen.io/crl-figures/concept-classic-dqn-dataflow.svg)
+![真实交互、经验回放、在线 Q 网络和目标网络的分离，以及一次更新的梯度边界。](../assets/crl-figures/concept-classic-dqn-dataflow.svg)
 
 沿图检查采样、梯度更新、目标复制三种时钟。图中独立算例给定目标后继值 (2,6)、奖励 1、折扣 0.9，故 DQN 标签为 6.4；画面中的迷宫不是这些值的训练来源。后文另一组给定输出用于对比 Double DQN，不与本图数值混用。
+
+先保留离散动作、固定 MDP 和折扣目标。$Q_\theta(s,a)$ 的参数持续更新，$Q^*$ 仍是同一个数学对象。经验来自当前 $\epsilon$-greedy 策略，训练 batch 来自 replay，bootstrap 使用滞后快照 $\theta^-$。行为分布、训练分布与标签在变化，本身不表示环境规律变了。
 
 | 持久对象 | 存什么 | 何时改 |
 | --- | --- | --- |
 | 在线网络 $\theta$ | 当前动作价值 | 每次梯度更新 |
-| 目标网络 $\theta^-$ | 较慢移动的 target | 每 C 步硬复制，或明确的软更新 |
+| 目标网络 $\theta^-$ | bootstrap 的价值副本 | 每 C 步硬复制，或明确的软更新；须声明采用哪种时钟 |
 | replay D | 真实经验及终止语义 | 每步加入、按容量淘汰 |
 | 优化器状态 | 动量、二阶矩等 | 每次参数更新；本章用 SGD 便于检查 |
 
-本章不把 replay 称为 CRL 的完整记忆方案。均匀缓冲区回答的是“从现有数据分布抽样”，不是“哪些知识以后仍值得保留”。
+这些量连同探索计数器决定学习器之后怎样行动和学习。只保存在线网络，可以重现某次前向预测，却未必能续上同一个训练过程。均匀 replay 规定怎样抽取已存数据；决定保留哪些历史，进一步取决于未来用途与内存预算。
 
 <a id="lesson-derive"></a>
 
-## 2 · Bellman target 到半梯度，再到 Double DQN
+## 2 · 一次回归固定了什么，下一次又会改变什么
 
 $$
 Y=r+\gamma(1-d)\max_{a\prime}Q_{\theta^-}(s\prime,a\prime),\qquad L(\theta)=\frac1B\sum_{i=1}^B\frac12[Q_\theta(s_i,a_i)-\operatorname{sg}(Y_i)]^2
@@ -137,7 +146,7 @@ $$
 \theta\leftarrow\theta+\frac{\alpha}{B}\sum_i[Y_i-Q_\theta(s_i,a_i)]\nabla_\theta Q_\theta(s_i,a_i)
 $$
 
-从平方损失求导即可得到。若使用 Huber loss，大误差区的导数会截到常数幅度；这改变鲁棒性与梯度尺度，不改变 target 定义。本教学实现用半平方误差，便于有限差分。
+固定这批输入与标签后，这是回归损失对在线参数的完整梯度。放回整个自举过程看，它采用不沿后继估计求导的半梯度原则。Huber loss 保留 target 定义，但改变误差导数，可能连最优拟合值也改变；本教学实现用半平方误差，便于有限差分。
 
 $$
 a^*=\operatorname{argmax}_a Q_\theta(s\prime,a),\qquad Y^{\mathrm{Double}}=r+\gamma(1-d)Q_{\theta^-}(s\prime,a^*)
@@ -145,7 +154,9 @@ $$
 
 DQN 同一目标网络既选动作又评估；Double DQN 用在线网络选择、目标网络评估。两网络仍相关，不能声称完全消除高估或保证性能更好。
 
-为什么目标要慢一点？若预测和 target 同时追着彼此跑，当前网络误差会立刻成为新的标签。目标网络暂时固定这层反馈；replay 则减弱相邻经验相关性并重用样本。二者是实践稳定化手段，不是对任意非线性网络收敛的证明。
+对一条固定旧转移，若目标网络的输入处理与前向计算也固定，普通 DQN 的标签在两次目标复制之间不变。Double DQN 的在线 argmax 却可能在下一次更新后换动作，因而即使目标副本未动，重新计算的标签也会变化。停止梯度只固定本次求导责任；冻结副本只固定指定参数的演化。两者都没有冻结整个学习器。
+
+Replay 重用经验并改变训练样本的混合，目标副本减慢部分自举反馈。第二册的[共享特征与旧经验重标记](../foundations/deep/deep-value.md#lesson-shared-feature)已经逐项算出这种联动。这里继续保留更新和网络导数，供检查持久状态的时序；这些稳定机制的存在仍不足以保证任意非线性网络收敛。
 
 <a id="experiment-deep-double_dqn"></a>
 
@@ -167,9 +178,24 @@ python3 implementations/deep/double_dqn.py --steps 1200 --seeds 0 1 2 3 4 --out 
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/deep-double_dqn/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-deep-double_dqn.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：训练环境步（独立评估交互另计）。纵轴：冻结策略的外部回报。每种方法 1200 训练环境步；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前网络，以 argmax 选择动作，在独立 DeadlineChain 中跑12次完整回合，取未折扣外部回报的平均。这里起点相同且评价过程确定，12次并非12个独立训练种子。
+
+**step：怎样计时。** step 只数训练环境转移。评价交互另计；任务中的12步期限是真正终止条件。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 的 phase=evaluation。可以重算冻结评估曲线；未保存逐步训练奖励，不能从这些评估点反推训练全程收益。
+
+计算位置：[deep/dqn.py](../implementations/deep/dqn.py) · [deep/double_dqn.py](../implementations/deep/double_dqn.py) · [deep/_common.py](../implementations/deep/_common.py)
+
+</details>
 
 **结果分析。** 第 600 步两者平均冻结回报都是 0.94；第 1200 步 Double DQN 为 0.94，DQN 为 0.936。短链上两者几乎打平，这个小差异不能证明普遍优势或已解决高估。
 
@@ -315,7 +341,7 @@ def train_dqn(steps=5000, seed=7, double=True):
 
 <a id="lesson-branches"></a>
 
-## 6 · DQN 家族的不同改动在解决什么
+## 6 · 从 DQN 的内部状态定位持续学习问题
 
 | 分支 | 改什么 | 并不自动解决 |
 | --- | --- | --- |
@@ -326,7 +352,9 @@ def train_dqn(steps=5000, seed=7, double=True):
 | ReDo / resets / continual backprop | 长时间训练后的特征与优化状态 | 旧知识保留与安全 |
 | Recurrent DQN | 把历史编码成决策状态 | replay 中隐状态是否过时 |
 
-Rainbow 将若干改动组合，在其任务与预算中评估。研究 CRL 时不应把“使用 Rainbow”当作所有机制已处理：对变化场景，旧缓冲区、目标网络、特征和状态都可能以不同速度过时。
+这些改动可以组合，Rainbow 就在其任务与预算中评估了其中若干项。持续运行时还要定位变化的来源：旧转移可能来自已经改变的世界，目标副本可能落后于当前估计，网络即使面对固定新标签也可能学得很慢。这三种情况分别涉及数据时效、目标同步与可训练能力，单看 TD loss 无法区分。
+
+本章的小型固定 MDP 与梯度检查先提供可知答案。[知识保留](retention.md)进一步问保存哪些经验或功能，[可塑性](plasticity.md)问旧参数化还能否学习新目标。比较它们对控制的作用时，应从同一协议初始化完整学习器，继续采样与更新，把适应期低谷、旧能力诊断和总收益分别记录；仅比较最终 Q 网络遗漏了学习过程。
 
 <a id="lesson-check"></a>
 
@@ -356,7 +384,7 @@ Rainbow 将若干改动组合，在其任务与预算中评估。研究 CRL 时�
 
 DQN 保留 TD 目标。网络、回放与目标网络增加新的时间尺度，长期训练时也可能引入陈旧数据与可塑性问题。
 
-[分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-deep-value) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=deep-value) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=deep-value)
+[分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-deep-value) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=deep-value) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=deep-value)
 
 ## 持续强化学习：近期研究与原始实现
 

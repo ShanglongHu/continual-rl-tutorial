@@ -12,6 +12,13 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [学习与规划：Dyna、优先扫描和执行时搜索](../foundations/tabular/planning.md)：区分真实经验、模型学习和模拟更新。
+
+
 ### 一条经验
 
 在 $S_{t}$ 做 $A_{t}$ 后得到 $R_{t+1}$、$S_{t+1}$。奖励属于这次转移，不是到达状态之前另一轮的奖励。
@@ -182,9 +189,24 @@ python3 implementations/classic/dyna_q.py --steps 1200 --seeds 0 1 2 3 4 --out r
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/dyna_q/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-dyna_q.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：确定性贪心策略折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 Q，从六格链的起点0按确定性贪心动作计算折扣回报（γ=.95）。并列时评价选动作0，训练则在并列最优动作间均匀分配利用概率。循环路径的尾项用几何级数计入。
+
+**step：怎样计时。** step 是真实转移次数，包含到达终点的那一步。Dyna 每步直接更新一次 Q，再做5次模型更新；优先扫描先写模型和队列，Q 只在出队时更新，每步至多5次。model_backups 不含排队、查找前驱和计算优先级的成本。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结贪心回报曲线及模型更新次数。Dyna 的 Q 更新总数为 step + model_backups；本优先扫描实现的 Q 更新总数就是 model_backups。日志没有逐步行为奖励或 Q 表，不能恢复训练累计收益或每个检查点的策略。
+
+计算位置：[classic/dyna_q.py](../implementations/classic/dyna_q.py) · [classic/prioritized_sweeping.py](../implementations/classic/prioritized_sweeping.py) · [classic/q_learning.py](../implementations/classic/q_learning.py) · [classic/_common.py](../implementations/classic/_common.py)
+
+</details>
 
 **结果分析。** 首个15步检查点，Dyna平均回报0.5819，纯Q-learning为−0.2；到615步二者均为0.7774075。差别主要出现在样本有限的早期，不是更高的最终最优值。
 
@@ -276,9 +298,24 @@ python3 implementations/classic/prioritized_sweeping.py --steps 1200 --seeds 0 1
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/prioritized_sweeping/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-prioritized_sweeping.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：确定性贪心策略折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 Q，从六格链的起点0按确定性贪心动作计算折扣回报（γ=.95）。并列时评价选动作0，训练则在并列最优动作间均匀分配利用概率。循环路径的尾项用几何级数计入。
+
+**step：怎样计时。** step 是真实转移次数，包含到达终点的那一步。Dyna 每步直接更新一次 Q，再做5次模型更新；优先扫描先写模型和队列，Q 只在出队时更新，每步至多5次。model_backups 不含排队、查找前驱和计算优先级的成本。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结贪心回报曲线及模型更新次数。Dyna 的 Q 更新总数为 step + model_backups；本优先扫描实现的 Q 更新总数就是 model_backups。日志没有逐步行为奖励或 Q 表，不能恢复训练累计收益或每个检查点的策略。
+
+计算位置：[classic/dyna_q.py](../implementations/classic/dyna_q.py) · [classic/prioritized_sweeping.py](../implementations/classic/prioritized_sweeping.py) · [classic/q_learning.py](../implementations/classic/q_learning.py) · [classic/_common.py](../implementations/classic/_common.py)
+
+</details>
 
 **结果分析。** 15步时五种子均达到0.7774075，而Q-learning为−0.2；最终两者相同。这个图展示在很小链上的快速奖励传播，没有证明优先扫描对所有图结构都优于均匀Dyna。
 
@@ -331,7 +368,7 @@ python3 implementations/classic/prioritized_sweeping.py --steps 1200 --seeds 0 1
 
 一次真实经验既更新模型，也支持额外规划。持续环境中应同时测模型陈旧程度和规划收益。
 
-[分册导读](../docs/learning-route-classic-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-dyna) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=dyna) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=dyna)
+[分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-dyna) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=dyna) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=dyna)
 
 
 

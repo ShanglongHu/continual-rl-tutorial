@@ -23,7 +23,7 @@ implementations/
 
 多数基础组的 `_common.py` 共享环境、网络构造、采样和指标。`learner_control/_common.py` 还明确共享两组对照的交互与记忆更新循环；差分 Q 更新在 `online_differential_q.py` 中，冻结入口只改变参数更新权限。阅读时应追踪实际调用，而不能仅凭文件名判断算法边界。例如固定温度 SAC 不等于自动调温版本；单工作器同步 A2C 不等于分布式 A3C；已知奖励权重下的 GPI 不等于自动发现任务。
 
-集成智能体另在 `integrated_agents/_system.py` 明确展示共享闭环。五个命名入口是同一系统的不同模块配置，不是五种新的研究算法。网页在每个入口下直接展开该核心源码。
+集成智能体另在 `integrated_agents/_system.py` 明确展示共享闭环。五个命名入口是同一系统的不同模块配置，不是五种新的研究算法。网页在每个入口下提供可展开的核心源码。
 
 独立子机制实验也能完整运行，但只回答限定问题。透明消融入口会显式调用主方法并关闭一个机制，不计作新的完整算法。覆盖层次见[实现清单](implementation-coverage.md)。
 
@@ -155,6 +155,32 @@ python3 -m rlworkbench compare runs/bandit-teaching-v1 --candidate bandit_consta
 适配器冻结源码摘要并拒绝漂移；保存完整算法×种子人口。`failure-score` 是预先规定的复合分析分值，不是算法真实回报。对 RMSE 等越小越好的指标，应设定高而非低的失败分值。外层不重复评价；使用算法自己记录的指标，因此先读指标定义。
 
 此流程不自动启动 HPO、分布式训练或检查点恢复。大型作者工程保留原训练器，参见[作者工程接入](author-projects.md)和 Workbench 的 `docs/external-adapters.md`。
+
+## 明确近期与生命期指标
+
+Workbench 适配器 v2 可用 `--metric-spec` 固定字段、聚合、时钟、窗口、单位和字段含义。运行 `python3 -m rlworkbench.tutorial_adapter plan --help` 确認当前 checkout 包含此选项。不指定时仍取最后一条 `value`；它的统计对象由算法文件定义。
+
+集成智能体中，`value` 是最近 `min(t,100)` 个环境步的奖励均值；`average_reward` 是从第 1 步到 t 的实际奖励总和除以 t。前者回答近期表现，后者包含全部学习成本。要比较生命期收益率，取最后一条 `average_reward`，不要再次平均各检查点的累计均值。
+
+例如四步奖励 A=`[4,4,0,0]`、B=`[0,0,1,1]`。最终两步均值为 A=0、B=1；生命期均值为 A=2、B=0.5。这是固定日志算例，用于检查指标含义，不是算法训练结果。
+
+在 Workbench 根目录，先只生成和校验协议：
+
+```bash
+python3 -m rlworkbench.tutorial_adapter plan \
+  --tutorial-root TUTORIAL_CHECKOUT \
+  --ids integrated_recent_model integrated_no_planning \
+  --baseline integrated_no_planning --track continual \
+  --metric-spec examples/tutorial-metric-lifetime.json \
+  --study-id integrated-lifetime-smoke-v2 \
+  --seeds 11 23 --holdout-seeds 101 211 --steps 1200 \
+  --failure-score -10 --out studies/integrated-lifetime-smoke-v2.json
+python3 -m rlworkbench validate studies/integrated-lifetime-smoke-v2.json --external
+```
+
+`examples/tutorial-metric-recent.json` 则选择最终近期表现。不同问题使用新协议；旧锁和旧结果不改写。两种智能体的模型备份成本不同，固定环境步不等于固定计算预算。完整字段语义、无训练的检查例和后续执行步骤见 Workbench 的 `docs/tutorial-adapter.md`。
+
+记录窗口只筛选日志，不改变字段内部已有的滚动窗口。`mean` 聚合要求窗口内逐步完整的记录；稀疏检查点不能直接当作时间平均。
 
 ## 维护网页结果
 

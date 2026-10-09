@@ -1,5 +1,7 @@
 # 不完全可观测：信念状态、信息行动与递归记忆
 
+现代深度强化学习 · 并列研究分支
+
 当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？
 
 ## 本章内容
@@ -7,10 +9,19 @@
 - 从历史条件分布推导 Bayes filter。
 - 把信息获取的价值纳入 Bellman 决策。
 - 区分精确信念、学习的 recurrent state 和训练时的隐状态权限。
+- 逐版本计算 recurrent replay 的状态、TD 标签与截断梯度。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [MDP、回报与价值：序列决策的数学对象](../tabular/mdps.md)：区分状态与当前观测，理解Markov条件。
+- [函数逼近预测：从回归到 TD 固定点](../approximation/prediction.md)：理解参数化预测及其误差，再引入递归活动。
+
 
 ### 条件概率与期望
 
@@ -209,7 +220,7 @@ python3 implementations/extended_adaptation/bayes_filter.py --steps 1200 --seeds
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/extended-bayes_filter/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 observations。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：observations。纵轴：prequential_logloss_ema。每种方法 1200 observations；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 1200 条观测后，五种子的平均损失为 0.353 nats，无记忆对照为 0.478 nats。记忆在该持久状态模型中有帮助，但曲线仍随错误观测与真实切换波动；滤波不是把不确定性消除为零。
 
@@ -263,13 +274,133 @@ $$
 
 与持续学习的连接：在一个长期运行、不方便重置的世界里，清空 hidden state、截断梯度、清空 replay 和重置参数是四个不同的操作。报告中必须写出实际发生了哪个操作，才能判断算法是否真的保留并利用长时经验。
 
+<a id="recurrent-replay-task"></a>
+
+### 5.1 · 仓库标签消失后，回放从哪份记忆开始
+
+前面的 filter 从一个已声明先验开始，随后一直保存后验。学习的递归网络还会改变状态更新函数；若只从经验库抽取中间一段，就同时缺少早期观察和它们形成的活动。[状态构建章的长走廊](../../textbook/state.md#lesson-delayed-memory-budget)已经分开前向记忆和时间信用。本节再加入经验回放与参数副本，逐一检查初始活动、求导窗口和 TD 标签。
+
+用一个只有左右货道的仓库取件任务隔离回放问题；第 6.1–6.2 节再加入中央货道与扫描行动。每回合包裹在 L 或 R，各半；入口 C 的准确标签 $x_0\in\{+1,-1\}$ 分别表示 L、R。随后必须前进四次，观察信号 $x_1=\cdots=x_4=0$；可见位置类型从 C、走廊 M 到路口 J，标签已经被遮挡。J 才能取 L 或 R，正确奖励 4、错误 −2，取件后真正终止；前进奖励为 0，折扣 $\gamma=0.9$。位置类型规定可用动作，但包裹位置不作为网络的额外输入。这里的准确标签与第 6.2 节带噪扫描是两个明示的任务条件。
+
+$$
+h_{-1}=0,\qquad h_t^{(v)}=\tanh\!\left(\rho^{(v)}h_{t-1}^{(v)}+w^{(v)}x_t\right),\quad\theta^{(v)}=(w^{(v)},\rho^{(v)})
+$$
+
+观察先进入状态，随后才选动作。回合内三套参数各自固定：采集版本 $\theta^b=(-0.8,0.8)$、当前版本 $\theta=(0.8,0.8)$、目标副本 $\theta^-= (0.6,0.7)$。它们是本例给定权重，不是训练所得。上标标记“用谁重算这份历史”，不是时间下标。
+
+$$
+Q_\theta(h,L)=1+3h,\quad Q_\theta(h,R)=1-3h,\quad Q_\theta(h,F)=1+3h^2
+$$
+
+F 是走廊唯一可用的前进动作，L、R 只在 J 可用。读出头手工固定，只有递归参数可写入；Q 是待校准的折扣回报估计。平局取 L。准确标签下 J 的真实动作值为正确门 4、错误门 −2；这里的网络估计尚未等于真值。
+
+取一条正标签记录 $(1,0,0,0,0)$。旧参数得到 $h_4^b=-0.2264448$，在 J 取 R，收到 −2。当前参数从回合起点重算相同观察，得到 $h_4=0.2264448$，两个取件估计为 $(1.6793345,0.3206655)$，会选 L；在同一确定性包裹分支上另行重演，这次奖励为 4。经验库仍保存旧行动 R 与奖励 −2，回放训练使用这对样本；当前策略的重演结果不会替换记录。
+
+![入口标签消失后的仓库轨迹与同一观察在旧、当前、目标三个参数版本下的递归活动](../../assets/crl-figures/recurrent-replay-walkthrough-task.svg)
+
+上方只揭示已执行的右取件结果，未选左门保持问号。下方三条曲线从相同回合零状态开始，各自使用一套固定参数；横轴为观察时刻，曲线是精确活动展开。旧策略的右取件记录与当前策略的左取件重演分别报告。原创非线性算例，由独立 Python 与 JavaScript 计算交叉核验。
+
+<a id="recurrent-replay-state"></a>
+
+### 5.2 · 存储旧状态、零起点与 burn-in 分别恢复什么
+
+设抽样片段从观察 $x_2$ 开始，前两项 $x_2,x_3$ 只用于预热（burn-in），学习段从 $x_4$ 开始。存储状态必须说明它位于哪次观察之前：本例保存的是旧采集器处理完 $x_1$ 后的 $h_1^b$，因此应先输入 $x_2$，不能再输入一次 $x_1$。旧状态、当前参数下的完整前缀重建和零初始化是三种不同起点。
+
+$$
+\tilde h_1\in\{h_1^b,0\},\qquad\tilde h_t=f_\theta(\tilde h_{t-1},x_t)\ (t=2,3),\qquad\tilde h_4=f_\theta(\tilde h_3,x_4)
+$$
+
+预热使用当前参数；目标副本也需要自己的状态展开。这里的完整前缀 $h_t^\theta$ 只是“同一观察、当前固定参数、真实回合零起点”的参照，不是精确 belief，也不必等于一个在线变化参数的控制器当时携带的活动。在线状态可能由 $\theta_0,\theta_1,\ldots$ 的混合版本形成。
+
+| 如何开始学习段 | $x_4$ 前的活动 | $x_4$ 后的活动 | 当前读出的门 |
+| --- | --- | --- | --- |
+| 完整当前前缀：从 $x_0$ 重算 | 0.2880487 | 0.2264448 | L |
+| 学习段直接清零 | 0 | 0 | L（平局） |
+| 存储 $h_1^b=-0.4863203$，再预热 $x_2,x_3$ | −0.2880487 | −0.2264448 | R |
+| 从零预热 $x_2,x_3$ | 0 | 0 | L（平局） |
+
+本例的零预热没有恢复标签：两个输入都是 0，零活动仍为零。旧状态携带了标签的影响，却是在旧输入权重下写成负号；当前参数只处理后面的灰观察，也没有机会重写这个符号。若取得从真实回合起点开始的前缀 $x_0,\ldots,x_3$，从零预热便能精确恢复本例的当前参照。前缀是否覆盖必要线索，和它有多少步，是两个需要一起记录的条件。
+
+DRQN 将单帧卷积特征送入 LSTM，再输出各动作 Q 值；其“Stable Recurrent Updates”比较从回合起点连续推进活动与在随机片段处清零。R2D2 §3 则比较零状态、存储状态和 burn-in，分析采集参数与 learner 参数不同导致的表示漂移及状态陈旧。这些是原论文中的具体训练选择；本页用标量 tanh 隔离其中的计算，并未实现整套 Atari agent。
+
+$$
+a_4^*=\arg\max_{a\in\{L,R\}}Q_\theta(h_4^\theta,a),\qquad y_3=\operatorname{stopgrad}\!\left[0+0.9Q_{\theta^-}(h_4^{\theta^-},a_4^*)\right]
+$$
+
+$M_3\to J_4$ 尚未终止。在线副本选门，目标副本评值，是一步 Double-Q 标签。本例 $h_4^{\theta^-}=0.1189176$，故 $y_3=0.9(1+3\times0.1189176)=1.2210776$；当前 F 估计为 $1+3h_3^2=1.2489161$。误把当前 $h_4$ 直接送入目标读出，会得到 1.5114010。目标副本包含递归单元时，同一观察不意味着同一活动坐标。
+
+上式用完整前缀分别构造两个副本以便核验。实际只取得中段时，还需为两个副本分别声明初始化近似；相同旧存储值可以作为两个起点，但后续用 $\theta$ 与 $\theta^-$ 展开后通常不同。[DeepMind 官方 Acme JAX R2D2 learner](https://github.com/google-deepmind/acme/blob/master/acme/agents/jax/r2d2/learning.py)明确执行这两次展开，再由在线输出选择、目标输出评值。冻结 target 的参数和标签，也不等于将 target 的活动复制成 online 活动。
+
+<a id="recurrent-replay-gradient"></a>
+
+### 5.3 · 不在前缀计损失，是否仍让末端误差穿过前缀
+
+现在只训练 J 的旧记录 R／−2。终止标签 $y_4=-2$ 不含自举；在本次求导期间固定记录动作、奖励与参数版本，不对选门、环境结果或跨次优化器更新求导。先保留完整当前前缀，再比较“前缀没有直接损失”和“学习入口把前缀活动作为常数”。两个程序有相同的 $h_4$，却不是同一个可微函数。
+
+$$
+\ell_4(\theta)=\tfrac12\left(Q_\theta(h_4,R)-(-2)\right)^2,\qquad E_t=\begin{bmatrix}\partial h_t/\partial w\\\partial h_t/\partial\rho\end{bmatrix}=(1-h_t^2)\left[\rho E_{t-1}+\begin{bmatrix}x_t\\h_{t-1}\end{bmatrix}\right]
+$$
+
+完整当前前缀从 $E_{-1}=0$ 开始。因子 $1-h_t^2$ 是 tanh 的局部导数，括号保留过去的参数路径及当前直接影响。旧采集版本下保存的敏感度是关于旧参数的导数，不能当作当前参数的 $E$ 接上；存储旧活动作常数初始化时，当前 E 应从零开始。
+
+$$
+E_4^{\rm full}=(0.1312196,0.9596107)^\top,\qquad\tilde h_3=\operatorname{stopgrad}(h_3),\quad E_4^{\rm detach}=(1-h_4^2)(0,h_3)^\top=(0,0.2732783)^\top
+$$
+
+detach 保存 $h_3=0.2880487$ 的数值，但删除它对 $w,\rho$ 的历史路径。学习段唯一输入 $x_4=0$，故直接 w 导数为零；ρ 仍直接乘在保存的活动上，因此其局部导数保留。清空 $h_3$ 则会把 $h_4$ 也变为零，那是另一项操作。
+
+$$
+g_4=(Q_\theta(h_4,R)+2)(-3)E_4,\qquad\theta^+=\theta-0.01g_4
+$$
+
+记录 R 的读出导数是 −3。完整梯度约为 $(−0.9135506,−6.6808061)$，写入 $(w^+,\rho^+)=(0.8091355,0.8668081)$；入口 detach 给 $(0,−1.9025628)$，写入 $(0.8,0.8190256)$。本次写入之后，已经形成的 h 不自动重算；下次重演或未来观察才按新参数计算。
+
+![完整当前前缀与入口detach的相同前向活动、不同反向路径和两个参数的梯度](../../assets/crl-figures/recurrent-replay-walkthrough-gradient.svg)
+
+蓝色节点按观察推进活动；紫色线单独表示求导路径，叉号切断 $h_3$ 的导数。灰色前缀没有直接损失，完整 BPTT 仍可以接收末端误差。下方长度表示参数梯度的绝对值，同一参数内共用零点；w 与 ρ 分别使用标明的范围。独立嵌套展开和固定边界有限差分核验两种函数。
+
+因此 burn-in 长度 B、学习损失窗口 U、反传可达窗口 K 要分开声明。只把预热输出从损失求和中排除，没有切断它通向后续损失的计算图。本例显示两种约定；官方 Acme JAX 实现将预热展开放在被求导的 loss 函数内，学习段剔除前缀的直接损失，但入口没有显式 stop-gradient。不能根据“burn-in”这个名称推断所有实现都采用本例的 detach 版本。
+
+**算法：本页固定一次终止样本和一次非终止标签分别核验。采样权重、优先级、n-step 与值变换属于完整 R2D2 的其他机制，未包含在此标量程序中。**
+
+1. 固定本次 online θ 与 target θ⁻；读出旧记录与真实终止标记。
+1. 明确初始状态位于哪次观察之前：真回合起点、旧存储活动或零近似。
+1. 用两个副本各自的参数推进 burn-in 前缀，不计该前缀的直接损失。
+1. 若协议要求 TBPTT：在学习入口 detach 活动；数值 h 继续保留。
+1. 推进学习段；online 在后继可用动作中选择，target 评值，标签停止梯度。
+1. 真实终止只保留已收到奖励；普通片段边界保留所需后继自举。
+1. 对记录动作计算损失和梯度，再更新 online 参数；不改写记录动作。
+1. 按另行声明的周期复制 target 参数；下次重建活动时使用新版本。
+
+<a id="recurrent-replay-boundaries"></a>
+
+### 5.4 · 片段结束没有让仓库结束，预热也不能补出缺失标签
+
+在 $M_3$ 处结束一次采样，机器人仍将到 $J_4$，故 continuation 保留；本例尾标签仍是 1.2210776。把“chunk 结束”写成 terminal 会把它误设为 0。若片段没有保存所需后继观察，应取得后缀或不训练这条尚无标签的转移。取件后的真实终止才让尾值为零；下一回合重新抽取包裹时，内部活动从零开始。仅在抽样入口 detach 会保留记忆，在抽样入口 reset 则会删除记忆。
+
+$$
+\|f_\theta(h,x)-f_\theta(h',x)\|\leq\kappa\|h-h'\|\ (\kappa<1)\quad\Longrightarrow\quad\|\tilde h_{s+B}-h_{s+B}\|\leq\kappa^B\|\tilde h_s-h_s\|
+$$
+
+这个初始化误差界要求两条计算采用同一固定 θ、同一 B 步输入，并在涉及的状态区域统一满足收缩条件。本例 tanh 的导数不超过一，故 |ρ|=0.8 可取 κ=0.8。它只比较初始化造成的活动差，不保证恢复必要标签、不保证 Q 校准，也不保证动作相同。
+
+这里旧、当前活动符号相反；输入都是 0 时，$h\mapsto\tanh(0.8h)$ 保持符号。因此误差随灰观察缩小，旧状态重建仍一直选错门。若只把保持系数改为 $\rho=1.2$，正、负活动在八次灰观察之后仍相距约 1.31763；没有上述全局收缩条件，就不能沿用 $0.8^B$ 的界。这个例子给出一项失败，并不说明所有非收缩记忆都失败。
+
+![收缩与非收缩递归的初始化误差，以及两个缺失入口标签的相同灰片段被零起点合并](../../assets/crl-figures/recurrent-replay-walkthrough-boundaries.svg)
+
+上图横轴为同一灰前缀的长度 B，纵轴为当前参照与重建的活动差。ρ=0.8 的误差缩小但错误符号保留；ρ=1.2 的指定正负起点持续分离。下方两条入口标签均在采样片段外，零初始化看到相同灰观察，便都取左。曲线由固定 tanh 递推生成，不是训练性能曲线。
+
+再同时检查两个历史：入口分别为 +1 与 −1，片段都只保存 $(0,0,0)$。零初始化后它们都给出 h=0，无论再读多少个零也无法区分，固定平局规则总取 L。两种包裹位置等概率时，期望奖励为 $(4-2)/2=1$；保存完整准确标签历史可得 4。这个缺口来自片段与初始化删除了信息。延长反传窗口只能改变可求导路径，无法创造未保存的标签。
+
+持续学习时，还需分别记录环境变化、采集策略版本、活动初始化来源、在线与目标参数版本，以及预热和信用窗口。可以先固定观察记录，比较完整当前前缀、存储旧状态、零状态和不同前缀长度；再用同一信息条件下的新交互检验动作和回报。活动误差变小与闭环收益改善应各自测量。
+
 <a id="lesson-example"></a>
 
 ## 6 · 两个可手算的例子
 
 设物体藏在左室或右室。智能体不能看见它，只能等待一步，再读取一盏有噪声的指示灯。等待期间物体可能换房间；灯亮也不唯一对应某个位置。因此先用转移模型预测位置，再用实际灯光更新信念。下图始终不揭示物体的真实位置。
 
-![两房间隐藏位置的先验、概率搬运、灯光似然和后验四步图](https://yingwen.io/crl-figures/concept-deep3-belief-update.svg)
+![两房间隐藏位置的先验、概率搬运、灯光似然和后验四步图](../../assets/crl-figures/concept-deep3-belief-update.svg)
 
 给定模型下的一次精确滤波。圆面积表示位置概率；虚线表示模型搬运概率。灯光行的十个点表示似然比例，不是新采集的十次观测。预测概率分别乘以灯亮似然，再共同除以证据 $0.572$。图按 Kaelbling、Littman、Cassandra（1998）§3.3 的滤波规则绘制；两房间参数是本节算例。
 
@@ -278,6 +409,70 @@ $$
 为什么不能把灯亮时的左室概率直接写成 0.8？0.8 回答的是“已知物体在左室，灯有多大概率亮”。控制需要的却是“已经看到灯亮，物体有多大概率在左室”。前一个问题给出似然；后一个问题还取决于等待后各位置原本有多可能。
 
 另一个任务只有左右两扇门，隐藏的正确门先验各半，选对得一、选错得负一。立即选择的期望收益为零。准确率 0.8 的传感器让观察后的最佳选择收益为 0.6；感知成本 0.1，净收益为 0.5。若传感器完全无信息，净增益为 −0.1。
+
+<a id="belief-planning-task"></a>
+
+### 6.1 · 同一个路口：保存分布还是只保存位置均值
+
+继续用一个取件任务，把状态估计与行动接在一起。机器人站在仓库路口，左、中、右货道均被门遮住；包裹只在一个货道，隐藏位置为 $S\in\{L,C,R\}$，坐标编码是 $x(L)=-1,x(C)=0,x(R)=1$。部署观察总是同一个路口画面，机器人不能读取真实位置。已知的任务模型、初始 belief 与预算由设计者提供；不同的已到达历史可以给出不同 belief。
+
+任务最多允许两个动作，使用 $\gamma=1$ 的有限期望总奖励。初始阶段可直接取左、中或右，也可扫描一次。扫描不移动包裹，立即扣除 $0.4$，随后只能取件，不能再次扫描。取件正确得 $4$、错误得 $-2$，奖励到账后任务真正终止，尾值为零。若直接取件，任务在第一个动作后便结束。阶段与剩余预算也是决策状态的一部分。
+
+$$
+b^{A}=(\tfrac12,0,\tfrac12),\quad b^{B}=(0,1,0),\qquad \mathbb E_{b^A}[x(S)]=\mathbb E_{b^B}[x(S)]=0
+$$
+
+belief 分量按 L、C、R 排列。两个 belief 都可在同一个路口出现；它们是本节给定的两份历史条件分布，不是把读者图中的真实位置透露给机器人。
+
+$$
+Q_{\rm collect}(b,j)=4b(j)-2[1-b(j)]=6b(j)-2,\quad j\in\{L,C,R\}
+$$
+
+对包裹位置取完整条件期望。历史 A 的三个动作值为 $(1,-2,1)$，历史 B 为 $(-2,4,-2)$，最佳取件货道不同。平局时教程选择最左动作。
+
+![读者全知仓库示例、机器人实际遮挡观察，以及两份均值相同却动作不同的belief](../../assets/crl-figures/belief-planning-walkthrough-task.svg)
+
+先读上方两种信息权限：读者示例画出左侧包裹，部署观察只画遮挡门。下方柱高表示两份给定 belief，二者位置均值都为零，却分别偏好侧边与中央。原创任务与精确动作期望，由本页教程生成；全知示例不作为 actor 输入。
+
+若把平均位置零当作确定的中央位置，便会给历史 A 的取中动作预测 $4$，而它的真实期望为 $-2$。即使均值预测完全正确，这个非线性取件奖励仍需位置分布。给定正确模型时完整 belief 递归地保留预测与控制所需的信息；只保留一个均值没有这样的保证。能否进一步压缩，要看压缩后是否仍能区分后果与动作值。
+
+<a id="belief-planning-scan"></a>
+
+### 6.2 · 扫描之后，哪条观察真正改变取件动作
+
+扫描给出一个标签 $O\in\{L,C,R\}$。用行表示包裹位置、列表示标签，完整观测模型如下；准确率 $0.8$ 的剩余概率均分给另两个标签。扫描奖励固定，所以此步奖励不额外揭示位置。
+
+$$
+\Pr(O=o\mid S=s,A=\mathrm{scan})=\begin{cases}0.8,&o=s,\\0.1,&o\ne s,\end{cases}\qquad O_{\rm scan}=\begin{bmatrix}.8&.1&.1\\.1&.8&.1\\.1&.1&.8\end{bmatrix}
+$$
+
+包裹在扫描期间保持原位，$T_{\rm scan}(s,s')=\mathbf1[s=s']$。这两项共同规定了全部扫描后果，而不是只给一个正确率。
+
+$$
+p_o=\sum_s b^A(s)O_{\rm scan}(s,o),\qquad b^A_o(s)=\frac{b^A(s)O_{\rm scan}(s,o)}{p_o}
+$$
+
+分母是该标签的发生概率。收到 L 时分子为 $(0.4,0,0.05)$，分母 $0.45$，所以后验为 $(8/9,0,1/9)$；收到标签不是直接取得真实位置。
+
+| 收到标签 | 分支概率 | 归一化后验 | 取件动作 | 条件期望奖励 |
+| --- | --- | --- | --- | --- |
+| $L$ | $0.45$ | $(8/9,0,1/9)$ | 左 | $10/3$ |
+| $C$ | $0.10$ | $(1/2,0,1/2)$ | 左（与右平局） | $1$ |
+| $R$ | $0.45$ | $(1/9,0,8/9)$ | 右 | $10/3$ |
+
+$$
+Q_{\rm scan}(b^A)=-0.4+0.45\cdot\tfrac{10}{3}+0.10\cdot1+0.45\cdot\tfrac{10}{3}=2.7
+$$
+
+立即取左的期望为 $1$，所以扫描在这里增加 $1.7$。标签 C 没有区分左右；保留这一条分支及其成本，才得到完整期望。
+
+![扫描计划树的三条信号分支、后验概率和不同取件动作](../../assets/crl-figures/belief-planning-walkthrough-plan.svg)
+
+紫色虚线表示模型中的三种可能标签；机器人真实执行时只沿收到的一条分支行动。横条按左、中央、右后验概率着色。每条分支先条件化再选取件动作，最后按标签概率加权。固定 scan→左的净期望为 0.6；扫描后依标签取左/左/右的净期望为 2.7。原创精确枚举。
+
+信息价值来自后续行为对标签的响应。若扫描后无论看到什么都取左，成功率仍为 $1/2$，净收益只剩 $1-0.4=0.6$。历史 B 已知包裹在中央，扫描后也始终取中；扫描只能把收益从 $4$ 降到 $3.6$。同一个传感器，面对不同 belief 会有不同控制价值。[模型与规划章](model-based.md#belief-planning-contingent)将用这一任务比较确定动作序列与条件计划。
+
+本节滤波与条件计划分别对应 [Kaelbling、Littman、Cassandra（1998）§3.3–3.4 与 §4.1](https://www.cassandra.org/arc/papers/aij98.pdf)及 [Algorithms for Decision Making §19.2、§20.1–20.2](https://algorithmsbook.com/)。取件参数是本节原创算例，读者可以在已知模型下枚举所有计划。
 
 <a id="lesson-code"></a>
 
@@ -323,6 +518,26 @@ def information_value(prior, sensor, rewards, sensing_cost=0.):
 ```
 
 执行 python3 examples/extended_foundations_lab.py demo 查看 posterior、evidence 和信息收益；执行 test 检查归一化、零证据与无信息传感器。代码没有训练 recurrent 网络，也没有实现一般 POMDP 规划器。pomdp-solve 是 Cassandra 的经典求解软件；pomdp-py 是后续研究框架，二者的归属与实现范围不同。
+
+取件任务另有一个可独立下载的 [标准库 Python 教程](../../tutorials/belief-planning-walkthrough.py)。在仓库根目录运行下面的命令，逐条打印信号概率、后验和动作；--test 用精确分数枚举 27 个条件计划，并在多组 belief 与传感器核上交叉检查。
+
+单文件即可运行，无额外依赖；输出是已知有限任务的解析结果。
+
+```bash
+python3 tutorials/belief-planning-walkthrough.py
+python3 tutorials/belief-planning-walkthrough.py --test
+python3 tutorials/belief-planning-walkthrough.py --json
+```
+
+递归回放另有 [独立 Python 标准库教程](../../tutorials/recurrent-replay-walkthrough.py) 和 [JavaScript 逐步计算](https://yingwen.io/crl-code/figures/recurrent-replay-walkthrough.mjs)。Python 对每个前缀重新嵌套 tanh，并展开局部 Jacobian 的乘积求导；JavaScript 推进敏感度递推。两者逐字段核对三个参数版本、两个隐藏历史、损失、标签和边界，有限差分分别固定或重算前缀以核验完整与 detach 函数。
+
+下载单文件后可从空目录运行，只需 Python 3.10+ 标准库；默认打印状态、取件动作、标签与梯度，--json 输出同一确定性数据。
+
+```bash
+python3 tutorials/recurrent-replay-walkthrough.py
+python3 tutorials/recurrent-replay-walkthrough.py --test
+python3 tutorials/recurrent-replay-walkthrough.py --json
+```
 
 <a id="lesson-branches"></a>
 
@@ -410,6 +625,10 @@ for lam in (0., .5, 1.):
 - 问：Bayes 更新的证据为零时可以加一个很小的数继续吗？答：数值平滑可以作为建模改动，但不能隐去模型与观测矛盾；需要报告所用平滑和支持假设。
 - 实验：将传感器准确率从 0.8 改为 0.5。在门任务里后验保持先验，信息净收益应为 −0.1；此结论不依赖控制网络。
 
+## 从本章进入实践
+
+[行动与经验](https://yingwen.io/zh/continual-rl/code/#practice-action-evidence)：行动决定了能得到哪些证据。学习又怎样改变下一次行动？
+
 
 
 <a id="chapter-code"></a>
@@ -428,6 +647,16 @@ python3 examples/extended_foundations_lab.py test
 
 ## 参考文献与实现
 
+- [Sutton & Barto · Reinforcement Learning, second edition](http://incompleteideas.net/book/the-book-2nd.html)：§17.3 pp.464–467：观察历史、递归状态更新与给定模型下的 belief。
+
+- [Hausknecht & Stone · Deep Recurrent Q-Learning for Partially Observable MDPs](https://arxiv.org/abs/1507.06527)：2015 工作，已核对 v4 的 DRQN Architecture 与 Stable Recurrent Updates；随机片段清零与整回合递推的区别。
+
+- [Kapturowski et al. · Recurrent Experience Replay in Distributed Reinforcement Learning](https://openreview.net/forum?id=r1lyTjAqYX)：ICLR 2019 论文入口；本节已核对公开送审稿 §2.3、§3 的 stored state、burn-in 与状态陈旧诊断。
+
+- [R2D2 · OpenReview 原始公开送审稿](https://openreview.net/references/pdf?id=Hy7PKCFCQ)：可读全文版本；§3 对初始化与 Q discrepancy 的机制说明，经验发现保持原实验范围。
+
+- [DeepMind · Acme JAX R2D2 learner](https://github.com/google-deepmind/acme/blob/master/acme/agents/jax/r2d2/learning.py)：loss 中分别展开 online/target 活动，剔除前缀直接损失；预热处没有显式 stop_gradient。后续官方实现，不冒称论文原始训练工程。
+
 - [Kaelbling、Littman、Cassandra · Planning and Acting in Partially Observable Stochastic Domains](https://www.cassandra.org/arc/papers/aij98.pdf)：作者托管原文；belief、决策与 POMDP 求解。
 
 - [Cassandra · pomdp-solve](https://www.pomdp.org/code/index.html)：经典 POMDP 求解软件的作者入口，并非神经 recurrent agent。
@@ -436,12 +665,10 @@ python3 examples/extended_foundations_lab.py test
 
 - [Kochenderfer、Wheeler、Wray · Algorithms for Decision Making](https://algorithmsbook.com/)：作者书站提供决策、信念状态、模型与规划教材及配套 Julia 代码入口。
 
-- [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：§9–11：函数逼近与离策略；§12：资格迹；§13.1 的短走廊与 §13.2–13.5 的策略梯度。对照各结论采用的策略类、采样分布与函数表示。
-
-- [Kapturowski et al. · Recurrent Experience Replay in Distributed Reinforcement Learning](https://openreview.net/forum?id=r1lyTjAqYX)：原论文分析 replay 中的参数延迟、表示漂移、recurrent state staleness，以及 stored state 和 burn-in 的取舍。
-
 - [Baisero & Amato · Unbiased Asymmetric Reinforcement Learning under Partial Observability](https://www.ifaamas.org/Proceedings/aamas2022/pdfs/p44.pdf)：§4–5：state-only critic 的条件与 history-state value；额外训练信息不自动消除历史依赖。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-partial-observability#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-partial-observability#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-partial-observability)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -459,6 +686,11 @@ Bellman 方程先假定有足够的状态。表格为不同状态分别存值；
 [MDP 的状态条件](../tabular/mdps.md) → [表示与泛化](../approximation/features-control.md) → [不完全可观测](partial-observability.md) → [智能体状态](../../textbook/state.md)
 
 
+### 可进一步检验的问题
+
+- [02 · 有限的内部状态应当保留哪些历史信息？](../../docs/research-atlas.md#research-agent-state)：精确信念更新与信息行动提供可检查的参照，进而可以辨认有限递归状态丢失的是哪项决策信息。
+
+
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)
 
 - [智能体状态与递归学习](../../textbook/state.md)
@@ -466,4 +698,4 @@ Bellman 方程先假定有足够的状态。表格为不同状态分别存值；
 - [时间信用分配与资格迹](../../textbook/credit.md)
 - [转移模型与后果模型](../../textbook/models.md)
 
-对应原始材料：Kaelbling、Littman、Cassandra：POMDP；Algorithms for Decision Making：state uncertainty。本文为原创讲解，原书、论文与上游代码保留各自许可。
+对应原始材料：Sutton & Barto §17.3；Kaelbling、Littman、Cassandra：POMDP；DRQN：Stable Recurrent Updates；R2D2 §3：recurrent replay；Algorithms for Decision Making：state uncertainty。本文为原创讲解，原书、论文与上游代码保留各自许可。

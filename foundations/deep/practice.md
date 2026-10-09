@@ -1,5 +1,7 @@
 # 深度 RL 的机制接口：模型、记忆、离线数据与实验
 
+现代深度强化学习 · 第 6 章
+
 改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？
 
 ## 本章内容
@@ -11,6 +13,14 @@
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [深度价值学习：DQN、Double DQN 与目标的时间顺序](deep-value.md)：掌握采样、回放、标签和参数更新的基本循环。
+- [策略梯度：从轨迹概率到 GAE 与 actor–critic](policy-gradient.md)：掌握rollout、优势和策略更新之间的数据关系。
+
 
 ### Bellman 递推
 
@@ -112,6 +122,8 @@ DQN、PPO、TD3 与 SAC 的损失不能脱离数据采集过程理解。每条�
 
 数据记录也包括观测归一化器与奖励变换的状态。若训练过程中更新归一化统计，旧 replay 的原始观测与已归一化特征会产生不同语义；必须选择保存哪一种，并保持实验一致。
 
+当环境、动作推理与梯度更新在不同机器上并行，这份约定还必须描述策略版本和经验等待时间。接续本章的 [大规模训练：算法与系统怎样共同设计](systems.md) 从 A3C、IMPALA 与 V-trace，讲到 OpenAI Five 的采样与推理分工、SEED RL 的集中推理，以及 GEAR 的经验存取；逐一解释吞吐、延迟、离策略与资源利用之间的关系。
+
 <a id="lesson-derive"></a>
 
 ## 2 · 模型误差为什么会沿自举放大
@@ -154,11 +166,13 @@ $h$ 是当下的历史摘要，$E$ 是摘要对参数的敏感度。保留 $h$ �
 
 配套最小例子固定递归系数 $a$，学习输入系数 $\theta$：$h_t=ah_{t-1}+\theta x_t$，初始 $h_0=0$。于是 $E_t=aE_{t-1}+x_t$。取 $a=0.5,\theta=0.2$，输入 $(1,0,0)$，得到状态 $(0.2,0.1,0.05)$ 与敏感度 $(1,0.5,0.25)$。对输入系数做中心差分即可检验最后的 0.25；若改为学习递归系数，直接导数项应变为 $h_{t-1}$。
 
-![完整梯度、截断梯度与清空记忆下，前向 hidden state 和参数敏感度的不同演化](https://yingwen.io/crl-figures/concept-depth-classic-memory-gradients.svg)
+![完整梯度、截断梯度与清空记忆下，前向 hidden state 和参数敏感度的不同演化](../../assets/crl-figures/concept-depth-classic-memory-gradients.svg)
 
 在第一步之后施加边界操作，其他设置相同。蓝色是前向记忆；橙色圆面积表示对输入系数 $\theta$ 的敏感度。detach 将已得到的 $h_1$ 当作常数，后两步的记忆数值仍为 0.1、0.05；清空记忆才使它们变成 0。参数在三步内保持不变，图中未做优化。[精确递推代码](https://yingwen.io/crl-code/figures/classic-visual-depth.mjs)。
 
-从 replay 抽取 recurrent 序列还需要初始状态。用一段 burn-in 重建 hidden state 能缓解直接用零状态的失配，但使用当前参数重建的状态不一定等于采集时的状态。跨任务的变化和长时记忆会放大这一差别。模型记忆、记忆重建和梯度窗口应分别记录。
+从 replay 抽取一段中途开始的序列，还需要解释其初始状态从哪里来。保存的状态由采集时的参数形成；当前网络若从历史起点重新展开，可能得到另一个状态。预热（burn-in）先读一段前缀，再在后缀计算损失，用来减轻这项起点失配。前缀如果没有包含必要线索，从零开始预热仍可能丢失决定动作的信息。
+
+损失从哪里开始与梯度在哪里截断，是两个独立决定。可以让后缀损失穿过整个预热段求导，也可以将预热末端状态保留为数值、截断其梯度。两者在这次前向计算中输出相同，却可能得到不同的参数更新。[递归回放算例](partial-observability.md#recurrent-replay-task)逐项比较保存状态、零状态和当前参数重建，并把它们接到实际动作与 TD 标签。
 
 <a id="course-optimizer-memory"></a>
 
@@ -226,7 +240,7 @@ python3 implementations/deep/cql.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/deep-cql/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 training_batches。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：training_batches。纵轴：冻结策略的外部回报。每种方法 1200 training_batches；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 600 个 batch 两者均约 0.94；1200 个 batch 分别为 0.94 与 0.932。当前数据已经足以学到近最优路线，不能用此例证明保守正则对严重覆盖不足普遍有效。
 
@@ -425,13 +439,17 @@ $$
 - 问：CQL 正则能从零数据推断未见动作奖励吗？答：不能。它限制乐观外推，不产生缺失的因果信息。
 - 实验：把 DeadlineChain 的剩余时间从观察删除，在不同剩余步数的同一位置比较价值目标；答案是出现状态混叠，不能简单归因于 DQN 优化失败。
 
+## 从本章进入实践
+
+[策略梯度与控制](https://yingwen.io/zh/continual-rl/code/#practice-policy-control)：优化器确实降低了损失，为什么行动仍可能变差？
+
 
 
 <a id="chapter-code"></a>
 
 ## 下载与运行
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 [下载 deep_textbook_lab.py](../../examples/deep_textbook_lab.py)
 
@@ -469,6 +487,8 @@ python3 examples/deep_textbook_lab.py test
 
 - [Elsayed et al. · Streaming Deep Reinforcement Learning Finally Works](https://arxiv.org/abs/2410.14606)：Stream-X 将神经预测与控制放回逐样本更新；应逐项检查归一化、初始化、资格迹和步长控制，不把移除 replay 当作完整算法。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-practice#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-practice#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-practice)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -483,7 +503,14 @@ python3 examples/deep_textbook_lab.py test
 
 持续学习中的研究问题：单一行为流怎样支持许多预测和技能？在固定内存下，怎样权衡覆盖、样本年龄、更新方差与适应速度，而不把离策略修正当作完整稳定性保证？
 
-[离策略稳定性](../approximation/off-policy.md) → [数据与训练接口](practice.md) → [离线数据的覆盖](offline.md) → [流式更新](../../textbook/streaming.md)
+[离策略稳定性](../approximation/off-policy.md) → [数据与训练接口](practice.md) → [大规模系统与策略滞后](systems.md) → [离线数据的覆盖](offline.md) → [流式更新](../../textbook/streaming.md)
+
+
+### 可进一步检验的问题
+
+- [02 · 有限的内部状态应当保留哪些历史信息？](../../docs/research-atlas.md#research-agent-state)：将 recurrent 活动状态与跨时间参数梯度分开，才能区分线索没有被保存和保存机制没有学会。
+- [13 · 为什么训练越久，学习新东西反而越慢？](../../docs/research-atlas.md#research-plasticity)：训练与评价协议中的参数、优化器和数据权限必须明确，才能比较老网络、新初始化及局部重置后是否还能学会新目标。
+- [16 · 什么实验能区分“仍在更新”与“仍在有效学习”？](../../docs/research-atlas.md#research-measurement)：分开训练过程、冻结评价、随机重复和计算预算，才能判断一个机制改善了哪一段学习过程。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

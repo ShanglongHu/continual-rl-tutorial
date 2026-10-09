@@ -1,16 +1,26 @@
 # 离策略函数逼近：覆盖、发散与稳定更新
 
+函数逼近与经典进阶方法 · 第 4 章
+
 行为数据足够覆盖目标策略，为什么 TD 仍可能发散，又能怎样修复？
 
 ## 本章内容
 
-- 区分动作重要性修正与状态加权带来的稳定性。
-- 推导 MSPBE 及 GTD2、TDC 的辅助权重更新。
-- 理解 emphatic weighting 的目的、时间索引和线性理论条件。
+- 用同一二状态例子区分动作校正、当前状态权重和目标占据。
+- 从投影几何推导 MSPBE，手算 GTD2、TDC 的样本方向与辅助量。
+- 算出 emphatic 强调质量，并区分稳定更新、投影固定点与真实价值。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [函数逼近预测：从回归到 TD 固定点](prediction.md)：区分逼近误差、投影和TD固定点。
+- [Monte Carlo：完整回报、探索控制与离策略评价](../tabular/monte-carlo.md)：掌握行为策略、目标策略与重要性比率。
+
 
 ### 两种策略与覆盖
 
@@ -148,6 +158,17 @@ ETD 的 follow-on 分布也不是简单地把行为分布还原成目标的稳�
 
 有 A、B 两状态和“去 A”“去 B”两个动作。行为在每个状态都以 0.1 概率去 B、0.9 概率去 A，所以平稳状态权重是 (0.9,0.1)。目标总去 B；它的动作被行为覆盖。令奖励全为 0，$\gamma=0.9$，一维特征 $x_A=1,x_B=2$。
 
+行为转移矩阵的两行都是 $(0.9,0.1)$，目标矩阵的两行都是 $(0,1)$。目标的平稳占据为 $d_\pi=(0,1)$，但用行为流预测时仍会在 A 收到大量更新。“去 A”的动作比为 0，“去 B”的动作比为 10。下面把 $w$ 冻结在 1，列出全部四种经验；概率是行为稳态下当前状态与动作的联合概率。
+
+| 经验 | 行为联合概率 | 动作比 ρ | δ（旧 w=1） |
+| --- | --- | --- | --- |
+| A → A | 0.81 | 0 | −0.1 |
+| A → B | 0.09 | 10 | 0.8 |
+| B → A | 0.09 | 0 | −1.1 |
+| B → B | 0.01 | 10 | −0.2 |
+
+乘动作比后，A→B 的加权质量是 $0.09\times10=0.9$，B→B 是 $0.01\times10=0.1$，其余为零。下一状态已经全部指向 B，当前状态质量却仍是 $(0.9,0.1)$。因此 $\rho$ 已完成它应完成的动作校正，下面的发散仍可能发生。
+
 $$
 \begin{aligned}A&=\mathbb E_b[\rho x(x-\gamma x')]\\ &=0.9(1)(1-1.8)+0.1(2)(2-1.8)\\ &=-0.68.\end{aligned}
 $$
@@ -162,7 +183,7 @@ $$
 
 图中目标箭头总指向大特征状态，而行为大多停留在小特征状态。把这两种比例代入更新，原本要纠正预测的反馈变成了放大器。下面两条对照只改变这个具体模型的数据分布或自举项。
 
-![两个共享权重状态、目标策略箭头与行为状态质量，以及原反例和两项单机制对照的精确均场递推。](https://yingwen.io/crl-figures/concept-classic-td-stability.svg)
+![两个共享权重状态、目标策略箭头与行为状态质量，以及原反例和两项单机制对照的精确均场递推。](../../assets/crl-figures/concept-classic-td-stability.svg)
 
 原创精确递推图，$w_0=1,\alpha=0.01$，共 300 次固定数据律的均场更新，非在线随机训练曲线。原反例乘子为 1.0068；改用目标策略平稳分布时为 0.996；保留行为状态权重但令 $\gamma=0$ 时为 0.987。三条曲线共用坐标。这里的稳定对照是本例的计算结果，一般收敛仍需其余条件。
 
@@ -190,7 +211,7 @@ python3 implementations/nonlinear_diagnostics/baird_expected_td.py --steps 1200 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/baird_expected_td/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 expected_sweeps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：expected_sweeps。纵轴：log10(1 + 七状态价值 RMSE)。每种方法 1200 expected_sweeps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 半梯度 TD 的平均图值由约 0.529 增至 2.641；五种子原始 RMSE 末尾约为 436–438。残差梯度末尾图值约 0.271，未发生同样增长。该反例直接说明不稳定并非只能归因于深网或随机噪声。
 
@@ -284,10 +305,10 @@ $$
 用 $b_v$ 表示奖励向量，避免与行为策略 $b$ 混淆。将投影矩阵代入 MSPBE 并约去 $C$ 后，得到这个二次目标。要求特征在行为分布下独立，使 $C$ 可逆。
 
 $$
-\begin{aligned}-\nabla J(w)&=A^\top C^{-1}(b_v-Aw),\\ h&\approx C^{-1}(b_v-Aw).\end{aligned}
+\begin{aligned}-\nabla J(w)&=A^\top C^{-1}(b_v-Aw),\\ h^*(w)&=C^{-1}(b_v-Aw),\qquad h\approx h^*(w).\end{aligned}
 $$
 
-辅助权重 $h$ 学习一组预条件化的期望 TD 更新。它不是第二个价值函数，而是为了用单个经验流跟踪梯度中的期望。
+辅助权重 $h$ 学习一组预条件化的期望 TD 更新。冻结主权重后，它是用当前特征回归目标 $hodelta$ 的最小二乘系数；目标和回归系数都不同于真实价值。
 
 <a id="rlss-td-nonconservative"></a>
 
@@ -339,9 +360,35 @@ $$
 
 这一反例直接通向 agent state：加入记忆是否真的区分了与未来有关的历史？如果在动作前没有任何线索区分 A₁、A₂，仅换成 RNN 也不能凭空恢复隐藏标签。先写清学习器能见到什么，再决定损失与可检验的正确性标准。
 
+<a id="offpolicy-geometry"></a>
+
+## 4 · 同一反例中的投影几何与下降方向
+
+在线性函数类中，两状态的全部可表示预测为 $\Phi w=(w,2w)$，其中 $\Phi=(1,2)^\top$。投影的距离由 $D_b=\operatorname{diag}(0.9,0.1)$ 决定。将两坐标分别乘 $\sqrt{0.9}$ 和 $\sqrt{0.1}$ 后，$D_b$ 加权距离就成为普通欧氏距离；图中两轴按同一长度单位绘制。
+
+$$
+\Pi_{D_b}=\Phi(\Phi^\top D_b\Phi)^{-1}\Phi^\top D_b,\qquad \Pi_{D_b}y=\Phi\frac{0.9y_A+0.2y_B}{1.3}.
+$$
+
+投影选择一个共享参数，使两个坐标的加权平方差最小。它不能独立修改 A 和 B。
+
+在 $w=1$ 时，$\hat v=(1,2)$，$T_\pi\hat v=(1.8,1.8)$。投影标签的参数为 $1.98/1.3=99/65$，所以 $\Pi_{D_b}T_\pi\hat v=(99/65,198/65)$。这个投影点沿可表示直线走向更大的 $w$；反复跟随标签并不等于对投影误差目标求梯度。
+
+![同一零奖励二状态例子的加权正交投影：当前价值、Bellman标签、投影标签，以及相反的普通TD和MSPBE负梯度方向。](../../assets/crl-figures/offpolicy-geometry-walkthrough-projection.svg)
+
+原创精确计算，$w=1,D_b=\operatorname{diag}(0.9,0.1)$。图的价值坐标已乘 $\sqrt{D_b}$，紫色虚线显示正交投影；红、青箭头分别为 Bellman 残差和投影残差。下方箭头长度表示未乘步长的参数方向：TD 为 0.68，$-\nabla J=-578/1625$。来源思想对应原书 §11.4、§11.7 与 Sutton 等 2009 §3–4，数值是本页变体。
+
+$$
+\begin{aligned}\mathrm{VE}_{D_b}(1)&=1.3,\\\mathrm{MSBE}(1)&=0.9(0.8)^2+0.1(-0.2)^2=0.58,\\\mathrm{MSPBE}(1)&=\frac{0.68^2}{1.3}=\frac{578}{1625},\\J(w)&=\tfrac12\mathrm{MSPBE}(w)=\frac{289}{1625}w^2,\\h^*(w)&=\frac{34}{65}w,\qquad-\nabla J(w)=-\frac{578}{1625}w.\end{aligned}
+$$
+
+这里真实价值全为零。三个误差以不同对象作比较；半 MSPBE 的梯度还须对自举标签随 w 的变化求导。因此在 w>0 时，普通 TD 的均场方向为正，MSPBE 的下降方向为负。
+
+投影残差指向更大的标签，但它的长度也随参数变大。普通 TD 只取“误差乘当前特征”，遗漏了标签对参数的导数。梯度方法需要的正是这项几何变化；下一节用辅助量在一个经验流中估计它。
+
 <a id="offpolicy-gtd"></a>
 
-## 4 · GTD2 与 TDC 的两组更新
+## 5 · 同一经验上的 GTD2 与 TDC
 
 $$
 \begin{aligned}h^+&=h+\beta[\rho\delta-x^\top h]x,\\ w^+_{\mathrm{GTD2}}&=w+\alpha\rho(x-\gamma x')(x^\top h).\end{aligned}
@@ -357,6 +404,28 @@ TDC 保留普通 TD 项，再加修正项。辅助参数仍按上一式更新。
 
 尤其注意：辅助更新的协方差项 $-(x^\top h)x$ 不整体乘 $\rho$。这组公式选择行为状态下的 $C$。当某个动作使 $\rho=0$ 时，主参数不更新，但辅助参数仍可以沿协方差项变化。代码为这个容易写错的情况设置了测试。
 
+回到同一 A→B 经验：旧 $w=1$、旧 $h=h^*(1)=34/65$，所以 $\delta=0.8$、$x^\top h=34/65$、$\rho=10$。先计算各个未乘步长的方向，再同时写入新参数。
+
+$$
+\begin{aligned}g_{\rm TD}&=10(0.8)(1)=8,\\g_{\rm GTD2}&=10(1-1.8)\frac{34}{65}=-\frac{272}{65},\\g_{\rm TDC}&=10\left[0.8-1.8\frac{34}{65}\right]=-\frac{92}{65},\\g_h&=\left[10(0.8)-\frac{34}{65}\right](https://yingwen.io/zh/continual-rl/download/1)=\frac{486}{65}.\end{aligned}
+$$
+
+辅助量已等于冻结 w 的平衡值，单次样本仍会改变它。GTD2 与 TDC 在同一经验上的方向不同，它们只在辅助量达到平衡时具有相同的期望主方向。
+
+其余事件也必须参与期望。例如 B→B 的 GTD2 方向为 $136/65>0$，TDC 为 $-1484/65$。A→A 和 B→A 虽然 $\rho=0$，辅助方向仍分别为 $-34/65$ 和 $-136/65$。按四事件概率加权后，在 $w=1,h=34/65$ 得到 TD 方向 0.68、两种梯度方法方向均为 $-578/1625$、辅助方向为 0。逐样本的符号不等同于均场符号。
+
+$$
+\begin{aligned}h^+&=h+\beta(0.68w-1.3h),\\w^+_{\rm GTD2}&=w-\alpha(0.68h),\\w^+_{\rm TDC}&=w+\alpha(0.68w-1.98h).\end{aligned}
+$$
+
+这是本例的冻结旧参数、固定数据律递推。$1.98=\gamma\mathbb E_{d_b,\pi}[x'x]$。每一步的右侧均使用同一旧 w,h；在线轨迹中经验、参数和历史相依，不能把该递推直接称为在线参数的条件期望。
+
+![行为、动作校正后、目标稳态与ETD强调质量的四条比例尺，以及从同一旧主权重和辅助权重出发的GTD2/TDC参数轨迹。](../../assets/crl-figures/offpolicy-geometry-walkthrough-dynamics.svg)
+
+原创固定数据律计算。上图蓝为 A、青为 B；ETD(0) 取 $i\equiv1$，强调质量 $(0.9,9.1)$ 只为画条归一化为 $(0.09,0.91)$。下图从 $(w,h)=(1,0)$ 出发，$\alpha=0.01,\beta=0.05$，精确枚举四事件后同时更新，600 步；圆/方标出 t=100、600。灰虚线为冻结 w 的辅助平衡线。轨迹检查双参数动力学，不是随机训练或控制性能证据。
+
+从图的初值出发，第一次均场更新的辅助量都为 $0+0.05(0.68)=0.034$。GTD2 的主参数仍为 1；TDC 使用旧 h=0，暂时与普通 TD 相同，得到 1.0068。TDC 的 w 在本例先略增、再减；GTD2 也须等待辅助信息。把新 h=0.034 提前用于第一次主更新，会画出另一条轨迹。
+
 **算法：Gradient TD 的单步时序**
 
 1. 初始化主权重 $w$、辅助权重 $h$，固定目标与行为策略
@@ -365,11 +434,13 @@ TDC 保留普通 TD 项，再加修正项。辅助参数仍按上一式更新。
 1. 按 GTD2 或 TDC 计算完整主参数增量
 1. 按辅助方程计算增量，最后同时写入两个新参数
 
-经典理论针对固定线性特征、固定策略、适当矩阵非奇异性和矩条件，并要求与分析匹配的采样和递减步长。GTD2 的联合系统与 TDC 的两时间尺度分析需要区分；TDC 常令辅助参数比主参数更快，步长比趋于零。本页固定步长的小例子只检验公式和动力学，不是这些随机收敛定理的复现。
+这里的辅助写法与原书 §11.7 一致。将它改为 $h^+=h+\beta\rho(\delta-x^\top h)x$，在冻结参数、完整动作支持下也有相同均场，因为 $\mathbb E_b[\rho\mid S]=1$；但 $\rho=0$ 时的样本更新与方差会改变。本页核验的是前一种写法，不能只按“GTD”名称互换代码。
+
+Sutton 等 2009 的证明使用独立同分布的转移样本、固定线性特征、非奇异 A/C 与矩条件。GTD2 的联合系统证明允许 $\beta_t=\eta\alpha_t$；TDC 的证明另要求 $\alpha_t/\beta_t\to0$。步长还须满足各自随机逼近条件，包括步长和发散、平方和有限。原书显式加入动作比；普通单轨迹的 Markov 依赖仍要用匹配的分析。本页常数步长递推只检验这个系统的计算。
 
 <a id="offpolicy-emphasis"></a>
 
-## 5 · Emphatic TD：改变状态更新权重
+## 6 · 同一状态占据怎样产生 emphatic 权重
 
 另一条路线改变各状态的更新强调程度。非负 interest $i(s)$ 指定哪些预测重要；follow-on trace 追踪重要性沿目标策略的后继传播。设 $0\le\lambda_t\le1$，初始化 $F_{-1}=0,e_{-1}=0$。这种加权改变了投影几何，不是在原来 TD 更新外附加一个新的奖励。
 
@@ -379,13 +450,40 @@ $$
 
 $\gamma_t$ 描述进入当前状态的延续，$\delta_t$ 的 bootstrap 使用 $\gamma_{t+1}$。$F_t$ 用上一动作比值，$e_t$ 用当前比值。interest 不是额外奖励。
 
-![兴趣只在A注入，follow-on沿实际采样路径用上一比率递推；每个时刻再乘当前比率，得到不同的特征更新系数。](https://yingwen.io/crl-figures/concept-credit3-emphatic-flow.svg)
+仍用二状态主例，取 $i(A)=i(B)=1,\lambda=0$。因此 $M_t=F_t$。用小写 $m(s)=d_b(s)\lim_t\mathbb E_b[F_t\mid S_t=s]$ 表示稳态强调质量；大写 $M_t$ 是当前样本的强调。两者不是同一个对象。每个行为状态注入一次 interest，旧的强调再沿目标转移传播，因而质量满足：
+
+$$
+m=d_b+\gamma P_\pi^\top m,\qquad m_A=0.9,\qquad m_B=0.1+0.9(m_A+m_B)=9.1.
+$$
+
+本例 $P_\pi$ 的两行均为 (0,1)，总强调质量为 $1/(1-\gamma)=10$。归一化为 (0.09,0.91) 只用于图中比例比较；算法均场以下用原始质量。它与目标稳态 (0,1) 不同，也保留了从 A 开始预测的需求。
+
+$$
+\begin{aligned}A_M&=\Phi^\top\operatorname{diag}(m)(I-\gamma P_\pi)\Phi\\&=0.9(1)(-0.8)+9.1(2)(0.2)=2.92,\\w^+_{\rm ETD(0)}&=w+\alpha(0-A_Mw)=(1-2.92\alpha)w.\end{aligned}
+$$
+
+这是稳态 trace 质量与冻结参数下的确定性算子。正的 $A_M$ 将本例的零固定点变为均场吸引点；离散递推还需 $0<\alpha<2/2.92$。它没有声称任意常数步长在线 ETD 都平稳。
+
+样本 F 仍可能很大。给定一条行为允许的记录 A→B→B→A→B，$w_0=1,\alpha=0.01,F_{-1}=0$，动作比依次为 10、10、0、10。下面实际逐步改变 w；δ 都用各步旧参数，F 则用上一动作比。
+
+| t / 经验 | $F_t$ / $e_t$ | $\delta_t$（旧 $w$） | 新 $w$ |
+| --- | --- | --- | --- |
+| 0 · A → B | 1 / 10 | 0.8 | 1.08 |
+| 1 · B → B | 10 / 200 | −0.216 | 0.648 |
+| 2 · B → A | 91 / 0 | −0.7128 | 0.648 |
+| 3 · A → B | 1 / 10 | 0.5184 | 0.69984 |
+
+t=2 虽然 F=91，当前 $\rho=0$ 使资格系数为零；t=3 的 F 才因上一比值为零而回到 1。这条给定合法路径检查时序，不是从稳态抽出的平均轨迹。连续选“去 B”的行为概率只有 0.1，较长连续串会把 follow-on 放大，说明正的均场矩阵仍未解决样本方差。
+
+另一个三状态算例可以看清 interest 只从一个起点注入时，强调怎样传给没有直接 interest 的自举后继：
+
+![兴趣只在A注入，follow-on沿实际采样路径用上一比率递推；每个时刻再乘当前比率，得到不同的特征更新系数。](../../assets/crl-figures/concept-credit3-emphatic-flow.svg)
 
 图示同一组递推的具体时间顺序。设 interest 为 (1,0,0)，首次进入之后 γ=0.5，采样动作比率为 (2,4,1)。F 依次为 (1,1,2)，λ=0 下当前特征系数为 (2,4,2)。状态下方的 $c_{t+1}$ 在本列动作之后收到；它不参与 F 的递推。原创数值算例，采用固定单热特征。
 
 目标策略沿 $A\to B\to C\to A$ 前进，行为在 A、B 分别以 0.5、0.25 的概率前进，否则等待，在 C 必回 A。图中是一段恰好连续前进的实际经验，累计信号 c 取到达 C 的指示。虽然只对 A 直接设置了 interest，A 的预测依赖 B，B 又依赖 C；将 B、C 的学习一律关闭会丢掉这些自举依赖。图中的 F 是这段样本历史产生的权重，不是把行为状态频率直接变成目标策略稳态频率的密度比。
 
-有限状态 ETD 理论要求固定目标满足 $(I-P_\pi\Gamma)^{-1}$ 存在，行为链不可约且覆盖目标动作，强调为正的状态具有足够独立特征。奖励噪声方差有界；原论文还给出特定递减步长条件，例如适当的 $\alpha_t=a/(b+t)$，其中 $a,b>0$。表示学习、变化策略和常数步长追踪，不直接落在这一定理内。
+Sutton、Mahmood 与 White 2016 的 Theorem 1 证明均场 A 的正定性，要求有限状态动作、固定策略、行为稳态在各状态为正并覆盖目标动作、适当软终止、各状态正 interest、特征列独立，以及所用 trace 条件期望存在。几乎必然收敛还需随机逼近条件与适当步长，论文另引用 Yu 的分析；更弱 interest 条件也有独立论证。表示学习、变化策略和常数步长追踪不会自动继承这些结论。
 
 强调提高稳定性不等于低方差。多个重要性比沿时间传播可能产生大幅 trace。记录 trace 范数和重尾更新很重要；若裁剪 trace，则应说明已改变算法。没有必要为了避免普通 TD 发散而隐藏修复方法自身的方差代价。
 
@@ -659,17 +757,38 @@ $$
 
 <a id="lesson-example"></a>
 
-## 6 · 手算辅助变量与强调的时间索引
+## 7 · 奖励变体：稳定后得到哪个答案
 
-令 $w=1,h=0,x=1,x'=2,R=0,\gamma=0.9,\rho=2,\alpha=0.1,\beta=0.2$。误差 $\delta=0.8$。GTD2 第一步主权重仍为 1，因为旧辅助权重为零；辅助权重变为 0.32。TDC 第一步则得到主权重 1.16。
+到此为止奖励一直为零，普通投影与强调投影的固定点都为零，所以只看终点还看不出它们改变了什么目标。现在单独定义奖励变体：从 A 离开得 1，从 B 离开得 0，策略、转移、特征和折扣全部保留。这一节的数字不用于前面的零奖励轨迹。
 
-对于 ETD，取旧 $F=2$、上一比值 3、进入当前状态的折扣 0.5、interest 为 1。得到 $F_t=1+0.5\times3\times2=4$。若 $\lambda=0,\rho_t=4,x_t=1$，则新 trace 为 16。把当前比值错放进 follow-on，会得到不同答案。
+目标策略从 A 一步到 B，此后留在 B；因此真实价值为 $v_\pi=(1,0)$，已经无法写成 $(w,2w)$。直接拟合真实价值、按行为权重解投影 Bellman 方程、按 emphatic 权重解该方程，现在得到三个不同答案。
 
-二状态反例中 $C=1.3,b_v=0$，因此 $J(w)=0.68^2w^2/(2\times1.3)$。这是以零为最小点的凸二次函数。GTD2 的期望递推可以下降，而普通 TD 的期望递推增长；代码把它们在同一概率模型中比较。
+$$
+\begin{aligned}w_{\rm VE}&=\frac{\Phi^\top D_bv_\pi}{C}=\frac{0.9}{1.3}=\frac9{13},\\w_{D_b\text{-PBE}}&=\frac{b_v}{A}=\frac{0.9}{-0.68}=-\frac{45}{34},\\w_{M\text{-PBE}}&=\frac{b_M}{A_M}=\frac{0.9}{2.92}=\frac{45}{146}.\end{aligned}
+$$
+
+三者比较同一真实价值，但使用不同求解准则。GTD2/TDC 所追踪的行为权重 MSPBE 在第二个参数处为零；ETD(0) 改变投影权重，因而在第三个参数处为零。
+
+| 求解准则 | 共享 w | 同一 Dᵦ 下的平方价值误差 |
+| --- | --- | --- |
+| 直接价值回归 | 9/13 ≈ 0.6923 | 18/65 ≈ 0.2769 |
+| 行为权重 MSPBE 固定点 | −45/34 ≈ −1.3235 | 64269/11560 ≈ 5.5596 |
+| emphatic 投影固定点 | 45/146 ≈ 0.3082 | 99909/213160 ≈ 0.4687 |
+
+行为权重 MSPBE 的零点甚至给出两个负预测，而真实价值为非负。其投影残差可以互相抵消，真实价值误差仍大。直接价值回归在这项评价准则下误差最小，但它需要真实价值或合适回报目标。这个奖励变体把“算法到达了所规定的固定点”与“所规定的近似适合当前评价”分开了；三个数字不构成一般方法排名。
 
 <a id="lesson-code"></a>
 
-## 7 · 可运行的稳定性与时序检查
+## 8 · 两种独立计算检查同一例子
+
+先运行[标准库 Fraction 教程](../../tutorials/offpolicy-geometry-walkthrough.py)。它逐事件打印 δ、旧辅助量和各更新方向，用分数计算强调质量与奖励变体的三种解；双参数轨迹另由矩阵递推计算。[图的解析核](https://yingwen.io/crl-code/figures/offpolicy-geometry-walkthrough.mjs) 则枚举四事件、加权完整增量。[原始图数据](https://yingwen.io/crl-figures/offpolicy-geometry-walkthrough-data.json) 保存全部 601 个参数前缀；两个实现逐项对照，避免只核对最后一个数。
+
+固定模型、给定路径和分数参照；无随机训练
+
+```sh
+python3 tutorials/offpolicy-geometry-walkthrough.py
+python3 tutorials/offpolicy-geometry-walkthrough.py --json
+```
 
 GTD2、TDC、ETD 更新核与概率加权反例
 
@@ -729,7 +848,7 @@ python3 examples/approximation_textbook_lab.py test
 
 <a id="lesson-branches"></a>
 
-## 8 · 从预测理论到 CRL 的边界
+## 9 · 从预测理论到 CRL 的边界
 
 多个 GVF 可以共享一个行为流，但每个预测仍须定义自己的目标策略、信号、折扣和 interest。共享表示会耦合更新；线性固定特征下某个预测器稳定，不代表联合神经表示一定稳定。
 
@@ -737,7 +856,12 @@ python3 examples/approximation_textbook_lab.py test
 
 <a id="lesson-check"></a>
 
-## 9 · 练习与答案
+## 10 · 练习与答案
+
+- 用表中四事件核对“动作比修正当前占据”的说法。答案：$\sum_a p_b(A,a)\rho(a)=0.9$，B 为 0.1；被修正的是动作/后继分布，当前状态没有变为目标稳态。
+- 在 A→A 上取旧 w=1,h=34/65，GTD2/TDC 主参数与辅助参数分别怎样变？答案：ρ=0，主方向为零，辅助方向为 −34/65；把整条辅助式乘ρ会改变这一步。
+- 为什么 ETD 给定路径 t=2 的 F=91，却不更新主参数？答案：F 用上一动作比递推，当前比为0，e=0；下一步F才回到1。
+- 奖励变体的行为权重 MSPBE=0，能推出价值误差为0吗？答案：不能；其 w=−45/34，真实值是(1,0)，同一Dᵦ下平方价值误差约5.5596。
 
 - 为什么重要性比已经正确，TD 仍发散？答案：它只修正条件动作分布；行为状态加权与共享特征仍可能形成不稳定的投影更新。
 - GTD2 第一步主权重不变，是否说明程序失效？答案：若辅助权重初始化为零，这是公式要求；后续辅助信息才驱动主更新。
@@ -765,12 +889,16 @@ python3 examples/approximation_textbook_lab.py test
 
 - [Sutton & Barto · Reinforcement Learning: An Introduction, 2nd edition](http://incompleteideas.net/book/the-book-2nd.html)：Part II 第 9–13 章。原书建立函数逼近预测、控制、离策略稳定性、资格迹与策略梯度的共同框架。
 
-- [Sutton et al. · Fast Gradient-Descent Methods for Temporal-Difference Learning with Linear Function Approximation](https://icml.cc/2009/papers/546.pdf)：GTD2、TDC 与投影误差推导的原始论文。本文代码额外显式写出目标与行为动作的重要性比。
+- [Sutton et al. · Fast Gradient-Descent Methods for Temporal-Difference Learning with Linear Function Approximation](https://icml.cc/2009/papers/546.pdf)：§3–4 推导 MSPBE 与两组更新；§5–6 分别给出 GTD2 的联合系统与 TDC 的两时间尺度证明。原始转移设定为独立采样，动作重要性比写法另按原书 §11.7 核对。
 
-- [Mahmood et al. · Emphatic Temporal-Difference Learning](https://arxiv.org/abs/1507.01569)：ETD 的 interest、follow-on 与线性收敛条件。阅读公式时区分当前与上一重要性比。
+- [Sutton, Mahmood & White · An Emphatic Approach to the Problem of Off-policy Temporal-Difference Learning](https://jmlr.org/papers/v17/14-488.html)：§4 的 follow-on 质量，§5 式17–20 的ETD时序，§6 的强调投影固定点与均场稳定性定理，§8–9 的样本方差。本文0.9/0.1行为是教材变体，不复现原论文0.5/0.5曲线。
+
+- [Mahmood et al. · Emphatic Temporal-Difference Learning](https://arxiv.org/abs/1507.01569)：补充阅读：ETD 的算法族与收敛分析背景；本页更新式和数值主要按 Sutton、Mahmood、White 原始 JMLR 论文核对。
 
 - [RLPark · Original reinforcement-learning implementations](https://github.com/rlpark/rlpark)：作者群体开发的线性与资格迹算法实现库。版本中的梯度 TD 命名和具体更新须逐项对应，不能只按类名互换。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-off-policy#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-off-policy#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-approximation-off-policy)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -785,7 +913,13 @@ python3 examples/approximation_textbook_lab.py test
 
 持续学习中的研究问题：单一行为流怎样支持许多预测和技能？在固定内存下，怎样权衡覆盖、样本年龄、更新方差与适应速度，而不把离策略修正当作完整稳定性保证？
 
-[离策略稳定性](off-policy.md) → [数据与训练接口](../deep/practice.md) → [离线数据的覆盖](../deep/offline.md) → [流式更新](../../textbook/streaming.md)
+[离策略稳定性](off-policy.md) → [数据与训练接口](../deep/practice.md) → [大规模系统与策略滞后](../deep/systems.md) → [离线数据的覆盖](../deep/offline.md) → [流式更新](../../textbook/streaming.md)
+
+
+### 可进一步检验的问题
+
+- [03 · 哪些预测值得学习，谁来使用这些预测？](../../docs/research-atlas.md#research-predictive-knowledge)：同一经验流学习多个策略条件预测时，覆盖与稳定性决定哪些答案可学；答案可学以后，还要寻找使用它的消费者。
+- [06 · 不存 replay、每步只处理新经验时，怎样避免更新失稳？](../../docs/research-atlas.md#research-streaming-stability)：覆盖充分仍可能发生的 TD 发散说明，小步长或尺度归一化与修正期望更新方向是两项不同工作。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

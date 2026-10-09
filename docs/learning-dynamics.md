@@ -220,7 +220,7 @@ python3 implementations/nonlinear_diagnostics/double_sample_residual.py --steps 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/double_sample_residual/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 paired_successor_queries。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：paired_successor_queries。纵轴：真实 MSBE。每种方法 1200 paired_successor_queries；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 第 1200 次更新，双采样的平均真实 MSBE 为 0.000182，单样本残差法为 0.125000。后者很稳定，却停在另一个优化问题的解。这正是“训练损失下降”不足以保证目标正确的例子。
 
@@ -286,7 +286,7 @@ python3 implementations/nonlinear_diagnostics/baird_expected_td.py --steps 1200 
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/baird_expected_td/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 expected_sweeps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：expected_sweeps。纵轴：log10(1 + 七状态价值 RMSE)。每种方法 1200 expected_sweeps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 半梯度 TD 的平均图值由约 0.529 增至 2.641；五种子原始 RMSE 末尾约为 436–438。残差梯度末尾图值约 0.271，未发生同样增长。该反例直接说明不稳定并非只能归因于深网或随机噪声。
 
@@ -432,9 +432,24 @@ python3 implementations/nonlinear_diagnostics/lagged_nonlinear_td.py --steps 120
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/lagged_nonlinear_td/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-lagged_nonlinear_td.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：二状态真实价值 RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 当前在线网络在两状态的预测与真实值20/9、25/9比较，取均匀 RMSE。测量的是在线网络，不是滞后目标副本。
+
+**step：怎样计时。** step 是真实转移数；target_copies 和 target_age 描述复制时钟，不替代交互时钟。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算各记录时刻的跨种子均值、样本标准差和末点误差；没有保存全部预测向量，不能仅凭 value 重新计算状态权重或逐状态误差。
+
+计算位置：[nonlinear_diagnostics/lagged_nonlinear_td.py](../implementations/nonlinear_diagnostics/lagged_nonlinear_td.py) · [nonlinear_diagnostics/online_nonlinear_td.py](../implementations/nonlinear_diagnostics/online_nonlinear_td.py) · [nonlinear_diagnostics/_common.py](../implementations/nonlinear_diagnostics/_common.py)
+
+</details>
 
 **结果分析。** 第 600 步，冻结 50 步目标的平均 RMSE 为 0.2384，即时目标为 0.00890；末尾为 0.0206 对 0.0000201。两者均下降，但冻结目标在此任务明显更慢。它不是所有自举问题都应启用的免费改进。
 

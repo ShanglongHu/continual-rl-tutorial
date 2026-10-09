@@ -5,6 +5,7 @@
 ## 本章内容
 
 - 区分样本模型、分布模型、期望模型、option model 与 successor features。
+- 让控制器在没有变化通知时取得新证据、更新模型并改变下一次行动，分别评价估计、覆盖与实际收益。
 - 从随机持续时间的回报推导 reward/end-state 模型与一步 TD 学习。
 - 知道期望模型为何在线性价值下足够，以及对非线性价值为什么会失败。
 - 独立实现 SF 的向量 TD 与 GPI，并理解它们和 option/世界模型的边界。
@@ -12,6 +13,14 @@
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [Options：多步决策、技能发现与可复用行为](options.md)：明确技能的执行、停止与后果。
+- [Dyna：模型学习与规划](dyna.md)：理解模型如何被更新和使用。
+
 
 ### 条件模型
 
@@ -128,6 +137,155 @@ $\mathcal V$ 为声明的下游价值类，$\gamma$ 为折扣。模型充分性�
 
 以 option 为例，模型接收 $(s,o)$，输出执行期间的外部奖励模型 $r_o(s)$ 与折扣终点核 $p_o^\gamma(\cdot|s)$；规划器用当前价值 $V$ 计算 $r_o+p_o^\gamma V$。这里的“执行期间”限制累计的时间段，不是指技能训练用的内部奖励。固定动力学、奖励定义和 option 后，这个分工允许后续价值改变时复用同一个后果模型。直接预测某个固定高层策略的完整回报也有用，但不能替代面向不同后续价值的后果接口。
 
+<a id="lesson-model-repair"></a>
+
+### 1.1 从五条记录到模型，再看关闸后的错误
+
+沿用目标章的运输世界：上路 S→A→X，下路 S→B→C→X，X、Y 为物理终点。每条边一步，目标 X 只在到达时给奖励 1，折扣为 0.9。智能体已记录两条路线的五个转移；可用动作和地点标识已知，后果表最初为空。这里的确定性假设让每个被访问的状态—动作对只需保存最近观察到的下一状态与物理终止标志。它没有从缺失记录推断道路的能力。
+
+$$
+\widehat M(s,a)\leftarrow(s',d_{\rm phys}),\qquad \widehat P(j\mid s,a)=\mathbf1\{j=s'\}
+$$
+
+这是按真实记录覆盖一个表格条目的模型更新。每个阶段内动力学确定且不再改变，才使单条新观察足以精确修正该行；随机环境需要估计后果分布。
+
+规划器读取这个表，再用当前目标把后果转换成 reward 和 continuation。它不能查询评估器中的真实地图，也没有“闸门已改”的通知。图中的完整道路是给读者与精确诊断看的；学习器只取得五条旧记录，以及稍后真实经过 S→A→Y 得到的两条新记录。为了取得后者，需再允许一次回到 S 的重置，不能把 A 当成免费可访问的查询点。
+
+![关闸后的真实上路从A通向Y，左图旧模型还虚线预测X，右图获得新记录并传播价值后改选下路。](../assets/crl-figures/goal-model-planning-walkthrough-repair.svg)
+
+红箭头是当前真实后果，紫虚线是陈旧预测，数字为规划中的状态值。目标 X 下，旧模型预测上路回报 $0.9$，实际沿 S→A→Y 得到 $0$。两步新记录仅改变 A 的后果行；再做两轮共十次模型调用后，起点选择回报 $0.81$ 的下路。
+
+模型的误差需要注明在哪个分布上量。旧表在五条历史记录上仍完全吻合；若评估器用当前确定性真值核对五个状态—动作对，只有 A 的出口错了。该行预测质量由 X 移到 Y，$L_1$ 距离为 $|1-0|+|0-1|=2$，五行均匀平均为 $2/5=0.4$。这项全表诊断使用真值，学习器并不因此获得隐藏后果。新记录修正后误差为零，因为此例只有这一行发生变化。
+
+$$
+\widehat y_g-y_g=\sum_j\left[\widehat P(j\mid s,a)-P(j\mid s,a)\right]\left[r_g(s,a,j)+\gamma(1-d_g(j))V(j)\right]
+$$
+
+固定同一个后续值 $V$，将两个备份相减即得模型误差怎样进入消费者。这里的状态足以决定物理终止，且奖励函数由任务已知；一般情形还要计入奖励、终止预测与表示误差。
+
+A 这一行中，旧模型送入的是 X，target 为 $1$；当前后果 Y 物理终止但未成功，target 为 $0$。所以这一行的备份误差是 $1$，并通过上一步折扣变成 S 上路价值的 $0.9$ 误差。若改为目标 A，过程在进入 A 时已经结束，这个出口错误就不影响从 S 完成目标 A。相同的预测错误，对不同消费者有不同影响；仅凭一个全表误差不能读出所有目标的控制损失。
+
+奖励权重变化时复用 SF，需要保持动力学、目标策略、特征及累计规则一致，见 [SF 原文 §3–4](https://arxiv.org/html/1606.05312)。关闸改变了未来访问的地点，旧累计特征本身就要更新。Option 模型也条件化于内部策略和停止规则；只改同名技能的执行而保留旧模型，会产生同类失配。[STOMP 原文 §4–5](https://arxiv.org/html/2202.03466v3)将模型学习与规划分别定义，正是为了让后果预测能够被明确的备份消费。
+
+本例保留原子动作模型，所以可以从新目标重新算奖励与停止；若只缓存上路技能的“终点 X、时长两步、奖励 0.9”，这个摘要既不适合关闸后的上路，也不够回答在中途 A 提前结束的任务。要么保存足以回答新问题的后果信息，要么重新学习对应的模型。下面的 option 模型推导把“足以回答什么”写成具体接口。
+
+独立复算入口：[goal_model_planning_walkthrough.py](../tutorials/goal_model_planning_walkthrough.py)；完整逐轮记录：[确定性数据 JSON](https://yingwen.io/crl-figures/goal-model-planning-walkthrough-data.json)。[规划章](planning.md#lesson-replanning)接着说明为什么模型改好以后，旧计划还不会在同一瞬间全部改好。
+
+下载单文件后直接运行；Fraction 精确计算后以小数输出
+
+```sh
+python3 tutorials/goal_model_planning_walkthrough.py
+```
+
+<a id="lesson-model-change"></a>
+
+### 1.2 闸门再打开时，智能体怎样才会知道
+
+刚才把两条新记录交给模型，便能逐项检查修正与传播。现在让控制器自己取得记录。仍用同一六地点运输图、目标 X 和折扣 0.9，只让 A 的出口在 X 与 Y 之间改变。目标发现节曾在这张基图上增加两条 probe 支路；这里保留原来的五条运输边，不开放那两条附加动作，以便单独观察“已知道路发生改变”的困难。下路始终通往 X。
+
+智能体先真实走八次上路、一次下路，所有已访问后果都进入模型。这段共同暖身提供 $19$ 次道路动作、$9$ 次重置和奖励 $9$。随后每个控制器从 S 独立运行 $96$ 个真实交互步。进入 X 或 Y 结束本次送货；若预算尚余，终点到 S 的 reset 花一个交互步，奖励为零。相较前面的固定记录算例，这里把回到起点的代价也列入预算，避免较短路线凭免费重置获得隐含优势。
+
+$$
+G_{
+m trip}=\sum_{j=1}^{\tau}\gamma^{j-1}R_{t+j},\qquad L_{96}=\sum_{t=0}^{95}R_{t+1},\qquad \gamma=0.9.
+$$
+
+$\tau$ 是一次送货的道路动作数，终点尾值固定为零；$G_{\rm trip}$ 是规划器比较路线的准则。$L_{96}$ 是固定真实交互预算内实际取得的奖励总数，包含 reset 消耗的时间。它们是两个明示的评价对象；代码没有把单次送货的折扣价值称为终身回报。暖身计入时，总预算为 $124$，总奖励为 $9+L_{96}$。
+
+令 $t$ 表示比较期已完成的真实交互步数，包括重置。环境在动作发出前按自己的时钟改变 A：$t<12$ 时通 X，$12\le t<48$ 时通 Y，$t\ge48$ 时重新通 X。这个时间表仅用于构造环境与画真值参照，控制器收不到阶段标签、变化通知或当前后果表。一次交互只返回实际的 $(s,a,r,s',d)$；智能体可以记住自己多久没有走某条路。
+
+![相同六地点运输图只改变A出口；环境时钟决定关闸重开，学习器只能从实际行走取得记录，终点回S另花一步。](../assets/crl-figures/model-change-walkthrough-task.svg)
+
+先读道路，再读右侧真实时间段。上路成功时两步回报为 $0.9$，下路三步回报为 $0.81$；关闸的上路仍花两步，却到达奖励为零的 Y。图给读者完整地图，模型只能消费实际观察。比较期的 $96$ 步与每次回到 S 的五次模型行备份分别计数。
+
+关闸比较容易被发现：正在走上路的智能体很快会到 Y，旧预测与当前观察产生冲突。重开却不碰触正在走下路的智能体。假如它总依据“上路通 Y”的模型选择下路，之后收到的经验都继续支持下路；世界变好了，已有行为却不再提供能揭示改善的记录。第 8 章 §8.3 的 blocking maze 与 shortcut maze 正是用这两个方向的变化说明模型错误怎样和探索联系起来。[Sutton 与 Barto，第二版，2020 版次文本，第 166–168 页](http://incompleteideas.net/book/the-book-2nd.html)。
+
+由此出现两个不同问题。已经走到 A 并观察新后果后，旧证据应保留多大权重？长时间不走 A 时，又怎样决定是否值得花真实动作重新检查？先把前一个估计问题写清，才能分辨后一个覆盖问题有没有被解决。
+
+<a id="lesson-model-aging"></a>
+
+### 1.3 一条新观察应改动多少模型
+
+对固定状态—动作对 $(s,a)$，把第 $k$ 次真实观察编码为后果向量 $Z_k(j)=\mathbf1\{S'=j\}$。这里 $k$ 只在真正执行这一对时增加；它与全局时钟 $t$ 不同。累计模型保存全部后果计数，近期模型给刚到达的观察更大权重。两者都在估计动作后果，尚未决定下次走哪条路。
+
+$$
+\begin{aligned}\widehat P_k^{\rm all}(j\mid s,a)&=\frac1k\sum_{i=1}^k Z_i(j)
+       =\widehat P_{k-1}^{\rm all}(j\mid s,a)+\frac1k\bigl[Z_k(j)-\widehat P_{k-1}^{\rm all}(j\mid s,a)\bigr],\\
+       \widehat P_k^{\rm recent}(j\mid s,a)&=(1-\alpha)\widehat P_{k-1}^{\rm recent}(j\mid s,a)+\alpha Z_k(j).
+       \end{aligned}
+$$
+
+本算例取 $\alpha=1$，即保存最近一次实际后果；每个阶段内转移确定，所以新观察能直接描述刚走过的这一行。一般 $0<\alpha<1$ 时，第 $i$ 条旧观察的权重按后续对该行的访问次数衰减，而非按没有访问的真实时间自动衰减。
+
+本例奖励与终止由到达地点决定，因而只需观察到下一地点即可重算它们；独立代码仍把 $(s',r,d)$ 合成后果，避免把不同奖励或终止的记录混为同一结果。记 $p=\widehat P(X\mid A,\mathrm{cross})$，模型给控制器的上、下路价值分别为 $0.9p$ 和 $0.81$。平分选下路，于是上路只有在 $p>0.9$ 时才被贪心选择。
+
+$$
+\widehat Q(S,\mathrm{upper})=\gamma\bigl[p\times1+(1-p)\times0\bigr]=0.9p,\qquad \widehat Q(S,\mathrm{lower})=\gamma^2=0.81.
+$$
+
+这是同一模型版本下的期望备份；X 与 Y 均无回合尾值。代码按 C、B、A、S 的两个动作逆向备份，共读五个模型行，得到完整的本次计划。这里没有额外的真实经验，也没有直接 Q-learning 更新。
+
+先关闭复查。暖身已有八次上路成功，比较期又在 $t=2,5,8,11$ 完成四次成功。第一次关闸观察在 $t=14$ 完成，此时累计模型为 $p=12/13$，上路值 $10.8/13\approx0.831$ 仍大于 $0.81$，所以再走一次上路。第二次失败后 $p=12/14$，上路值约 $0.771$，才转向下路。近期模型在第一次失败后便把 $p$ 置零，下一次送货走下路。这一差异来自新旧证据的权重。
+
+![上下两组阶梯曲线分别关闭和启用路线年龄复查；两种贪心模型都错过重开，复查后近期模型回到1而累计模型仍低于决策阈值。](../assets/crl-figures/model-change-walkthrough-estimates.svg)
+
+纵轴是 A 出口到 X 的模型概率，橙线 $0.9$ 是起点改选上路所需的阈值；圆点与方块标真实经过 A 的时刻。灰虚线是真实变化，仅供读者对照。上图的近期估计虽然能快改，却在重开后保持零；下图在真实复查后才获得新的成功证据。数据由有限闭环逐步运行产生，没有平滑或随机重复。
+
+模型“老了”与模型“估错了”不是同一个可观察事件。长时间未访问说明知识缺少近期检验，却没有告诉我们门是否真的变了；一次失败则可能来自变化，也可能来自原本随机的后果。为分清两者，暂时换一个估计问题：固定不变的门独立地以 $p=0.95$ 通向 X，预先指定地观察 $n=20$ 次。最后一条观察作为概率估计的均方误差为 $p(1-p)=0.0475$；累计频率的均方误差为 $p(1-p)/n=0.002375$。附带脚本对二项分布的 $21$ 种计数精确求和得到这些值。这个随机、平稳的反事实没有混入前面的确定性变化实验：它解释了为什么覆盖旧值在无噪声时反应快，却容易把随机失败当成结构改变。
+
+保存模型版本 $v$ 能说明一次计划读到了哪份估计。这里每接收一条道路经验就增加版本；同一版本上的规划只改计算结果，不增加任何后果计数。反复使用一条旧 $A\to X$ 记录可以传播旧知识，却不能增加“门在当前时刻开放”的独立证据；若把重放次数直接加进频率分母，相当于人为改变样本权重。即使累计模型包含 X 与 Y 两种后果，其混合比例在变化环境中也只是历史频率，并非当前门真的随机通向两端。
+
+<a id="lesson-model-recheck"></a>
+
+### 1.4 把复查代价放回行动循环
+
+现在加入一个完全由已知经验驱动的行为规则。每次回到 S，记 $\ell(a)$ 为最近执行该起点动作后完成的交互时钟，路线年龄为 $u_t(a)=t-\ell(a)$。若有路线满足 $u_t(a)\ge12$，就选其中最久未走的一条；否则读取当前模型的贪心路线。年龄相等按动作名排序，价值相等选下路。上、下路都受同一规则约束，控制器没有被告知哪一行会变。
+
+**算法：模型只从真实记录更新；规划计算不推进环境时钟。两种时钟分别记账。**
+
+1. 共同暖身：实际走 8 次上路、1 次下路；每次终点重置花 1 步
+1. 比较期重复，直到真实交互计数达到 96：
+  1. 若在 S：
+    1. 冻结当前模型版本，逆序做 5 次期望行备份
+    1. 先求贪心路线；启用复查时，再检查两个路线年龄
+    1. 最老路线年龄达到 12，则本次真实改走该路线
+  1. 若在 A、B、C：执行唯一道路动作
+  1. 若在 X、Y：执行 reset，奖励 0，真实时钟加 1
+  1. 获得真实后果；道路记录才更新模型和证据版本
+  1. 按实际奖励计分；预算耗尽时立即停，不补齐回合或 reset
+
+这个复查规则直接改变实际选路，没有给模型奖励添加 bonus。Dyna-Q+ 则在模型产生的规划奖励中加入随未尝试时间增长的项，再由更新后的价值影响行为；原书还允许规划未尝试动作并为它们规定初始模型。两者共享“长期未检验的后果值得再试”的动机，具体更新与覆盖机制不同。[原书 §8.3，第 168 页及脚注 1](http://incompleteideas.net/book/the-book-2nd.html)。这里也没有同时发现子任务、学习任意 option 或复现完整 STOMP/Dyna。
+
+近期模型加复查在 $t=15,30,45$ 真实看到 A 通向 Y；三次失败都计入成本。重开后，它在 $t=58$ 从 S 选上路，$t=60$ 才收到 A 通 X 的新观察。该记录将 $p$ 从 0 改为 1；第 $61$ 步时回到 S，下一次贪心计划于是选择上路。行动取得证据，证据改变模型，模型经过规划又改变后续行动。累计模型加复查也会再看到 X，但旧 Y 计数仍占权重，比较期末 $p=14/18\approx0.778$，未越过 $0.9$；它接下来的上路访问仍由复查规则触发。
+
+![固定96真实交互步比较累计环境奖励，近期复查在重开条件获得25，但无变化只得30低于贪心32，永久关闸只得20低于贪心24。](../assets/crl-figures/model-change-walkthrough-return.svg)
+
+上图保留四种实际轨迹：累计贪心 $23$、近期贪心 $24$、累计复查 $22$、近期复查 $25$。下图固定近期估计，只改变是否复查，并并列始终开放与永久关闸两个对照；横向条长使用同一奖励尺度。所有分支先支付共同 $28$ 步暖身，曲线只画随后 $96$ 步。它们是单个确定性构造中的精确结果，不是跨任务平均性能。
+
+| 重开条件 | 实际奖励 | 失败送货 | 道路动作 + reset | 模型行备份 |
+| --- | --- | --- | --- | --- |
+| 累计 · 贪心 | 23 | 2 | 71 + 25 = 96 | 130 |
+| 近期 · 贪心 | 24 | 1 | 71 + 25 = 96 | 130 |
+| 累计 · 复查 | 22 | 4 | 70 + 26 = 96 | 135 |
+| 近期 · 复查 | 25 | 3 | 69 + 27 = 96 | 140 |
+
+固定交互预算没有固定计算量：路线越短，越常回到 S，五行规划也调用得越频繁。表中每次道路动作对应一次模型统计更新；reset 只改变真实位置和时间。模型内存固定为五行、各后果计数及最后访问时刻，不保存完整训练轨迹；JSON 中的逐步轨迹属于只读教学记录。各分支在预算末端停在不同位置：近期复查刚到终点，其余重开分支还有未完成的送货。统计奖励只计已经发生的事件，既不补出未来成功，也不虚构最后一次重置。
+
+复查没有固定方向的收益。门始终开放时，近期贪心得 32，近期复查因为定期绕下路只得 30；门关闭后不再打开时，两者分别得 24 与 20，复查增加了失败。重开条件中，累计复查虽然收集了更多更新证据，奖励 22 仍低于累计贪心的 23。新鲜度、当前预测误差和固定预算收益因此要分别观察：证据要足以改变决策，改变后的决策还要来得及偿还取得证据的代价。
+
+还能做一个更强的辨析：对两个纯贪心控制器，把环境从“第 $48$ 步重开”改成“永不重开”，它们收到的全部动作、奖励和地点序列逐项相同，因为它们不再访问 A。仅处理这份历史的算法无法知道自己身处哪一个世界。增加旧模型规划次数也不会打破这种等价；需要一个能把行为带回相关位置的机制。年龄复查只是一种给定方案，阈值与任务代价的关系仍须另作比较。
+
+独立脚本 [model-change-walkthrough.py](../tutorials/model-change-walkthrough.py) 只用 Python 标准库，以 Fraction 保存概率与回报，通过枚举经验模型的有限终点路径计算路线值；网页模块用逆序 Bellman 行备份，两种推导逐决策互查。下载单文件到空目录即可运行，输出三个环境条件、四个控制器的资源账与精确断言；加 --json 输出实际动作、模型版本与估计轨迹。网页图的全部数组另见 [数据 JSON](https://yingwen.io/crl-figures/model-change-walkthrough-data.json)。
+
+固定 28 + 96 交互步；无第三方依赖、随机种子或训练任务。Python 枚举操作量不等于网页规划器的五行备份计数。
+
+```sh
+python3 tutorials/model-change-walkthrough.py
+python3 tutorials/model-change-walkthrough.py --json
+```
+
+回到后果模型的一般形式：若动作换成持续多步的技能，还要说明技能策略和停止规则是否改变。刚才固定了这两项，才能把差异归到环境与数据；接下来的 reward model 和折扣终点模型推导，将写明规划消费者实际需要的两个对象。
+
 <a id="lesson-derive"></a>
 
 ## 2. Reward model 与折扣终点模型从哪里来
@@ -195,9 +353,24 @@ python3 implementations/extended_knowledge/option_model.py --steps 1200 --seeds 
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/option_model/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-option_model.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：冻结reward/discounted-endpoint联合RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 六个起点各有一个奖励模型和七个折扣终点权重，共48个分量。与固定 option 模型的数值固定点比较，合并平方误差、除以48再开方。
+
+**step：怎样计时。** step 是真实原始转移数；完成的 option 数另存 completed_options。这里学习模型，不执行任务策略改善。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算这项联合误差的跨种子汇总。仅有 value 不能拆回奖励误差与终点权重误差；两者的尺度也会影响联合分数。
+
+计算位置：[extended_knowledge/option_model.py](../implementations/extended_knowledge/option_model.py) · [extended_knowledge/option_model_monte_carlo.py](../implementations/extended_knowledge/option_model_monte_carlo.py) · [extended_knowledge/_common.py](../implementations/extended_knowledge/_common.py)
+
+</details>
 
 **结果分析。** 1200步TD联合RMSE为0.0308±0.0168，MC为0.0775±0.0115。这里TD每步都能更新，MC只在完成时更新起点；差异同时包含更新频率和bootstrap，不是单独比较一个无偏与有偏估计量。
 
@@ -211,7 +384,7 @@ python3 implementations/extended_knowledge/option_model.py --steps 1200 --seeds 
 
 ## 3. 期望模型为什么有时够用，有时必错
 
-![抛物线上两个等概率后果的价值均为一，平均后果零的价值却为零。](https://yingwen.io/crl-figures/concept-research-model-expectation.svg)
+![抛物线上两个等概率后果的价值均为一，平均后果零的价值却为零。](../assets/crl-figures/concept-research-model-expectation.svg)
 
 绿色线段连接两个真实后果的价值；橙点表示把平均后果送入同一个价值函数。两种运算给出不同答案。数值由 research-mechanisms.mjs 精确计算；下文给出线性情形的等价条件。
 
@@ -362,7 +535,7 @@ python3 implementations/continual/successor_features_gpi.py --steps 1200 --seeds
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/successor_features_gpi/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：冻结选择策略的解析折扣价值。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
 
 **结果分析。** 已记录的检查点中，GPI在前后两阶段均为5；固定策略0前半段为1，变化后也为5。基线后半段变好是因为任务奖励改到它偏爱的动作，不是它开始适应。五种子策略价值一致，也不代表SF数值完全相同。
 
@@ -583,9 +756,24 @@ python3 implementations/integrated_agents/integrated_cumulative_model.py --steps
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/integrated_cumulative_model/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-integrated_cumulative_model.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：最近100个真实步的平均外部奖励。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 七状态环中，实际行为最近 min(step,100) 个原始转移的平均外部奖励。每步奖励为到达当前奖励位置的指示量减0.02。该窗口包括探索、技能执行和尚未完成的技能；不是冻结贪心策略的价值，也不是算法内部的 estimated_rate。
+
+**step：怎样计时。** step 只数真实转移，奖励位置在预算中点改变，不重置世界或学习器。高层真实备份只在一个原子动作或 option 完成后进行；近期模型与累计模型每次完成各做4次模型备份，故 model_backups=4×real_backups。不规划的对照仍学习模型，但 model_backups 始终为0。每个真实步还更新两个给定子任务，subtask_backups=2×step。相同真实步数未必包含相同规划计算。
+
+**怎样汇总。** 窗口每步滑动，但只在第1步、每20步和预算末尾记录。变化后的前99步仍可含旧阶段奖励。average_reward 是从第1步累计的实际奖励率；estimated_rate 则由每次完成后的差分误差递增，二者的定义不同。技能策略改变时，版本化方法清除对应模型和高层 Q，不清空奖励窗口。取该记录时刻的值；不先对曲线上的时间点求平均。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** lifetime_reward 与 average_reward×step 可互查，并可用累计量差恢复检查点之间的总奖励。step≥120的20步检查点可用相隔100步的累计量重算 value；其余稀疏窗口不一定能重建。预算末尾 pending_duration>0 时，其奖励已计入真实收益，但这段尚未产生高层备份或完整段模型样本。model_reward_mae 只平均最近至多100个“此前已有对应模型”的完整段奖励预测误差，既不是全状态误差，也没有检验时长和终点分布；模型清除会改变哪些样本进入它。
+
+计算位置：[integrated_agents/_system.py](../implementations/integrated_agents/_system.py) · [integrated_agents/integrated_recent_model.py](../implementations/integrated_agents/integrated_recent_model.py) · [integrated_agents/integrated_cumulative_model.py](../implementations/integrated_agents/integrated_cumulative_model.py) · [integrated_agents/integrated_no_planning.py](../implementations/integrated_agents/integrated_no_planning.py)
+
+</details>
 
 **结果分析。** 最终累计模型末窗奖励0.364，高于近期模型0.328；但生命期奖励率为0.247，低于近期模型0.270。800步时累计模型末窗为0.098，近期为0.114。结论依赖是否重视过渡期损失，不能只选终点排名。
 
@@ -722,7 +910,11 @@ $$
 
 模型不必重建全部观测。应预测规划真正需要的量，并测试模型误差如何改变决策。
 
-[分册导读](../docs/learning-route-deep-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-models) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=models) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=models)
+[分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-models) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=models) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=models)
+
+## 从本章进入实践
+
+[技能与规划](https://yingwen.io/zh/continual-rl/code/#practice-skills)：一个多步行为怎样成为可学习、可预测、可规划的动作？
 
 ## 持续强化学习：近期研究与原始实现
 
@@ -1368,6 +1560,8 @@ python3 examples/knowledge_algorithms_lab.py models
 <a id="lesson-sources"></a>
 
 ## 参考文献与实现
+
+- [Sutton & Barto — 第二版 §8.2–8.3：模型学习、模型错误与重新探索](http://incompleteideas.net/book/the-book-2nd.html)：依据版权页标注 2018、2020 的第二版文本，第 162–168 页；最后观察表格模型、blocking/shortcut 对照、Dyna-Q+ 时间 bonus 及脚注中的未试动作模型。本文六地点与年龄复查为原创算例。
 
 - [Sutton, Precup & Singh — Options 的 Bellman 模型](https://doi.org/10.1016/S0004-3702(99)00052-1)：原始框架。先比较完整轨迹定义与一步递推，再核对 discount 已包含在 transition model 中。
 

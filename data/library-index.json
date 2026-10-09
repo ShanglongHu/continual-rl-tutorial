@@ -516,7 +516,14 @@
       "X-SILVER"
     ],
     "chapterIds": [
-      "value"
+      "value",
+      "study-tabular-bandits",
+      "study-tabular-mdps",
+      "study-tabular-dynamic-programming",
+      "study-tabular-monte-carlo",
+      "study-tabular-temporal-difference",
+      "study-tabular-multistep",
+      "study-tabular-planning"
     ]
   },
   {
@@ -648,8 +655,33 @@
       "gvf",
       "streaming",
       "meta",
+      "goals",
+      "models",
       "planning",
+      "retention",
+      "exploration",
       "architectures",
+      "study-tabular-bandits",
+      "study-tabular-mdps",
+      "study-tabular-dynamic-programming",
+      "study-tabular-monte-carlo",
+      "study-tabular-temporal-difference",
+      "study-tabular-multistep",
+      "study-tabular-planning",
+      "study-approximation-prediction",
+      "study-approximation-features-control",
+      "study-approximation-average-control",
+      "study-approximation-off-policy",
+      "study-approximation-traces",
+      "study-approximation-policy-gradient",
+      "study-deep-deep-value",
+      "study-deep-policy-gradient",
+      "study-deep-trust-region",
+      "study-deep-deterministic-control",
+      "study-deep-entropy-control",
+      "study-deep-practice",
+      "study-deep-partial-observability",
+      "study-deep-distributional",
       "plasticity",
       "policy"
     ]
@@ -828,6 +860,7 @@
     "chapterIds": [
       "objectives",
       "average",
+      "study-approximation-average-control",
       "control",
       "experiments",
       "models",
@@ -1002,6 +1035,9 @@
       "plasticity",
       "deep-value",
       "policy",
+      "study-deep-deep-value",
+      "study-deep-practice",
+      "study-deep-distributional",
       "soft-control"
     ]
   },
@@ -1177,6 +1213,7 @@
       "retention",
       "experiments",
       "streaming",
+      "study-deep-practice",
       "deep-value",
       "architectures"
     ]
@@ -1203,7 +1240,8 @@
     ],
     "chapterIds": [
       "plasticity",
-      "experiments"
+      "experiments",
+      "retention"
     ]
   },
   {
@@ -1743,7 +1781,9 @@
       "architectures",
       "dyna",
       "gvf",
-      "average"
+      "average",
+      "study-deep-practice",
+      "study-deep-model-based"
     ]
   },
   {
@@ -3002,11 +3042,9 @@
       "V17"
     ],
     "chapterIds": [
-      "value",
-      "control",
-      "deep-value",
-      "policy",
-      "soft-control"
+      "study-deep-exploration",
+      "study-deep-offline",
+      "study-deep-model-based"
     ]
   },
   {
@@ -3107,6 +3145,7 @@
       "V21"
     ],
     "chapterIds": [
+      "reward-design",
       "average",
       "state",
       "value",
@@ -3114,12 +3153,38 @@
       "control",
       "streaming",
       "meta",
+      "goals",
       "dyna",
+      "models",
       "planning",
+      "retention",
+      "exploration",
       "architectures",
+      "study-tabular-bandits",
+      "study-tabular-mdps",
+      "study-tabular-dynamic-programming",
+      "study-tabular-monte-carlo",
+      "study-tabular-temporal-difference",
+      "study-tabular-multistep",
+      "study-tabular-planning",
+      "study-approximation-prediction",
+      "study-approximation-features-control",
+      "study-approximation-average-control",
+      "study-approximation-off-policy",
+      "study-approximation-traces",
+      "study-approximation-policy-gradient",
+      "study-deep-deep-value",
+      "study-deep-policy-gradient",
+      "study-deep-trust-region",
+      "study-deep-deterministic-control",
+      "study-deep-entropy-control",
+      "study-deep-practice",
+      "study-deep-partial-observability",
+      "study-deep-distributional",
       "plasticity",
       "credit",
-      "policy"
+      "policy",
+      "study-deep-marl-populations"
     ]
   },
   {
@@ -4698,7 +4763,10 @@
       "streaming",
       "credit",
       "policy",
-      "soft-control"
+      "soft-control",
+      "study-deep-deep-value",
+      "study-deep-practice",
+      "study-deep-distributional"
     ]
   },
   {
@@ -4725,6 +4793,7 @@
       "plasticity",
       "retention",
       "architectures",
+      "study-deep-practice",
       "deep-value"
     ]
   },
@@ -4895,6 +4964,8 @@
       "state",
       "planning",
       "architectures",
+      "study-deep-practice",
+      "study-deep-model-based",
       "dyna",
       "gvf",
       "average"
@@ -4942,6 +5013,7 @@
     ],
     "chapterIds": [
       "experiments",
+      "study-deep-practice",
       "objectives",
       "architectures",
       "plasticity",
@@ -5726,6 +5798,7 @@
     ],
     "chapterIds": [
       "gvf",
+      "study-approximation-off-policy",
       "value",
       "state",
       "meta"
@@ -5883,8 +5956,8 @@
       "IMPL-eigenoptions"
     ],
     "chapterIds": [
-      "options",
       "goals",
+      "options",
       "gvf",
       "planning"
     ]
@@ -6024,7 +6097,8 @@
       "gvf",
       "state",
       "planning",
-      "options"
+      "options",
+      "study-approximation-average-control"
     ]
   },
   {
@@ -6295,7 +6369,10 @@
       "state",
       "models",
       "planning",
-      "meta"
+      "meta",
+      "study-deep-exploration",
+      "study-deep-offline",
+      "study-deep-model-based"
     ]
   },
   {
@@ -6400,7 +6477,8 @@
       "CORE-SAC"
     ],
     "chapterIds": [
-      "soft-control"
+      "soft-control",
+      "study-deep-entropy-control"
     ]
   },
   {
@@ -6565,6 +6643,7 @@
     ],
     "chapterIds": [
       "objectives",
+      "reward-design",
       "gvf"
     ]
   },
@@ -6656,7 +6735,7 @@
     ]
   },
   {
-    "id": "CH-reward-design-0",
+    "id": "CH-reward-design-1",
     "title": "Singh, Lewis & Barto — Where Do Rewards Come From? (CogSci 2009)",
     "kind": "论文",
     "topic": "objectives",
@@ -6670,14 +6749,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-0"
+      "CH-reward-design-1"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-1",
+    "id": "CH-reward-design-2",
     "title": "Sorg, Lewis & Singh — Reward Design via Online Gradient Ascent (NeurIPS 2010)",
     "kind": "论文",
     "topic": "objectives",
@@ -6691,14 +6770,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-1"
+      "CH-reward-design-2"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-2",
+    "id": "CH-reward-design-3",
     "title": "Zheng, Oh & Singh — On Learning Intrinsic Rewards for Policy Gradient Methods (NeurIPS 2018)",
     "kind": "论文",
     "topic": "objectives",
@@ -6712,14 +6791,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-2"
+      "CH-reward-design-3"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-3",
+    "id": "CH-reward-design-4",
     "title": "LIRPG：原论文作者实现",
     "kind": "代码",
     "topic": "objectives",
@@ -6733,14 +6812,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-3"
+      "CH-reward-design-4"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-4",
+    "id": "CH-reward-design-5",
     "title": "Zheng et al. — What Can Learned Intrinsic Rewards Capture? (ICML 2020)",
     "kind": "论文",
     "topic": "objectives",
@@ -6754,14 +6833,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-4"
+      "CH-reward-design-5"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-5",
+    "id": "CH-reward-design-6",
     "title": "Silver, Singh, Precup & Sutton — Reward is Enough (2021)",
     "kind": "论文",
     "topic": "objectives",
@@ -6775,14 +6854,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-5"
+      "CH-reward-design-6"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-7",
+    "id": "CH-reward-design-8",
     "title": "Abel et al. — On the Expressivity of Markov Reward (NeurIPS 2021)",
     "kind": "论文",
     "topic": "objectives",
@@ -6796,7 +6875,7 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-7"
+      "CH-reward-design-8"
     ],
     "chapterIds": [
       "reward-design",
@@ -6808,28 +6887,7 @@
     ]
   },
   {
-    "id": "CH-reward-design-8",
-    "title": "Ng, Harada & Russell — Policy Invariance under Reward Transformations (ICML 1999)",
-    "kind": "论文",
-    "topic": "objectives",
-    "description": "势函数塑形的原始论文。阅读时明确终止、折扣和保持最优策略的条件。",
-    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
-    "links": [
-      {
-        "url": "https://ai.stanford.edu/~ang/papers/shaping-icml99.pdf",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
-    "sourceIds": [
-      "CH-reward-design-8"
-    ],
-    "chapterIds": [
-      "reward-design"
-    ]
-  },
-  {
-    "id": "CH-reward-design-9",
+    "id": "CH-reward-design-10",
     "title": "Toro Icarte et al. — Reward Machines：作者论文与代码",
     "kind": "代码",
     "topic": "objectives",
@@ -6843,14 +6901,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-9"
+      "CH-reward-design-10"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-10",
+    "id": "CH-reward-design-11",
     "title": "Christiano et al. — Deep Reinforcement Learning from Human Preferences (2017)",
     "kind": "论文",
     "topic": "objectives",
@@ -6864,14 +6922,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-10"
+      "CH-reward-design-11"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-11",
+    "id": "CH-reward-design-12",
     "title": "Lee, Smith & Abbeel — PEBBLE (2021)",
     "kind": "论文",
     "topic": "objectives",
@@ -6881,32 +6939,6 @@
       {
         "url": "https://arxiv.org/abs/2106.05091",
         "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
-    "sourceIds": [
-      "CH-reward-design-11"
-    ],
-    "chapterIds": [
-      "reward-design",
-      "objectives",
-      "state",
-      "control",
-      "goals",
-      "experiments"
-    ]
-  },
-  {
-    "id": "CH-reward-design-12",
-    "title": "B-Pref / PEBBLE：研究团队官方代码",
-    "kind": "代码",
-    "topic": "objectives",
-    "description": "含 PEBBLE 训练脚本与基准。先核对依赖、标签噪声与查询预算。",
-    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
-    "links": [
-      {
-        "url": "https://github.com/rll-research/BPref",
-        "label": "实现入口"
       }
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
@@ -6924,6 +6956,32 @@
   },
   {
     "id": "CH-reward-design-13",
+    "title": "B-Pref / PEBBLE：研究团队官方代码",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "含 PEBBLE 训练脚本与基准。先核对依赖、标签噪声与查询预算。",
+    "question": "折扣收益、每步奖励率和每次技能收益分别衡量什么？reset 成本和 option 时长有没有计入？",
+    "links": [
+      {
+        "url": "https://github.com/rll-research/BPref",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
+    "sourceIds": [
+      "CH-reward-design-13"
+    ],
+    "chapterIds": [
+      "reward-design",
+      "objectives",
+      "state",
+      "control",
+      "goals",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-reward-design-14",
     "title": "imitation — Preference Comparisons 官方教程",
     "kind": "论文",
     "topic": "objectives",
@@ -6937,14 +6995,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-13"
+      "CH-reward-design-14"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-14",
+    "id": "CH-reward-design-15",
     "title": "Ziebart et al. — Maximum Entropy Inverse Reinforcement Learning (AAAI 2008)",
     "kind": "论文",
     "topic": "objectives",
@@ -6958,14 +7016,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-14"
+      "CH-reward-design-15"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-15",
+    "id": "CH-reward-design-16",
     "title": "Hadfield-Menell et al. — Cooperative Inverse Reinforcement Learning (2016)",
     "kind": "论文",
     "topic": "objectives",
@@ -6979,14 +7037,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-15"
+      "CH-reward-design-16"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-16",
+    "id": "CH-reward-design-17",
     "title": "Hadfield-Menell et al. — Inverse Reward Design (2017)",
     "kind": "论文",
     "topic": "objectives",
@@ -7000,14 +7058,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-16"
+      "CH-reward-design-17"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-17",
+    "id": "CH-reward-design-18",
     "title": "Everitt et al. — Reward Tampering: A Causal Influence Diagram Perspective",
     "kind": "论文",
     "topic": "objectives",
@@ -7021,14 +7079,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-17"
+      "CH-reward-design-18"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-18",
+    "id": "CH-reward-design-19",
     "title": "Google DeepMind — Specification Gaming",
     "kind": "论文",
     "topic": "objectives",
@@ -7042,14 +7100,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-18"
+      "CH-reward-design-19"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-19",
+    "id": "CH-reward-design-20",
     "title": "AI Safety Gridworlds：原始环境代码",
     "kind": "代码",
     "topic": "objectives",
@@ -7063,14 +7121,14 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-19"
+      "CH-reward-design-20"
     ],
     "chapterIds": [
       "reward-design"
     ]
   },
   {
-    "id": "CH-reward-design-20",
+    "id": "CH-reward-design-21",
     "title": "Pickett et al. — The Ungrounded Alignment Problem",
     "kind": "论文",
     "topic": "objectives",
@@ -7104,7 +7162,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/omx-ungrounded/",
     "sourceIds": [
-      "CH-reward-design-20",
+      "CH-reward-design-21",
       "omx-ungrounded"
     ],
     "chapterIds": [
@@ -7114,7 +7172,7 @@
     ]
   },
   {
-    "id": "CH-reward-design-21",
+    "id": "CH-reward-design-22",
     "title": "EmergenceAI — babybeaver 作者代码",
     "kind": "代码",
     "topic": "objectives",
@@ -7132,7 +7190,7 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/reward-design/#lesson-sources",
     "sourceIds": [
-      "CH-reward-design-21"
+      "CH-reward-design-22"
     ],
     "chapterIds": [
       "reward-design",
@@ -7263,7 +7321,8 @@
       "CH-average-8"
     ],
     "chapterIds": [
-      "average"
+      "average",
+      "study-approximation-average-control"
     ]
   },
   {
@@ -7841,7 +7900,8 @@
     ],
     "chapterIds": [
       "state",
-      "credit"
+      "credit",
+      "study-deep-practice"
     ]
   },
   {
@@ -8867,7 +8927,8 @@
       "CH-gvf-12"
     ],
     "chapterIds": [
-      "gvf"
+      "gvf",
+      "study-approximation-off-policy"
     ]
   },
   {
@@ -9355,7 +9416,8 @@
       "CH-deep-value-0"
     ],
     "chapterIds": [
-      "deep-value"
+      "deep-value",
+      "study-deep-deep-value"
     ]
   },
   {
@@ -9376,7 +9438,8 @@
       "CH-deep-value-1"
     ],
     "chapterIds": [
-      "deep-value"
+      "deep-value",
+      "study-deep-deep-value"
     ]
   },
   {
@@ -9418,7 +9481,8 @@
       "CH-policy-1"
     ],
     "chapterIds": [
-      "policy"
+      "policy",
+      "study-deep-policy-gradient"
     ]
   },
   {
@@ -9439,7 +9503,8 @@
       "CH-policy-2"
     ],
     "chapterIds": [
-      "policy"
+      "policy",
+      "study-deep-trust-region"
     ]
   },
   {
@@ -9481,7 +9546,9 @@
       "CH-policy-4"
     ],
     "chapterIds": [
-      "policy"
+      "policy",
+      "study-deep-policy-gradient",
+      "study-deep-trust-region"
     ]
   },
   {
@@ -9502,7 +9569,8 @@
       "CH-soft-control-0"
     ],
     "chapterIds": [
-      "soft-control"
+      "soft-control",
+      "study-deep-entropy-control"
     ]
   },
   {
@@ -9523,7 +9591,8 @@
       "CH-soft-control-1"
     ],
     "chapterIds": [
-      "soft-control"
+      "soft-control",
+      "study-deep-entropy-control"
     ]
   },
   {
@@ -9544,7 +9613,8 @@
       "CH-soft-control-2"
     ],
     "chapterIds": [
-      "soft-control"
+      "soft-control",
+      "study-deep-entropy-control"
     ]
   },
   {
@@ -9565,7 +9635,8 @@
       "CH-soft-control-3"
     ],
     "chapterIds": [
-      "soft-control"
+      "soft-control",
+      "study-deep-entropy-control"
     ]
   },
   {
@@ -9586,7 +9657,8 @@
       "CH-soft-control-4"
     ],
     "chapterIds": [
-      "soft-control"
+      "soft-control",
+      "study-deep-entropy-control"
     ]
   },
   {
@@ -9652,7 +9724,8 @@
       "CH-credit-4"
     ],
     "chapterIds": [
-      "credit"
+      "credit",
+      "study-approximation-traces"
     ]
   },
   {
@@ -9718,7 +9791,8 @@
       "CH-credit-7"
     ],
     "chapterIds": [
-      "credit"
+      "credit",
+      "study-deep-policy-gradient"
     ]
   },
   {
@@ -9847,7 +9921,8 @@
       "credit",
       "policy",
       "architectures",
-      "retention"
+      "retention",
+      "study-deep-systems"
     ]
   },
   {
@@ -10219,7 +10294,8 @@
       "CH-credit-31"
     ],
     "chapterIds": [
-      "credit"
+      "credit",
+      "study-tabular-multistep"
     ]
   },
   {
@@ -10265,7 +10341,28 @@
     ]
   },
   {
-    "id": "CH-streaming-7",
+    "id": "CH-streaming-6",
+    "title": "Kingma & Ba · Adam: A Method for Stochastic Optimization",
+    "kind": "论文",
+    "topic": "streaming",
+    "description": "Algorithm 1 与 §2–3：一阶矩、二阶矩和更新计数共同决定偏差校正；只保存参数没有保存优化器的继续过程。",
+    "question": "数据能否重复访问？每步存储和计算是否有界？归一化与输出尺度控制怎样影响一次更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1412.6980",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
+    "sourceIds": [
+      "CH-streaming-6"
+    ],
+    "chapterIds": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-streaming-8",
     "title": "Elsayed, Vasan & Mahmood · Stream-X，2024 版",
     "kind": "论文",
     "topic": "streaming",
@@ -10279,14 +10376,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-7"
+      "CH-streaming-8"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-8",
+    "id": "CH-streaming-9",
     "title": "Stream-X · 2024 作者实现",
     "kind": "代码",
     "topic": "streaming",
@@ -10300,14 +10397,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-8"
+      "CH-streaming-9"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-9",
+    "id": "CH-streaming-10",
     "title": "Elsayed, Lupu, Vasan & Mahmood · Stream-X，2026 修订版",
     "kind": "论文",
     "topic": "streaming",
@@ -10325,7 +10422,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-9"
+      "CH-streaming-10"
     ],
     "chapterIds": [
       "streaming",
@@ -10334,7 +10431,7 @@
     ]
   },
   {
-    "id": "CH-streaming-10",
+    "id": "CH-streaming-11",
     "title": "Vitchutripop 等 · An Analysis of Streaming Deep Reinforcement Learning for Adaptive Continual Learning in Robotics",
     "kind": "论文",
     "topic": "streaming",
@@ -10348,14 +10445,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-10"
+      "CH-streaming-11"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-12",
+    "id": "CH-streaming-13",
     "title": "Welford · Note on a Method for Calculating Corrected Sums of Squares and Products",
     "kind": "论文",
     "topic": "streaming",
@@ -10369,14 +10466,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-12"
+      "CH-streaming-13"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-14",
+    "id": "CH-streaming-15",
     "title": "De Asis & Sutton · An Idiosyncrasy of Time-discretization in RL · RLC 2024",
     "kind": "论文",
     "topic": "streaming",
@@ -10402,7 +10499,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/OM-TIME-2024/",
     "sourceIds": [
-      "CH-streaming-14",
+      "CH-streaming-15",
       "OM-TIME-2024"
     ],
     "chapterIds": [
@@ -10413,7 +10510,7 @@
     ]
   },
   {
-    "id": "CH-streaming-15",
+    "id": "CH-streaming-16",
     "title": "Time-discretization · 原文式 (7)",
     "kind": "论文",
     "topic": "streaming",
@@ -10427,7 +10524,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-15"
+      "CH-streaming-16"
     ],
     "chapterIds": [
       "streaming",
@@ -10436,7 +10533,7 @@
     ]
   },
   {
-    "id": "CH-streaming-16",
+    "id": "CH-streaming-17",
     "title": "Kris De Asis · Design for Learning · 2025",
     "kind": "论文",
     "topic": "streaming",
@@ -10450,7 +10547,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-16"
+      "CH-streaming-17"
     ],
     "chapterIds": [
       "streaming"
@@ -11036,7 +11133,28 @@
     ]
   },
   {
-    "id": "CH-goals-0",
+    "id": "CH-goals-2",
+    "title": "Machado — Representation-driven Option Discovery · AAAI 2025 讲座概要",
+    "kind": "论文",
+    "topic": "skills",
+    "description": "经验、表示、子任务、option、再采样的循环；一页讲座概要不替代具体算法论文。",
+    "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
+    "links": [
+      {
+        "url": "https://ojs.aaai.org/index.php/AAAI/article/download/35100/37255",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
+    "sourceIds": [
+      "CH-goals-2"
+    ],
+    "chapterIds": [
+      "goals"
+    ]
+  },
+  {
+    "id": "CH-goals-4",
     "title": "SUN: Reaching for Novelty in Reinforcement Learning · 2026 预印本",
     "kind": "论文",
     "topic": "skills",
@@ -11050,14 +11168,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-0"
+      "CH-goals-4"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-1",
+    "id": "CH-goals-5",
     "title": "Viteri et al. — When Do Intrinsic Rewards Lead to Exploration? · 2026 预印本",
     "kind": "论文",
     "topic": "skills",
@@ -11071,14 +11189,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-1"
+      "CH-goals-5"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-2",
+    "id": "CH-goals-6",
     "title": "Schaul et al. — Universal Value Function Approximators",
     "kind": "论文",
     "topic": "skills",
@@ -11092,14 +11210,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-2"
+      "CH-goals-6"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-3",
+    "id": "CH-goals-7",
     "title": "Andrychowicz et al. — Hindsight Experience Replay",
     "kind": "论文",
     "topic": "skills",
@@ -11113,7 +11231,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-3"
+      "CH-goals-7"
     ],
     "chapterIds": [
       "goals",
@@ -11122,7 +11240,7 @@
     ]
   },
   {
-    "id": "CH-goals-4",
+    "id": "CH-goals-8",
     "title": "OpenAI Baselines — her_sampler.py",
     "kind": "代码",
     "topic": "skills",
@@ -11136,14 +11254,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-4"
+      "CH-goals-8"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-5",
+    "id": "CH-goals-9",
     "title": "Florensa et al. — Automatic Goal Generation for RL Agents",
     "kind": "论文",
     "topic": "skills",
@@ -11157,14 +11275,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-5"
+      "CH-goals-9"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-6",
+    "id": "CH-goals-10",
     "title": "Goal generation — 作者 rllab-curriculum",
     "kind": "代码",
     "topic": "skills",
@@ -11178,14 +11296,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-6"
+      "CH-goals-10"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-7",
+    "id": "CH-goals-11",
     "title": "Sutton et al. — Reward-Respecting Subtasks",
     "kind": "论文",
     "topic": "skills",
@@ -11199,7 +11317,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-7"
+      "CH-goals-11"
     ],
     "chapterIds": [
       "goals",
@@ -11208,7 +11326,7 @@
     ]
   },
   {
-    "id": "CH-goals-8",
+    "id": "CH-goals-12",
     "title": "Park et al. — HIQL · NeurIPS 2023",
     "kind": "论文",
     "topic": "skills",
@@ -11222,7 +11340,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-8"
+      "CH-goals-12"
     ],
     "chapterIds": [
       "goals",
@@ -11231,7 +11349,7 @@
     ]
   },
   {
-    "id": "CH-goals-9",
+    "id": "CH-goals-13",
     "title": "HIQL 作者实现",
     "kind": "代码",
     "topic": "skills",
@@ -11249,7 +11367,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-9"
+      "CH-goals-13"
     ],
     "chapterIds": [
       "goals",
@@ -11259,7 +11377,7 @@
     ]
   },
   {
-    "id": "CH-goals-10",
+    "id": "CH-goals-14",
     "title": "HIQL 目标采样 — src/gc_dataset.py",
     "kind": "代码",
     "topic": "skills",
@@ -11273,14 +11391,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-10"
+      "CH-goals-14"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-11",
+    "id": "CH-goals-15",
     "title": "HIQL 核心文件 — src/agents/hiql.py",
     "kind": "代码",
     "topic": "skills",
@@ -11294,14 +11412,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-11"
+      "CH-goals-15"
     ],
     "chapterIds": [
       "goals"
     ]
   },
   {
-    "id": "CH-goals-12",
+    "id": "CH-goals-16",
     "title": "OGBench · ICLR 2025",
     "kind": "论文",
     "topic": "skills",
@@ -11319,7 +11437,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-12"
+      "CH-goals-16"
     ],
     "chapterIds": [
       "goals",
@@ -11328,7 +11446,7 @@
     ]
   },
   {
-    "id": "CH-goals-14",
+    "id": "CH-goals-18",
     "title": "Klissarov et al. — MaestroMotif · ICLR 2025",
     "kind": "论文",
     "topic": "skills",
@@ -11342,7 +11460,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-14"
+      "CH-goals-18"
     ],
     "chapterIds": [
       "goals",
@@ -11351,7 +11469,7 @@
     ]
   },
   {
-    "id": "CH-goals-15",
+    "id": "CH-goals-19",
     "title": "MaestroMotif 作者实现",
     "kind": "代码",
     "topic": "skills",
@@ -11369,7 +11487,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/goals/#lesson-sources",
     "sourceIds": [
-      "CH-goals-15"
+      "CH-goals-19"
     ],
     "chapterIds": [
       "reward-design",
@@ -11818,7 +11936,8 @@
     ],
     "chapterIds": [
       "dyna",
-      "architectures"
+      "architectures",
+      "study-tabular-planning"
     ]
   },
   {
@@ -11844,7 +11963,7 @@
     ]
   },
   {
-    "id": "CH-models-2",
+    "id": "CH-models-3",
     "title": "Wan et al. — Planning with Expectation Models",
     "kind": "论文",
     "topic": "models",
@@ -11858,14 +11977,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-2"
+      "CH-models-3"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-3",
+    "id": "CH-models-4",
     "title": "Planning with Expectation Models for Control",
     "kind": "论文",
     "topic": "models",
@@ -11879,14 +11998,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-3"
+      "CH-models-4"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-5",
+    "id": "CH-models-6",
     "title": "DeepMind — Option Keyboard 作者工程",
     "kind": "代码",
     "topic": "models",
@@ -11900,7 +12019,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-5"
+      "CH-models-6"
     ],
     "chapterIds": [
       "models",
@@ -11911,7 +12030,7 @@
     ]
   },
   {
-    "id": "CH-models-6",
+    "id": "CH-models-7",
     "title": "Reward-Aware Proto-Representations in RL · NeurIPS 2025",
     "kind": "论文",
     "topic": "models",
@@ -11921,40 +12040,6 @@
       {
         "url": "https://arxiv.org/abs/2505.16217",
         "label": "原文入口"
-      },
-      {
-        "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
-        "label": "研究问题与方法导读"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
-    "sourceIds": [
-      "CH-models-6"
-    ],
-    "chapterIds": [
-      "reward-design",
-      "models",
-      "options",
-      "exploration",
-      "goals",
-      "gvf",
-      "planning",
-      "dyna",
-      "state",
-      "average"
-    ]
-  },
-  {
-    "id": "CH-models-7",
-    "title": "Reward-Aware Proto-Representations 作者实现",
-    "kind": "代码",
-    "topic": "models",
-    "description": "从默认转移和奖励构造 DR，比较奖励感知特征、奖励塑形与技能发现；读取数值求解与谱处理设置。",
-    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
-    "links": [
-      {
-        "url": "https://github.com/httse9/Reward-Aware-Proto-Representations",
-        "label": "实现入口"
       },
       {
         "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
@@ -11980,6 +12065,40 @@
   },
   {
     "id": "CH-models-8",
+    "title": "Reward-Aware Proto-Representations 作者实现",
+    "kind": "代码",
+    "topic": "models",
+    "description": "从默认转移和奖励构造 DR，比较奖励感知特征、奖励塑形与技能发现；读取数值求解与谱处理设置。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://github.com/httse9/Reward-Aware-Proto-Representations",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "sourceIds": [
+      "CH-models-8"
+    ],
+    "chapterIds": [
+      "reward-design",
+      "models",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning",
+      "dyna",
+      "state",
+      "average"
+    ]
+  },
+  {
+    "id": "CH-models-9",
     "title": "DR 矩阵构造 — rep_utils.py",
     "kind": "代码",
     "topic": "models",
@@ -11993,14 +12112,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-8"
+      "CH-models-9"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-9",
+    "id": "CH-models-10",
     "title": "DR 在线表示与发现 — ROD_DR.py",
     "kind": "代码",
     "topic": "models",
@@ -12014,14 +12133,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-9"
+      "CH-models-10"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-10",
+    "id": "CH-models-11",
     "title": "Hafner et al. — DreamerV3",
     "kind": "论文",
     "topic": "models",
@@ -12035,15 +12154,17 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-10"
+      "CH-models-11"
     ],
     "chapterIds": [
       "models",
-      "planning"
+      "planning",
+      "study-deep-practice",
+      "study-deep-model-based"
     ]
   },
   {
-    "id": "CH-models-12",
+    "id": "CH-models-13",
     "title": "Schrittwieser et al. — MuZero",
     "kind": "论文",
     "topic": "models",
@@ -12057,15 +12178,16 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-12"
+      "CH-models-13"
     ],
     "chapterIds": [
       "models",
-      "planning"
+      "planning",
+      "study-deep-marl-populations"
     ]
   },
   {
-    "id": "CH-models-13",
+    "id": "CH-models-14",
     "title": "Sutton et al. — Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping（UAI 2008）",
     "kind": "论文",
     "topic": "models",
@@ -12079,14 +12201,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-13"
+      "CH-models-14"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-22",
+    "id": "CH-models-23",
     "title": "NeurIPS 2023 原文",
     "kind": "论文",
     "topic": "models",
@@ -12096,33 +12218,6 @@
       {
         "url": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/b0cd0e8027309ea050951e758b70d60e-Abstract-Conference.html",
         "label": "原文入口"
-      },
-      {
-        "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
-        "label": "研究问题与方法导读"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
-    "sourceIds": [
-      "CH-models-22"
-    ],
-    "chapterIds": [
-      "models",
-      "planning",
-      "objectives"
-    ]
-  },
-  {
-    "id": "CH-models-23",
-    "title": "作者实现",
-    "kind": "代码",
-    "topic": "models",
-    "description": "原文第 7 节直接链接的实验代码。",
-    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
-    "links": [
-      {
-        "url": "https://github.com/tylerkastner/distribution-equivalence",
-        "label": "实现入口"
       },
       {
         "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
@@ -12141,6 +12236,33 @@
   },
   {
     "id": "CH-models-24",
+    "title": "作者实现",
+    "kind": "代码",
+    "topic": "models",
+    "description": "原文第 7 节直接链接的实验代码。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://github.com/tylerkastner/distribution-equivalence",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "sourceIds": [
+      "CH-models-24"
+    ],
+    "chapterIds": [
+      "models",
+      "planning",
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-models-25",
     "title": "ICLR 2024 原文",
     "kind": "论文",
     "topic": "models",
@@ -12158,7 +12280,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-24"
+      "CH-models-25"
     ],
     "chapterIds": [
       "models",
@@ -12168,7 +12290,7 @@
     ]
   },
   {
-    "id": "CH-models-25",
+    "id": "CH-models-26",
     "title": "作者实现",
     "kind": "代码",
     "topic": "models",
@@ -12186,19 +12308,20 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-25"
+      "CH-models-26"
     ],
     "chapterIds": [
       "models",
       "planning",
       "architectures",
       "deep-value",
+      "study-deep-practice",
       "dyna",
       "options"
     ]
   },
   {
-    "id": "CH-models-32",
+    "id": "CH-models-33",
     "title": "Sutton et al. · Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping",
     "kind": "论文",
     "topic": "models",
@@ -12212,7 +12335,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-32"
+      "CH-models-33"
     ],
     "chapterIds": [
       "models",
@@ -12301,6 +12424,7 @@
     ],
     "chapterIds": [
       "planning",
+      "study-deep-practice",
       "dyna",
       "models",
       "options"
@@ -12397,7 +12521,7 @@
     ]
   },
   {
-    "id": "CH-retention-0",
+    "id": "CH-retention-2",
     "title": "Rolnick et al. · Experience Replay for Continual Learning (CLEAR)",
     "kind": "论文",
     "topic": "plasticity",
@@ -12411,7 +12535,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-0"
+      "CH-retention-2"
     ],
     "chapterIds": [
       "retention",
@@ -12421,7 +12545,7 @@
     ]
   },
   {
-    "id": "CH-retention-2",
+    "id": "CH-retention-4",
     "title": "Kirkpatrick et al. · Overcoming catastrophic forgetting in neural networks",
     "kind": "论文",
     "topic": "plasticity",
@@ -12435,14 +12559,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-2"
+      "CH-retention-4"
     ],
     "chapterIds": [
       "retention"
     ]
   },
   {
-    "id": "CH-retention-3",
+    "id": "CH-retention-5",
     "title": "Schwarz et al. · Progress & Compress",
     "kind": "论文",
     "topic": "plasticity",
@@ -12456,14 +12580,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-3"
+      "CH-retention-5"
     ],
     "chapterIds": [
       "retention"
     ]
   },
   {
-    "id": "CH-retention-4",
+    "id": "CH-retention-6",
     "title": "Fu et al. · Knowledge Retention in Continual Model-Based RL · ICML 2025",
     "kind": "论文",
     "topic": "plasticity",
@@ -12481,7 +12605,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-4"
+      "CH-retention-6"
     ],
     "chapterIds": [
       "retention",
@@ -12496,7 +12620,7 @@
     ]
   },
   {
-    "id": "CH-retention-5",
+    "id": "CH-retention-7",
     "title": "DRAGO 作者实现",
     "kind": "代码",
     "topic": "plasticity",
@@ -12514,7 +12638,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-5"
+      "CH-retention-7"
     ],
     "chapterIds": [
       "retention",
@@ -12529,7 +12653,7 @@
     ]
   },
   {
-    "id": "CH-retention-10",
+    "id": "CH-retention-12",
     "title": "ICLR 2024 原文",
     "kind": "论文",
     "topic": "plasticity",
@@ -12551,7 +12675,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-10"
+      "CH-retention-12"
     ],
     "chapterIds": [
       "plasticity",
@@ -12560,7 +12684,7 @@
     ]
   },
   {
-    "id": "CH-retention-11",
+    "id": "CH-retention-13",
     "title": "作者预印本",
     "kind": "论文",
     "topic": "plasticity",
@@ -12574,7 +12698,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-11"
+      "CH-retention-13"
     ],
     "chapterIds": [
       "retention",
@@ -12583,7 +12707,7 @@
     ]
   },
   {
-    "id": "CH-retention-12",
+    "id": "CH-retention-14",
     "title": "Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning · 作者实现",
     "kind": "代码",
     "topic": "plasticity",
@@ -12601,7 +12725,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-12"
+      "CH-retention-14"
     ],
     "chapterIds": [
       "plasticity",
@@ -12610,7 +12734,7 @@
     ]
   },
   {
-    "id": "CH-retention-13",
+    "id": "CH-retention-15",
     "title": "NeurIPS 2024 原文",
     "kind": "论文",
     "topic": "plasticity",
@@ -12632,7 +12756,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-13"
+      "CH-retention-15"
     ],
     "chapterIds": [
       "plasticity",
@@ -12641,7 +12765,7 @@
     ]
   },
   {
-    "id": "CH-retention-14",
+    "id": "CH-retention-16",
     "title": "作者版本记录",
     "kind": "论文",
     "topic": "plasticity",
@@ -12655,7 +12779,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-14"
+      "CH-retention-16"
     ],
     "chapterIds": [
       "retention",
@@ -12664,7 +12788,7 @@
     ]
   },
   {
-    "id": "CH-retention-15",
+    "id": "CH-retention-17",
     "title": "Parseval Regularization for Continual Reinforcement Learning · 作者实现",
     "kind": "代码",
     "topic": "plasticity",
@@ -12682,7 +12806,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-15"
+      "CH-retention-17"
     ],
     "chapterIds": [
       "plasticity",
@@ -12827,7 +12951,28 @@
     ]
   },
   {
-    "id": "CH-exploration-0",
+    "id": "CH-exploration-1",
+    "title": "Houthooft et al. · VIME: Variational Information Maximizing Exploration",
+    "kind": "论文",
+    "topic": "curriculum",
+    "description": "§2.2–2.3，式 (2)–(7)：关于动力学参数的后验变化、信息增益与变分近似；本章两世界更新可精确枚举。",
+    "question": "课程在改变任务、目标还是经验分布？提高的是当前回报、新任务适应，还是能力覆盖？",
+    "links": [
+      {
+        "url": "https://arxiv.org/pdf/1605.09674",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
+    "sourceIds": [
+      "CH-exploration-1"
+    ],
+    "chapterIds": [
+      "exploration"
+    ]
+  },
+  {
+    "id": "CH-exploration-2",
     "title": "Bellemare et al. · Unifying Count-Based Exploration and Intrinsic Motivation",
     "kind": "论文",
     "topic": "curriculum",
@@ -12841,14 +12986,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-0"
+      "CH-exploration-2"
     ],
     "chapterIds": [
       "exploration"
     ]
   },
   {
-    "id": "CH-exploration-1",
+    "id": "CH-exploration-3",
     "title": "Burda et al. · Exploration by Random Network Distillation",
     "kind": "论文",
     "topic": "curriculum",
@@ -12862,16 +13007,17 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-1"
+      "CH-exploration-3"
     ],
     "chapterIds": [
       "exploration",
+      "study-deep-exploration",
       "goals",
       "objectives"
     ]
   },
   {
-    "id": "CH-exploration-2",
+    "id": "CH-exploration-4",
     "title": "RND 作者代码",
     "kind": "代码",
     "topic": "curriculum",
@@ -12885,16 +13031,17 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-2"
+      "CH-exploration-4"
     ],
     "chapterIds": [
       "exploration",
+      "study-deep-exploration",
       "goals",
       "objectives"
     ]
   },
   {
-    "id": "CH-exploration-3",
+    "id": "CH-exploration-5",
     "title": "Portelas et al. · Teacher algorithms for curriculum learning",
     "kind": "论文",
     "topic": "curriculum",
@@ -12908,14 +13055,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-3"
+      "CH-exploration-5"
     ],
     "chapterIds": [
       "exploration"
     ]
   },
   {
-    "id": "CH-exploration-4",
+    "id": "CH-exploration-6",
     "title": "ALP-GMM 作者实现 · teachDeepRL",
     "kind": "代码",
     "topic": "curriculum",
@@ -12929,14 +13076,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-4"
+      "CH-exploration-6"
     ],
     "chapterIds": [
       "exploration"
     ]
   },
   {
-    "id": "CH-exploration-7",
+    "id": "CH-exploration-9",
     "title": "Ishfaq et al. · Langevin Soft Actor-Critic",
     "kind": "论文",
     "topic": "curriculum",
@@ -12950,14 +13097,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-7"
+      "CH-exploration-9"
     ],
     "chapterIds": [
       "exploration"
     ]
   },
   {
-    "id": "CH-exploration-8",
+    "id": "CH-exploration-10",
     "title": "LSAC 作者实现",
     "kind": "代码",
     "topic": "curriculum",
@@ -12971,7 +13118,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-8"
+      "CH-exploration-10"
     ],
     "chapterIds": [
       "exploration"
@@ -13048,7 +13195,8 @@
       "CH-architectures-11"
     ],
     "chapterIds": [
-      "architectures"
+      "architectures",
+      "study-approximation-features-control"
     ]
   },
   {
@@ -13329,6 +13477,7 @@
     ],
     "chapterIds": [
       "experiments",
+      "study-deep-practice",
       "objectives",
       "architectures",
       "plasticity",
@@ -13375,6 +13524,3034 @@
     ],
     "chapterIds": [
       "experiments"
+    ]
+  },
+  {
+    "id": "CH-study-tabular-bandits-2",
+    "title": "Auer, Cesa-Bianchi & Fischer · Finite-time Analysis of the Multiarmed Bandit Problem (2002)",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "原论文 §2、UCB1 图 1 与证明中的 Chernoff–Hoeffding 界。适用条件为各臂独立同分布、奖励支持集 [0,1]；本页只借助上界构造解释选择分数。",
+    "question": "没有状态转移时，仍需一边估计动作收益，一边决定下一次尝试什么。这个最小问题把估计误差、探索代价和策略更新分开。",
+    "links": [
+      {
+        "url": "https://homes.di.unimi.it/~cesabian/Pubblicazioni/ml-02.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/tabular/bandits/#lesson-sources",
+    "sourceIds": [
+      "CH-study-tabular-bandits-2"
+    ],
+    "chapterIds": [
+      "study-tabular-bandits"
+    ]
+  },
+  {
+    "id": "CH-study-tabular-temporal-difference-2",
+    "title": "Watkins & Dayan · Q-learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "表格 Q-learning 与收敛条件。",
+    "question": "如何在完整回报尚不可用时学习？TD 用下一预测补足未来；控制算法再根据不同的下一动作处理方式，形成不同的学习目标。",
+    "links": [
+      {
+        "url": "https://doi.org/10.1007/BF00992698",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/tabular/temporal-difference/#lesson-sources",
+    "sourceIds": [
+      "CH-study-tabular-temporal-difference-2"
+    ],
+    "chapterIds": [
+      "study-tabular-temporal-difference"
+    ]
+  },
+  {
+    "id": "CH-study-tabular-temporal-difference-3",
+    "title": "van Hasselt · Double Q-learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "最大化偏差、双估计器及原始算法。",
+    "question": "如何在完整回报尚不可用时学习？TD 用下一预测补足未来；控制算法再根据不同的下一动作处理方式，形成不同的学习目标。",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2010/hash/091d584fced301b442654dd8c23b3fc9-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/tabular/temporal-difference/#lesson-sources",
+    "sourceIds": [
+      "CH-study-tabular-temporal-difference-3"
+    ],
+    "chapterIds": [
+      "study-tabular-temporal-difference"
+    ]
+  },
+  {
+    "id": "CH-study-tabular-multistep-3",
+    "title": "De Asis et al. · Fixed-Horizon Temporal Difference Methods for Stable Reinforcement Learning",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "为不同剩余时域建立价值预测：h 步预测从 h−1 步预测 bootstrap，形成按时域排列的依赖链。代价是额外预测器；n 步备份、并行计算和共享参数用于降低开销。 适用范围：固定时域目标不等于无限时域折扣目标；理论假设不能无条件移到共享非线性网络。此论文不能据标题视为严格无样本存储算法。未确认专属作者仓库。",
+    "question": "不让一个预测器从自身 bootstrap，能否改变离策略不稳定的结构？ 先画 h=0、1、2 的依赖图，再读线性条件下的矩阵与收敛分析。随后单独检查深度实验的共享表示和 replay 协议。",
+    "links": [
+      {
+        "url": "https://ojs.aaai.org/index.php/AAAI/article/view/5784",
+        "label": "原文入口"
+      },
+      {
+        "url": "https://ojs.aaai.org/index.php/AAAI/article/download/5784/5640",
+        "label": "论文全文"
+      },
+      {
+        "url": "https://arxiv.org/abs/1909.03906",
+        "label": "作者预印本"
+      },
+      {
+        "url": "/zh/continual-rl/resource/OM-FHTD-2020/",
+        "label": "个人研究脉络与读法"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/resource/OM-FHTD-2020/",
+    "sourceIds": [
+      "CH-study-tabular-multistep-3",
+      "OM-FHTD-2020"
+    ],
+    "chapterIds": [
+      "value",
+      "deep-value",
+      "credit",
+      "study-tabular-multistep"
+    ]
+  },
+  {
+    "id": "CH-study-tabular-planning-3",
+    "title": "Sutton (1990) · Integrated Architectures for Learning, Planning, and Reacting Based on Approximating Dynamic Programming",
+    "kind": "论文",
+    "topic": "models",
+    "description": "§1–2给出交互/模型共享更新的架构，§4–5区分blocking与shortcut并展开Dyna-Q；本章采用原书§8的确定性表格顺序。",
+    "question": "真实经验既能直接改进价值，也能训练后果模型。规划使用这个模型继续计算，关键是模型语义、backup 的成本以及计算应分配到哪里。",
+    "links": [
+      {
+        "url": "https://mlanthology.org/icml/1990/sutton1990icml-integrated/",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/tabular/planning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-tabular-planning-3"
+    ],
+    "chapterIds": [
+      "study-tabular-planning"
+    ]
+  },
+  {
+    "id": "CH-study-tabular-planning-4",
+    "title": "Moore & Atkeson (1993) · Prioritized Sweeping",
+    "kind": "论文",
+    "topic": "models",
+    "description": "§2与图3解释有限计算间隔、前驱与队列；原论文优先级形式和原书确定性Q版不同。本章队列主例核对的是原书§8.4。",
+    "question": "真实经验既能直接改进价值，也能训练后果模型。规划使用这个模型继续计算，关键是模型语义、backup 的成本以及计算应分配到哪里。",
+    "links": [
+      {
+        "url": "https://people.eecs.berkeley.edu/~pabbeel/cs287-fa15/optreadings/MooreAtkeson-1993-prioritized-sweeping.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/tabular/planning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-tabular-planning-4"
+    ],
+    "chapterIds": [
+      "study-tabular-planning"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-prediction-1",
+    "title": "Bradtke & Barto · Linear Least-Squares Algorithms for Temporal Difference Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "LSTD 的原始论文。适合在理解期望 TD 正规方程之后阅读。",
+    "question": "共享少量参数以后，MC、TD 和最小二乘方法究竟在求解什么？",
+    "links": [
+      {
+        "url": "https://link.springer.com/article/10.1007/BF00114723",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/prediction/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-prediction-1"
+    ],
+    "chapterIds": [
+      "study-approximation-prediction"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-features-control-1",
+    "title": "Sutton · Tile Coding Software",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "原作者的 tile coding 使用说明和代码入口。实际使用时需记录哈希容量、tiling 数与缩放。",
+    "question": "特征怎样改变学习行为，Sarsa 又怎样在共享参数下改善策略？",
+    "links": [
+      {
+        "url": "http://incompleteideas.net/tiles/tiles3.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/features-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-features-control-1"
+    ],
+    "chapterIds": [
+      "study-approximation-features-control"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-features-control-2",
+    "title": "Konidaris, Osentoski & Thomas · Value Function Approximation in RL Using the Fourier Basis",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "Fourier 基的原始论文；解释频率表示与强化学习中的使用。",
+    "question": "特征怎样改变学习行为，Sarsa 又怎样在共享参数下改善策略？",
+    "links": [
+      {
+        "url": "https://people.cs.umass.edu/~pthomas/papers/Konidaris2011a.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/features-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-features-control-2"
+    ],
+    "chapterIds": [
+      "study-approximation-features-control"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-off-policy-1",
+    "title": "Sutton et al. · Fast Gradient-Descent Methods for Temporal-Difference Learning with Linear Function Approximation",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§3–4 推导 MSPBE 与两组更新；§5–6 分别给出 GTD2 的联合系统与 TDC 的两时间尺度证明。原始转移设定为独立采样，动作重要性比写法另按原书 §11.7 核对。",
+    "question": "行为数据足够覆盖目标策略，为什么 TD 仍可能发散，又能怎样修复？",
+    "links": [
+      {
+        "url": "https://icml.cc/2009/papers/546.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/off-policy/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-off-policy-1"
+    ],
+    "chapterIds": [
+      "study-approximation-off-policy"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-off-policy-2",
+    "title": "Sutton, Mahmood & White · An Emphatic Approach to the Problem of Off-policy Temporal-Difference Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§4 的 follow-on 质量，§5 式17–20 的ETD时序，§6 的强调投影固定点与均场稳定性定理，§8–9 的样本方差。本文0.9/0.1行为是教材变体，不复现原论文0.5/0.5曲线。",
+    "question": "行为数据足够覆盖目标策略，为什么 TD 仍可能发散，又能怎样修复？",
+    "links": [
+      {
+        "url": "https://jmlr.org/papers/v17/14-488.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/off-policy/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-off-policy-2"
+    ],
+    "chapterIds": [
+      "study-approximation-off-policy"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-traces-1",
+    "title": "van Seijen et al. · True Online Temporal-Difference Learning",
+    "kind": "论文",
+    "topic": "credit",
+    "description": "在线前向定义、Dutch trace 和精确等价的原始期刊论文；Algorithm 2 对应本文的常数步长更新。",
+    "question": "当前到来的奖励怎样更新过去的预测，同时保留正确的在线更新语义？",
+    "links": [
+      {
+        "url": "https://jmlr.org/papers/v17/15-599.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/traces/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-traces-1"
+    ],
+    "chapterIds": [
+      "study-approximation-traces"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-policy-gradient-1",
+    "title": "Sutton et al. · Policy Gradient Methods for Reinforcement Learning with Function Approximation",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "策略梯度与兼容函数逼近的原始论文。区分起点折扣权重和平均奖励平稳分布。",
+    "question": "直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper_files/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/policy-gradient/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-policy-gradient-1"
+    ],
+    "chapterIds": [
+      "study-approximation-policy-gradient"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-policy-gradient-2",
+    "title": "Greensmith, Bartlett & Baxter · Variance Reduction Techniques for Gradient Estimates in Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "从控制变量角度分析基线与 actor–critic。原论文的 GPOMDP 估计器和时序方差分析比本章单状态 score 基线算例更一般；不可将局部最小二阶矩公式直接当作整个轨迹的最小方差保证。",
+    "question": "直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？",
+    "links": [
+      {
+        "url": "https://www.jmlr.org/papers/v5/greensmith04a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/policy-gradient/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-policy-gradient-2"
+    ],
+    "chapterIds": [
+      "study-approximation-policy-gradient"
+    ]
+  },
+  {
+    "id": "CH-study-approximation-policy-gradient-3",
+    "title": "Kakade · A Natural Policy Gradient",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "自然策略梯度的原始工作，连接策略空间的局部度量与兼容逼近。",
+    "question": "直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2001/hash/4b86abe48d358ecf194c56c69108433e-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/approximation/policy-gradient/#lesson-sources",
+    "sourceIds": [
+      "CH-study-approximation-policy-gradient-3"
+    ],
+    "chapterIds": [
+      "study-approximation-policy-gradient"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deep-value-2",
+    "title": "DeepMind · 原始 DQN NeuralQLearner.lua",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "getQUpdate 生成目标，qLearnMinibatch 只对在线网 backward，perceive 按计数复制目标。原作者 Lua/Torch 工程。",
+    "question": "把表格 Q-learning 换成网络后，损失、数据与目标为什么都需要重新组织？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/dqn/blob/master/dqn/NeuralQLearner.lua#L167",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deep-value/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deep-value-2"
+    ],
+    "chapterIds": [
+      "study-deep-deep-value"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deep-value-5",
+    "title": "Schaul et al. · Prioritized Experience Replay",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§3.3–3.4：抽样概率与重要性权重；校正目标是当前 buffer 的均匀经验分布，不是任意当前世界分布。",
+    "question": "把表格 Q-learning 换成网络后，损失、数据与目标为什么都需要重新组织？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1511.05952",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deep-value/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deep-value-5"
+    ],
+    "chapterIds": [
+      "study-deep-deep-value"
+    ]
+  },
+  {
+    "id": "CH-study-deep-policy-gradient-0",
+    "title": "Spinning Up · VPG",
+    "kind": "课程与讲座",
+    "topic": "foundations",
+    "description": "用作算法与实现接口的对照；本章解释和配套小实验独立编写。",
+    "question": "延迟奖励怎样改变动作概率？有限 rollout、critic 与停止梯度分别改变哪一项估计？",
+    "links": [
+      {
+        "url": "https://spinningup.openai.com/en/latest/algorithms/vpg.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/policy-gradient/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-policy-gradient-0"
+    ],
+    "chapterIds": [
+      "study-deep-policy-gradient"
+    ]
+  },
+  {
+    "id": "CH-study-deep-policy-gradient-3",
+    "title": "Pardo et al. · Time Limits in Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§2–3：任务期限与训练截断的不同价值语义；前者需状态含剩余时间，后者保留尾值。",
+    "question": "延迟奖励怎样改变动作概率？有限 rollout、critic 与停止梯度分别改变哪一项估计？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v80/pardo18a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/policy-gradient/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-policy-gradient-3"
+    ],
+    "chapterIds": [
+      "study-deep-policy-gradient"
+    ]
+  },
+  {
+    "id": "CH-study-deep-policy-gradient-4",
+    "title": "Spinning Up · vpg.py",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "VPGBuffer.finish_path/get 与 compute_loss_pi/compute_loss_v：GAE、回归标签、标准化和均匀样本均值。",
+    "question": "延迟奖励怎样改变动作概率？有限 rollout、critic 与停止梯度分别改变哪一项估计？",
+    "links": [
+      {
+        "url": "https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/vpg/vpg.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/policy-gradient/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-policy-gradient-4"
+    ],
+    "chapterIds": [
+      "study-deep-policy-gradient"
+    ]
+  },
+  {
+    "id": "CH-study-deep-trust-region-0",
+    "title": "Schulman et al. · Trust Region Policy Optimization, arXiv v5",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "本章采用此版奖励最大化记法。§2 Eqs.(1)–(4)：性能差分与一阶对齐；§3 Eqs.(8)–(10)：最大状态差异与精确下界；§4–6：平均 KL、有限样本和实际近似；Appendix C：CG、方向缩放与非线性回溯。",
+    "question": "旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1502.05477v5",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/trust-region/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-trust-region-0"
+    ],
+    "chapterIds": [
+      "study-deep-trust-region"
+    ]
+  },
+  {
+    "id": "CH-study-deep-trust-region-1",
+    "title": "Schulman et al. · TRPO, PMLR 2015 发表版",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "保留正式发表入口。§2 使用成本最小化，§3 的界和编号也与 arXiv v5 不同；核对公式时先确认版本。",
+    "question": "旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v37/schulman15.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/trust-region/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-trust-region-1"
+    ],
+    "chapterIds": [
+      "study-deep-trust-region",
+      "study-deep-constraints"
+    ]
+  },
+  {
+    "id": "CH-study-deep-trust-region-4",
+    "title": "Spinning Up · TRPO",
+    "kind": "课程与讲座",
+    "topic": "foundations",
+    "description": "用作算法与实现接口的对照；本章解释和配套小实验独立编写。",
+    "question": "旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？",
+    "links": [
+      {
+        "url": "https://spinningup.openai.com/en/latest/algorithms/trpo.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/trust-region/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-trust-region-4"
+    ],
+    "chapterIds": [
+      "study-deep-trust-region"
+    ]
+  },
+  {
+    "id": "CH-study-deep-trust-region-5",
+    "title": "Spinning Up · PPO",
+    "kind": "课程与讲座",
+    "topic": "foundations",
+    "description": "用作算法与实现接口的对照；本章解释和配套小实验独立编写。",
+    "question": "旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？",
+    "links": [
+      {
+        "url": "https://spinningup.openai.com/en/latest/algorithms/ppo.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/trust-region/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-trust-region-5"
+    ],
+    "chapterIds": [
+      "study-deep-trust-region"
+    ]
+  },
+  {
+    "id": "CH-study-deep-trust-region-6",
+    "title": "Spinning Up · trpo.py",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "工程辅助：官方 TensorFlow 1 TRPO，实现 CG、Hessian-vector product 和整批回溯。",
+    "question": "旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？",
+    "links": [
+      {
+        "url": "https://github.com/openai/spinningup/blob/master/spinup/algos/tf1/trpo/trpo.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/trust-region/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-trust-region-6"
+    ],
+    "chapterIds": [
+      "study-deep-trust-region"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deterministic-control-0",
+    "title": "Spinning Up · DDPG",
+    "kind": "课程与讲座",
+    "topic": "foundations",
+    "description": "用作算法与实现接口的对照；本章解释和配套小实验独立编写。",
+    "question": "不能枚举连续动作时，如何用 critic 的梯度改进 actor？",
+    "links": [
+      {
+        "url": "https://spinningup.openai.com/en/latest/algorithms/ddpg.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deterministic-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deterministic-control-0"
+    ],
+    "chapterIds": [
+      "study-deep-deterministic-control"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deterministic-control-1",
+    "title": "Spinning Up · TD3",
+    "kind": "课程与讲座",
+    "topic": "foundations",
+    "description": "用作算法与实现接口的对照；本章解释和配套小实验独立编写。",
+    "question": "不能枚举连续动作时，如何用 critic 的梯度改进 actor？",
+    "links": [
+      {
+        "url": "https://spinningup.openai.com/en/latest/algorithms/td3.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deterministic-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deterministic-control-1"
+    ],
+    "chapterIds": [
+      "study-deep-deterministic-control"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deterministic-control-2",
+    "title": "Silver et al. · Deterministic Policy Gradient Algorithms",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "确定性策略梯度定理及其占据分布条件。",
+    "question": "不能枚举连续动作时，如何用 critic 的梯度改进 actor？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v32/silver14.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deterministic-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deterministic-control-2"
+    ],
+    "chapterIds": [
+      "study-deep-deterministic-control"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deterministic-control-3",
+    "title": "Lillicrap et al. · Continuous Control with Deep Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "DDPG：确定性 actor、replay 与 target network。",
+    "question": "不能枚举连续动作时，如何用 critic 的梯度改进 actor？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1509.02971",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deterministic-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deterministic-control-3"
+    ],
+    "chapterIds": [
+      "study-deep-deterministic-control"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deterministic-control-4",
+    "title": "Fujimoto et al. · Addressing Function Approximation Error in Actor-Critic Methods",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "TD3 原论文，ICML 2018。",
+    "question": "不能枚举连续动作时，如何用 critic 的梯度改进 actor？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v80/fujimoto18a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deterministic-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deterministic-control-4"
+    ],
+    "chapterIds": [
+      "study-deep-deterministic-control"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deterministic-control-5",
+    "title": "Fujimoto · TD3.py",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "作者实现；检查 policy_noise、noise_clip、policy_freq 与 target 更新时机。",
+    "question": "不能枚举连续动作时，如何用 critic 的梯度改进 actor？",
+    "links": [
+      {
+        "url": "https://github.com/sfujim/TD3/blob/master/TD3.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deterministic-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deterministic-control-5"
+    ],
+    "chapterIds": [
+      "study-deep-deterministic-control"
+    ]
+  },
+  {
+    "id": "CH-study-deep-deterministic-control-6",
+    "title": "Spinning Up · ddpg.py",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "官方教学实现，包含完整采样与 replay 循环。",
+    "question": "不能枚举连续动作时，如何用 critic 的梯度改进 actor？",
+    "links": [
+      {
+        "url": "https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/ddpg/ddpg.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/deterministic-control/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-deterministic-control-6"
+    ],
+    "chapterIds": [
+      "study-deep-deterministic-control"
+    ]
+  },
+  {
+    "id": "CH-study-deep-practice-4",
+    "title": "Kumar et al. · Conservative Q-Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "offline 分布偏移、保守价值目标及其条件。",
+    "question": "改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2006.04779",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/practice/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-practice-4"
+    ],
+    "chapterIds": [
+      "study-deep-practice",
+      "study-deep-offline"
+    ]
+  },
+  {
+    "id": "CH-study-deep-practice-5",
+    "title": "Kumar · CQL",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "作者实现；包含离散与连续控制实验入口。",
+    "question": "改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？",
+    "links": [
+      {
+        "url": "https://github.com/aviralkumar2907/CQL",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/practice/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-practice-5"
+    ],
+    "chapterIds": [
+      "study-deep-practice",
+      "study-deep-offline"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-0",
+    "title": "Mnih et al. (2016) · Asynchronous Methods for Deep Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§4 与 Algorithm S2：本地短轨迹、本地梯度与共享异步更新。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v48/mniha16.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-0"
+    ],
+    "chapterIds": [
+      "study-deep-systems"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-2",
+    "title": "DeepMind · scalable_agent / vtrace.py",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "原始 V-trace 实现；对照逆序修正、bootstrap 与独立的 PG 截断。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/scalable_agent/blob/master/vtrace.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-2"
+    ],
+    "chapterIds": [
+      "study-deep-systems"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-3",
+    "title": "Berner et al. (2019) · Dota 2 with Large Scale Deep Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§3.2、Figure 2、Appendix M：设备分工、数据新鲜度、复用与同步比较。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://cdn.openai.com/dota-2.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-3"
+    ],
+    "chapterIds": [
+      "study-deep-systems"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-4",
+    "title": "Espeholt et al. (2020) · SEED RL",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§3：将推理集中到 learner，处理每步 RPC 与批处理延迟。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1910.06591",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-4"
+    ],
+    "chapterIds": [
+      "study-deep-systems"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-5",
+    "title": "Google Research · SEED RL",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "作者系统实现，含 V-trace 与 R2D2。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://github.com/google-research/seed_rl",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-5"
+    ],
+    "chapterIds": [
+      "study-deep-systems"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-6",
+    "title": "Wang et al. (2023) · GEAR",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§3：分列轨迹、索引管理、分布式选择与 GPU-centric 收集。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v202/wang23aj.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-6"
+    ],
+    "chapterIds": [
+      "study-deep-systems"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-7",
+    "title": "GEAR · 作者实现",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "论文系统的公开工程入口；检查版本功能、CUDA/NCCL 与硬件条件。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://github.com/bigrl-team/gear",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-7"
+    ],
+    "chapterIds": [
+      "study-deep-systems"
+    ]
+  },
+  {
+    "id": "CH-study-deep-systems-8",
+    "title": "Kapturowski et al. (2019) · Recurrent Experience Replay in Distributed Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "R2D2：分布式回放中的表示漂移、recurrent state staleness 与 burn-in。",
+    "question": "环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？",
+    "links": [
+      {
+        "url": "https://openreview.net/forum?id=r1lyTjAqYX",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/systems/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-systems-8"
+    ],
+    "chapterIds": [
+      "study-deep-systems",
+      "study-deep-partial-observability",
+      "study-deep-model-based"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-1",
+    "title": "Hausknecht & Stone · Deep Recurrent Q-Learning for Partially Observable MDPs",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "2015 工作，已核对 v4 的 DRQN Architecture 与 Stable Recurrent Updates；随机片段清零与整回合递推的区别。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1507.06527",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-1"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-3",
+    "title": "R2D2 · OpenReview 原始公开送审稿",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "可读全文版本；§3 对初始化与 Q discrepancy 的机制说明，经验发现保持原实验范围。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://openreview.net/references/pdf?id=Hy7PKCFCQ",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-3"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-4",
+    "title": "DeepMind · Acme JAX R2D2 learner",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "loss 中分别展开 online/target 活动，剔除前缀直接损失；预热处没有显式 stop_gradient。后续官方实现，不冒称论文原始训练工程。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/acme/blob/master/acme/agents/jax/r2d2/learning.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-4"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-5",
+    "title": "Kaelbling、Littman、Cassandra · Planning and Acting in Partially Observable Stochastic Domains",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "作者托管原文；belief、决策与 POMDP 求解。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://www.cassandra.org/arc/papers/aij98.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-5"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-6",
+    "title": "Cassandra · pomdp-solve",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "经典 POMDP 求解软件的作者入口，并非神经 recurrent agent。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://www.pomdp.org/code/index.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-6"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-7",
+    "title": "h2r · pomdp-py",
+    "kind": "代码",
+    "topic": "memory",
+    "description": "框架作者的模型、belief 与规划接口；是后续工具，不是 1998 原文代码。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://github.com/h2r/pomdp-py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-7"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-8",
+    "title": "Kochenderfer、Wheeler、Wray · Algorithms for Decision Making",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "作者书站提供决策、信念状态、模型与规划教材及配套 Julia 代码入口。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://algorithmsbook.com/",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-8"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability",
+      "study-deep-model-based",
+      "study-deep-constraints"
+    ]
+  },
+  {
+    "id": "CH-study-deep-partial-observability-9",
+    "title": "Baisero & Amato · Unbiased Asymmetric Reinforcement Learning under Partial Observability",
+    "kind": "论文",
+    "topic": "memory",
+    "description": "§4–5：state-only critic 的条件与 history-state value；额外训练信息不自动消除历史依赖。",
+    "question": "当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？",
+    "links": [
+      {
+        "url": "https://www.ifaamas.org/Proceedings/aamas2022/pdfs/p44.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/partial-observability/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-partial-observability-9"
+    ],
+    "chapterIds": [
+      "study-deep-partial-observability"
+    ]
+  },
+  {
+    "id": "CH-study-deep-exploration-0",
+    "title": "Auer、Cesa-Bianchi、Fischer · Finite-time Analysis of the Multiarmed Bandit Problem",
+    "kind": "论文",
+    "topic": "curriculum",
+    "description": "UCB1 的置信宽度、有限时间分析及平稳 bandit 条件。",
+    "question": "为什么每一步都随机，并不等于有效获取长期有用的信息？",
+    "links": [
+      {
+        "url": "https://link.springer.com/article/10.1023/A:1013689704352",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/exploration/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-exploration-0"
+    ],
+    "chapterIds": [
+      "study-deep-exploration"
+    ]
+  },
+  {
+    "id": "CH-study-deep-exploration-1",
+    "title": "Osband、Russo、Van Roy · (More) Efficient Reinforcement Learning via Posterior Sampling",
+    "kind": "论文",
+    "topic": "curriculum",
+    "description": "§§2–4：有限 episode、模型 posterior sampling、策略承诺与正确先验下的采样恒等式；PSRL 不等于 Bayes-adaptive 最优控制。",
+    "question": "为什么每一步都随机，并不等于有效获取长期有用的信息？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1306.0940",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/exploration/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-exploration-1"
+    ],
+    "chapterIds": [
+      "study-deep-exploration"
+    ]
+  },
+  {
+    "id": "CH-study-deep-exploration-2",
+    "title": "Osband et al. · Deep Exploration via Bootstrapped DQN",
+    "kind": "论文",
+    "topic": "curriculum",
+    "description": "§§2–5、§6.1 与附录 B：行为头时钟、各头目标、固定经验 mask 与共享数据版本。",
+    "question": "为什么每一步都随机，并不等于有效获取长期有用的信息？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1602.04621",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/exploration/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-exploration-2"
+    ],
+    "chapterIds": [
+      "study-deep-exploration"
+    ]
+  },
+  {
+    "id": "CH-study-deep-exploration-3",
+    "title": "Osband、Aslanides、Cassirer · Randomized Prior Functions for Deep Reinforcement Learning",
+    "kind": "论文",
+    "topic": "curriculum",
+    "description": "§3、§4：固定 prior 加可训练残差；线性高斯精确采样条件与非线性推广边界。",
+    "question": "为什么每一步都随机，并不等于有效获取长期有用的信息？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1806.03335",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/exploration/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-exploration-3"
+    ],
+    "chapterIds": [
+      "study-deep-exploration"
+    ]
+  },
+  {
+    "id": "CH-study-deep-exploration-4",
+    "title": "DeepMind · bsuite",
+    "kind": "代码",
+    "topic": "curriculum",
+    "description": "作者团队后续诊断平台，包含 Deep Sea；不是原文所有实验的原始快照。",
+    "question": "为什么每一步都随机，并不等于有效获取长期有用的信息？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/bsuite",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/exploration/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-exploration-4"
+    ],
+    "chapterIds": [
+      "study-deep-exploration"
+    ]
+  },
+  {
+    "id": "CH-study-deep-distributional-1",
+    "title": "Bellemare、Dabney、Munos · A Distributional Perspective on Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "固定策略分布算子、控制的差别与 categorical 算法。",
+    "question": "学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v70/bellemare17a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/distributional/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-distributional-1"
+    ],
+    "chapterIds": [
+      "study-deep-distributional"
+    ]
+  },
+  {
+    "id": "CH-study-deep-distributional-2",
+    "title": "Dabney et al. · Distributional Reinforcement Learning with Quantile Regression",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "式 (7)–(13)、Lemma 2 与算法 1：等质量 midpoint 投影、pinball、Huber 和均值动作；精确投影与有限网络更新不同。",
+    "question": "学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1710.10044",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/distributional/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-distributional-2"
+    ],
+    "chapterIds": [
+      "study-deep-distributional"
+    ]
+  },
+  {
+    "id": "CH-study-deep-distributional-3",
+    "title": "Dabney et al. · Implicit Quantile Networks",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§2.3、§3、式 (1)–(4)：归一化 Huber、当前/目标/动作三组独立水平与风险读出。",
+    "question": "学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v80/dabney18a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/distributional/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-distributional-3"
+    ],
+    "chapterIds": [
+      "study-deep-distributional"
+    ]
+  },
+  {
+    "id": "CH-study-deep-distributional-4",
+    "title": "Yang et al. · Fully Parameterized Quantile Function",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "§3.1–3.4、Proposition 1 与算法 1：可学习概率边界、区间质量和加权均值；边界导数的连续非降条件。",
+    "question": "学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？",
+    "links": [
+      {
+        "url": "https://proceedings.neurips.cc/paper/2019/hash/f471223d1a1614b58a7dc45c9d01df19-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/distributional/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-distributional-4"
+    ],
+    "chapterIds": [
+      "study-deep-distributional"
+    ]
+  },
+  {
+    "id": "CH-study-deep-distributional-5",
+    "title": "Google · Dopamine",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "原研究团队框架，提供分布算法与 Atari 工程；非本页标准库核。",
+    "question": "学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？",
+    "links": [
+      {
+        "url": "https://github.com/google/dopamine",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/distributional/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-distributional-5"
+    ],
+    "chapterIds": [
+      "study-deep-distributional"
+    ]
+  },
+  {
+    "id": "CH-study-deep-distributional-6",
+    "title": "Bellemare、Dabney、Rowland · Distributional Reinforcement Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "原作者体系教材，可按 Bellman 分布、投影、控制与 statistical functionals 深入。",
+    "question": "学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？",
+    "links": [
+      {
+        "url": "https://direct.mit.edu/books/oa-monograph/5590/Distributional-Reinforcement-Learning",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/distributional/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-distributional-6"
+    ],
+    "chapterIds": [
+      "study-deep-distributional"
+    ]
+  },
+  {
+    "id": "CH-study-deep-offline-0",
+    "title": "Jiang、Li · Doubly Robust Off-policy Value Evaluation",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "顺序 doubly robust 估计器、条件和方差分析。",
+    "question": "不能补采数据时，怎样判断策略好坏，怎样避免利用没有证据的高价值动作？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v48/jiang16.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/offline/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-offline-0"
+    ],
+    "chapterIds": [
+      "study-deep-offline"
+    ]
+  },
+  {
+    "id": "CH-study-deep-offline-3",
+    "title": "Kostrikov、Nair、Levine · Implicit Q-Learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "expectile 价值、隐式改进与加权行为克隆。",
+    "question": "不能补采数据时，怎样判断策略好坏，怎样避免利用没有证据的高价值动作？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2110.06169",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/offline/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-offline-3"
+    ],
+    "chapterIds": [
+      "study-deep-offline"
+    ]
+  },
+  {
+    "id": "CH-study-deep-offline-4",
+    "title": "Kostrikov · IQL 原作者代码",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "JAX 实现，含离线训练和在线微调入口。",
+    "question": "不能补采数据时，怎样判断策略好坏，怎样避免利用没有证据的高价值动作？",
+    "links": [
+      {
+        "url": "https://github.com/ikostrikov/implicit_q_learning",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/offline/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-offline-4"
+    ],
+    "chapterIds": [
+      "study-deep-offline"
+    ]
+  },
+  {
+    "id": "CH-study-deep-model-based-0",
+    "title": "Chua et al. · Deep Reinforcement Learning in a Handful of Trials",
+    "kind": "论文",
+    "topic": "models",
+    "description": "PETS 原文：概率模型与候选轨迹评估。",
+    "question": "模型在哪里进入决策，预测误差又怎样变成控制误差？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1805.12114",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/model-based/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-model-based-0"
+    ],
+    "chapterIds": [
+      "study-deep-model-based"
+    ]
+  },
+  {
+    "id": "CH-study-deep-model-based-1",
+    "title": "Chua et al. · PETS 作者代码",
+    "kind": "代码",
+    "topic": "models",
+    "description": "概率动力学 ensemble 与 trajectory sampling 的原论文实现。",
+    "question": "模型在哪里进入决策，预测误差又怎样变成控制误差？",
+    "links": [
+      {
+        "url": "https://github.com/kchua/handful-of-trials",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/model-based/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-model-based-1"
+    ],
+    "chapterIds": [
+      "study-deep-model-based"
+    ]
+  },
+  {
+    "id": "CH-study-deep-model-based-2",
+    "title": "Janner et al. · When to Trust Your Model",
+    "kind": "论文",
+    "topic": "models",
+    "description": "MBPO 的短分支 rollout、模型偏差与实践动机。",
+    "question": "模型在哪里进入决策，预测误差又怎样变成控制误差？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1906.08253",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/model-based/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-model-based-2"
+    ],
+    "chapterIds": [
+      "study-deep-model-based"
+    ]
+  },
+  {
+    "id": "CH-study-deep-model-based-3",
+    "title": "Janner · MBPO 原作者代码",
+    "kind": "代码",
+    "topic": "models",
+    "description": "真实/模型 buffer、rollout schedule 和 SAC 工程。",
+    "question": "模型在哪里进入决策，预测误差又怎样变成控制误差？",
+    "links": [
+      {
+        "url": "https://github.com/jannerm/mbpo",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/model-based/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-model-based-3"
+    ],
+    "chapterIds": [
+      "study-deep-model-based"
+    ]
+  },
+  {
+    "id": "CH-study-deep-constraints-0",
+    "title": "Altman · Constrained Markov Decision Processes",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "原作者专著；占据测度、线性规划与拉格朗日方法的系统来源。",
+    "question": "“回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？",
+    "links": [
+      {
+        "url": "https://www.routledge.com/Constrained-Markov-Decision-Processes/Altman/p/book/9781315140223",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/constraints/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-constraints-0"
+    ],
+    "chapterIds": [
+      "study-deep-constraints"
+    ]
+  },
+  {
+    "id": "CH-study-deep-constraints-1",
+    "title": "Achiam et al. · Constrained Policy Optimization",
+    "kind": "论文",
+    "topic": "objectives",
+    "description": "§4 给定起点的折扣 CMDP；§5.3 式 (10)、Proposition 2 的成本代理与违反界；§6 线性/二阶局部近似、共轭梯度、回溯和恢复；§7 与跨轮保存乘子的区别。",
+    "question": "“回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v70/achiam17a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/constraints/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-constraints-1"
+    ],
+    "chapterIds": [
+      "study-deep-constraints"
+    ]
+  },
+  {
+    "id": "CH-study-deep-constraints-3",
+    "title": "Achiam · CPO 原作者代码",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "原研究工程；算法实现与环境依赖应分别阅读。",
+    "question": "“回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？",
+    "links": [
+      {
+        "url": "https://github.com/jachiam/cpo",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/constraints/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-constraints-3"
+    ],
+    "chapterIds": [
+      "study-deep-constraints"
+    ]
+  },
+  {
+    "id": "CH-study-deep-constraints-4",
+    "title": "OpenAI · Safety Gym",
+    "kind": "代码",
+    "topic": "objectives",
+    "description": "原团队的带成本环境，用于约束学习评估；不提供普遍安全保证。",
+    "question": "“回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？",
+    "links": [
+      {
+        "url": "https://github.com/openai/safety-gym",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/constraints/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-constraints-4"
+    ],
+    "chapterIds": [
+      "study-deep-constraints"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-0",
+    "title": "Bernstein et al. · The Complexity of Decentralized Control of MDPs",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "分散控制与局部信息的原始理论研究；局部历史不等于所有参与者共享的充分状态。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://pubsonline.informs.org/doi/10.1287/moor.27.4.819.297",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-0"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-1",
+    "title": "Albrecht、Christianos、Schäfer · Multi-Agent Reinforcement Learning",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "免费教材、课程、讲义与练习；用 games 和 solution concepts 区分共同收益、最佳响应与均衡。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://marl-book.com/",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-1"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-2",
+    "title": "MARL 教材 · 作者代码",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "教材配套 Python 算法；用于学习和机制核对，不应与某篇原始实验工程混同。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/marl-book/codebase",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-2"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-3",
+    "title": "DeepMind · OpenSpiel",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "游戏、解概念与算法实验平台；需按目标选择环境和评价，不用单次胜率代替均衡差距。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/open_spiel",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-3"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-4",
+    "title": "Lowe et al. · Multi-Agent Actor-Critic",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "MADDPG 的集中 critic、局部 actor 和混合合作—竞争设置；不是 COMA 反事实求和的连续版。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1706.02275",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-4"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-5",
+    "title": "OpenAI · MADDPG",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "原论文工程入口；比较训练时 critic 与部署时 actor 的输入权限。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/openai/maddpg",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-5"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-6",
+    "title": "Foerster et al. · Counterfactual Multi-Agent Policy Gradients",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "§4 的反事实 baseline 与附录条件；不能把局部收敛论证外推为任意深度 critic 的每步改善。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1705.08926",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-6"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-7",
+    "title": "Sunehag et al. · Value-Decomposition Networks",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "从团队回报学习局部 utility 的加法分解；utility 不等于给定的个体奖励价值。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1706.05296",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-7"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-8",
+    "title": "Rashid et al. · QMIX",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "单调混合、状态条件 hypernetwork 与分散 argmax；单调性不是跨训练迭代的性能保证。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v80/rashid18a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-8"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-9",
+    "title": "Wang et al. · QPLEX",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "§3 与 Proposition 2；IGM 完整表达以足够函数逼近能力为条件。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2008.01062",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-9"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-10",
+    "title": "Mahajan et al. · MAVEN",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "共享 episode 潜变量、互信息辅助目标与协调探索；2-corridors 不是一般单生命期证明。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1910.07483",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-10"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-11",
+    "title": "Yang、Wen et al. · Multi-Agent Determinantal Q-Learning",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "§3 的分区约束、质量—多样性表示、正交充分条件和近似采样边界；§3.6 区分完整深度工程与概念验证。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v119/yang20i.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-11"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent",
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-12",
+    "title": "Yu et al. · The Surprising Effectiveness of PPO in Cooperative, Multi-Agent Games",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "MAPPO 的经验评估与实现选择；参数共享和集中 critic 都不是无条件协调保证。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2103.01955",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-12"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-13",
+    "title": "Kuba et al. · Trust Region Policy Optimisation in MARL",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "Lemma 1、Algorithm 1、Theorem 2–3 与 practical algorithms；分开读理想 max-KL 更新和 HATRPO/HAPPO 近似。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2109.11251",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-13"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-14",
+    "title": "Wang et al. · Order Matters: Agent-by-agent Policy Optimization",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "§3.3 PreOPC、误差项 ξ 与 §4 实际裁剪。较紧误差界不直接证明实际样本效率排序。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2302.06205v2",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-14"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-15",
+    "title": "Wen et al. · Multi-Agent Reinforcement Learning is a Sequence Modeling Problem",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "优势分解、联合观察编码与自回归执行；实际 PPO clip 不能单凭恒等式获得逐步性能保证。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2205.14953",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-15"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-16",
+    "title": "Peng、Wen et al. · BiCNet",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "§3 的双向隐层通信、团队确定性策略梯度与固定敌方设定；不是完全无通信执行，也不是平均奖励证明。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1703.10069",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-16"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-17",
+    "title": "Zhou、Wen et al. · Factorized Q-Learning for Large-Scale Multi-Agent Systems",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "§3.1–3.3 的低秩成对项、同类参数共享和旧同伴动作近似；坐标形式不是精确联合求解保证。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1809.03738",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-17"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-18",
+    "title": "Hu、Wen et al. · PMAT",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "§5 的 AGPS、Plackett–Luce 排列概率与评分器梯度；动作生成次序不同于参数更新次序。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2502.16496v1",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-18"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-19",
+    "title": "Li、Wen et al. · Aligning Individual and Collective Objectives in Multi-Agent Cooperation",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "AgA §4.2 与附录 Algorithm 1；混合动机、邻域方向与符号条件不能简写为任意深度博弈中的全局最优保证。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2402.12416v3",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-19"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-20",
+    "title": "Oxford · PyMARL",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "COMA、VDN、QMIX 的原团队工程入口；连读 controller、learner、mixer 和环境版本。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/oxwhirl/pymarl",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-20"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-21",
+    "title": "QPLEX · 作者实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "dmaq_general、dmaq_si_weight 与 dmaq_qatten_learner 对照完整结构，不只摘取一条公式。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/wjh720/QPLEX",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-21"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-22",
+    "title": "MAVEN · 作者实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "noise_controller、noise_q_learner 与高层 bandit；区分默认配置和辅助损失变体。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/AnujMahajanOxf/MAVEN",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-22"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-23",
+    "title": "Q-DPP · 作者实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "qdpp_controller、projection_selector、qdpp mixer；训练联合采样与测试局部策略的数据权限不同。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/QDPP-GitHub/QDPP",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-23"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-24",
+    "title": "MAPPO · 官方 on-policy",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "集中价值、局部策略、价值归一化、GAE 与 rollout / active masks 的工程入口。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/marlbenchmark/on-policy",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-24"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-25",
+    "title": "HATRPO / HAPPO · 作者实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "base_runner 的随机顺序与 factor 累乘，happo_trainer / hatrpo_trainer 的不同更新。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/cyanrain7/TRPO-in-MARL",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-25"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-26",
+    "title": "A2PO · 作者实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "`shared_buffer` 的轨迹修正和 `r_mappo` 的顺序训练；仓库 README 明示重构版本的复现边界。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/xihuai18/A2PO-ICLR2023",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-26"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-27",
+    "title": "MAT · 作者实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "ma_transformer、transformer_act 与 mat_trainer；检查联合输入、因果 mask、顺序采样和 PPO clip。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/PKU-MARL/Multi-Agent-Transformer",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-27"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-multi-agent-28",
+    "title": "PMAT · 作者实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "pma_transformer、transformer_policy 和 mat_trainer；对照评分、排列采样、索引还原与动作网络更新。",
+    "question": "团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？",
+    "links": [
+      {
+        "url": "https://github.com/NUDT-BI-MARL/PMAT",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-multi-agent-28"
+    ],
+    "chapterIds": [
+      "study-deep-multi-agent"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-0",
+    "title": "Heinrich、Lanctot、Silver · Fictitious Self-Play（ICML 2015）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "阅读实现等价的行为平均与 XFP/FSP，注意到达概率权重。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v37/heinrich15.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-0"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-1",
+    "title": "Heinrich、Silver · Neural Fictitious Self-Play（2016）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "Algorithm 1 的按局模式抽样、两种记忆与平均策略评价。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1603.01121",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-1"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-2",
+    "title": "Silver 等 · AlphaGo（Nature 2016）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "Figure 1、强化学习策略与价值训练、MCTS；监督先验与 rollout 不可追述成 Zero 的单网络闭环。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://storage.googleapis.com/deepmind-media/alphago/AlphaGoNaturePaper.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-2"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-3",
+    "title": "Silver 等 · AlphaGo Zero（Nature 2017）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "第 1 节、公式 1：网络、搜索计数、当前玩家终局标签与联合损失。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-3"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-4",
+    "title": "Silver 等 · AlphaZero（Science 2018，作者开放稿）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "正文公式 1、与 Zero 的区别及三个分别训练实例；区分 2017 预印本与最终评估。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphazero-shedding-new-light-on-chess-shogi-and-go/alphazero_preprint.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-4"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-6",
+    "title": "MuZero 作者公开伪代码",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "记录搜索分布、构建展开目标与模型训练；带未实现接口，不是完整软件包。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/src/1911.08265v1/anc/pseudocode.py",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-6"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-7",
+    "title": "OpenSpiel · AlphaZero 数据生成与学习",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "_play_game 存访问计数分布；collect_trajectories 接终局回报。平台版本可能演化。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/alpha_zero/alpha_zero.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-7"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-8",
+    "title": "OpenSpiel · AlphaZero 价值视角转换",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "evaluate 将固定玩家价值转成双方收益；与训练标签约定一起阅读。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/alpha_zero/evaluator.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-8"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-9",
+    "title": "Zinkevich 等 · Regret Minimization in Games with Incomplete Information（2007）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "反事实价值、局部到整体遗憾界与完美回忆条件。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://poker.cs.ualberta.ca/publications/NIPS07-cfr.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-9"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-10",
+    "title": "OpenSpiel · NFSP",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "公开平台实现；阅读按局策略抽样、reservoir 和监督损失。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/pytorch/nfsp.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-10"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-11",
+    "title": "OpenSpiel · CFR",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "对照 counterfactual reach、regret matching 和 average_policy。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/open_spiel/blob/master/open_spiel/python/algorithms/cfr.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-11"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-12",
+    "title": "David Balduzzi · 作者主页与公开讲义入口",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "主页列出 Open-ended learning in games（2019）与 Designing learning dynamics（NeurIPS tutorial，2020）。讲义用于理解问题脉络；下面的 ICML 2019 论文提供正式定义、算法和证明。本页原创图不转载整套讲义。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://sites.google.com/site/dbalduzzi/",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-12"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-13",
+    "title": "Balduzzi et al. · Open-ended Learning in Symmetric Zero-sum Games",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "ICML 2019。按 §2 的对手→目标、§3 的 FGS/EGS 与相对种群值、§4 的 Nash/rectified Nash、Appendix E 的包含与严格扩张证明阅读。弱单调沿集合包含链成立，不给任意种群全序；§5 的预算未计交叉评估。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1901.08106",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-13"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-15",
+    "title": "Lanctot et al. · A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "PSRO 元博弈、元策略与学习响应接口；框架和具体解概念分开。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1711.00832",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-15"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations",
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-16",
+    "title": "Zhou et al. · Efficient Policy Space Response Oracles",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "URR、response 与元策略联合学习、warm start 和并行；保留均衡与遗憾条件。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2202.00633",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-16"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-17",
+    "title": "Perez-Nieves et al. · Modelling Behavioural Diversity for Learning in Open-Ended Games",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "DPP 期望集合大小和 payoff 几何，与动作层 Q-DPP 不同。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v139/perez-nieves21a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-17"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-18",
+    "title": "Liu et al. · Towards Unifying Behavioral and Response Diversity",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "占据分布、响应向量、gamescape 与 population effectivity。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2106.04958",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-18"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-19",
+    "title": "Feng et al. · Neural Auto-Curricula",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "依据后续可利用度训练课程生成器，连接种群学习与元学习。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2106.02745",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-19"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-20",
+    "title": "Zhang et al. · Learning to Design Games: Strategic Environments in Reinforcement Learning",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "IJCAI 2018，§3.1–3.3、式 2、Definition 1 与图 1–2：对抗环境目标、dual MDP、连续转移梯度与离散生成。难度或轨迹等价不是持续学习与全局优化保证；实现入口须另行确认。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://www.ijcai.org/Proceedings/2018/0426.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-20"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-21",
+    "title": "Lian et al. · Fusion-PSRO",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "Nash 加权参数融合用于 response 初始化，不等于概率混合。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://doi.org/10.3233/FAIA251106",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-21"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-22",
+    "title": "Huang et al. · Conflux-PSRO",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "状态级路由复用子策略，再蒸馏；机制说明不等于无条件性能排序。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2410.22776",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-22"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-23",
+    "title": "McAleer et al. · XDO: A Double Oracle Algorithm for Extensive-Form Games",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "信息状态级组合及 NXDO；相邻团队研究，表格界与神经近似分开。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2103.06426",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-23"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-24",
+    "title": "Li et al. · Cooperative Open-ended Learning Framework for Zero-shot Coordination",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "ICML 2023 原始 COLE：图评价、兼容性课程与局部偏好目标。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v202/li23au.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-24"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-25",
+    "title": "Li et al. · AT-Drone: Benchmarking Adaptive Teaming in Multi-Drone Pursuit",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "CoRL 2025 / PMLR 305。方法详见 arXiv v2 §3.1–3.3：多学习者与陌生伙伴、三个具体测试池、SUC/COL/AST/REW。项目页未提供公开训练仓库；不外推有限物理场地结果。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v305/li25a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-25"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-26",
+    "title": "Li et al. · Tackling Cooperative Incompatibility for Zero-Shot Human-AI Coordination",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "JAIR 2024 扩展，含 COLE-SV、COLE-R 与人机研究。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://doi.org/10.1613/jair.1.15884",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-26"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-27",
+    "title": "Li et al. · HOLA-Drone",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "超图合作关系、多伙伴课程与实体无人机零样本配合，部署策略固定。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2409.08767",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-27"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-28",
+    "title": "Li et al. · Multi-Robot Open Adaptive Teaming Across Unseen Environments, Partners, and Scales",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "后续环境、伙伴与规模变化研究；无微调不等于部署阶段参数学习。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2607.04972",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-28"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-29",
+    "title": "Wang et al. · ZSC-Eval",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "测试伙伴生成、BR-Div 与 BR-Prox，评价未见伙伴泛化。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2310.05208",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-29"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-31",
+    "title": "Chen et al. · Offline Fictitious Self-Play for Competitive Games",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "固定数据上的对手重加权和离线响应；数据支持缺口不能由权重消除。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2403.00841",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-31"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-32",
+    "title": "Liu et al. · Leveraging Team Correlation for Approximating Equilibrium in Two-Team Zero-Sum Games",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "团队相关、偏离空间与受限团队解，连接合作内层与竞争外层。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2403.00255",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-32"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-33",
+    "title": "Liu et al. · Computing Ex Ante Equilibrium in Heterogeneous Zero-Sum Team Games",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "H-PSRO 的异质团队表达与顺序更新；区分局部训练界和总体均衡近似。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/2410.01575",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-33"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-34",
+    "title": "Mguni et al. · Learning in Nonzero-Sum Stochastic Games with Potentials",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "特殊势结构下的一般和学习，不覆盖任意利益关系。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v139/mguni21a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-34"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-populations-35",
+    "title": "Zhou et al. · MALib",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "JMLR 2023 种群训练系统，组织采样、评价与训练的嵌套工作负载。",
+    "question": "自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？",
+    "links": [
+      {
+        "url": "https://jmlr.org/papers/v24/22-0169.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-populations/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-populations-35"
+    ],
+    "chapterIds": [
+      "study-deep-marl-populations"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-0",
+    "title": "Wen、Yang、Luo、Wang、Pan · PR2（ICLR 2019）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "条件响应的变分推断、Theorem 1/2 和 PR2-Q/PR2-AC；保留定理假设。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1901.09207",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-0"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-1",
+    "title": "Wen、Yang、Wang · GR2（IJCAI 2020）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "第 4 节层次模型与第 5 节实现近似；有限理性模型不是人类心理机制的实证证明。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://www.ijcai.org/proceedings/2020/58",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-1"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-2",
+    "title": "Tian、Wen 等 · ROMMEO（IJCAI 2019）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "阅读经验对手先验、KL 正则与合作场景；它改变模型目标，不只是增加预测头。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://www.ijcai.org/proceedings/2019/85",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-2"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-3",
+    "title": "ROMMEO 作者代码",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "论文指定的表格与 actor–critic 实现；不是任意对抗场景的稳健性保证。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://github.com/rommeoijcai2019/rommeo",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-3"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-4",
+    "title": "Fu、Tian、Wen 等 · GSCU（ICML 2022）",
+    "kind": "论文",
+    "topic": "multiagent",
+    "description": "阅读离线策略嵌入、线上后验与两策略选择；遗憾比较对象及信息权限须保留。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v162/fu22b.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-4"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-5",
+    "title": "GSCU 作者代码",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "embedding_learning、conditional_RL 与 online_test 分别对应准备、响应训练和线上适应。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://github.com/YeTianJHU/GSCU",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-5"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-6",
+    "title": "GR2 作者代码与理论附录",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "原文指定工程，含 PR2 基线；附录 D 的低维动力学分析不是深度训练全局定理。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://github.com/ying-wen/gr2",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-6"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-7",
+    "title": "GR2 · 递归与层次混合实现",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "检查 stop_gradient 与确定动作加权，勿称精确随机层次混合。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://github.com/ying-wen/gr2/blob/master/code/maci/policies/level_k_policy.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-7"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
+    ]
+  },
+  {
+    "id": "CH-study-deep-marl-reasoning-8",
+    "title": "GR2 · 条件响应与 actor–critic",
+    "kind": "代码",
+    "topic": "multiagent",
+    "description": "检查 critic、SVGD、粒子软聚合与 replay 字段；仍需独立运行验证兼容性。",
+    "question": "给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？",
+    "links": [
+      {
+        "url": "https://github.com/ying-wen/gr2/blob/master/code/maci/learners/mavb_ac.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/multi-agent-reasoning/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-marl-reasoning-8"
+    ],
+    "chapterIds": [
+      "study-deep-marl-reasoning"
     ]
   },
   {
@@ -15410,37 +18587,6 @@
     "chapterIds": [
       "gvf",
       "value"
-    ]
-  },
-  {
-    "id": "OM-FHTD-2020",
-    "title": "Fixed-Horizon Temporal Difference Methods for Stable Reinforcement Learning",
-    "kind": "论文",
-    "topic": "foundations",
-    "description": "为不同剩余时域建立价值预测：h 步预测从 h−1 步预测 bootstrap，形成按时域排列的依赖链。代价是额外预测器；n 步备份、并行计算和共享参数用于降低开销。 AAAI 2020；De Asis、Chan、Pitis、Sutton、Daniel Graves。适用范围：固定时域目标不等于无限时域折扣目标；理论假设不能无条件移到共享非线性网络。此论文不能据标题视为严格无样本存储算法。未确认专属作者仓库。",
-    "question": "不让一个预测器从自身 bootstrap，能否改变离策略不稳定的结构？ 先画 h=0、1、2 的依赖图，再读线性条件下的矩阵与收敛分析。随后单独检查深度实验的共享表示和 replay 协议。",
-    "links": [
-      {
-        "url": "https://ojs.aaai.org/index.php/AAAI/article/view/5784",
-        "label": "AAAI 正式记录"
-      },
-      {
-        "url": "https://ojs.aaai.org/index.php/AAAI/article/download/5784/5640",
-        "label": "论文全文"
-      },
-      {
-        "url": "https://arxiv.org/abs/1909.03906",
-        "label": "作者预印本"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/resource/OM-FHTD-2020/",
-    "sourceIds": [
-      "OM-FHTD-2020"
-    ],
-    "chapterIds": [
-      "value",
-      "deep-value",
-      "credit"
     ]
   },
   {

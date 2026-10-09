@@ -14,6 +14,14 @@
 
 ## 预备知识与符号
 
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [持续控制：比较策略与学习智能体](control.md)：明确在相同资源和交互条件下比较什么。
+- [持续控制与平均奖励](../foundations/approximation/average-control.md)：掌握奖励率、差分价值和基本预测/控制更新。
+
+
 ### 状态与马尔可夫性
 
 给定当前状态和动作，下一步奖励与状态的条件分布不再依赖更早历史；观测不充分时，需要先构造带记忆的 agent state。
@@ -216,7 +224,7 @@ $$
 | --- | --- | --- |
 | 固定起点或固定初始分布 $\nu$ | $J_\gamma(\pi;\nu)=\nu^\top V^\pi_\gamma$ | 可以有上述折扣/平均排序反转 |
 | 每条策略自身的稳态分布 $d_\pi$ | $d_\pi^\top V^\pi_\gamma=g_\pi/(1-\gamma)$ | 求梯度时不能忽略分布随策略改变 |
-| 冻结策略的长期性能 | $g_\pi$；必要时再比较规范化的 bias | 不能替代学习期间实际经历的收益 |
+| 冻结策略的长期性能 | $g_\pi$；必要时再比较规范化的 bias | 不能替代学习期间实际交互的收益 |
 | 具有记忆与参数更新的完整学习器 | 给定历史 $H_t$、预算 $T$ 与权限，比较实际后续累计收益 | 未必存在固定策略稳态分布，不能直接套用本章固定策略定理 |
 
 $$
@@ -544,9 +552,24 @@ python3 implementations/average_systems/differential_td_offpolicy.py --steps 120
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/differential_td_offpolicy/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-differential_td_offpolicy.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：参考状态对齐后的差分价值RMSE。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 先从三个当前差分价值中统一减去状态0的估计，再与目标策略的差分价值比较，取三状态均匀 RMSE。目标策略的真值由真实模型仅作评价求得，不提供给学习更新。
+
+**step：怎样计时。** step 是行为策略产生的真实转移数；每次转移更新差分价值和奖励率，无回合终止或重置。评价解方程不增加环境步。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 主图消除了公共平移，需同时看 gain_abs_error（目标奖励率误差）和 raw_bias_offset（未经对齐的状态0值）；小的对齐误差不能代替正确的奖励率。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 保存 bias_0、bias_1、bias_2，可结合已知模型独立重算 RMSE。gain 与 true_gain 可重算奖励率误差；experienced_reward_rate × step 可恢复行为累计奖励，但行为奖励率不等于目标策略奖励率。
+
+计算位置：[average_systems/differential_td_offpolicy.py](../implementations/average_systems/differential_td_offpolicy.py) · [average_systems/wrong_behavior_mean_td.py](../implementations/average_systems/wrong_behavior_mean_td.py) · [average_systems/_common.py](../implementations/average_systems/_common.py)
+
+</details>
 
 **结果分析。** 1200 步时，对齐 RMSE 均值为 0.04395，错误负对照为 0.05323，差别不大。但奖励率绝对误差分别为 0.01666 和 0.14124；原始参考值偏移分别约 0.5793 和 4.5044。只展示对齐 RMSE 会掩盖错误率估计。
 
@@ -601,9 +624,24 @@ python3 implementations/average_systems/rvi_multistate.py --steps 1200 --seeds 0
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/rvi_multistate/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-rvi_multistate.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 model_sweeps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：model_sweeps。纵轴：最优偏差参考对齐RMSE。每种方法 1200 model_sweeps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 把三个规划值对齐到状态0后，与已知三状态模型的最优差分价值作均匀 RMSE。主图比较相对值，不比较共同增长的绝对值；未规范化 VI 也可得到正确的相对值。
+
+**step：怎样计时。** step 是一轮同步扫描：3状态 × 2动作，共6次状态动作期望备份，每个备份再对3个后继求和。model_backups = 6 × step，environment_updates 始终为0；该图没有真实采样。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 本计算完全确定，种子不参与更新；重复曲线及零标准差不构成多次随机实验的证据。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 的三个 bias 字段可独立重算对齐 RMSE，raw_bias_offset 保留公共偏移。RVI 的 gain 是该轮减去的参考值；未规范化 VI 的 gain 是参考值的单轮增量，不是随扫描累积的绝对值。
+
+计算位置：[average_systems/rvi_multistate.py](../implementations/average_systems/rvi_multistate.py) · [average_systems/unnormalized_vi_multistate.py](../implementations/average_systems/unnormalized_vi_multistate.py) · [average_systems/_common.py](../implementations/average_systems/_common.py)
+
+</details>
 
 **结果分析。** 初始误差约 0.43049；60 次扫描后两者均约 $6.76\times10^{-8}$；120 次后均约 $10^{-13}$。最终两者都接近浮点精度。图中没有 RVI 在价值差上的性能优势，它隔离的是公共尺度的控制。
 
@@ -666,7 +704,7 @@ $$
 
 **检验的机制。** 先做真实差分 Q 更新，再写入经验模型，再用 planning_update 更新 Q 和率。模型不能从未访问状态动作生成知识；模拟奖励不计入真实生命期奖励。
 
-**测量。** 主图是冻结当前贪心策略后，用真实模型精确解得的 gain。另看真实经历奖励率和总备份数：最终策略能力、学习过程所得收益和计算开销是三个量。
+**测量。** 主图是冻结当前贪心策略后，用真实模型精确解得的 gain。另看真实交互奖励率和总备份数：最终策略能力、学习过程所得收益和计算开销是三个量。
 
 ```bash
 python3 implementations/average_systems/differential_dyna.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
@@ -674,9 +712,24 @@ python3 implementations/average_systems/differential_dyna.py --steps 1200 --seed
 
 在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
 
-![实测学习曲线](https://yingwen.io/crl-code/results/differential_dyna/curves.svg)
+![实测学习曲线](../assets/crl-figures/result-differential_dyna.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：environment_steps。纵轴：冻结贪心策略的精确平均奖励。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 固定当前 Q 所选的贪心策略，在真实三状态模型上求其长期平均奖励。真实模型只用于评价。value 不是算法内部的 gain_estimate，也不是带探索的行为所收到的平均奖励。
+
+**step：怎样计时。** step 是真实交互数。两方法每步都直接更新 Q 和率；Differential Dyna 另做5次经验模型期望备份。environment_updates、model_backups、total_backups 分别记录这两类更新及其和，尚未计模型维护与求和的全部运行时间。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 全程行为奖励率另看 experienced_reward_rate：它已把从第1步开始的探索与学习成本纳入平均，不应再次平均各稀疏检查点。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算奖励率差 optimal_gain − value 和各更新计数。experienced_reward_rate × step 给出累计真实奖励；模型奖励不加入该总量。日志未保存 Q 表与每步奖励，不能仅凭冻结策略的 value 恢复策略或逐步行为轨迹。
+
+计算位置：[average_systems/differential_dyna.py](../implementations/average_systems/differential_dyna.py) · [average_systems/differential_q_multistate.py](../implementations/average_systems/differential_q_multistate.py) · [average_systems/_common.py](../implementations/average_systems/_common.py)
+
+</details>
 
 **结果分析。** 第 300 步，Dyna 的冻结策略 gain 均值约 0.58763，对照约 0.42844；第 1200 步两者均为最优 0.59704。真实全程奖励率分别约 0.50207、0.45040，但总备份数分别为 7200 和 1200。相同交互不等于相同计算。
 
@@ -692,7 +745,7 @@ python3 implementations/average_systems/differential_dyna.py --steps 1200 --seed
 
 执行一次导航技能，可能持续 2 步，也可能持续 200 步。若每次 option 结束只平均奖励，慢技能可能因为单次收益高而被偏爱。单位原始步奖励应为总奖励除以总耗时。在独立重复执行、均值有限且平均时长为正的例子中，它是 $\mathbb E[R]/\mathbb E[\tau]$，一般不同于 $\mathbb E[R/\tau]$。
 
-![两个回到同一状态的环，A每秒得2，B每三秒得3；下方把两者放到同一段十二秒时间，奖励总量分别为24和12。](https://yingwen.io/crl-figures/concept-depth-average-clock.svg)
+![两个回到同一状态的环，A每秒得2，B每三秒得3；下方把两者放到同一段十二秒时间，奖励总量分别为24和12。](../assets/crl-figures/concept-depth-average-clock.svg)
 
 沿环走一圈才发生下一次高层决策。A 每圈得 2，B 每圈得 3，所以按决策次数平均会偏爱 B。下方每枚圆点表示 1 奖励，横轴使用同一个物理时钟；此时 A 的奖励率是 B 的两倍。回到 S 是环境自身的转移。原创确定性计算；[计算与绘图代码](https://yingwen.io/crl-code/figures/continual-visual-depth.mjs)。
 
@@ -760,7 +813,7 @@ $$
 
 有限样本的恒等式：总奖励除以总时间，等于各段奖励率的时间加权算术平均。此恒等式不需要独立性，也不需要平稳性。随机极限是否存在，是另一个问题。
 
-取两段经历：(奖励, 时长) 分别为 (1,1) 和 (4,2)。总奖励率为 5/3。两个局部率为 1 和 2，其简单调和平均为 4/3。二者在没有噪声的例子中已经不同。这个反例不评价某种聚合在其他目标上的用途，只说明不能未经附加条件便宣称两者等价。
+取两段交互记录：(奖励, 时长) 分别为 (1,1) 和 (4,2)。总奖励率为 5/3。两个局部率为 1 和 2，其简单调和平均为 4/3。二者在没有噪声的例子中已经不同。这个反例不评价某种聚合在其他目标上的用途，只说明不能未经附加条件便宣称两者等价。
 
 固定路程下求平均速度时，调和平均有适用条件：每段路程相同。在奖励问题中，对应的是每段奖励满足特定约束，而不是任意 option。若另加正负奖励分组、平移或截断，也必须重新证明目标与策略排序；数值更平稳不是目标等价的证明。
 
@@ -768,10 +821,151 @@ $$
 
 1. 对任意聚合提议，先写出优化对象及其单位
 1. 检查常数奖励偏移、时间拆分、负奖励和不同持续时长
-1. 构造两段确定性经历，比较目标值与策略排序
+1. 构造两段确定性交互记录，比较目标值与策略排序
 1. 若排序改变，把它命名为新的偏好目标；不要仍称同一平均奖励问题
 
 尚未确认该预印本对应的作者代码。这里保留原文入口，目的在于学习如何审查一个目标主张。当前平均奖励与整体智能体实现继续使用实际外部奖励总和除以实际时间。
+
+<a id="average-rate-task"></a>
+
+### 7.1 · 贯穿算例：让预测与控制共用一个时钟
+
+前面的单状态例子隔离了时间分母。现在给服务系统加入启动过程和可预测的中间状态，使同一个世界能够用于策略评价、一次学习更新、策略改善与模型规划。第一册的[服务站算例](../foundations/approximation/average-control.md#average-rate-cycles)从预测讲起；这里完整给出环境，再追踪这些量怎样被控制器使用。
+
+| 当前位置与动作 | 后继状态 | 动作总奖励 R | 耗时 τ（秒） |
+| --- | --- | --- | --- |
+| E：启动 | H | −3 | 2 |
+| H：选快环 | A | 0 | 1 |
+| A：返回 | H | 4 | 1 |
+| H：选慢环 | B | 0 | 1 |
+| B：返回 | H | 9 | 3 |
+
+E 只在生命开始时访问一次；H 是反复返回的服务站。所有奖励在对应动作完成时到账，执行期间没有额外奖励或新选择。以 $n$ 数决策间的转移，以 $T_n$ 数真实秒，$\tau_n=T_{n+1}-T_n$。快环 $\pi_F$ 固定在 H 选 A，慢环 $\pi_L$ 固定选 B。每条策略都只有一个常返类，允许另一分支与 E 为暂态；两条确定性循环都有周期。
+
+$$
+g_F=\frac{4}{1+1}=2,\qquad g_L=\frac{9}{1+3}=\frac94.
+$$
+
+两条策略的 gain 单位均为奖励/秒。这里是每圈总奖励除以总时长，启动成本不改变长期斜率。真实生命中启动的 2 秒与损失 3 仍然保留。
+
+看图前预测：如果日志把每个动作记成一行，然后把每行的“奖励/耗时”等权平均，哪条路线会被误判？
+
+![四状态服务站：启动两秒成本3；快环两秒得4，慢环四秒得9，所有边与奖励到账时刻共享物理秒数坐标。](../assets/crl-figures/average-rate-walkthrough-cycles.svg)
+
+每条环的水平长度按真实秒数，实心小圆点每枚代表 1 奖励。快环每次回站要 2 秒，慢环要 4 秒；H 的再次出现表示自然返回。原创确定性算例；[解析核](https://yingwen.io/crl-code/figures/average-rate-walkthrough.mjs)与[标准库教程](../tutorials/average_rate_walkthrough.py)可重算。
+
+$$
+\frac{0/1+4/1}{2}=2,\qquad\frac{0/1+9/3}{2}=\frac32<2.
+$$
+
+逐次率平均把慢环的 3 秒返回动作与 1 秒出发动作赋予相同权重，因而反转了真实排序。每次转移平均奖励则是 2 与 9/2，单位为奖励/决策，同样不等于奖励/秒。
+
+令 $\bar d_\pi$ 为“只在决策时刻观察”得到的嵌入链平稳分布，$r_\pi(s)$ 和 $\ell_\pi(s)$ 分别为一次动作的期望总奖励和期望时长。将半马尔可夫 Poisson 方程左乘 $\bar d_\pi^\top$，后继价值相消，得到：
+
+$$
+h_\pi=r_\pi-g_\pi\ell_\pi+P_\pi h_\pi,\qquad g_\pi=\frac{\bar d_\pi^\top r_\pi}{\bar d_\pi^\top\ell_\pi}.
+$$
+
+分母是每次决策之间经过的平均真实时间。慢环决策分布在 H、B 各占 1/2，因此 $g_L=(9/2)/[(1+3)/2]=9/4$。按决策次数的平稳分布不是按每秒观察的占用分布。
+
+若每次到 H 以概率 p 选慢环，则期望一圈奖励为 $4(1-p)+9p$，时间为 $2(1-p)+4p$，所以 $g(p)=(4+5p)/(2+2p)$。$p=1/2$ 时为 $13/6$，不同于两条固定路线率的均值 $17/8$。这个区别只来自时长，没有估计噪声。
+
+<a id="average-rate-prediction"></a>
+
+### 7.2 · 先学哪一个量：同一规范下的 gain 与 bias
+
+固定策略后，取 $h_\pi(H)=0$。从每个状态到下一个决策时刻，扣除这段时间本可按 $g_\pi$ 获得的收益。每条边满足 $h_\pi(s)=R-g_\pi\tau+h_\pi(s')$；在 H 对策略选择取期望。这里通过 Poisson 方程固定差分价值，周期链的普通无限中心化和不必收敛。
+
+$$
+h_\pi(E)=-3-2g_\pi,\quad h_\pi(A)=4-g_\pi,\quad h_\pi(B)=9-3g_\pi,\quad h_\pi(H)=0.
+$$
+
+第一条同时计入启动成本与启动期间的机会成本。其余两条保留到站奖励与等待秒数。
+
+| 策略 | g（奖励/秒） | h(E) | h(H) | h(A) | h(B) |
+| --- | --- | --- | --- | --- | --- |
+| 快环 | 2 | −7 | 0 | 2 | 3 |
+| 慢环 | 9/4 | −15/2 | 0 | 7/4 | 9/4 |
+
+检查慢环的两条常返边：H 的残差为 $0-9/4+9/4=0$，B 的残差为 $9-3\times9/4-9/4=0$。即使只跟随慢环，模型也能算出暂态 A 和 E 的值；真实在线流却不会反复访问 E。这里算出所有状态是模型评价，不声称单条生命能无限次采样启动阶段的经验。
+
+把 N 次高层转移的方程相加，可得到精确的有限交互序列关系：
+
+$$
+\mathbb E_\pi\!\left[\sum_{n=0}^{N-1}R_n\right]-g_\pi\mathbb E_\pi[T_N]=h_\pi(S_0)-\mathbb E_\pi[h_\pi(S_N)],\qquad T_0=0.
+$$
+
+$N$ 是固定转移次数，$T_N$ 是完成它们后的真实时刻。若窗口恰在长动作中途截止，还需保留未完成动作的状态；不能把它伪造成已返回 H。
+
+未知模型时，一条实际返回样本也能形成残差。固定慢环策略，旧估计为 $\bar g=2,\hat h(B)=2,\hat h(H)=0$，观察 B→H 得 9、花 3 秒。用已知确定性期望时长 $L=3$，采用前节 inter-option 预测更新的特例：
+
+$$
+\delta=9-2\times3+0-2=1,\quad\Delta=\frac{\alpha\delta}{L}=\frac1{10},\quad\hat h^+(B)=2.1,\quad\bar g^+=2.05.
+$$
+
+取 $\alpha=0.3$ 秒、$\eta=0.5/\text{秒}$，率增量为 $\eta\Delta$。一秒为时间单位时直接使用数值 0.3、0.5。固定确定性策略下每个访问状态只有一个选定动作，$\hat h(s)$ 对应其动作价值估计。
+
+这个单步核采用 Wan、Naik 与 Sutton 的 options 论文 §3，式 (6)–(10) 的时长归一化与旧参数时序。价值与率必须共用同一个 δ：先改率再重算，会把 δ 从 1 变为 0.85。随机时长下，论文使用期望长度估计 L；本例 L 恰好等于每次实际时长，不把两者在一般情形中混用。
+
+<a id="average-rate-control"></a>
+
+### 7.3 · 从预测到控制：一次策略改善能增加多少率
+
+预测回答“总选快环会怎样”。控制再问“只在当前 H 改选一次慢环，随后恢复快环，会增加多少收益”。使用刚算出的快环 $g_F=2$ 和 $h_F$，定义带时间成本的动作价值：
+
+$$
+q_F(H,F)=0-2\times1+h_F(A)=0,\qquad q_F(H,L)=0-2\times1+h_F(B)=1.
+$$
+
+相对 $h_F(H)=0$，选择一次慢环多出 1 奖励。它是差分动作价值，单位为奖励；数值 1 不是“每秒提高 1”。
+
+将这种选择每次重复，就得到慢环策略。慢环每圈用 4 秒，多出的中心化奖励恰为 $9-2\times4=1$，所以真正的率改善是 $1/4$。更一般地，令 $A_\pi(s,a)=r(s,a)-g_\pi\ell(s,a)+(P_a h_\pi)(s)-h_\pi(s)$，将它按新策略的嵌入链平稳分布求平均：
+
+$$
+g_{\pi'}-g_\pi=\frac{\sum_s\bar d_{\pi'}(s)\sum_a\pi'(a\mid s)A_\pi(s,a)}{\sum_s\bar d_{\pi'}(s)\sum_a\pi'(a\mid s)\ell(s,a)}.
+$$
+
+后继 bias 项仍因平稳性相消，分母把每次决策的改善换回每秒。本例新策略在 H、B 各占 1/2，平均优势为 1/2，平均时长为 2 秒，故 $g_L-g_F=(1/2)/2=1/4$。当所有动作耗时为 1，这条式子退化为前面的 MDP 性能差异公式。
+
+在这个给定模型上，规划可先精确评价快环，再按 q 选择慢环，最后重新解 Poisson 方程。这就是一次完整的策略迭代。新评价得到 $g_L=9/4$，此时 $q_L(H,F)=4-2\times9/4=-1/2$、$q_L(H,L)=9-4\times9/4=0$，动作不再改变。由于 $g(p)$ 在 $[0,1]$ 上递增，慢环也优于任何固定随机混合策略。
+
+精确模型允许查阅 B 的后果。若只从一直执行快环的经验学习，B 从未被访问，改善所需的值就没有数据支持。模型规划、实际探索与一次样本更新使用不同的信息，不能把解析策略迭代的答案当作学习器已经获得的知识。
+
+再预测一个有限时间问题：两个相同服务系统都从 E 启动，一个固定快环，一个固定慢环。只运行 12 秒时，奖励率较高的慢环一定已经赚得更多吗？
+
+![真实累计奖励的阶梯曲线：第12秒快环17高于慢环15，第18秒快环29低于慢环33，启动成本保留。](../assets/crl-figures/average-rate-walkthrough-lifetime.svg)
+
+蓝实线为快环，橙虚线为慢环；横轴从同一 E 启动时计秒，奖励只在动作完成时到账。慢环有更高长期斜率，却在第 12 秒落后，因为下一笔奖励尚未到达。原创逐秒确定性展开，图中点由[教程](../tutorials/average_rate_walkthrough.py)独立重算。
+
+第 12 秒：快环完成 5 圈，收益 $-3+5\times4=17$；慢环完成 2 圈，收益 $-3+2\times9=15$。第 18 秒：两者分别完成 8 圈和 4 圈，收益为 29 与 33。这个比较无需引入学习误差。研究完整 CRL 学习器时，真实收益还会包含探索、模型更新与适应过程，因此应保留生命期累计收益，不能只用最终冻结策略的 gain 替代。
+
+<a id="average-rate-planning"></a>
+
+### 7.4 · 时长模型改变，旧规划答案如何失效
+
+仍在这个服务站，只让 B 返回 H 的耗时从 3 秒变成 4 秒；奖励 9 与终点 H 都不变，其他转移也不变。旧模型会继续报告慢环率 9/4，真实慢环却已经变为 9/5，低于快环的 2。这给出了一个只改变时长、即可使动作选择反转的控制问题。
+
+看图前预测：若模型的奖励均方误差与终点预测误差都为零，只保留过时的时长，它能否继续正确规划？
+
+![旧模型把完整慢环记为4秒得9，新世界需要5秒得9；率从2.25降到1.8，越过快环率2。](../assets/crl-figures/average-rate-walkthrough-model.svg)
+
+上方两条路线共用秒数坐标，紫色虚线表示旧模型，橙实线表示改变后的真实转移。下方同一奖励/秒轴上的两根条形跨过快环率 2 的参考线。只改变 B→H 的时长；这是给定模型的精确比较。
+
+$$
+h_F^{\rm new}(B)=9-2\times4=1,\qquad q_F^{\rm new}(H,L)=0-2+1=-1.
+$$
+
+更新时长后，先按快环基准重新评价 B，再把该值传回 H，就会选快环。若只更新 B 的值却还未传播到 H，暂时的动作错误来自未完成的备份；若时长模型本身仍错，重复同一个旧备份不会修正答案。
+
+因此一条 option 模型记录至少要绑定期望总奖励、期望时长、终点分布及对应的内部策略版本。预测精度在这里由控制用途检验：只预测终点与奖励仍不足以比较每秒收益。环境何时改变、怎样发现时长变化、需要多少真实样本以及多久完成传播，是下一层学习问题；本算例只固定改变前后的模型，精确显示它们要求不同的动作。
+
+下载下方单文件教程，在仓库根目录重算预测、控制、规划与真实累计收益
+
+```bash
+python3 tutorials/average_rate_walkthrough.py
+```
+
+完整[标准库教程](../tutorials/average_rate_walkthrough.py)使用 Fraction 解四条策略方程及 h(H)=0 的规范，逐秒展开真实过程；[图形计算核](https://yingwen.io/crl-code/figures/average-rate-walkthrough.mjs)另由再生周期求解。两种计算交叉检查所有状态，包括暂态 E。脚本不运行随机训练，也不把单步备份通过当作收敛或效率证据。
 
 <a id="lesson-chain-geometry"></a>
 
@@ -827,7 +1021,7 @@ k 为外层轮次，t 为轮内更新；ι 指定使用哪一次历史 Q。两�
 
 为什么缩放？在固定遍历策略下，折扣价值通常含随 1/(1−γ) 增大的共同率分量。乘以 1−γ 后，主要尺度变成 gain。控制问题仍需处理 bias span、有限样本误差和策略提取；仅有固定策略的极限恒等式，不足以证明任意实际算法正确。
 
-原文在表格、弱连通等条件下给出样本复杂度，并研究多个客户端的独立采样与通信。每轮为所有状态动作采样的权限不同于真实生命里逐步选择动作。生成模型结果没有支付到达稀有状态的探索成本，也不等于机器人可以无代价复制自己的经历。
+原文在表格、弱连通等条件下给出样本复杂度，并研究多个客户端的独立采样与通信。每轮为所有状态动作采样的权限不同于真实生命里逐步选择动作。生成模型结果没有支付到达稀有状态的探索成本，也不等于机器人可以无代价复制自己的交互历史。
 
 - 先在已知模型上画固定策略的缩放折扣值与精确 gain，分别画参考对齐后的 bias。
 - 再用可查询任意状态动作的模拟器核对同步采样算法，统计每次模型查询。
@@ -1410,6 +1604,10 @@ reset critic 使用 reset 指示作为信号，fd 按对应移动参考更新。
 平均奖励按原始时间计收益。随机时长 option 要使用半马尔可夫时间口径。
 
 [分册导读](../docs/learning-route-continual-rl.md) · [本章实验](https://yingwen.io/zh/continual-rl/labs/#experiment-average) · [资源](https://yingwen.io/zh/continual-rl/library/?chapter=average) · [学者](https://yingwen.io/zh/continual-rl/people/?chapter=average)
+
+## 从本章进入实践
+
+[策略梯度与控制](https://yingwen.io/zh/continual-rl/code/#practice-policy-control)：优化器确实降低了损失，为什么行动仍可能变差？
 
 ## 持续强化学习：近期研究与原始实现
 

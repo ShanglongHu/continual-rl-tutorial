@@ -1,3 +1,31 @@
+# 现代 DRL：可学习表示与稳定控制：正文目录
+
+## 第 II 册 · 深度强化学习
+
+表示、目标和数据都在变化时，怎样组织一个可靠的训练循环？
+
+### 核心算法与训练循环
+
+- [第 1 章 · 深度价值学习：DQN、Double DQN 与目标的时间顺序](../foundations/deep/deep-value.md)：把表格 Q-learning 换成网络后，损失、数据与目标为什么都需要重新组织？
+- [第 2 章 · 策略梯度：从轨迹概率到 GAE 与 actor–critic](../foundations/deep/policy-gradient.md)：延迟奖励怎样改变动作概率？有限 rollout、critic 与停止梯度分别改变哪一项估计？
+- [第 3 章 · 策略更新的尺度：TRPO 与 PPO](../foundations/deep/trust-region.md)：旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？
+- [第 4 章 · 连续动作的价值优化：DDPG 与 TD3](../foundations/deep/deterministic-control.md)：不能枚举连续动作时，如何用 critic 的梯度改进 actor？
+- [第 5 章 · 最大熵连续控制：SAC 的价值、密度与温度](../foundations/deep/entropy-control.md)：随机 actor 不只是加噪声：熵如何进入 Bellman 方程与自动微分？
+- [第 6 章 · 深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)：改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？
+- [第 7 章 · 大规模训练：算法与系统怎样共同设计](../foundations/deep/systems.md)：环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？
+
+### 按问题选择的研究分支
+
+- [不完全可观测：信念状态、信息行动与递归记忆](../foundations/deep/partial-observability.md)：当前观察不能决定未来时，智能体应记住什么，信息又如何影响行动？
+- [探索与不确定性：后验、乐观估计和时间一致行动](../foundations/deep/exploration.md)：为什么每一步都随机，并不等于有效获取长期有用的信息？
+- [分布强化学习：Bellman 分布、分位数与风险目标](../foundations/deep/distributional.md)：学习完整回报分布，与学习均值、评估风险和估计知识不确定性分别有什么关系？
+- [离线强化学习：数据支持、策略评估与保守改进](../foundations/deep/offline.md)：不能补采数据时，怎样判断策略好坏，怎样避免利用没有证据的高价值动作？
+- [模型学习与规划：MPC、短模型 rollout 和潜在想象](../foundations/deep/model-based.md)：模型在哪里进入决策，预测误差又怎样变成控制误差？
+- [约束强化学习：占据测度、拉格朗日与可行策略](../foundations/deep/constraints.md)：“回报高且代价不超过预算”与“每一步都安全”之间差了哪些条件？
+- [多智能体合作：结构化探索与信用分配](../foundations/deep/multi-agent.md)：团队共享一个奖励时，怎样从联合经验中学习可执行的协作策略，并正确处理同伴更新？
+- [自对弈与开放式多智能体学习：评估、目标与策略种群](../foundations/deep/multi-agent-populations.md)：自对弈怎样产生课程和训练标签，又怎样通过历史保留、交互评价与策略种群发现值得继续学习的问题？
+- [对手建模与递归推理：预测谁，回应什么？](../foundations/deep/multi-agent-reasoning.md)：给定参与者和评价目标，怎样利用行为预测、条件响应与有限递归改善决策，并检验模型是否可信？
+
 # 现代 DRL：可学习表示与稳定控制
 
 运行时，智能体与世界形成交互闭环；外部设计者选择奖励、初始化、数据权限、调参与预算。经典方法、神经表示和持续学习描述不同维度，可以共同用于同一智能体。下面按教学先修组织，不把三册视为互斥问题类，也不要求读完全部分支才开始研究。
@@ -297,7 +325,7 @@ python3 examples/knowledge_algorithms_lab.py test
 
 环境状态 $S_t$ 与智能体收到的观测 $O_t$ 不一定相同。若过去线索影响现在的动作，必须从历史构造内部状态 $h_t$。已知模型时可以维护对隐藏状态的 belief；模型未知时，可用循环网络学习一个压缩历史。这个状态是行动所需信息的表示，不是价值函数的别名。
 
-循环活动和参数有不同生命周期。活动记录当前经历中的情境，参数记录如何根据经历更新活动及行动。仅让 hidden state 持续变化，并不能说明算法在长期积累知识；反过来，频繁清空活动也可能破坏任务所需的记忆。
+循环活动和参数有不同生命周期。活动记录当前交互中的情境，参数记录如何根据经验更新活动及行动。仅让 hidden state 持续变化，并不能说明算法在长期积累知识；反过来，频繁清空活动也可能破坏任务所需的记忆。
 
 BPTT 沿展开的计算图传播参数对后续状态的影响。截断 BPTT 节省内存，却会删去截断点之前的梯度路径；前向记忆仍可保留，因此“记住了信息”和“能学会记住信息”必须分开。RTRL 用前向敏感度维护这些导数，但一般计算代价很高。
 
@@ -336,7 +364,56 @@ python3 examples/state_meta_lab.py test
 - [Williams & Zipser · A Learning Algorithm for Continually Running Fully Recurrent Neural Networks](https://doi.org/10.1162/neco.1989.1.2.270)：RTRL 的原始前向敏感度方法。
 - [Hausknecht & Stone · Deep Recurrent Q-Learning](https://arxiv.org/abs/1507.06527)：把循环状态用于部分可观测深度 Q-learning。
 
-## 8 · 多智能体：合作的探索与信用，开放式学习的评估与目标
+## 8 · 大规模训练：数据、算法与硬件共同决定效率
+
+增加环境与 GPU 后，更多计算怎样成为更快的策略改善？
+
+先区分环境推进、动作推理、轨迹存储与参数更新。A3C 让 worker 提交本地梯度，IMPALA 让 actor 提交轨迹，再在 learner 用当前参数求梯度；两者分别面临过期梯度与行为策略失配。
+
+V-trace 把本步误差校正与后续误差传播分开。集中推理则把许多环境的请求组成批次。OpenAI Five 和 SEED RL 展示了采样、推理与优化器分工，GEAR 进一步处理大模型训练中的经验选择与搬运。
+
+样本年龄、样本复用、推理延迟与吞吐不是同一个量。先用固定数据核验估计器，再测数据管线，最后按墙钟、交互与硬件成本比较策略学习。
+
+$$
+r_{\mathrm{reuse}}=\frac{B\,U}{F},\qquad \Delta\tau=\tau_{\mathrm{use}}-\tau_{\mathrm{action}}
+$$
+
+F 为每秒新增转移数，U 为每秒 learner 更新数，B 为每次更新参与 loss 的转移数。复用率与数据年龄要分开记录。
+
+### 动手与核对
+
+[下载 distributed_systems_lab.py](../examples/distributed_systems_lab.py)
+
+在保存该文件的目录运行：
+
+```sh
+python3 examples/distributed_systems_lab.py demo
+python3 examples/distributed_systems_lab.py test
+```
+
+预期检查：两步 V-trace 标签为 1.6 与 2；有界队列减小数据年龄但丢弃部分经验。
+
+实验范围：标准库确定性核验，不是集群训练吞吐测量。
+
+自测：为何学习 GPU 利用率升高，策略改善反而变慢？
+
+解答：可能重复消费更多过期经验、训练分布改变、裁剪比例升高，或只是在处理更多 padding。必须把有效数据、算法更新和端到端策略表现分别测量。
+
+完整推导与问题衔接：
+
+- [大规模训练系统：A3C、IMPALA、OpenAI Five、SEED RL 与 GEAR](../foundations/deep/systems.md)
+- [深度价值学习](../textbook/deep-value.md)
+- [策略梯度与 actor–critic](../textbook/policy.md)
+- [时间信用分配与资格迹](../textbook/credit.md)
+- [流式更新与稳定性](../textbook/streaming.md)
+- [实验设计、统计与算法测试](../textbook/experiments.md)
+
+原文、课程与实现：
+
+- [IMPALA](https://proceedings.mlr.press/v80/espeholt18a.html)：actor–learner 解耦与 V-trace。
+- [GEAR](https://proceedings.mlr.press/v202/wang23aj.html)：轨迹分片、索引一致性与 GPU-centric 数据收集。
+
+## 9 · 多智能体：合作的探索与信用，开放式学习的评估与目标
 
 合作如何发现并学会配合？竞争和开放式合作又怎样确定每一轮该学什么，以形成可检验的策略改善？
 
@@ -344,7 +421,11 @@ python3 examples/state_meta_lab.py test
 
 顺序优化与顺序行动是不同操作。HATRPO/HAPPO、A2PO研究更新时如何考虑前序策略的变化；MAT用条件序列生成联合动作。PR2/GR2则研究对手会如何响应，以及怎样建模不同推理层次。每种方法都必须声明训练和执行可见的信息。
 
-竞争与开放式合作的核心是评估并构建每轮学习目标，以实现有条件、可检验的单调改善。这里的开放式学习特指开放式多智能体学习：代表性脉络主要从竞争自对弈、PSRO与竞争多样性发展，温颖及合作者以COLE、HOLA拓展合作伙伴课程。先定义评价对象，再说明构建什么目标能够改善它。
+自对弈至少有两条不同的学习逻辑。FSP/NFSP 回应并保留历史策略；AlphaGo Zero / AlphaZero 用当次搜索的访问分布训练策略，用实际对局结果训练价值。MuZero 再把已知规则搜索中的转移替换为学得的模型。先用一棵两层博弈树区分搜索、真实行动和训练标签，才能理解这些方法怎样构成闭环。
+
+竞争与开放式合作的核心是评估并构建每轮学习目标。希望获得怎样的改善，必须先由评价对象规定。固定参照下扩张自身可行策略集合，可以保留旧解的最优值；这不等于每轮训练出的策略都更好。这里的开放式学习特指开放式多智能体学习：代表性脉络从竞争自对弈、PSRO 与竞争多样性发展，温颖及合作者以 COLE、HOLA 拓展合作伙伴课程。
+
+Balduzzi 的 gamescape 给出了理解这一外层问题的几何语言：一个策略的坐标是它对不同对手的收益，种群的混合形成这些坐标的凸包。剪刀石头布说明击败前任仍可绕回原处；增加不同回应方向则可能扩大可选能力。几何扩大、固定参照下的种群价值和完整游戏的可利用性需要分别评价。
 
 $$
 J_k(\pi)=\mathbb E_{\xi\sim\mu_k}u(\pi,\xi),\qquad \mu_{k+1}=\mathcal M(\mathcal P_{k+1},\widehat U_{k+1})
@@ -374,8 +455,8 @@ python3 examples/marl_objectives_lab.py test
 完整推导与问题衔接：
 
 - [合作主线与共同设定：结构化探索和信用分配](../foundations/deep/multi-agent.md)
-- [支撑方法：对手建模与递归推理](../foundations/deep/multi-agent-reasoning.md)
-- [开放式多智能体学习：评估、目标构建与策略改善](../foundations/deep/multi-agent-populations.md)
+- [自对弈与开放式多智能体学习：评估、目标与策略种群](../foundations/deep/multi-agent-populations.md)
+- [对手建模与递归推理：怎样学习响应](../foundations/deep/multi-agent-reasoning.md)
 - [持续控制与学习智能体比较](../textbook/control.md)
 - [智能体状态与递归学习](../textbook/state.md)
 - [探索与经验选择](../textbook/exploration.md)

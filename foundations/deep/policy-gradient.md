@@ -1,17 +1,27 @@
 # 策略梯度：从轨迹概率到 GAE 与 actor–critic
 
-不对环境求导，怎样从采样动作计算策略梯度？价值网络和优势各自做什么？
+现代深度强化学习 · 第 2 章
+
+延迟奖励怎样改变动作概率？有限 rollout、critic 与停止梯度分别改变哪一项估计？
 
 ## 本章内容
 
-- 推导 score-function 梯度与 baseline 消去。
-- 区分真实目标、优势估计和实现 surrogate。
-- 给 GAE 设置独立的 bootstrap 与跨序列 mask。
-- 正确使用 log_prob、detach 和 actor/critic loss。
+- 从完整轨迹 score 推到 reward-to-go 与 baseline。
+- 分清回合目标、有限 rollout 权重和实现 surrogate。
+- 解释 critic 误差怎样进入有限 GAE，并设置两类 mask。
+- 追踪 actor/critic 的固定量与求导路径，再进入 PPO。
 
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [策略梯度、基线与 Actor–Critic](../approximation/policy-gradient.md)：掌握轨迹概率、score与基线的基本推导。
+- [多步回报、资格迹与 True-online TD](../approximation/traces.md)：理解多步误差加权，再解释GAE中的等待长度。
+
 
 ### Bellman 递推
 
@@ -33,9 +43,9 @@ on-policy 数据由当前策略产生；off-policy 数据可来自旧策略，�
 
 ### 给定条件与符号
 
-- 状态 $s\in\mathcal S$、动作 $a\in\mathcal A$；转移与奖励核 $p(s^{\prime},r\mid s,a)$。
-- 初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\le\gamma<1$；$J(\pi)=\mathbb E_{d_0,\pi,p}[\sum_{t\ge0}\gamma^tR_{t+1}]$。
-- 可微策略 $\pi_\theta$、价值近似 $V_\phi$、优势估计 $\hat A_t$。
+- 初始分布 $\rho$、真正终止时刻 $T$、$0<\gamma\le1$；目标 $J(\theta)=\mathbb E_{\pi_\theta}\sum_{t<T}\gamma^tR_{t+1}$。
+- 有限期限任务将剩余时间计入状态；回报可积，轨迹求导与期望可以交换。
+- 可微策略 $\pi_\theta$、价值近似 $V_\phi$、优势估计 $\hat A_t$；采样前固定本批策略与 critic 参数。
 
 ### 需要求解的对象
 
@@ -46,10 +56,10 @@ on-policy 数据由当前策略产生；off-policy 数据可来自旧策略，�
 标准 on-policy 更新使用采样时策略的动作概率；使用旧策略数据需额外校正。
 
 $$
-\nabla_\theta J=\mathbb E\!\left[\sum_{t\ge0}\gamma^t\nabla_\theta\log\pi_\theta(A_t\mid S_t)A^{\pi_\theta}(S_t,A_t)\right]
+\nabla_\theta J=\mathbb E\!\left[\sum_{t<T}\gamma^t\nabla_\theta\log\pi_\theta(A_t\mid S_t)A^{\pi_\theta}(S_t,A_t)\right]
 $$
 
-$A^\pi=Q^\pi-V^\pi$ 是真实优势。代码将它替换为估计量时，会引入方差以及可能的自举或截断偏差。
+$A^\pi=q^\pi-v^\pi$ 是真实优势。有限 rollout 的均匀样本损失还需核对访问权重；近似 critic 可改变优势估计。真 critic 与正确边界下，有限截断本身不必增加偏差。
 
 ### 成立条件与解的含义
 
@@ -80,13 +90,15 @@ $A^\pi=Q^\pi-V^\pi$ 是真实优势。代码将它替换为估计量时，会引
 
 ### 本章的核心思路
 
-从精确策略梯度出发，把未知优势换成具有明确边界的多步残差估计。
+先核对目标和样本权重，再用具有明确边界的多步残差估计未知优势。
 
-1. [先求轨迹梯度](policy-gradient.md#lesson-derive)：环境不可微并不阻止对策略概率求导。
+1. [先求轨迹梯度](policy-gradient.md#lesson-derive)：对概率求导，再用条件期望删除过去奖励和满足条件的基线。
 
-2. [构造时间上的优势估计](policy-gradient.md#lesson-advantage)：GAE 混合 TD 残差，并保留末状态的 bootstrap。
+2. [从目标到实际采样权重](policy-gradient.md#lesson-weighting)：完整回合、随机行数归一化与固定长度 rollout 不能不加区分地取均值。
 
-3. [隔离 actor 与 critic 的梯度职责](policy-gradient.md#lesson-algorithm)：actor 中通常停止对优势反传；critic 使用自己的回归损失。
+3. [构造时间上的优势估计](policy-gradient.md#lesson-advantage)：GAE 混合 TD 残差，并按终止和截断语义处理尾值。
+
+4. [隔离 actor 与 critic 的梯度职责](policy-gradient.md#lesson-algorithm)：actor 中固定优势；critic 使用独立的回归标签和损失。
 
 结论与条件：真实优势给出梯度恒等式；实际 actor–critic 的性质还取决于 critic 误差和数据协议。
 
@@ -101,11 +113,13 @@ $A^\pi=Q^\pi-V^\pi$ 是真实优势。代码将它替换为估计量时，会引
 
 ## 1 · 随机策略和有限轨迹
 
-价值方法通过比较动作价值来改变行为。连续动作难以逐个枚举，有限表示下的最好策略也可能需要特定的随机概率，这时可以直接学习策略。我们仍希望提高环境回报，但可调对象变为动作分布的参数；价值预测在这一过程中承担评价与减小噪声的作用。
+第一册已解释直接优化动作概率的动机，本章沿用 Sutton 与 Barto 第13章的基本对象，继续处理神经策略的采样与优化。考虑三步通关：只有连续前进才在最后得到奖励，早期动作的即时奖励全为零。对当前奖励求导给不出早期动作的信用，而对未知环境的整条路径求导也不可行。我们需要从实际动作的概率和后来收到的奖励构造更新。
 
-策略 $\pi_\theta(a\mid s)$ 输出动作分布。离散动作通常使用 softmax logits，连续动作可使用 Gaussian。这里先考虑终止时间为 $T$ 的 episode，目标 $J(\theta)=\mathbb E_\theta[\sum_{t=0}^{T-1}\gamma^tR_{t+1}]$。环境转移对参数未知，但轨迹中动作的概率可以计算。
+策略 $\pi_\theta(a\mid s)$ 输出动作分布，离散动作可用 softmax，连续动作可用 Gaussian。先规定目标 $J(\theta)=\mathbb E_{\pi_\theta}[G_0]$，其中 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}R_{k+1}$，$0<\gamma\le1$，$T$ 是任务真正终止的时刻。所有策略共用初始分布 $\rho$，奖励与环境转移不直接依赖 $\theta$。有限期限任务将剩余时间计入状态；下文价值指这个充分状态下的价值。
 
-Actor 改变行为分布。学到的状态价值可以只充当 baseline，也可以进入 bootstrap 来评价动作。按教材 §13.5 的严格用法，REINFORCE 加一个学习的 baseline 仍是 Monte Carlo 策略梯度；后继价值参与动作评价时才构成这里的 actor–critic。现代工程有时用更宽的名称，阅读时以实际目标为准。A2C 通常同步收集并更新，A3C 使用异步工作者；执行方式不改变这个区分。
+本轮用参数 $\theta_0$ 的策略 $\pi_0$ 收集经验，critic 参数为 $\phi_0$；先固定两者，再计算这轮估计。真实量为 $v^{\pi_0}(s)=\mathbb E_{\pi_0}[G_t\mid S_t=s]$、$q^{\pi_0}(s,a)=\mathbb E_{\pi_0}[G_t\mid S_t=s,A_t=a]$ 和优势 $A^{\pi_0}=q^{\pi_0}-v^{\pi_0}$。网络 $V_{\phi_0}$ 只是估计，不能在等式中直接替代真值。
+
+Actor 改变动作分布。价值估计既可作为完整回报的比较基线（baseline），也可预测尚未观察到的尾部回报，即自举（bootstrap）。前一种用法仍是 REINFORCE 加 baseline；后一种让 critic 参与动作评价，构成这里的 actor–critic。A2C 同步收集与更新，A3C 使用异步工作者；区分它们时，还要看参数版本与执行次序。
 
 <a id="course-policy-class"></a>
 
@@ -113,7 +127,7 @@ Actor 改变行为分布。学到的状态价值可以只充当 baseline，也�
 
 有限折扣 MDP 在常规条件下存在确定性的平稳最优策略。这不表示观察受限、记忆受限或参数共享之后，受限策略类的最优解仍然确定。策略梯度的一个动机，是直接优化可表达的动作概率，而非只在固定 ε-greedy 规则下改变动作排序。
 
-考虑 Sutton 与 Barto 的短走廊。非终止位置为零、一、二，终点在三。动作“右”在位置零、二向右，在位置一反而向左；“左”反向，位置零向左时原地不动。每步奖励 −1，本例使用无折扣的回合总回报（$\gamma=1$）。观察或参数化使三个位置使用相同概率 p 选择“右”。这里暂不允许 recurrent 记忆。
+考虑教材中的短走廊。非终止位置为零、一、二，终点在三。动作“右”在位置零、二向右，在位置一反而向左；“左”反向，位置零向左时原地不动。每步奖励 −1，本例使用无折扣的回合总回报（$\gamma=1$）。观察或参数化使三个位置使用相同概率 p 选择“右”。这里暂不允许 recurrent 记忆。
 
 $$
 \begin{aligned}
@@ -152,66 +166,92 @@ print(p, -steps)  # 解析式核验，不是训练结果
 ## 2 · 对轨迹概率求导，不对环境求导
 
 $$
-\begin{gathered}p_\theta(\tau)=p(s_0)\prod_{t=0}^{T-1}\pi_\theta(a_t\mid s_t)P(s_{t+1},r_{t+1}\mid s_t,a_t)\\\nabla_\theta\log p_\theta(\tau)=\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)\end{gathered}
+\begin{gathered}p_\theta(\tau)=\rho(s_0)\prod_{t=0}^{T-1}\pi_\theta(a_t\mid s_t)P(s_{t+1},r_{t+1}\mid s_t,a_t),\\\psi_t=\left.\nabla_\theta\log\pi_\theta(A_t\mid S_t)\right|_{\theta_0},\\\left.\nabla J\right|_{\theta_0}=\mathbb E_{\pi_0}\!\left[G_0\sum_{t=0}^{T-1}\psi_t\right].\end{gathered}
 $$
 
-环境概率不含策略参数，所以对数导数只保留动作概率项。需要可微策略及使交换期望与求导成立的常规条件。
+先用 ∇p=p∇log p 对完整轨迹概率求导。环境核不含策略参数，故对数导数只保留动作项；策略改变到达后续状态的概率，已包含在这条轨迹的概率中。假定策略光滑、相关动作具有正概率，且回报可积并允许交换求导与期望。
+
+完整轨迹公式把同一个 $G_0$ 乘给每个动作，包含了该动作发生前的奖励。记 $\mathcal H_t$ 为选择 $A_t$ 前的历史（含 $S_t$），$C_t=\sum_{k<t}\gamma^kR_{k+1}$ 为已收到的折扣奖励。条件于这段历史，$C_t$ 已确定，而动作 score 的平均为零。
 
 $$
-\nabla J=\mathbb E\!\left[\sum_t\gamma^t\nabla\log\pi_\theta(A_t\mid S_t)G_t\right],\quad G_t=\sum_{k=t}^{T-1}\gamma^{k-t}R_{k+1}
+\begin{gathered}\mathbb E_{\pi_0}[\psi_t\mid\mathcal H_t]=\sum_a\pi_0(a\mid S_t)\left.\nabla\log\pi_\theta(a\mid S_t)\right|_{\theta_0}=0,\\G_0=C_t+\gamma^tG_t,\qquad\mathbb E[\psi_tC_t]=0,\\\left.\nabla J\right|_{\theta_0}=\mathbb E_{\pi_0}\!\left[\sum_{t<T}\gamma^t\psi_tG_t\right].\end{gathered}
 $$
 
-从完整 return 的 score estimator 出发，动作无法改变它之前已经发生的奖励，条件期望使这些过去奖励项为零，于是得到 reward-to-go。
+由条件期望删除过去奖励，得到从当前动作起的回报（reward-to-go）。删除的是期望为零的项；一条具体轨迹上，两个估计的数值可以不同。
 
 $$
-\sum_a\pi_\theta(a\mid s)\nabla\log\pi_\theta(a\mid s)b(s)=b(s)\nabla\sum_a\pi_\theta(a\mid s)=0
+\mathbb E_{\pi_0}[\psi_tB_t\mid\mathcal H_t]=B_t\sum_a\pi_0(a\mid S_t)\left.\nabla\log\pi_\theta(a\mid S_t)\right|_{\theta_0}=0
 $$
 
-任何不依赖当前动作的 baseline 都可以在真实期望中消去。令 baseline 近似状态价值，便得到优势形式。baseline 自身参与训练，但 actor 的这次 score-function 求导将优势视为固定权重。
+一个充分条件是 $B_t$ 在当前动作前已经确定，例如用预先固定的 $V_{\phi_0}(S_t)$。于是 $G_t$ 可换成 $G_t-B_t$，期望梯度不变。基线能改变方差；真实状态价值是有用的选择，但不保证使整个回合梯度方差最小。
 
-这里的“不依赖”是采样分布中的条件独立，不只是网络没有 action 输入。若先用当前样本的回报拟合 baseline，再评价同一个样本，拟合结果仍可能依赖它的动作。detach 只阻断计算图，不能消除这种统计依赖。可以在采样动作前固定 critic，或用独立 episode 训练基线；交叉拟合也应按独立完整轨迹分折。同一轨迹内随机拆分转移不能保证独立，因为后续样本仍可能透露当前动作的后果。
+这项条件涉及样本怎样产生。网络只输入 state，并不保证用当前回报拟合后的输出与当前动作无关。若先拟合本样本再作基线，统计抵消可能失效；detach 只切断求导路径。可先保存旧价值，再训练 critic，或按独立完整回合交叉拟合。把同一轨迹的转移随机拆开不能保证独立，因为后续状态仍可透露早期动作的后果。
+
+actor 的求导路径是固定权重乘 score：$\operatorname{sg}(G_t-B_t)\nabla\log\pi_\theta$。若让梯度穿过 $B_t$，会额外出现基线导数；那是另一种更新。采样参数固定保证经验来自声明的 $\pi_0$，baseline 的统计条件保证消去成立，停止梯度规定优化器这次对谁求导。三项各有作用，同一轨迹内的转移仍然相互依赖。
+
+<a id="lesson-weighting"></a>
+
+## 2.1 · 从完整回合到有限 rollout：怎样给样本加权
 
 $$
-L_\pi(\theta)=-\frac1n\sum_{i=1}^{n}\sum_{t=0}^{T_i-1}\gamma^t\log\pi_\theta(a_{i,t}\mid s_{i,t})\operatorname{sg}(\hat A_{i,t})
+L_{\rm ep}(\theta)=-\frac1n\sum_{i=1}^{n}\sum_{t=0}^{T_i-1}\gamma^t\log\pi_\theta(a_{i,t}\mid s_{i,t})\operatorname{sg}(\hat A_{i,t})
 $$
 
-这里 n 是独立 episode 数。采样策略处、优势满足相应无偏条件时，负损失梯度估计起点目标的梯度；它不是对任意远处候选策略都精确的回报函数。
+$n$ 是预先固定的独立完整回合数，每回合从 $\rho$ 开始并使用同一 $\pi_0$。在 $\theta_0$ 处，若优势满足相应 score 期望条件，负损失梯度估计 $\nabla J$；离开 $\theta_0$ 后，它只是固定数据的优化目标。
 
-$\gamma^t$ 对应从初始分布出发的折扣目标。很多实现均匀采样时间步并省去它，使用的是常见近似，或另一个状态加权目标；以随机的总步数归一化也不等于以固定 episode 数取平均。配套 PPO 小任务取 $\gamma=1$，按固定 rollout 步数训练，其实现 surrogate 与上述精确 episode 估计应分别理解。
+内层 $G_t$ 中的 $\gamma^{k-t}$ 规定从当前动作向后看多久；外层 $\gamma^t$ 规定该决策距回合起点多远。前者不能代替后者。例如固定两步、两处各有独立 Bernoulli logit，只有两次动作均为一才在第二步获奖。两处概率都是 $.5$、$\gamma=.5$ 时，$J=.5\times.5^2=.125$，两个 logit 的真实梯度均为 $.0625$；省去外层折扣得到 $(.0625,.125)$，改变了相对更新方向。
+
+归一化也要看随机量。记完整回合的梯度和为 $\hat g$，总行数为 $M=\sum_iT_i$，一般有 $\mathbb E[\hat g/M]\ne\mathbb E[\hat g]/\mathbb E[M]$。最小例子取一个回合、$\gamma=1$：起点等概率选择立即结束并得一，或再等一步得一；第二步的行为与该 logit 无关。$J=1$，真实梯度为零，两类回合的梯度和是 $+.5,-.5$。按各自行数一、二取均值后，期望却为 $.5(.5)+.5(-.25)=.125$。
+
+$$
+L_B(\theta)=-\frac1B\sum_{j=1}^{B}\log\pi_\theta(a_j\mid s_j)\operatorname{sg}(\hat A_j)
+$$
+
+实际固定 B 行 rollout 常采用这个均匀样本目标。B 是固定数，没有上一例的随机分母；但这 B 行可以包含多个回合和未完成片段，它们的状态权重仍需单独判断。
+
+配套训练取 $B=128,\gamma=1$，所以没有外层折扣的缺项；它仍使用有限 GAE、批内优势标准化与部分回合。普通 rollout 尾部继续保留环境活动，下一批的起始状态可能由上一版策略带到。当前动作由 $\pi_0$ 采样，并不自动令整个批次具有完整回合的访问权重。这里采用工程的局部样本 surrogate，不能仅凭参数冻结就称它为前一公式的精确估计；去掉外层折扣也没有定义平均奖励目标。
+
+要复现起点折扣梯度，需要相应的回合起点与时间权重，或明确按折扣占用分布采样并保留归一化系数。要理解现有训练，则按它实际的 rollout 权重读损失。下一步在这些样本上估计回报：完整结果尚未到来时，critic 能提供怎样的尾部预测？
 
 <a id="lesson-advantage"></a>
 
 ## 3 · TD 残差、多步优势与 GAE
 
+用完整 $G_t-V_{\phi_0}(S_t)$ 时，价值误差只进入动作前的基线。缩短等待后，以 $R_{t+1}+\gamma V_{\phi_0}(S_{t+1})$ 替代未知回报，后继状态的预测也进入动作评价。若 $V_{\phi_0}=v^{\pi_0}$，其条件均值是 $q^{\pi_0}(s,a)$；近似值则可能通过动作依赖的后继状态改变优势方向。GAE 将不同等待长度的这些估计混合。
+
 $$
-\begin{gathered}\delta_t=R_{t+1}+\gamma b_tV_\phi(S_{t+1})-V_\phi(S_t)\\\hat A_t^{\mathrm{GAE}}=\delta_t+\gamma\lambda c_t\hat A_{t+1}^{\mathrm{GAE}}\end{gathered}
+\begin{gathered}\delta_t=R_{t+1}+\gamma b_tV_{\phi_0}(S_{t+1})-V_{\phi_0}(S_t)\\\hat A_t^{\mathrm{GAE}}=\delta_t+\gamma\lambda c_t\hat A_{t+1}^{\mathrm{GAE}}\end{gathered}
 $$
 
 $b_t$ 是能否 bootstrap；$c_t$ 是能否把下一行样本的优势继续接上。真正终止使二者为零。环境被人工重置的 timeout 通常 $b_t=1$、$c_t=0$。普通 batch 尾部用最后观测的价值，递推 carry 初始化为零。
 
-![GAE 中价值自举与下一行优势的两条接续路径，在三种边界下分别开关](https://yingwen.io/crl-figures/concept-depth-classic-gae-masks.svg)
+![GAE 中价值自举与下一行优势的两条接续路径，在三种边界下分别开关](../../assets/crl-figures/concept-depth-classic-gae-masks.svg)
 
 三栏固定奖励、旧价值与折扣参数，只比较不同边界语义。蓝箭头从最后观测取 V′；橙箭头接下一行的优势，只有它属于同一轨迹时才可接入。人工重置后不能使用重置观察代替最后观测。数值是 [GAE §3](https://arxiv.org/pdf/1506.02438#page=4) 递推的原创算例；时间截断的自举语义见 [Pardo 等 §3](https://proceedings.mlr.press/v80/pardo18a/pardo18a.pdf#page=5)。[计算代码](https://yingwen.io/crl-code/figures/classic-visual-depth.mjs)。
 
-若序列内部没有边界，展开得到 $\hat A_t=\sum_{l\ge0}(\gamma\lambda)^l\delta_{t+l}$。$\lambda=0$ 只保留一步误差；$\lambda=1$ 在真终止 episode 中望远镜消去为 $G_t-V_\phi(S_t)$。不准确的 critic 在较小 $\lambda$ 下通常引入更多 bootstrap 偏差，较长估计又通常承受更多采样噪声。
+两个 mask 回答不同问题：尾部回报在任务中是否还存在，以及下一行残差是否仍属于这条轨迹。若任务规定截止时刻就是结局，该期限是终止，$b_t=c_t=0$；若时间限制只用于收集经验，尾部尚存在，应自举。自动 reset 的环境必须保存 reset 前的最后观测来计算 next value。
+
+若同一片段从 $t$ 起还有 $K$ 个残差，展开为 $\hat A_t=\sum_{l=0}^{K-1}(\gamma\lambda)^l\delta_{t+l}$。$\lambda=0$ 只留一步误差；$\lambda=1$ 时，望远镜相消得到片段回报加尾值，再减起点预测。只有真终止才令尾值为零，并成为完整 $G_t-V_{\phi_0}(S_t)$。
 
 $$
-\begin{gathered}A_t^{(k)}=\sum_{l=0}^{k-1}\gamma^l\delta_{t+l}=\sum_{l=0}^{k-1}\gamma^lR_{t+l+1}+\gamma^kV_\phi(S_{t+k})-V_\phi(S_t)\\\hat A_t^{\rm GAE}=(1-\lambda)\sum_{k=1}^{K-1}\lambda^{k-1}A_t^{(k)}+\lambda^{K-1}A_t^{(K)}\end{gathered}
+\begin{gathered}A_t^{(k)}=\sum_{l=0}^{k-1}\gamma^l\delta_{t+l}=\sum_{l=0}^{k-1}\gamma^lR_{t+l+1}+\gamma^kV_{\phi_0}(S_{t+k})-V_{\phi_0}(S_t)\\\hat A_t^{\rm GAE}=(1-\lambda)\sum_{k=1}^{K-1}\lambda^{k-1}A_t^{(k)}+\lambda^{K-1}A_t^{(K)}\end{gathered}
 $$
 
 在没有跨序列边界的 K 步片段上，先由 TD 残差望远镜相消得到 k 步优势，再混合不同长度。最后一项保留全部剩余权重，故权重和为一；真终止的尾值取零。K=1 时只有一步，λ=1 时只有 K 步估计，片段截断时仍含尾值。
 
 第 $l$ 个残差出现在所有 $k\ge l+1$ 的项中。它的混合权重为 $(1-\lambda)\sum_{k=l+1}^{K-1}\lambda^{k-1}+\lambda^{K-1}=\lambda^l$，再乘 $\gamma^l$，就得到 GAE 的 $(\gamma\lambda)^l$。这解释了递推系数的来源，也避免把有限片段末端的余重丢掉。
 
-如果 critic 恰为当前固定策略的真实价值、状态充分且边界正确，一步 TD 残差的条件均值已经是 $A^\pi(s,a)$；后续残差在按该策略采样的动作上均值为零，任意 $\lambda$ 的这种 GAE 都不会仅因 bootstrap 引入偏差。反过来，critic 即使用 Monte Carlo 训练，只要其动作评价仍不准确，也能使 actor 的更新有偏。原 GAE 论文的 $\gamma$-just 性质针对声明的折扣梯度估计，不能解读为对所有回报目标无偏。
+若 critic 在采样动作前固定，且恰为 $v^{\pi_0}$、状态充分、边界正确，一步残差的条件均值就是 $A^{\pi_0}(s,a)$；后续残差在 $\pi_0$ 的动作上均值为零，有限 GAE 对任意 $\lambda$ 都不因自举额外产生偏差。近似 critic 的中间与尾部误差怎样进入，见紧接的误差展开。误差来自用于评价动作的预测，不由训练 critic 时使用 MC 还是 TD 的名称决定。
 
-先用旧 critic 计算全部优势和回归目标 $\hat R_t=\hat A_t+V_{\phi_{\rm old}}(s_t)$，再更新网络。优势标准化只能用于 actor 的权重；若把标准化后的优势加回 value 当作 critic target，就改变了价值的奖励单位。
+原 GAE 论文先以无折扣总回报为目标，再定义 $g^\gamma=\mathbb E\sum_t\psi_tA^{\pi,\gamma}(S_t,A_t)$；其 $\gamma$-just 条件保持这个表达的 score 期望，没有外层 $\gamma^t$。本章 $J$ 将折扣写进任务目标，故对应梯度还有外层时间权重。准确估计一个优势，与按正确访问权重汇总它，是两步不同的判断。
+
+本教程先用旧 critic 计算全部优势，并选择有限 $\lambda$-return 作为回归目标：$\hat R_t=\hat A_t^{\rm GAE}+V_{\phi_{\rm old}}(s_t)$，然后才更新网络。这是 critic 标签的一种选择；GAE 本身并不规定所有实现必须如此。Spinning Up 的 PPO 则使用带尾值的完整片段 rewards-to-go，通常在 $\lambda<1$ 时与此不同。优势标准化只能用于 actor 的权重；若把标准化后的优势加回 value 当作 critic target，就改变了价值的奖励单位。
 
 <a id="course-gae-error"></a>
 
 ## 3.1 · GAE 的偏差到底从哪一项进入
 
-固定采样策略 $\pi$，并在整段轨迹内固定 critic。记 $\epsilon_t=V_\phi(S_t)-v^\pi(S_t)$。用真价值形成的 TD 残差记为 $\delta_t^*$。先在长度 K、没有中间 reset 的同一段数据上比较两个估计，而不是把网络误差与轨迹噪声混在一起。
+固定采样策略 $\pi$；critic 在采集这段数据前已经确定，并在片段内保持不变。记 $\epsilon_t=V_\phi(S_t)-v^\pi(S_t)$。用真价值形成的 TD 残差记为 $\delta_t^*$。先在长度 K、没有中间 reset 的同一段数据上比较两个估计，而不是把网络误差与轨迹噪声混在一起。
 
 $$
 \delta_t-\delta_t^*=\gamma\epsilon_{t+1}-\epsilon_t
@@ -229,7 +269,7 @@ $$
 
 将相邻误差的系数合并。三项依次是起点 baseline 误差、中间 bootstrap 误差、有限片段的尾值误差。有限片段的优势递推从尾部的零开始；这不意味着尾部状态的价值为零。
 
-在 actor 的条件期望里，$-\epsilon_t$ 与当前动作无关，可作为 baseline 消去。中间与尾部状态却依赖此前动作，不能同样删除。$\lambda=1$ 消掉中间项；只有真正终止且终止价值固定为零时，尾项才消失。无终止的采样窗口不会获得这个额外条件。
+条件于动作前的历史和已固定的 critic，$-\epsilon_t$ 不依赖当前动作，可在 actor 的 score 条件期望里作为 baseline 消去。若先用同批动作与奖励拟合 critic，再计算这些样本的 baseline，即使代码停止了梯度，也要另查统计依赖。中间与尾部状态依赖此前动作，不能同样删除。$\lambda=1$ 消掉中间项；只有真正终止且终止价值固定为零时，尾项才消失。无终止的采样窗口不会获得这个额外条件。
 
 数值核验：$K=2,\gamma=0.9$，起点和终点误差为零，中间误差为二。残差误差分别为 $1.8,-2$。$\lambda=0$ 的优势误差为 1.8；$\lambda=0.8$ 时为 $1.8-0.72\times2=0.36$；$\lambda=1$ 时为零。这是 critic 误差传播的解析示例，不是“λ 越大越好”的实验结论。
 
@@ -243,25 +283,28 @@ $$
 
 B=1 时，这种中心化把学习信号完全消掉。用其余样本的均值作 leave-one-out baseline，可以在这个独立 bandit 例子中消除缩减。整段轨迹中的时间步并不独立，除以样本标准差又增加了随机缩放，因此不能把这条简单修正式直接用于所有优势标准化。
 
-本书的逐样本即时更新协议不等待整批优势反向计算。资格迹可以把部分时间权重变成前向递推的记忆，但网络在递推期间也会改变。固定权重下的前向—后向等价，不自动等于非线性、逐步更新时的同一算法。后续在线信用分配章正是继续处理这个差别。
+若进一步要求逐样本即时更新，就无法等待整批优势反向计算。资格迹可以把部分时间权重变成前向递推的记忆，但网络在递推期间也会改变。固定权重下的前向—后向等价，不自动等于非线性、逐步更新时的同一算法。后续在线信用分配章正是继续处理这个差别。
 
 <a id="lesson-algorithm"></a>
 
 ## 4 · VPG / A2C 的更新次序与 autograd
 
-**算法：这里写 γ=1 的有限时域形式；若采用初始状态折扣目标，actor 项还需对应时间权重。**
+**算法：这是同步批更新的均匀 rollout 规约，配套 vpg_update 执行一次 actor 和一次 critic 更新。若改用完整回合的起点折扣目标，actor 样本权重按 $L_{\rm ep}$ 处理；平均 loss 的写法本身没有完成转换。**
 
-1. 固定本轮策略与 critic，收集新 trajectories。
-1. 记录 observation、action、reward、terminal、value 与 next value。
-1. 后向计算原始 GAE 与固定 critic target。
-1. 构造 $L_\pi=-\operatorname{mean}(\log\pi_\theta(a\mid s)\operatorname{sg}(\hat A))$。
-1. 构造 $L_V=\operatorname{mean}((V_\phi(s)-\operatorname{sg}(\hat R))^2)$。
-1. 清空梯度，反传相应 loss，更新对应参数。
-1. 丢弃本轮 on-policy 数据，开始下一轮采样。
+1. 输入：固定 rollout 行数 B、gamma、lambda、actor 与 critic 优化器。
+1. 本批开始保存 theta_old、phi_old；采样期间固定参数。
+1. 收集 B 行新经验，保存 state、实际 action、reward、old logp、旧 value。
+1. 在 reset 前保存最后观测与 next value，分别记录终止和序列边界。
+1. 每个片段的优势 carry 从零开始，按 b、c 后向递推原始 GAE。
+1. 先固定 critic target = 原始 GAE + 旧 value；需要时另建标准化 actor 权重。
+1. 用当前策略计算 loss_actor = -mean(log_prob(实际 action) * stopgrad(actor 权重))。
+1. 清空 actor 梯度，反传 loss_actor，执行一次 actor 更新。
+1. 用当前 critic 计算 loss_critic = mean((V - stopgrad(target)) ** 2)，更新 critic。
+1. 丢弃本批优化数据，保留未终止的环境活动，开始下一批采样。
 
 离散动作必须对实际采样动作计算 `log_prob`，不能直接对最大 logit 求导。`torch.distributions.Categorical(logits=...)` 会进行稳定归一化。连续多维独立 Gaussian 的 `log_prob` 通常先返回各坐标，必须对动作维度求和，而不是把动作维度误当 batch。
 
-如果共享 encoder，actor 和 critic 两个损失都会训练共享参数。必须明确损失系数与优化次序。把 critic 当 baseline 消去，并不意味着共享 critic 参数的梯度可以偷偷流过 actor 优势；这会增加与策略梯度不同的项。
+对分离网络，固定优势后，actor loss 只对策略参数求导；critic 的固定标签平方损失只对当前预测求导。若共享 encoder，actor 与 critic 两个损失都会训练共享参数，价值回归也会改变动作分布。必须规定损失系数、求导路径和更新次序；actor 优势停止梯度后，共享表示仍会收到单独的价值损失梯度。
 
 <a id="experiment-deep-vpg"></a>
 
@@ -285,7 +328,22 @@ python3 implementations/deep/vpg.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/deep-vpg/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：训练环境步（独立评估交互另计）。纵轴：冻结策略的外部回报。每种方法 1200 训练环境步；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 actor，在独立 DeadlineChain 中按 argmax 动作重复12次完整回合，取未折扣外部回报的平均。每次都从位置0、剩余12步开始；到位置4奖励1，其余步奖励−.02。评价环境和动作选择都确定，同一网络的12次回合相同，不能当成12个训练种子。
+
+**step：怎样计时。** step 只数训练环境转移，包含未完成回合的 pending_samples；评价交互另计。到位置4或用尽任务的12步时，VPG用该完整回合做一次actor梯度和一次critic梯度，updated_batches因此是已更新回合数。预算末尾未完成回合不作Monte Carlo更新，不能把预算截断当成终止。A2C对照每60步更新一批，1200步有20次actor和20次critic梯度，相同环境预算没有对齐更新次数。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 第0步评价尚未更新的网络；后续每60步记录当前网络，可能仍在等待下一完整回合。VPG用γ=1的reward-to-go减去采样时的价值基线，没有优势归一化；A2C用一步自举。图中argmax回报与随机行为策略的期望回报分别定义，两方法还改变了等待长度与优化时钟。这是单环境教学实现，不是论文基准复现。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结回报均值和样本标准差；updated_batches给出VPG的actor、critic各自梯度次数，samples−pending_samples给出已用于完整回合更新的转移数。已知确定性任务下，成功时回合长度L=1+(1−value)/.02，失败时L=12；12×L给本检查点额外评价转移数。未保存训练奖励、回合回报、基线、优势或策略概率，不能恢复训练累计收益、随机行为策略回报或完整梯度。policy_loss和value_loss来自最近完成回合（A2C为最近批次），不是检查点间的平均。
+
+计算位置：[deep/vpg.py](../../implementations/deep/vpg.py) · [deep/a2c.py](../../implementations/deep/a2c.py) · [deep/_common.py](../../implementations/deep/_common.py)
+
+</details>
 
 **结果分析。** 第 600 步 VPG 均值为 0.94，A2C 为 0.704，后者 seed 标准差约 0.528；第 1200 步两者都为 0.94。本配置说明 critic 引入后不必更早学好，但两者最终都达到最短路径行为。
 
@@ -297,9 +355,19 @@ python3 implementations/deep/vpg.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 <a id="lesson-example"></a>
 
-## 5 · 两步 GAE 与 softmax 梯度
+## 5 · 一条三步轨迹贯穿 GAE 与 PPO
 
-取奖励 $(1,2)$，旧价值 $(0.5,1)$，第二步真终止，$\gamma=0.9,\lambda=0.8$。两步残差分别为 $1+0.9\times1-0.5=1.4$ 与 $2-1=1$。故优势为 $(2.12,1)$，critic 目标为 $(2.62,2)$。若第一步其实是独立序列的截断，不能把第二条的残差接到它后面。
+回到三个状态的通关任务。每处选择前进才进入下一状态；选择另一动作立即以零奖励终止；从最后一处前进得到 $+1$ 并终止。旧策略在三处前进概率均为 $.5$。给定一条成功轨迹，奖励 $(0,0,1)$，旧 critic 估计 $(.2,.8,.4,0)$。这些是刻意不准确的给定估计；旧策略的真实价值其实为 $(.125,.25,.5,0)$。取 $\gamma=1,\lambda=.5$；终止后的价值和优势 carry 都为零。
+
+$$
+\begin{aligned}\delta&=(0+.8-.2,\ 0+.4-.8,\ 1-.4)=(.6,-.4,.6),\\\hat A_2&=.6,\quad\hat A_1=-.4+.5(.6)=-.1,\\\hat A_0&=.6+.5(-.1)=.55,\\\hat R^{\lambda}&=V_{\rm old}+\hat A=(.75,.7,1).\end{aligned}
+$$
+
+第一步的优势要等后两步残差反向传回；中间动作的估计优势为负，即使整条轨迹最后获得了正奖励。
+
+若选择完整 rewards-to-go 标签，本例三个标签均为 $1$，不是 $(.75,.7,1)$。后者混合不同等待长度，仍含不准确的旧价值。将 $\lambda$ 改为 $1$，优势变成 $(.8,.2,.6)$，加回旧值后才与三个完整回报一致。若最后一行只是人工截断，则应使用最后观测的旧价值自举，但不把重置后下一行的优势接回来。
+
+一次 rollout 的准备阶段到此结束：保存三个旧 $\log\pi(a\mid s)=\log(.5)$、原始优势 $(.55,-.1,.6)$ 和 critic 标签 $(.75,.7,1)$。更新时三者都停止梯度；当前 $\log\pi_\theta$ 与当前 $V_\phi$ 仍参与各自损失的求导。若需要标准化优势，另建 actor 权重副本，不能覆盖用于构造价值标签的原始量。下一章[直接用这三个样本计算 PPO 裁剪与独立评价](trust-region.md#lesson-example)。
 
 $$
 \frac{\partial\log\pi(a\mid s)}{\partial z_j}=\mathbf1[j=a]-\pi(j\mid s)
@@ -335,6 +403,8 @@ def score_gradient(probabilities, action, advantage):
 <a id="lesson-code"></a>
 
 ## 6 · 从数值核验到实际 on-policy 训练
+
+下载 [gae_ppo_walkthrough.py](../../tutorials/gae_ppo_walkthrough.py)，执行 `python3 tutorials/gae_ppo_walkthrough.py --test`，可在不安装 PyTorch 的情况下复算本节全部分数。脚本的不可变 batch 分开保存旧 logp、原始 GAE 与固定 critic 标签；有限差分检查对照下一章正、负优势的四个 clipping 分支。
 
 VPG 的一次 actor–critic 更新。优势和回归目标停止梯度；actor 更新后必须重新采样。
 
@@ -392,15 +462,23 @@ def train_ppo(epochs=20, seed=0, batch_steps=128):
 
 执行 python3 examples/deep_textbook_lab.py demo 查看 GAE 与 score-gradient 的手算值；执行 python3 examples/deep_textbook_train.py ppo --epochs 20 --seed 0 查看真实 on-policy 采样。代码在 rollout 内固定参数，并保存旧 log-probability。环境已经真终止后才 reset；若 batch 恰在 episode 中间结束，环境活动继续保留。
 
-VPG 更新核用固定优势乘当前 log_prob，进行一次 actor 更新，再要求重新采样；PPO 则使用旧策略概率比并对同批数据做受限复用。上面的完整采样循环运行 PPO，不是独立 VPG 训练命令。官方 VPG 文件提供独立、完整的工程入口；配套 VPG 核用于逐项检查梯度与 detach。
+VPG 更新核用固定优势乘当前 log_prob，进行一次 actor 更新，再要求重新采样。上面的完整采样循环运行 PPO；官方 VPG 文件提供独立、完整的工程入口，配套 VPG 核用于逐项检查梯度与 detach。两份官方 buffer 都用 GAE 作 actor 权重、带尾值的 rewards-to-go 作 critic 标签，而本地 gae 返回有限 λ-return 标签，比较实现时要追踪实际计算。
+
+$$
+r_\theta=\exp(\log\pi_\theta(a\mid s)-\log\pi_0(a\mid s)),\qquad\left.\nabla_\theta r_\theta\right|_{\theta_0}=\left.\nabla_\theta\log\pi_\theta(a\mid s)\right|_{\theta_0}
+$$
+
+旧参数处概率比为一，故固定优势下，概率比目标和 log-probability 目标的第一步梯度相同。
+
+更新后继续复用同批数据时，PPO 用固定旧概率作分母，并裁剪部分更新激励。下一章进一步区分动作概率换分布的等式、状态权重替代的近似和策略改变尺度；本章得到的优势与旧概率正是它读取的固定输入。
 
 <a id="lesson-branches"></a>
 
 ## 7 · 估计误差与持续学习接口
 
-- 优势偏差：critic 有误差、λ 小、轨迹截断都会改变估计。不能把所有 GAE 都称作无偏真实优势。
-- 概率错误：离散采样后重新计算另一动作的 log_prob，或连续动作裁剪后仍使用裁剪前 Gaussian 密度，都改变了 estimator。
-- 策略陈旧：旧轨迹反复用于裸 log-probability loss，不再是当前 on-policy 梯度。
+- 优势误差：近似 critic 的中间和尾值误差随 λ 与片段长度进入更新；真价值与正确边界时，截断本身不必增加偏差。
+- 概率错误：离散采样后重新计算另一动作的 log_prob，或连续动作裁剪后仍使用裁剪前 Gaussian 密度，都改变了估计器。
+- 策略陈旧：旧轨迹反复用于裸 log-probability loss，不再是当前在策略梯度。
 - 任务变化：critic、状态和策略可以不同速度适应，优势的符号可能暂时错误。
 
 在 CRL 中，策略熵变小可能让有用数据不再出现；critic 误差又会影响行动更新。诊断时应分别测覆盖、优势误差和网络学习能力，而不是看到回报下降就统一归因于遗忘。
@@ -409,10 +487,16 @@ VPG 更新核用固定优势乘当前 log_prob，进行一次 actor 更新，再
 
 ## 8 · 练习与答案
 
-- 问：可以把即时奖励换成任意 baseline 吗？答：baseline 必须在条件期望中不依赖当前采样动作，且 actor 求导时固定它；否则消去推导不成立。
+- 问：可以从回报中减去任意 baseline 吗？答：一个充分条件是它在当前动作前已经确定，并在 actor 求导时固定；一般须核对 baseline 与 score 的条件期望是否为零。
 - 问：critic 的 loss 下降是否保证策略变好？答：不保证。它可能只改善高频无关状态，或在关键动作上的优势排序仍错误。
-- 问：原始优势是 (2.12,1)，标准化后还能作为价值 target 吗？答：不能。actor 的尺度处理不应改变 critic 的奖励单位。
-- 实验：固定一批完整轨迹，比较 λ=0、0.8、1 的目标，并单独制造一个 timeout。确认目标差异由哪一条 mask 和哪个尾值产生。
+- 问：把 (.55,−.1,.6) 标准化后加回旧值，还能得到本例价值标签吗？答：不能。actor 的尺度处理不应改变 critic 的奖励单位。
+- 练习：两步例子省去外层 γ 后，能否靠同一个全局步长同时修正两处梯度？答：不能；两处缩放不同。
+- 练习：$\lambda=1$、片段未终止，critic 尾值有误差 $e$。答：相对于真值估计，仍留下 $\gamma^K e$ 的尾项；起点 baseline 误差可在所述条件下消去。
+- 实验：固定三步轨迹，比较 λ=0、.5、1 的目标，再将最后一行改为 timeout 并给定尾值 .3。分别检查哪一条 mask 控制自举、哪一条阻止连接重置后样本。
+
+## 从本章进入实践
+
+[策略梯度与控制](https://yingwen.io/zh/continual-rl/code/#practice-policy-control)：优化器确实降低了损失，为什么行动仍可能变差？
 
 
 
@@ -420,7 +504,7 @@ VPG 更新核用固定优势乘当前 log_prob，进行一次 actor 更新，再
 
 ## 下载与运行
 
-标准库数值核验；完整小任务训练另需 deep_textbook_train.py 与 PyTorch。
+本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
 [下载 deep_textbook_lab.py](../../examples/deep_textbook_lab.py)
 
@@ -434,14 +518,20 @@ python3 examples/deep_textbook_lab.py test
 
 - [Spinning Up · VPG](https://spinningup.openai.com/en/latest/algorithms/vpg.html)：用作算法与实现接口的对照；本章解释和配套小实验独立编写。
 
-- [Sutton et al. · Policy Gradient Methods with Function Approximation](https://papers.neurips.cc/paper_files/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html)：策略梯度定理与函数逼近的原始研究。
+- [Sutton et al. · Policy Gradient Methods for Reinforcement Learning with Function Approximation](https://papers.neurips.cc/paper_files/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html)：§1 与附录的起点折扣梯度：状态权重包含策略改变访问频率的后果。兼容逼近在第一册展开。
 
-- [Schulman et al. · Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)：GAE 的偏差、方差与 γ-just 估计条件。
+- [Schulman et al. · Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)：§2 Eq.6–8 的 gγ 与 γ-just，§3 Eq.11–18 的多步与 GAE。先核对论文目标和时间权重，再用其估计性质。
 
-- [Spinning Up · vpg.py](https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/vpg/vpg.py)：官方教学工程；追踪 buffer 的 finish_path 与 actor/critic loss。
+- [Pardo et al. · Time Limits in Reinforcement Learning](https://proceedings.mlr.press/v80/pardo18a.html)：§2–3：任务期限与训练截断的不同价值语义；前者需状态含剩余时间，后者保留尾值。
+
+- [Spinning Up · vpg.py](https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/vpg/vpg.py)：VPGBuffer.finish_path/get 与 compute_loss_pi/compute_loss_v：GAE、回归标签、标准化和均匀样本均值。
+
+- [Spinning Up · ppo.py](https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/ppo/ppo.py)：PPOBuffer.finish_path：actor 优势与完整片段 rewards-to-go 标签独立计算。
 
 - [Sutton & Barto · Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html)：§9–11：函数逼近与离策略；§12：资格迹；§13.1 的短走廊与 §13.2–13.5 的策略梯度。对照各结论采用的策略类、采样分布与函数表示。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-policy-gradient#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-policy-gradient#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-deep-policy-gradient)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接
@@ -457,6 +547,11 @@ python3 examples/deep_textbook_lab.py test
 持续学习中的研究问题：在每步计算有界的条件下，保留多少过去影响才有用？替换特征时，怎样处理与旧特征绑定的资格迹、优化器动量和元梯度？
 
 [多步回报](../tabular/multistep.md) → [资格迹与等价条件](../approximation/traces.md) → [GAE 与 actor–critic](policy-gradient.md) → [在线信用分配](../../textbook/credit.md)
+
+
+### 可进一步检验的问题
+
+- [05 · 远处的反馈应该怎样更新早先的决策与内部计算？](../../docs/research-atlas.md#research-temporal-credit)：GAE 将价值误差组成动作优势，其 bootstrap 与跨序列边界决定远处反馈怎样进入策略更新。
 
 
 [领域总览与问题地图](../../docs/field-framework.md) · [奖励假设与设计](../../textbook/reward-design.md) · [持续控制：完整学习器的比较](../../textbook/control.md)

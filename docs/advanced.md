@@ -26,7 +26,7 @@
 **先修**：基本深度 RL、梯度下降。**脉络**：保住已学知识 → 发现“学不动”是另一个问题 → 研究表示更新与知识保留之间的冲突。
 
 1. **先读保留机制：[CLEAR / Experience Replay for Continual Learning](https://arxiv.org/abs/1811.11682)，Rolnick 等，NeurIPS 2019。** 回放旧经验，结合新经验学习与行为克隆来减轻遗忘。重点看为什么只有 RL 更新和加入行为保持约束会不同，以及 replay 容量会付出什么代价。
-2. **再读学习能力：[Loss of Plasticity](https://www.nature.com/articles/s41586-024-07711-7)，Dohare 等，Nature 2024。** 在入门阅读基础上细看 Continual Backprop 的单元效用、替换与实验对照。把“新任务更难”和“网络经历更长后更难学”分开。
+2. **再读学习能力：[Loss of Plasticity](https://www.nature.com/articles/s41586-024-07711-7)，Dohare 等，Nature 2024。** 在入门阅读基础上细看 Continual Backprop 的单元效用、替换与实验对照。把“新任务更难”和“网络接受更长训练后更难学”分开。
 3. **再比较一种干预：[The Dormant Neuron Phenomenon in Deep Reinforcement Learning](https://proceedings.mlr.press/v202/sokar23a.html)，Sokar 等，ICML 2023。** ReDo 回收低活动单元。比较它与 Continual Backprop 的筛选依据和操作细节；二者不能简单视为同一个算法。
 
 **进一步二选一**：想研究机制，读 [Understanding Plasticity in Neural Networks](https://proceedings.mlr.press/v202/lyle23b.html)（Lyle 等，ICML 2023），从优化和学习动态理解可塑性；想研究知识保护，读 [EWC](https://arxiv.org/abs/1612.00796)（Kirkpatrick 等，PNAS 2017），理解按参数重要性限制更新的思路。EWC 是基础对照，不代表当前最佳方案。

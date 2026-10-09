@@ -1,5 +1,7 @@
 # 策略梯度、基线与 Actor–Critic
 
+函数逼近与经典进阶方法 · 第 6 章
+
 直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？
 
 ## 本章内容
@@ -11,6 +13,14 @@
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
+
+### 需要哪些基础
+
+已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
+
+- [MDP、回报与价值：序列决策的数学对象](../tabular/mdps.md)：明确策略决定轨迹分布及要优化的回报。
+- [函数逼近预测：从回归到 TD 固定点](prediction.md)：理解critic提供的是近似预测，不是已知真值。
+
 
 ### 可微随机策略
 
@@ -158,7 +168,7 @@ $$
 
 对 vπ(s)=Σaπ(a|s)qπ(s,a) 求导。第一部分是策略概率的直接变化 u；第二部分沿下一状态继续传播价值导数。反复代入产生全部未来访问权重。μ 是起点分布，不是任意 minibatch 分布。
 
-例如 A 一步终止，另有从 A 不可达的 B 永远自循环。若总从 A 开始，$\mathbb E_\mu[T]=1$，但完整非终止矩阵是 $P_\pi=\operatorname{diag}(0,1)$，$I-P_\pi$ 仍奇异。起点的有限经历没有排除未访问闭类；不能据此前者直接写出全状态的无折扣逆矩阵。
+例如 A 一步终止，另有从 A 不可达的 B 永远自循环。若总从 A 开始，$\mathbb E_\mu[T]=1$，但完整非终止矩阵是 $P_\pi=\operatorname{diag}(0,1)$，$I-P_\pi$ 仍奇异。从起点产生的有限轨迹没有排除未访问闭类；不能据此前者直接写出全状态的无折扣逆矩阵。
 
 例如一个动作先把智能体送到新区域，若只对当前动作奖励求导，就漏掉该区域里后续选择的后果。占用权重展开恰好把这些后果沿时间计入。策略梯度不是绕过了序列决策，只是把未知动力学的导数转成可以通过轨迹估计的统计量。
 
@@ -238,7 +248,22 @@ python3 implementations/deep/vpg.py --steps 1200 --seeds 0 1 2 3 4 --out results
 
 ![实测学习曲线](https://yingwen.io/crl-code/results/deep-vpg/curves.svg)
 
-训练种子 0、1、2、3、4；每种方法 1200 environment_steps。阴影为 ±1 个样本标准差，不是置信区间。
+横轴：训练环境步（独立评估交互另计）。纵轴：冻结策略的外部回报。每种方法 1200 训练环境步；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+<details>
+<summary>这张曲线的 value 与 step</summary>
+
+**value：评价什么。** 冻结当前 actor，在独立 DeadlineChain 中按 argmax 动作重复12次完整回合，取未折扣外部回报的平均。每次都从位置0、剩余12步开始；到位置4奖励1，其余步奖励−.02。评价环境和动作选择都确定，同一网络的12次回合相同，不能当成12个训练种子。
+
+**step：怎样计时。** step 只数训练环境转移，包含未完成回合的 pending_samples；评价交互另计。到位置4或用尽任务的12步时，VPG用该完整回合做一次actor梯度和一次critic梯度，updated_batches因此是已更新回合数。预算末尾未完成回合不作Monte Carlo更新，不能把预算截断当成终止。A2C对照每60步更新一批，1200步有20次actor和20次critic梯度，相同环境预算没有对齐更新次数。
+
+**怎样汇总。** 取该记录时刻的值；不先对曲线上的时间点求平均。 第0步评价尚未更新的网络；后续每60步记录当前网络，可能仍在等待下一完整回合。VPG用γ=1的reward-to-go减去采样时的价值基线，没有优势归一化；A2C用一步自举。图中argmax回报与随机行为策略的期望回报分别定义，两方法还改变了等待长度与优化时钟。这是单环境教学实现，不是论文基准复现。 先在每个完整运行内计算 value，再在同一 step 上跨运行种子求均值和样本标准差（分母 n−1）。时间点不是独立重复；确定性计算即使换用种子也可能完全相同。标准差带不是置信区间，也不是单次观测的取值范围；图中的带可能越过奖励或误差的可行边界。
+
+**从记录能重算什么。** CSV 可重算冻结回报均值和样本标准差；updated_batches给出VPG的actor、critic各自梯度次数，samples−pending_samples给出已用于完整回合更新的转移数。已知确定性任务下，成功时回合长度L=1+(1−value)/.02，失败时L=12；12×L给本检查点额外评价转移数。未保存训练奖励、回合回报、基线、优势或策略概率，不能恢复训练累计收益、随机行为策略回报或完整梯度。policy_loss和value_loss来自最近完成回合（A2C为最近批次），不是检查点间的平均。
+
+计算位置：[deep/vpg.py](../../implementations/deep/vpg.py) · [deep/a2c.py](../../implementations/deep/a2c.py) · [deep/_common.py](../../implementations/deep/_common.py)
+
+</details>
 
 **结果分析。** 第 600 步 VPG 均值为 0.94，A2C 为 0.704，后者 seed 标准差约 0.528；第 1200 步两者都为 0.94。本配置说明 critic 引入后不必更早学好，但两者最终都达到最短路径行为。
 
@@ -295,7 +320,7 @@ $$
 
 取 $\theta=0.7,\gamma=0.5$，则 $p\approx0.668188,J\approx0.110856$，解析梯度约为 −0.0372894。对获奖轨迹，$G_0=0.5,G_1=1$，两次 score 都应乘上总权重 0.5。
 
-![四条两步轨迹的概率树，唯一获奖轨迹与解析目标曲线上的一次精确期望梯度更新。](https://yingwen.io/crl-figures/concept-classic-policy-gradient.svg)
+![四条两步轨迹的概率树，唯一获奖轨迹与解析目标曲线上的一次精确期望梯度更新。](../../assets/crl-figures/concept-classic-policy-gradient.svg)
 
 原创精确枚举图。分支宽度表示条件动作概率，末端数字是完整轨迹概率；沿用 $\theta=0.7,\gamma=0.5$。另给一步教学步长 $\alpha=5$，期望梯度使 $\theta$ 变为约 0.513553、动作 1 概率从 0.668 变为 0.626。下方是解析 $J(\theta)$，不是采样训练结果；此步收益上升可直接代入核对，不是任意步长保证。
 
@@ -304,6 +329,90 @@ $$
 它也说明为什么有时要学习随机策略。取 $\gamma>0$，在这个共用概率的无记忆策略类中，两个确定性极限 $p\to0$ 或 $p\to1$ 的收益都趋于零；$p(1-p)=1/4-(p-1/2)^2$ 表明最优选择是 $p=1/2$，收益为 $\gamma/4$。这里即使已知全部奖励，也应该保留随机性，它不是尚未探索完的表现。
 
 若让策略知道当前是第一步还是第二步，就能确定地依次选择1、0，获得 $\gamma$。因此“受限表示下随机策略更好”没有推翻有限 MDP 中存在最优确定策略的结论：原先的策略类根本表达不了这个按阶段区分的策略。学习动作概率改善的是现有表示下的行为；构造更有信息的 agent state 改变的是可选择的策略类。
+
+<a id="policy-occupancy-example"></a>
+
+### 6.1 · 同一个例子：占用怎样收集全部 score
+
+继续使用上面的四条轨迹，只把环境已经保存的信息写出来。起点为 $s_0$；第一步动作 $0$、$1$ 分别到达 $s_1^{(0)}$、$s_1^{(1)}$，第二步后终止。仅在 $s_1^{(1)}$ 选择动作 $0$ 得奖励 $1$。这三个状态使环境满足 Markov 性；actor 仍在三个状态共用同一个 logit，不读取阶段或先前动作。后面的精确 critic 与基线可以使用记录中的完整状态，actor 的策略类没有因此扩大。
+
+现在先求固定策略的条件价值，再乘访问质量。第一步选 $1$ 尚未获奖，但到达后以概率 $1-p$ 选择 $0$，所以 $q_\pi(s_0,1)=\gamma(1-p)$。在 $s_1^{(1)}$ 则有 $q_\pi(s_1^{(1)},0)=1$。三个状态的 score 仍都是 $a-p$。
+
+| 环境状态 | 折扣占用 $d_\gamma$ | 动作价值 $(q(0),q(1))$ | 占用加权梯度贡献 |
+| --- | --- | --- | --- |
+| $s_0$ | $1$ | $(0,\gamma(1-p))$ | $\gamma p(1-p)^2$ |
+| $s_1^{(0)}$ | $\gamma(1-p)$ | $(0,0)$ | $0$ |
+| $s_1^{(1)}$ | $\gamma p$ | $(1,0)$ | $-\gamma p^2(1-p)$ |
+
+$$
+\nabla J=\underbrace{\gamma p(1-p)^2}_{s_0}+\underbrace{0}_{s_1^{(0)}}-\underbrace{\gamma p^2(1-p)}_{s_1^{(1)}}=\gamma p(1-p)(1-2p).
+$$
+
+起点的贡献倾向增加动作 $1$，后续获奖可达状态的贡献倾向增加动作 $0$。共享一个参数时，这两个要求在同一坐标中相加。$\theta=0.7$ 下，贡献约为 $+0.036784$ 与 $-0.074073$，合计为 $-0.037289$。
+
+看图前先预测：如果只保留第一步 score，参数会向哪里移动？第一步奖励虽为零，它仍有正的梯度贡献，因为动作价值包含未来奖励。漏掉第二步 score 则会把当前参数推向相反方向。占用总质量是 $Z=1+\gamma=1.5$；若改用归一化状态分布，需先除以 $1.5$，最后再乘回 $1.5$ 才得到同一个梯度。
+
+![相同共享策略下的三个环境状态、四条轨迹概率，以及起点和后续状态方向相反的梯度贡献。](../../assets/crl-figures/policy-gradient-walkthrough-occupancy.svg)
+
+上图沿实线读动作与终止奖励，线宽表示条件动作概率；节点下方是折扣占用，末端依次为奖励、动作序列与完整轨迹概率。下图用同一有符号轴画未乘步长的参数贡献。原创精确枚举，$\theta=0.7,\gamma=0.5$；[原始数值](https://yingwen.io/crl-figures/policy-gradient-walkthrough-data.json)、[计算核](https://yingwen.io/crl-code/figures/policy-gradient-walkthrough.mjs)与[单文件教程](../../tutorials/policy-gradient-walkthrough.py)可逐项复算。
+
+<a id="policy-variance-example"></a>
+
+### 6.2 · 无偏、局部最小方差与整回合方差
+
+基线无偏性已经证明，接着问应该选多大。固定一个决策状态，令 $Y_b=(G_t-b)\psi_t$。其均值不随 $b$ 改变，因此最小化方差等价于最小化二阶矩。对 $b$ 求导时，回报和 score 都来自固定的当前策略，得到前面的 score 平方加权公式。外层 $\gamma^t$ 在这个状态固定，不改变最优 $b$。
+
+$$
+\frac{d}{db}\mathbb E[Y_b^2\mid s]=-2\mathbb E[(G_t-b)\psi_t^2\mid s]=0.
+$$
+
+这次只有一个策略参数，$\psi^2$ 就是平方范数。分母为 $p(1-p)>0$。在获奖可达状态，获奖动作 $0$ 的 score 为 $-p$，未获奖动作 $1$ 的 score 为 $1-p$，两者平方通常不同。
+
+| 状态 | 价值基线 $v_\pi$ | 该时刻的最优基线 $b^*$ |
+| --- | --- | --- |
+| $s_0$ | $\gamma p(1-p)$ | $\gamma(1-p)^2$ |
+| $s_1^{(0)}$ | $0$ | $0$ |
+| $s_1^{(1)}$ | $1-p$ | $p$ |
+
+在 $s_1^{(1)}$ 使用 $b^*=p$ 时，动作 $0$ 给出 $(1-p)(-p)$，动作 $1$ 给出 $(-p)(1-p)$。两个样本的梯度相同，该状态的条件方差为零。价值基线为 $1-p\approx0.331812$，局部最优基线为 $p\approx0.668188$；二者只有在 $p=1/2$ 时重合。起点的最优基线则约为 $0.055050$，也不同于价值 $0.110856$。
+
+但一次回合更新会把两个时刻的项相加。令 $g_0=(G_0-b(s_0))\psi_0$、$g_1=\gamma(G_1-b(S_1))\psi_1$。即使分别把它们的方差降低，整回合的方差还包含协方差：
+
+$$
+\operatorname{Var}(g_0+g_1)=\operatorname{Var}(g_0)+\operatorname{Var}(g_1)+2\operatorname{Cov}(g_0,g_1).
+$$
+
+两个 score 由独立动作抽样得到，但回报与下一状态把两个梯度项连接起来，因此两项不独立。单时刻最优公式没有优化这一协方差。
+
+| 每个状态采用的基线 | 整回合梯度期望 | 整回合梯度方差 | 两项协方差 |
+| --- | --- | --- | --- |
+| 零基线 | $-0.037289$ | $0.004881$ | $-0.009564$ |
+| 真实价值 | $-0.037289$ | $0.006159$ | $-0.002762$ |
+| 各状态的局部 $b^*$ | $-0.037289$ | $0.006802$ | $0$ |
+
+这里逐状态局部最优基线减小了每个状态的条件方差，却破坏了零基线下较强的负协方差，使整回合方差增大。价值基线也没有在这个策略参数处降低整回合方差。它们仍然无偏；这个精确反例说明“基线不改变期望”“局部最优”“整回合最优”是三个需要各自计算的判断。控制变量观点可继续读 [Greensmith 等 §5](https://www.jmlr.org/papers/v5/greensmith04a.html)，原论文分析的平均奖励 GPOMDP 与时序估计器不同，本页数值由当前有限回合独立推导。
+
+<a id="policy-critic-example"></a>
+
+### 6.3 · 同一个 critic 误差何时只是基线，何时反转行动方向
+
+保持策略冻结，把三个状态的 critic 写成 $V=v_\pi+\varepsilon$，终止价值仍为零。若仅用它减去完整回报，任意固定的三个误差都作为动作前基线进入，期望梯度不变。若用它构造一步 TD，起点动作则决定读到哪个后继预测，这部分误差会进入动作比较。
+
+$$
+\begin{aligned}e&=\varepsilon(s_1^{(1)})-\varepsilon(s_1^{(0)}),\\ \mathbb E[g_{\mathrm{TD}}]-\nabla J&=\gamma p(1-p)e,\\ \mathbb E[g_{\mathrm{TD}}]&=\gamma p(1-p)[1-2p+e].\end{aligned}
+$$
+
+第一步的当前状态误差是基线而抵消；两个后继误差的差乘上起点 score 留下来。第二步已真正终止，误差只位于当前状态项，仍可抵消。这里每一步使用同一份冻结 critic 和采样参数，并保留外层折扣。
+
+因此起点误差设为 $7$，或两个后继同加 $0.3$，都不会改变期望梯度。只把 $s_1^{(1)}$ 高估 $0.5$ 时，偏差约为 $+0.055428$，TD actor 的期望变为 $+0.018139$，而真实梯度仍为 $-0.037289$。向右更新会增加 $p$，恰好远离该策略类的最优概率 $1/2$。critic 不必每个状态都精确才可能无偏；本例要求的是两个后继误差相同。
+
+图中先比较局部与整回合方差，再把横轴换成后继误差差值。预测一下：在 $e=2p-1\approx0.336376$ 处，TD actor 的期望应落在哪里？代入后为零；超过它就改变方向。完整回报的 MC 曲线保持不动，因为同一个 critic 在那里只承担基线的作用。
+
+![单时刻基线方差曲线、三个整回合方差和后继critic误差引起的策略梯度反号。](../../assets/crl-figures/policy-gradient-walkthrough-variance-bias.svg)
+
+左上曲线是在 $s_1^{(1)}$ 条件下的单项方差，圆标区分真实价值与局部最优基线；另一个面板画完整回合两项之和的方差，三个期望相同。下图蓝虚线为完整回报减固定 MC 基线，橙实线为一步 TD；后继误差差 $e=0.5$ 使后者从负变正。原创确定性枚举；无采样训练，坐标和全部协方差由[单文件教程](../../tutorials/policy-gradient-walkthrough.py)独立计算。
+
+这里的偏差来自 actor 使用了有误差的后继条件价值，不取决于 critic 当初用 MC 还是 TD 拟合。增加 critic 拟合精度是否有帮助，要检查误差在哪个动作的后继上出现；一个整体均方误差数值尚不能说明这个误差差值。
 
 <a id="policy-natural"></a>
 
@@ -400,6 +509,17 @@ python3 examples/approximation_textbook_lab.py policy-gradient
 python3 examples/approximation_textbook_lab.py test
 ```
 
+进一步下载[独立标准库教程](../../tutorials/policy-gradient-walkthrough.py)，仓库中的文件为 `tutorials/policy-gradient-walkthrough.py`，在仓库根目录运行。它用 50 位 Decimal 枚举四条轨迹，逐项打印占用、score 贡献、两项方差与协方差、critic 误差及两个错误实现。无外部文件或第三方库。
+
+同一个例子的条件量与完整回合量
+
+```bash
+python3 tutorials/policy-gradient-walkthrough.py
+python3 tutorials/policy-gradient-walkthrough.py --json
+```
+
+运行前手算三个预测：减去常数 $3$ 后均值是否改变；漏掉外层折扣后的梯度是多少；先把当前样本回报直接设为该样本基线会怎样。答案分别是均值不变、约 $-0.111362$、全部样本梯度归零。最后一项已经依赖动作后的结果，无法使用基线抵消证明。JS 计算核与独立 Decimal 实现逐路径交叉核对，有限差分则直接检查所规定的 $J$。
+
 <a id="lesson-branches"></a>
 
 ## 9 · 从经典 actor–critic 到深度与持续学习
@@ -446,6 +566,8 @@ python3 examples/approximation_textbook_lab.py test
 
 - [Kakade · A Natural Policy Gradient](https://proceedings.neurips.cc/paper/2001/hash/4b86abe48d358ecf194c56c69108433e-Abstract.html)：自然策略梯度的原始工作，连接策略空间的局部度量与兼容逼近。
 
+
+[本章配套阅读与原始材料](https://yingwen.io/zh/continual-rl/library/?chapter=study-approximation-policy-gradient#topic-directory) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-approximation-policy-gradient#crl-catalog) · [人物与本章的关系](https://yingwen.io/zh/continual-rl/people/#people-study-approximation-policy-gradient)
 <a id="study-connections"></a>
 
 ## 与教材主线的衔接

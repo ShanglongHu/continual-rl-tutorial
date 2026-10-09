@@ -1047,7 +1047,7 @@
       "id": "plasticity",
       "title": "Dohare et al. · Loss of Plasticity in Deep Continual Learning",
       "url": "https://www.nature.com/articles/s41586-024-07711-7",
-      "note": "新任务学习能力随训练经历变化的实证问题。"
+      "note": "新任务学习能力随训练经验变化的实证问题。"
     },
     {
       "id": "qmix",
