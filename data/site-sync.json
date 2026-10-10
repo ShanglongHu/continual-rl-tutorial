@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source": "https://yingwen.io/zh/continual-rl/",
-  "source_export_sha256": "6f87bde2990dfb4bc01ab1669fbae95092acc4aaaf2fa173416f341243a5307d",
+  "source_export_sha256": "dde7052700543de9080ed72638f5036af1e4f54277c81fd054b705a9bc5183ff",
   "files": {
     "algorithms/01-value.md": {
       "sha256": "2b6ce78fd4f02e44a1a5edd351bf51530cfe33b8977c48e4af1022a2ef2ca833",
@@ -1652,20 +1652,20 @@
       "source_sha256": "4d0db6838dd5f7cdec5a3dad017c01ed6f480f3c875c45c3fc2d412ada6d84e2"
     },
     "data/algorithm-tutorials.json": {
-      "sha256": "08e0a4ade1daeace5df5f2d9d51fe21b04e6a1644e64e4dd2e8fd997cf31b567",
-      "source_sha256": "08e0a4ade1daeace5df5f2d9d51fe21b04e6a1644e64e4dd2e8fd997cf31b567"
+      "sha256": "df0119cfe21fa0e49bb9ca95d46876b667574148b1980eeb2cce69a3951d2a93",
+      "source_sha256": "df0119cfe21fa0e49bb9ca95d46876b667574148b1980eeb2cce69a3951d2a93"
     },
     "data/bridge-chapters.json": {
       "sha256": "60b692d768ca29b4e982047f667ef78c4fe6ac0c44198121180f065af8a46ff0",
       "source_sha256": "60b692d768ca29b4e982047f667ef78c4fe6ac0c44198121180f065af8a46ff0"
     },
     "data/chapter-companions.json": {
-      "sha256": "353cb6e755b8b25b6d0f8ea01f8ced534733e9591bdedbcfdb35403e60166250",
-      "source_sha256": "353cb6e755b8b25b6d0f8ea01f8ced534733e9591bdedbcfdb35403e60166250"
+      "sha256": "6e0cab017c1a16d0e4559a61ab736001a503dd631df879800a78eb6aa9b6846b",
+      "source_sha256": "6e0cab017c1a16d0e4559a61ab736001a503dd631df879800a78eb6aa9b6846b"
     },
     "data/chapter-relations.json": {
-      "sha256": "70c17f8c095627cdf2cadd938f178a4916bc7db8a46e32b77fbdf6595c5ef248",
-      "source_sha256": "70c17f8c095627cdf2cadd938f178a4916bc7db8a46e32b77fbdf6595c5ef248"
+      "sha256": "c61b37c86b37a0d0e4a5ac537fd61ed83057d14cbc43996cbd58921e0559ee5a",
+      "source_sha256": "c61b37c86b37a0d0e4a5ac537fd61ed83057d14cbc43996cbd58921e0559ee5a"
     },
     "data/chapter-runs.json": {
       "sha256": "1312d95ec6aee6445aa5d98e63e99c1964a99cd0ce9d4f8b29d8533319896818",
@@ -1680,8 +1680,8 @@
       "source_sha256": "2e53f9b194ab8d8e2ba457fe2938419e7002fce522577248ba9951d3d2dfd03d"
     },
     "data/field-framework.json": {
-      "sha256": "12ab47561e95c762ce0053697ad194364b93ac252f9c7f55db8fc94743bc5151",
-      "source_sha256": "12ab47561e95c762ce0053697ad194364b93ac252f9c7f55db8fc94743bc5151"
+      "sha256": "1aec1f0cbd9298deb4e6a93fdaaf4bfe6fd50b31f0ed4762b3e2a622c86bf28c",
+      "source_sha256": "1aec1f0cbd9298deb4e6a93fdaaf4bfe6fd50b31f0ed4762b3e2a622c86bf28c"
     },
     "data/foundations.json": {
       "sha256": "2b9c8db556ba3af30955bacbcb368cd67ee83aa018f545e928432c88733cdcc9",
@@ -1692,8 +1692,8 @@
       "source_sha256": "e328a1d26492666143091ed3c9cd3fefe8ff898ee4346744a3a6e0e39c9e042d"
     },
     "data/learning-route.json": {
-      "sha256": "c4742d488912e135e9e6b19e4d7d505ca52c8c19a2b2e2c5ad7746f12dae1dc3",
-      "source_sha256": "c4742d488912e135e9e6b19e4d7d505ca52c8c19a2b2e2c5ad7746f12dae1dc3"
+      "sha256": "bd8a017f63771076b42075050c997e4ad40c836aba9000f0602f1cd212e10fab",
+      "source_sha256": "bd8a017f63771076b42075050c997e4ad40c836aba9000f0602f1cd212e10fab"
     },
     "data/library-index.json": {
       "sha256": "2f09c90126960fe3d4b3ac983b9fbacbd99437c165cdad4072bb685386d5be1a",
@@ -1724,7 +1724,7 @@
       "source_sha256": "a5d61b618ef60a6fb79153e7bd75347dd9e6e5a34d83e4fbbba510cd97fbea69"
     },
     "data/site-export.json": {
-      "sha256": "6f87bde2990dfb4bc01ab1669fbae95092acc4aaaf2fa173416f341243a5307d",
+      "sha256": "dde7052700543de9080ed72638f5036af1e4f54277c81fd054b705a9bc5183ff",
       "source_sha256": null
     },
     "data/source-figures.json": {
@@ -1756,16 +1756,16 @@
       "source_sha256": "9d5302659cf941d22616222b280853444d90fba995599838e0252854eb439f18"
     },
     "docs/agent-perspective.md": {
-      "sha256": "3b7bd3345dd71934326639f9567bc458477b65f7e0616e10d076c214253aad23",
-      "source_sha256": "9fcd45be274ceeae6d0b32eec4cc50402da8f39a323dfd509c43d2a4209fe766"
+      "sha256": "47feb5590104f24dcabd84a7cd800bf71810d09d684a5fd91625fd5cca2eaa30",
+      "source_sha256": "17e16368693294f7b7b272ea3372f6d2b2f9854170a4af4b5cf434e27a240129"
     },
     "docs/algorithm-map.md": {
       "sha256": "99731d90d31775d818ea36408017986f16580041eff37f289c08cfb9c79f1786",
       "source_sha256": "a5ad941f4082dc3e17f9de62fa71f191847f34316077aaeb6213556b25d00185"
     },
     "docs/algorithm-tutorials.md": {
-      "sha256": "33f6ae3cd01a10058163342b39ac67c6a73230b5c089061cfd6e35aa9c0bd7c8",
-      "source_sha256": "1d98680b751bed66324ced79460e0954bf89e182a57d772aab6887024e5a7711"
+      "sha256": "92fe2b4c9153fa9ecab3ecbfe85a9403cfd466cf11aebdae645ada95f46930f6",
+      "source_sha256": "53d546866fa313cf0d2a0205ad78f6933ec5c15dc73de97ea2b60a8c808f864c"
     },
     "docs/algorithms.md": {
       "sha256": "1281c48ed70b5223d95bab8227b518809c8ec0c8de8dea12f957335d4b8cb44b",
@@ -1792,8 +1792,8 @@
       "source_sha256": null
     },
     "docs/field-framework.md": {
-      "sha256": "ccd7a06e6521723ca19eb6a3a22f9e95193ecfa39d8cf7bfe9850a3a2d2112f9",
-      "source_sha256": "9d5d5cd356f2f3e8367471d5f9dba4c34526f59de242c501c415b0b27abd55dd"
+      "sha256": "9150dcffc253876677db02a08987fa38a8fed4df334f576c4c5a06b0f7f409b7",
+      "source_sha256": "a2693940a7a2ae0764bcf38492e7ce537943d200f13fc1766655ef72ab5535c5"
     },
     "docs/foundations.md": {
       "sha256": "64d6d42ec09c181cc6e6dfd43ddfad3843763ebccecce02db2b43e70b6dbc964",
@@ -1812,20 +1812,20 @@
       "source_sha256": "39e0c890c16f87830da520f3e1825acf19b9695afa5deb0c8e94a3f54e0aa181"
     },
     "docs/learning-route-continual-rl.md": {
-      "sha256": "09fdb0f19514dc9e101a18ccbe589bffdfc15b14eecc1f8d205de71896762d0b",
-      "source_sha256": "aefaab4d367ddd48f1b1ea302ec8d6e3b4e2f0fa89f15981dfd48d948319c3ac"
+      "sha256": "cef2ac22cf848fb2a34b9f44ec14706dfcf879dcb460e0cf8296bd0f3e6aa537",
+      "source_sha256": "9ed6e4173d7011927314b88d31c2c12080d9faf729ba01e1163bbd867f514d5c"
     },
     "docs/learning-route-deep-rl.md": {
       "sha256": "02bd6e26b5f063395e2cf6ebcfad49ccd0df13eccc408ce526ccb4b66a79782f",
       "source_sha256": "02cb4727ef633c434dfc0bf16e7c3441a992c62b3a28902ee8ebef15ff9ac7d9"
     },
     "docs/learning-route.md": {
-      "sha256": "cca3c641b6d7db5b2910c9d9eb48beb091512128f1fef4b19dee71566f9ea5cd",
-      "source_sha256": "06d46beec0fe95f343616b20c02cd0c696faf266a1596acb75413dcb033265c6"
+      "sha256": "6b85f9aa6f0bab2ecf1821285ffe4f9f65acd8863f9d6d6e6d112ad3a62652b4",
+      "source_sha256": "ef78b39b4273744f2cb5e2319fe74f529ea01ebbcc1c4dac9e2656276c876bb6"
     },
     "docs/overview.md": {
-      "sha256": "209127b299b3764b7b5db470e421ed66bb0a781092232c93b7cf2a3f7a26fb47",
-      "source_sha256": "bb959a9fa3e49e85699b4dbb4dc3671b1c5eb9dd7a7dc544a0570752921abebe"
+      "sha256": "cd137e6238ef4b2ee447623172349673b5adfc3be20b333bf61834964965e3b2",
+      "source_sha256": "f0929dd07705507a99cc836604e7977b927b06dc226253478688815e842b6f5c"
     },
     "docs/practice-model-memory-planning.md": {
       "sha256": "958342fd7088f56fbb02a6858435a53ab6617f3fbabe49eaaea736f62ef21789",
@@ -2184,8 +2184,8 @@
       "source_sha256": "5785c391af300d37b87695c4576bc22510fde7d4e6f8b6da9c499193c25be669"
     },
     "textbook/objectives.md": {
-      "sha256": "7e2c089ed4714249cdb15a104519acce7918a06239df78ed3f2111fdd24df14d",
-      "source_sha256": "80e1fffaf43ad6392f2722f4d3e74abe2c9317881accda1023d60993f6755ae9"
+      "sha256": "5c4a7419036bd39525c146327e56a08e5c58956d270a563848fde539176b5358",
+      "source_sha256": "d520954cbcdca4a4458ecce90875c7f468b3b77015ccaf628f4bb8de617db23d"
     },
     "textbook/options.md": {
       "sha256": "88effd64a87315bb21945afe5b247da9f5a5b8eb70bc3bac27f572e5d005c073",

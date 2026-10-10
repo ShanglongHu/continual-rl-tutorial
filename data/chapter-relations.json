@@ -3703,72 +3703,6 @@
       ]
     },
     {
-      "id": "dyna",
-      "path": "algorithms/dyna/",
-      "title": "Dyna：模型学习与规划",
-      "question": "直接学习从真实经验更新价值或策略；模型学习估计行动后果；规划用这些估计进行额外计算。Dyna 将三者连接，使已有经验可以通过模型继续影响决策。",
-      "book": "continual-rl",
-      "group": "construction",
-      "kind": "core",
-      "order": 13,
-      "preparation": [
-        {
-          "chapterId": "study-tabular-planning",
-          "title": "学习与规划：Dyna、优先扫描和执行时搜索",
-          "path": "foundations/tabular/planning/",
-          "why": "区分真实经验、模型学习和模拟更新。"
-        }
-      ],
-      "usedBy": [
-        {
-          "chapterId": "models",
-          "title": "模型与后果预测：学什么，才能用于下一次决策？",
-          "path": "construction/models/",
-          "why": "理解模型如何被更新和使用。"
-        }
-      ],
-      "practice": [],
-      "executable": {
-        "file": "foundations_detail_lab.py",
-        "command": "python3 foundations_detail_lab.py dyna\npython3 foundations_detail_lab.py test",
-        "scope": "Python 3.10+，仅标准库。完整表格 Dyna-Q 与解析参照；概率模型、优先队列与神经世界模型需按正文接口进一步实现。",
-        "path": "download/foundations_detail_lab.py"
-      },
-      "walkthroughs": [],
-      "results": [
-        {
-          "algorithmId": "dyna_q",
-          "title": "同一批真实经验，增加五次模型备份",
-          "path": "algorithms/dyna/#experiment-dyna_q",
-          "implementationPath": "code/dyna_q/",
-          "afterSection": "dyna-steps"
-        },
-        {
-          "algorithmId": "prioritized_sweeping",
-          "title": "把有限规划预算沿前驱传播",
-          "path": "algorithms/dyna/#experiment-prioritized_sweeping",
-          "implementationPath": "code/prioritized_sweeping/",
-          "afterSection": "dyna-priorities"
-        }
-      ],
-      "research": [
-        {
-          "questionId": "reusable-models",
-          "title": "10 · 模型需要预测什么，才能在变化后继续支持决策？",
-          "path": "research/#research-reusable-models",
-          "setting": "模型用于预测动作或 option 的后果，而不是仅重建观测。状态表示、策略和环境可以分别改变。模型误差必须相对于它将被使用的 backup 或决策定义。",
-          "bridge": "模型用于预测动作或 option 的后果，而不是仅重建观测。状态表示、策略和环境可以分别改变。模型误差必须相对于它将被使用的 backup 或决策定义。"
-        },
-        {
-          "questionId": "planning-budget",
-          "title": "11 · 什么时候值得规划，应该把计算花在哪里？",
-          "path": "research/#research-planning-budget",
-          "setting": "规划用已学模型进行额外计算。真实交互、模型更新、搜索和想象训练共享有限预算。问题不是简单地增加规划步数，而是选择何时、何处、以什么时间尺度使用模型。",
-          "bridge": "规划用已学模型进行额外计算。真实交互、模型更新、搜索和想象训练共享有限预算。问题不是简单地增加规划步数，而是选择何时、何处、以什么时间尺度使用模型。"
-        }
-      ]
-    },
-    {
       "id": "models",
       "path": "construction/models/",
       "title": "模型与后果预测：学什么，才能用于下一次决策？",
@@ -3776,7 +3710,7 @@
       "book": "continual-rl",
       "group": "construction",
       "kind": "core",
-      "order": 14,
+      "order": 13,
       "preparation": [
         {
           "chapterId": "options",
@@ -3901,7 +3835,7 @@
       "book": "continual-rl",
       "group": "construction",
       "kind": "core",
-      "order": 15,
+      "order": 14,
       "preparation": [
         {
           "chapterId": "models",
@@ -4000,9 +3934,9 @@
       "title": "持续探索：新奇、不确定性、学习进展与恢复",
       "question": "外部奖励稀疏、世界持续改变时，怎样获得有用的新经验，而不是追逐永远无法学会的噪声？",
       "book": "continual-rl",
-      "group": "construction",
+      "group": "exploration",
       "kind": "core",
-      "order": 16,
+      "order": 15,
       "preparation": [
         {
           "chapterId": "control",
@@ -4068,7 +4002,7 @@
       "book": "continual-rl",
       "group": "architecture",
       "kind": "core",
-      "order": 17,
+      "order": 16,
       "preparation": [
         {
           "chapterId": "state",
@@ -4159,7 +4093,7 @@
       "book": "continual-rl",
       "group": "architecture",
       "kind": "core",
-      "order": 18,
+      "order": 17,
       "preparation": [
         {
           "chapterId": "control",
@@ -4245,7 +4179,7 @@
       "book": "continual-rl",
       "group": "bridges",
       "kind": "bridge",
-      "order": 19,
+      "order": 18,
       "preparation": [
         {
           "chapterId": "study-tabular-temporal-difference",
@@ -4310,7 +4244,7 @@
       "book": "continual-rl",
       "group": "bridges",
       "kind": "bridge",
-      "order": 20,
+      "order": 19,
       "preparation": [
         {
           "chapterId": "study-deep-deep-value",
@@ -4362,7 +4296,7 @@
       "book": "continual-rl",
       "group": "bridges",
       "kind": "bridge",
-      "order": 21,
+      "order": 20,
       "preparation": [
         {
           "chapterId": "study-approximation-policy-gradient",
@@ -4434,7 +4368,7 @@
       "book": "continual-rl",
       "group": "bridges",
       "kind": "bridge",
-      "order": 22,
+      "order": 21,
       "preparation": [
         {
           "chapterId": "study-deep-entropy-control",
@@ -4475,6 +4409,72 @@
           "path": "research/#research-streaming-stability",
           "setting": "数据到达后立即用于学习；过去 transition 不被存储再训练。资格迹、递归活动和 optimizer 状态仍可存在，但须计入内存。数值稳定、样本利用率和动作 deadline 都是评价对象。",
           "bridge": "数据到达后立即用于学习；过去 transition 不被存储再训练。资格迹、递归活动和 optimizer 状态仍可存在，但须计入内存。数值稳定、样本利用率和动作 deadline 都是评价对象。"
+        }
+      ]
+    },
+    {
+      "id": "dyna",
+      "path": "algorithms/dyna/",
+      "title": "Dyna：模型学习与规划",
+      "question": "直接学习从真实经验更新价值或策略；模型学习估计行动后果；规划用这些估计进行额外计算。Dyna 将三者连接，使已有经验可以通过模型继续影响决策。",
+      "book": "continual-rl",
+      "group": "bridges",
+      "kind": "bridge",
+      "order": 22,
+      "preparation": [
+        {
+          "chapterId": "study-tabular-planning",
+          "title": "学习与规划：Dyna、优先扫描和执行时搜索",
+          "path": "foundations/tabular/planning/",
+          "why": "区分真实经验、模型学习和模拟更新。"
+        }
+      ],
+      "usedBy": [
+        {
+          "chapterId": "models",
+          "title": "模型与后果预测：学什么，才能用于下一次决策？",
+          "path": "construction/models/",
+          "why": "理解模型如何被更新和使用。"
+        }
+      ],
+      "practice": [],
+      "executable": {
+        "file": "foundations_detail_lab.py",
+        "command": "python3 foundations_detail_lab.py dyna\npython3 foundations_detail_lab.py test",
+        "scope": "Python 3.10+，仅标准库。完整表格 Dyna-Q 与解析参照；概率模型、优先队列与神经世界模型需按正文接口进一步实现。",
+        "path": "download/foundations_detail_lab.py"
+      },
+      "walkthroughs": [],
+      "results": [
+        {
+          "algorithmId": "dyna_q",
+          "title": "同一批真实经验，增加五次模型备份",
+          "path": "algorithms/dyna/#experiment-dyna_q",
+          "implementationPath": "code/dyna_q/",
+          "afterSection": "dyna-steps"
+        },
+        {
+          "algorithmId": "prioritized_sweeping",
+          "title": "把有限规划预算沿前驱传播",
+          "path": "algorithms/dyna/#experiment-prioritized_sweeping",
+          "implementationPath": "code/prioritized_sweeping/",
+          "afterSection": "dyna-priorities"
+        }
+      ],
+      "research": [
+        {
+          "questionId": "reusable-models",
+          "title": "10 · 模型需要预测什么，才能在变化后继续支持决策？",
+          "path": "research/#research-reusable-models",
+          "setting": "模型用于预测动作或 option 的后果，而不是仅重建观测。状态表示、策略和环境可以分别改变。模型误差必须相对于它将被使用的 backup 或决策定义。",
+          "bridge": "模型用于预测动作或 option 的后果，而不是仅重建观测。状态表示、策略和环境可以分别改变。模型误差必须相对于它将被使用的 backup 或决策定义。"
+        },
+        {
+          "questionId": "planning-budget",
+          "title": "11 · 什么时候值得规划，应该把计算花在哪里？",
+          "path": "research/#research-planning-budget",
+          "setting": "规划用已学模型进行额外计算。真实交互、模型更新、搜索和想象训练共享有限预算。问题不是简单地增加规划步数，而是选择何时、何处、以什么时间尺度使用模型。",
+          "bridge": "规划用已学模型进行额外计算。真实交互、模型更新、搜索和想象训练共享有限预算。问题不是简单地增加规划步数，而是选择何时、何处、以什么时间尺度使用模型。"
         }
       ]
     }
