@@ -93,7 +93,7 @@
     {
       "file": "agent-perspective.md",
       "target": "docs/agent-perspective.md",
-      "sha256": "17e16368693294f7b7b272ea3372f6d2b2f9854170a4af4b5cf434e27a240129",
+      "sha256": "148f465956fe42a65aa343c9aaddde8a69220686666b0a562114af61c696d7eb",
       "page": null
     },
     {
@@ -399,13 +399,13 @@
     {
       "file": "field-framework.json",
       "target": "data/field-framework.json",
-      "sha256": "1aec1f0cbd9298deb4e6a93fdaaf4bfe6fd50b31f0ed4762b3e2a622c86bf28c",
+      "sha256": "9a55edeeab9c71193eabfe0e3737d81ea45536329d182af628a8866681936591",
       "page": null
     },
     {
       "file": "field-framework.md",
       "target": "docs/field-framework.md",
-      "sha256": "a2693940a7a2ae0764bcf38492e7ce537943d200f13fc1766655ef72ab5535c5",
+      "sha256": "c6786aed4ab23936bcf9c1061441c7a924c46b77799c17d184085a8fd4edec4b",
       "page": null
     },
     {
@@ -2209,6 +2209,30 @@
       "page": null
     },
     {
+      "file": "figure--overview-reward-paths.mobile.svg",
+      "target": "assets/crl-figures/overview-reward-paths.mobile.svg",
+      "sha256": "9867796a00dc34c8c9171263c9e7f39fb21d332cc66ea9d5d81029b951b675df",
+      "page": null
+    },
+    {
+      "file": "figure--overview-reward-paths.svg",
+      "target": "assets/crl-figures/overview-reward-paths.svg",
+      "sha256": "7eedbf26bfd3c1f788b6963a3a47bc0444261ee667d89c81729d03798ba34e4d",
+      "page": null
+    },
+    {
+      "file": "figure--overview-shared-features.mobile.svg",
+      "target": "assets/crl-figures/overview-shared-features.mobile.svg",
+      "sha256": "49684a3291e095542e7365392fb08d382ce04d2b1b06337deffd642bcd1e9a01",
+      "page": null
+    },
+    {
+      "file": "figure--overview-shared-features.svg",
+      "target": "assets/crl-figures/overview-shared-features.svg",
+      "sha256": "96fef8352e0624820a4d75b0a6032739a2eea72596a1cf1389723cbeedbb5d72",
+      "page": null
+    },
+    {
       "file": "figure--planning-budget-walkthrough-decision.mobile.svg",
       "target": "assets/crl-figures/planning-budget-walkthrough-decision.mobile.svg",
       "sha256": "cb7d1601a7cff07ce36d4f34285057578c10365de68f64b37443d04368e07fcc",
@@ -2979,7 +3003,7 @@
     {
       "file": "overview.md",
       "target": "docs/overview.md",
-      "sha256": "f0929dd07705507a99cc836604e7977b927b06dc226253478688815e842b6f5c",
+      "sha256": "f5d911fe313bef8e6734badcb5a3dd8867780e599372803911426d5644b0139d",
       "page": null
     },
     {
