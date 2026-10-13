@@ -70,7 +70,7 @@ $A^\pi=q^\pi-v^\pi$ 是真实优势。有限 rollout 的均匀样本损失还需
 
 ### 适用边界
 
-- 由 GAE 降方差推断估计必然无偏或策略必然改善。
+- GAE 降低方差，不意味着估计必然无偏或策略必然改善。
 
 ### 与其他问题的关系
 
@@ -164,6 +164,10 @@ print(p, -steps)  # 解析式核验，不是训练结果
 <a id="lesson-derive"></a>
 
 ## 2 · 对轨迹概率求导，不对环境求导
+
+先回到梯度如何由经验得到。对给定状态，策略梯度定理中的局部项是 $\sum_a q_\pi(s,a)\nabla\pi_\theta(a\mid s)$。逐项乘除 $\pi_\theta(a\mid s)$，它便成为按策略抽取一个动作后的期望：$\mathbb E_{A\sim\pi}[q_\pi(s,A)\nabla\log\pi_\theta(A\mid s)]$。继续按这项策略行动，所得回报 $G_t$ 的条件均值正是 $q_\pi(S_t,A_t)$。状态访问频率由轨迹本身提供，再按目标保留外层时间权重 $\gamma^t$，便得到逐轨迹的梯度估计。这里用采样替代求和，没有要求知道所有状态动作的价值；[基础章的概率面积图与完整推导](../approximation/policy-gradient.md#lesson-derive)展开了这些等式。
+
+神经网络改变了策略概率怎样由参数计算，没有改变上述概率恒等式。下面直接从整条轨迹的概率证明同一结果，再考察有限 rollout 和近似 critic 怎样改变估计。
 
 $$
 \begin{gathered}p_\theta(\tau)=\rho(s_0)\prod_{t=0}^{T-1}\pi_\theta(a_t\mid s_t)P(s_{t+1},r_{t+1}\mid s_t,a_t),\\\psi_t=\left.\nabla_\theta\log\pi_\theta(A_t\mid S_t)\right|_{\theta_0},\\\left.\nabla J\right|_{\theta_0}=\mathbb E_{\pi_0}\!\left[G_0\sum_{t=0}^{T-1}\psi_t\right].\end{gathered}

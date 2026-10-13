@@ -11,7 +11,7 @@
 - [第 3 章 · 策略更新的尺度：TRPO 与 PPO](../foundations/deep/trust-region.md)：旧策略的数据能支持多远的策略更新？怎样从局部代理走到采样、更新与独立评价？
 - [第 4 章 · 连续动作的价值优化：DDPG 与 TD3](../foundations/deep/deterministic-control.md)：不能枚举连续动作时，如何用 critic 的梯度改进 actor？
 - [第 5 章 · 最大熵连续控制：SAC 的价值、密度与温度](../foundations/deep/entropy-control.md)：随机 actor 不只是加噪声：熵如何进入 Bellman 方程与自动微分？
-- [第 6 章 · 深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)：改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？
+- [第 6 章 · 深度 RL 的训练循环：经验、目标与更新](../foundations/deep/practice.md)：一条真实经验怎样经过采样、保存、构造目标和求导，最后改变下一次行动？
 - [第 7 章 · 大规模训练：算法与系统怎样共同设计](../foundations/deep/systems.md)：环境、推理和学习并行以后，怎样把更多计算变成更快的策略改善？
 
 ### 按问题选择的研究分支

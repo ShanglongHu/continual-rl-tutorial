@@ -2,6 +2,60 @@
 
 各条路线使用不同的小环境隔离不同困难。每次换环境都会说明变化；不同任务的分数不直接排名。
 
+<a id="practice-first-run"></a>
+
+## 先完成一项任务
+
+以下练习只需 Python 3 标准库。在教程仓库根目录运行命令；第三项练习的 raw-runs.zip 从下方链接下载，也放在仓库根目录。
+
+### 学过基础 RL：先解释一次写入
+
+用相同的八个奖励，比较样本均值与常数步长。先手算最后一次更新，再对照程序输出。
+
+[bandit_tracking_walkthrough.py](../tutorials/bandit_tracking_walkthrough.py)
+
+```bash
+python3 tutorials/bandit_tracking_walkthrough.py
+```
+
+终端输出 JSON。rows 给出每次写入，weights 给出各次奖励的权重；第八次更新后的两项估计分别为 0.75 和 245/256。
+
+相同经验得到不同估计，是因为预测目标变了，还是过去经验的权重变了？这一步还没有比较实际动作的收益。
+
+[接着让估计影响行动](https://yingwen.io/zh/continual-rl/code/#practice-tracking) · [回到非平稳估计的推导](../foundations/tabular/bandits.md#bandit-tracking)
+
+### 会用 DQN/PPO：追踪目标与更新
+
+在同一条三步轨迹上计算 GAE 与 PPO 目标。找出哪些量在采样时确定、哪些量随优化改变，再阅读完整采样循环。
+
+[gae_ppo_walkthrough.py](../tutorials/gae_ppo_walkthrough.py)
+
+```bash
+python3 tutorials/gae_ppo_walkthrough.py
+```
+
+终端输出 JSON。advantage 应为 [0.55, −0.1, 0.6]；exact_evaluation 中旧策略回报为 0.125，候选策略为 0.1155。这里枚举真实期望，不启动神经网络训练。
+
+为什么批内代理目标提高，真实回报却下降？接着检查完整实现中采样批次、梯度更新与独立评价分别发生在哪一行。
+
+[继续读采样、更新与已有结果](https://yingwen.io/zh/continual-rl/code/#practice-policy-control) · [把各环节放回训练循环](../foundations/deep/practice.md)
+
+### 准备做研究：先解释已有证据
+
+读取七状态环任务的已有记录，比较近期模型、累计模型和无规划三个完整学习器。先重算生命期收益，再讨论模型记忆与规划的作用。
+
+[compare_continual_runs.py](../tutorials/compare_continual_runs.py) · [raw-runs.zip](https://yingwen.io/crl-code/results/integrated_recent_model/raw-runs.zip)
+
+```bash
+python3 tutorials/compare_continual_runs.py --archive raw-runs.zip > comparison.json
+```
+
+当前目录生成 comparison.json。runs 是十五次已有运行；methods 汇总各组读数；paired_differences 先按相同 seed 求差。近期模型 seed 0 的全程奖励为 313，生命期率为 313/1200。
+
+近期模型全程均值较高，累计模型最后窗口均值却较高。两项指标比较的是什么？提出两种解释，再判断现有记录能否把它们区分开。
+
+[完成模型记忆与规划研究作业](https://yingwen.io/zh/continual-rl/code/#study-model-memory-planning) · [回到完整智能体的评价](../textbook/architectures.md#lesson-evaluation)
+
 <a id="practice-tracking"></a>
 
 ## 估计与适应
@@ -298,7 +352,7 @@ T形到门预测使用到门停止；这个交替任务没有终点，改用常�
 
 在三步通关任务中，先算 TD 残差与 GAE，再用同一组优势计算 PPO 裁剪目标。枚举真实成功概率，核对样本目标与真实收益。随后读已有 PPO 的 update 和旧记录：找到 step=1200 的 samples、updated_batches 与 value，再按五个训练种子重算冻结评估。
 
-手算中旧策略、优势与critic标签固定，γ=1、λ=0.5。旧完整实现另用12步期限链、γ=0.99、λ=0.95，批内归一化优势；20批采样不等于20次策略梯度。图中value为确定性argmax策略的未折扣回报，不是三步任务成功率或PPO损失。
+手算中旧策略、优势与critic标签固定，γ=1、λ=0.5。旧完整实现另用12步期限链、γ=1、λ=0.95，批内归一化优势；20批采样不等于20次策略梯度。图中value为确定性argmax策略的未折扣回报，不是三步任务成功率或PPO损失。
 
 [GAE 的逐步计算](../foundations/deep/policy-gradient.md#lesson-example) · [同一轨迹上的 PPO](../foundations/deep/trust-region.md#lesson-example) · [运行 GAE/PPO 算例](../tutorials/gae_ppo_walkthrough.py) · [PPO：完整采样、更新与旧结果](https://yingwen.io/zh/continual-rl/code/deep-ppo/) · [下载 PPO 的冻结评估与采样批次](https://yingwen.io/crl-code/results/deep-ppo/raw-runs.zip)
 

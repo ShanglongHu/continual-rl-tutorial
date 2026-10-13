@@ -1142,10 +1142,16 @@
       },
       "walkthroughs": [
         {
+          "file": "policy-gradient-sampling.py",
+          "path": "/crl-code/tutorials/policy-gradient-sampling.py",
+          "section": "policy-sampling",
+          "sectionTitle": "3 · 从状态动作遍历到策略轨迹采样"
+        },
+        {
           "file": "policy-gradient-walkthrough.py",
           "path": "/crl-code/tutorials/policy-gradient-walkthrough.py",
           "section": "policy-occupancy-example",
-          "sectionTitle": "6.1 · 同一个例子：占用怎样收集全部 score"
+          "sectionTitle": "4.1 · 同一个例子：占用怎样收集全部 score"
         }
       ],
       "results": [
@@ -1191,7 +1197,7 @@
         },
         {
           "chapterId": "study-deep-practice",
-          "title": "深度 RL 的机制接口：模型、记忆、离线数据与实验",
+          "title": "深度 RL 的训练循环：经验、目标与更新",
           "path": "foundations/deep/practice/",
           "why": "掌握采样、回放、标签和参数更新的基本循环。"
         },
@@ -1337,7 +1343,7 @@
         },
         {
           "chapterId": "study-deep-practice",
-          "title": "深度 RL 的机制接口：模型、记忆、离线数据与实验",
+          "title": "深度 RL 的训练循环：经验、目标与更新",
           "path": "foundations/deep/practice/",
           "why": "掌握rollout、优势和策略更新之间的数据关系。"
         },
@@ -1614,8 +1620,8 @@
     {
       "id": "study-deep-practice",
       "path": "foundations/deep/practice/",
-      "title": "深度 RL 的机制接口：模型、记忆、离线数据与实验",
-      "question": "改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？",
+      "title": "深度 RL 的训练循环：经验、目标与更新",
+      "question": "一条真实经验怎样经过采样、保存、构造目标和求导，最后改变下一次行动？",
       "book": "deep-rl",
       "group": "deep-core",
       "kind": "core",
@@ -1703,7 +1709,7 @@
       "preparation": [
         {
           "chapterId": "study-deep-practice",
-          "title": "深度 RL 的机制接口：模型、记忆、离线数据与实验",
+          "title": "深度 RL 的训练循环：经验、目标与更新",
           "path": "foundations/deep/practice/",
           "why": "先分清环境采样、推理与学习的数据接口。"
         },
@@ -2344,7 +2350,7 @@
         },
         {
           "chapterId": "state",
-          "title": "Agent state：部分可观测性、递归记忆与在线信用分配",
+          "title": "智能体状态：从经验学习怎样记住",
           "path": "construction/state/",
           "why": "明确智能体收到的历史，以及评价持续学习过程的范围。"
         }
@@ -2729,8 +2735,8 @@
     {
       "id": "state",
       "path": "construction/state/",
-      "title": "Agent state：部分可观测性、递归记忆与在线信用分配",
-      "question": "任务目标给定以后，智能体应当保留哪些历史信息，才能预测未来并选择动作？",
+      "title": "智能体状态：从经验学习怎样记住",
+      "question": "预测失败怎样教智能体改变记忆规则，这种变化又怎样影响技能、模型与下一次行动？",
       "book": "continual-rl",
       "group": "knowledge",
       "kind": "core",
@@ -2752,7 +2758,7 @@
         },
         {
           "chapterId": "architectures",
-          "title": "持续智能体架构：模块接口、更新调度与长期评价",
+          "title": "持续智能体架构：从一次经验到下一次行动",
           "path": "construction/architectures/",
           "why": "理解内部状态如何随经验更新。"
         }
@@ -2789,45 +2795,45 @@
       "executable": {
         "file": "state_meta_lab.py",
         "command": "python3 state_meta_lab.py state",
-        "scope": "Bayes 过滤、标量 RTRL/BPTT/TBPTT、重置式监督提示实验、单个线性 RTU 风格旋转块；不是原论文 RL 基准复现。",
+        "scope": "深入阅读的 Bayes 过滤、RTRL/BPTT/TBPTT、重置式监督提示实验与 RTU 风格旋转块；主线无重置写入门另有单文件入口。",
         "path": "download/state_meta_lab.py"
       },
       "walkthroughs": [
         {
+          "file": "learned-memory-walkthrough.py",
+          "path": "/crl-code/tutorials/learned-memory-walkthrough.py",
+          "section": "lesson-learned-memory",
+          "sectionTitle": "3. 让写入门学习，再看实际行动"
+        },
+        {
           "file": "recurrent_state_walkthrough.py",
           "path": "/crl-code/tutorials/recurrent_state_walkthrough.py",
           "section": "lesson-delayed-recurrent",
-          "sectionTitle": "5.1 四步延迟提示：让保留系数也能学习"
+          "sectionTitle": "四步延迟提示：让保留系数也能学习"
         },
         {
           "file": "state-online-walkthrough.py",
           "path": "/crl-code/tutorials/state-online-walkthrough.py",
           "section": "lesson-online-versions",
-          "sectionTitle": "5.2 中途更新参数：活动、trace 与求导对象怎样改变"
+          "sectionTitle": "中途更新参数：活动、trace 与求导对象怎样改变"
         },
         {
           "file": "recurrent-control-walkthrough.py",
           "path": "/crl-code/tutorials/recurrent-control-walkthrough.py",
           "section": "lesson-recurrent-control",
-          "sectionTitle": "5.3 学到的递归系数怎样改变行动与下一条经验"
+          "sectionTitle": "学到的递归系数怎样改变行动与下一条经验"
         },
         {
           "file": "continuing-state-walkthrough.py",
           "path": "/crl-code/tutorials/continuing-state-walkthrough.py",
           "section": "lesson-continuing-control",
-          "sectionTitle": "5.4 门后继续走：无重置活动、在线变参与后续经验"
+          "sectionTitle": "门后继续走：无重置活动、在线变参与后续经验"
         },
         {
           "file": "delayed-state-walkthrough.py",
           "path": "/crl-code/tutorials/delayed-state-walkthrough.py",
           "section": "lesson-delayed-memory-budget",
-          "sectionTitle": "5.5 新模式与长走廊：保存信息和保存梯度各花什么资源"
-        },
-        {
-          "file": "learned-memory-walkthrough.py",
-          "path": "/crl-code/tutorials/learned-memory-walkthrough.py",
-          "section": "lesson-learned-memory",
-          "sectionTitle": "5.6 让写入门学习：旧提示该留下多少"
+          "sectionTitle": "新模式与长走廊：保存信息和保存梯度各花什么资源"
         }
       ],
       "results": [
@@ -2903,7 +2909,7 @@
       "preparation": [
         {
           "chapterId": "state",
-          "title": "Agent state：部分可观测性、递归记忆与在线信用分配",
+          "title": "智能体状态：从经验学习怎样记住",
           "path": "construction/state/",
           "why": "理解预测输入是智能体能维护的状态。"
         },
@@ -2917,7 +2923,7 @@
       "usedBy": [
         {
           "chapterId": "goals",
-          "title": "目标与子任务：条件控制、经验重用与技能设计",
+          "title": "子目标构建：从经验到技能与规划",
           "path": "construction/goals/",
           "why": "理解如何指定可由经验学习的问题，再讨论选择哪些问题。"
         }
@@ -2946,7 +2952,14 @@
         "scope": "六个线性学习器、三个共享经验的预测问题、解析 Bellman 参照与一个 off-policy 期望发散反例。",
         "path": "download/gvf_lab.py"
       },
-      "walkthroughs": [],
+      "walkthroughs": [
+        {
+          "file": "discovery_mechanisms.py",
+          "path": "/crl-code/tutorials/discovery_mechanisms.py",
+          "section": "gvf-discovery",
+          "sectionTitle": "15 · 自动发现：什么预测值得占用一个位置？"
+        }
+      ],
       "results": [
         {
           "algorithmId": "gvf_td",
@@ -3112,7 +3125,7 @@
       "id": "streaming",
       "path": "algorithms/streaming/",
       "title": "流式强化学习：交互协议与更新稳定性",
-      "question": "机器人刚获得一条经验，下一次行动已经快到了：学习器能保存什么，还能算几次？从相同数据流、两步 TD 与中途恢复的算例出发，理解原始经验、活动状态、权重、资格迹和尺度统计怎样影响下一次更新。",
+      "question": "一条经验处理完就会离开，延迟结果怎样改变过去的预测，又怎样影响下一次行动？从样本 TD 推到资格迹和 actor–critic，再检查深度更新、学习器状态，以及 GVF、技能与平均奖励在同一条流中的时间和资源接口。",
       "book": "continual-rl",
       "group": "learning",
       "kind": "core",
@@ -3170,7 +3183,7 @@
           "file": "streaming_state_walkthrough.py",
           "path": "/crl-code/tutorials/streaming_state_walkthrough.py",
           "section": "lesson-code",
-          "sectionTitle": "9 · 机制实验与作者实现"
+          "sectionTitle": "10 · 机制实验与作者实现"
         }
       ],
       "results": [
@@ -3475,8 +3488,8 @@
     {
       "id": "goals",
       "path": "construction/goals/",
-      "title": "目标与子任务：条件控制、经验重用与技能设计",
-      "question": "怎样让同一套控制器应对不同目标、从未成功的尝试中学习，并选择对未来控制有用的子任务？",
+      "title": "子目标构建：从经验到技能与规划",
+      "question": "怎样从已经取得的经验提出子目标，学会执行它，再让真实后果改变规划与下一次行动？",
       "book": "continual-rl",
       "group": "construction",
       "kind": "core",
@@ -3525,10 +3538,16 @@
           "sectionTitle": "1.1 同一条运输记录，换目标时究竟改什么"
         },
         {
+          "file": "learned_subgoal_cycle.py",
+          "path": "/crl-code/tutorials/learned_subgoal_cycle.py",
+          "section": "lesson-learning-cycle",
+          "sectionTitle": "3.2 从真实练习到技能、模型和下一次送货"
+        },
+        {
           "file": "goal_discovery_walkthrough.py",
           "path": "/crl-code/tutorials/goal_discovery_walkthrough.py",
           "section": "lesson-discovery-loop",
-          "sectionTitle": "3.2 候选变成行为，再让新经验改变候选与规划"
+          "sectionTitle": "3.3 对照：在已观察模型上求解同一到达问题"
         }
       ],
       "results": [
@@ -3597,7 +3616,7 @@
       "preparation": [
         {
           "chapterId": "goals",
-          "title": "目标与子任务：条件控制、经验重用与技能设计",
+          "title": "子目标构建：从经验到技能与规划",
           "path": "construction/goals/",
           "why": "区分目标规格与实现目标的行为。"
         },
@@ -3646,6 +3665,12 @@
           "path": "/crl-code/tutorials/option_model_walkthrough.py",
           "section": "lesson-option-practice",
           "sectionTitle": "动手：从一个固定技能走到模型规划"
+        },
+        {
+          "file": "discovery_mechanisms.py",
+          "path": "/crl-code/tutorials/discovery_mechanisms.py",
+          "section": "lesson-eigenoptions",
+          "sectionTitle": "8. Eigenoptions：把环境的慢变化方向变成行为"
         }
       ],
       "results": [
@@ -3734,7 +3759,7 @@
         },
         {
           "chapterId": "architectures",
-          "title": "持续智能体架构：模块接口、更新调度与长期评价",
+          "title": "持续智能体架构：从一次经验到下一次行动",
           "path": "construction/architectures/",
           "why": "理解可学习知识的规格与版本。"
         }
@@ -3771,6 +3796,12 @@
           "path": "/crl-code/tutorials/model-change-walkthrough.py",
           "section": "lesson-model-recheck",
           "sectionTitle": "1.4 把复查代价放回行动循环"
+        },
+        {
+          "file": "agent_cycle_walkthrough.py",
+          "path": "/crl-code/tutorials/agent_cycle_walkthrough.py",
+          "section": "lesson-code",
+          "sectionTitle": "6. 实现与实验：期望、时间和策略条件"
         }
       ],
       "results": [
@@ -3853,7 +3884,7 @@
       "usedBy": [
         {
           "chapterId": "architectures",
-          "title": "持续智能体架构：模块接口、更新调度与长期评价",
+          "title": "持续智能体架构：从一次经验到下一次行动",
           "path": "construction/architectures/",
           "why": "理解模型使用、资源分配与实际行动。"
         }
@@ -3879,6 +3910,12 @@
           "path": "/crl-code/tutorials/goal_model_planning_walkthrough.py",
           "section": "lesson-replanning",
           "sectionTitle": "1.1 模型已经修正，起点何时改选路线"
+        },
+        {
+          "file": "agent_cycle_walkthrough.py",
+          "path": "/crl-code/tutorials/agent_cycle_walkthrough.py",
+          "section": "lesson-code",
+          "sectionTitle": "10. 实现与实验：Dyna、优先传播与 MPC"
         }
       ],
       "results": [
@@ -3955,6 +3992,18 @@
       },
       "walkthroughs": [
         {
+          "file": "learned_subgoal_cycle.py",
+          "path": "/crl-code/tutorials/learned_subgoal_cycle.py",
+          "section": "lesson-data-cycle",
+          "sectionTitle": "1.4 · 同一运输任务：为了获取哪条经验而练习技能？"
+        },
+        {
+          "file": "deep-exploration-walkthrough.py",
+          "path": "/crl-code/tutorials/deep-exploration-walkthrough.py",
+          "section": "lesson-skills",
+          "sectionTitle": "6 · 技能发现与时间一致的探索"
+        },
+        {
           "file": "exploration-information-walkthrough.py",
           "path": "/crl-code/tutorials/exploration-information-walkthrough.py",
           "section": "lesson-code",
@@ -3997,8 +4046,8 @@
     {
       "id": "architectures",
       "path": "construction/architectures/",
-      "title": "持续智能体架构：模块接口、更新调度与长期评价",
-      "question": "各模块单独能学，不代表接在一起就能持续改善；它们究竟交换什么、何时更新、如何共享有限计算？",
+      "title": "持续智能体架构：从一次经验到下一次行动",
+      "question": "一次真实交互怎样用于预测、模型与控制的学习，这些变化又怎样决定下一次行动？",
       "book": "continual-rl",
       "group": "architecture",
       "kind": "core",
@@ -4006,7 +4055,7 @@
       "preparation": [
         {
           "chapterId": "state",
-          "title": "Agent state：部分可观测性、递归记忆与在线信用分配",
+          "title": "智能体状态：从经验学习怎样记住",
           "path": "construction/state/",
           "why": "理解内部状态如何随经验更新。"
         },
@@ -4041,15 +4090,33 @@
       "executable": {
         "file": "lifelong_algorithms_lab.py",
         "command": "python lifelong_algorithms_lab.py architectures",
-        "scope": "六状态、双动作、手工记忆的集成教学骨架；不是完整 OaK/STOMP 性能复现。",
+        "scope": "深入阅读中的六状态、双动作、手工记忆骨架；主线七位置环的单文件程序在“沿运行记录走完同一次学习循环”一节下载。二者均不是完整 OaK/STOMP 性能复现。",
         "path": "download/lifelong_algorithms_lab.py"
       },
       "walkthroughs": [
         {
+          "file": "agent_cycle_walkthrough.py",
+          "path": "/crl-code/tutorials/agent_cycle_walkthrough.py",
+          "section": "lesson-cycle-code",
+          "sectionTitle": "7. 沿运行记录走完同一次学习循环"
+        },
+        {
+          "file": "learned-memory-walkthrough.py",
+          "path": "/crl-code/tutorials/learned-memory-walkthrough.py",
+          "section": "lesson-learning-components",
+          "sectionTitle": "状态与技能也从经验中形成时"
+        },
+        {
+          "file": "learned_subgoal_cycle.py",
+          "path": "/crl-code/tutorials/learned_subgoal_cycle.py",
+          "section": "lesson-learning-components",
+          "sectionTitle": "状态与技能也从经验中形成时"
+        },
+        {
           "file": "architecture-walkthrough.py",
           "path": "/crl-code/tutorials/architecture-walkthrough.py",
           "section": "lesson-schedule",
-          "sectionTitle": "3 · 真实交互与规划的更新调度"
+          "sectionTitle": "真实交互与规划的更新调度"
         }
       ],
       "results": [

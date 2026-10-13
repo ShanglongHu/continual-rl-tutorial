@@ -68,7 +68,7 @@ $$
 
 ### 适用边界
 
-- 把 return variance 当作后验 epistemic uncertainty。
+- return variance 不等同于后验 epistemic uncertainty。
 
 ### 与其他问题的关系
 

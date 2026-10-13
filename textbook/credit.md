@@ -12,6 +12,12 @@
 - 从广义投影 Bellman 误差推导 GTD2／TDC／TDRC 的三条迹，核对非线性冻结总和等价。
 - 连接 actor–critic、GAE 和 RTRL／RTU，区分回报信用、状态敏感度与参数变化造成的过时导数。
 
+## 阅读这条论证
+
+先固定要预测的未来，再问一次新误差应当改变哪些过去的预测。多步目标给出前向答案，交换求和得到资格迹。在线参数变化使这项等价需要重建；共享特征、离策略数据和递归状态又分别改变更新方向、路径权重与导数来源。
+
+[定义信用分配问题](credit.md#lesson-setting) → [构造多步目标](credit.md#lesson-derive) → [推导资格迹](credit.md#lesson-equivalence) → [检查参数版本](credit.md#lesson-online) → [建立在线等价](credit.md#lesson-true-online) → [改变路径权重](credit.md#lesson-off-policy) → [连接预测与技能边界](credit.md#lesson-state-lambda) → [连接递归状态与策略](credit.md#lesson-actor-recurrent) → [核对实际算法](credit.md#lesson-code)
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -90,6 +96,12 @@ $w$ 是本段冻结的预测参数，$T$ 是真实终点，$G_t^\lambda$ 是本�
 
 - 组合不同学习问题 · [价值预测与资格迹](value.md)：同一固定策略预测对象可采用一步、多步或迹；信用机制改变如何利用反馈。
 
+- 组合不同学习问题 · [通用价值函数与预测知识](gvf.md)：每个预测问题有自己的累积信号与延续规则，因此也有自己的误差和资格边界。
+
+- 组合不同学习问题 · [Options 与技能发现](options.md)：预测技能内部后果时，技能停止可结束该预测；评价完整外部控制时，交回高层通常仍需保留后续价值。
+
+- 组合不同学习问题 · [平均奖励与差分价值](average.md)：以中心化奖励构造无折扣多步目标时，迹参数控制信用长度，奖励率另由其指定更新估计。
+
 - 组合不同学习问题 · [智能体状态与递归学习](state.md)：记忆参数的结构敏感度连接过去活动与当前输出，不由回报迹自动给出。
 
 - 改变信息或数据协议 · [流式更新与稳定性](streaming.md)：后向迹可满足有限内存；能否重放、等待和展开仍由协议限定。
@@ -161,6 +173,14 @@ Continuing task 指没有内在终点的持续交互任务；continual learning 
 
 ## 2. n-step 与 λ-return 的前向视角
 
+先把预测问题与更新目标分开。对固定 Markov 策略 $\pi$，要估计的是 $v_\pi(s)=\mathbb E_\pi[G_t\mid S_t=s]$；有限期限任务若剩余时间影响后果，就把时间纳入状态。一次经过 s 只能得到一条随机后续路径，不能直接观察这个条件期望。Bellman 关系允许我们用一条真实奖励，加上对后继的估计，构成可以逐步获得的标签。
+
+$$
+\begin{aligned}v_\pi(s)&=\mathbb E_\pi[R_{t+1}+\gamma v_\pi(S_{t+1})\mid S_t=s],\\(\mathcal T_\pi v)(s)&=\sum_a\pi(a\mid s)\sum_{s',r}p(s',r\mid s,a)[r+\gamma v(s')].\end{aligned}
+$$
+
+第一行定义真值应满足的关系；第二行说明完整期望要对动作、后继状态和奖励一起平均。模型未知时，实际 TD 用一次采到的转移估计这个备份。
+
 一步 TD 只使用下一条真实奖励，其余部分由价值估计补齐。$n$ 步目标使用更多真实奖励，再从第 $n$ 个后继状态 bootstrap。增加 $n$ 减少了对近处估计的直接依赖，也延迟了目标形成；在有噪声时，它通常改变偏差与方差。
 
 $$
@@ -176,6 +196,22 @@ G_t^\lambda=(1-\lambda)\sum_{n=1}^{T-t-1}\lambda^{n-1}G_t^{(n)}+\lambda^{T-t-1}G
 $$
 
 $\lambda=0$ 给出一步 TD 目标；$\lambda=1$ 给出完整 return。最后一步只有一个目标，其权重为一。$\gamma$ 决定任务中未来奖励的权重，$\lambda$ 决定学习时怎样混合不同 bootstrap 长度；二者职责不同。
+
+这个混合为何仍然指向同一个预测问题？先把尾部估计换成真值。反复应用 Bellman 关系，任意 n 步目标的条件期望都为 $v_\pi(s)$，归一化混合也保留它。尾部使用 $v_w$ 时，偏差则由尾部误差传回：
+
+$$
+\mathbb E_\pi[G_t^{(n)}-v_\pi(S_t)\mid S_t=s]=\gamma^n\mathbb E_\pi[v_w(S_{t+n})-v_\pi(S_{t+n})\mid S_t=s]
+$$
+
+式中尾部使用固定 $w$；为比较固定 n，终止后的轨迹按零奖励吸收状态延长，终点的两种价值均为零。它说明 bootstrap 的近似误差如何进入目标；一次样本目标仍有奖励和转移噪声。共享参数时，各状态的拟合互相约束，不能由这个逐状态等式直接推出 TD 的最小均方误差解。
+
+现在才定义一次学习。用 $\bar w$ 生成并固定整条轨迹的目标，将待更新参数另记为 w。对给定状态采样分布 d，固定标签的平方损失有普通梯度；在 $w=\bar w$ 处的单样本下降方向正是后面需要变换的前向半梯度：
+
+$$
+\begin{aligned}L_{\bar w}(w)&=\tfrac12\mathbb E_{S_t\sim d,\,\tau\sim\pi}[\{G_t^\lambda(\tau;\bar w)-v_w(S_t)\}^2],\\-\left.\nabla_w\tfrac12\{G_t^\lambda(\tau;\bar w)-v_w(S_t)\}^2\right|_{w=\bar w}&=(G_t^\lambda-v_{\bar w}(S_t))\left.\nabla_wv_w(S_t)\right|_{w=\bar w}.\end{aligned}
+$$
+
+求导时目标、状态采样分布和策略保持不动。称为半梯度，是因为重新用更新后参数生成目标时，目标也会变化，但这个方向没有对目标端求导。因此它是固定标签子问题的梯度，不自动是整个在线 TD 过程共享的一个固定损失梯度。
 
 在格子世界中实际算一次。上排三个相邻格为 A、B、C，C 下方是终点 G；固定随机策略产生了一条路线 $A\to B\to A\to B\to C\to G$，两次到 B 时采到了不同动作。进入 G 得 1，其余奖励为 0，表格价值初值全为 0。取 $\gamma=0.9,\lambda=0.8,\alpha=0.1$，本节先冻结预测。两次经过 A，是否只更新它一次？每一次预测都有自己的后续时间长度，因此要先分别算出它们的目标。
 
@@ -196,6 +232,10 @@ $$
 <a id="lesson-equivalence"></a>
 
 ## 3. 冻结参数时，资格迹来自交换求和
+
+![沿A B A B C终点的路径，资格圆面积逐步衰减并在重复访问时叠加，最后的奖励按保留下来的资格更新A B C的价值。](../assets/crl-figures/credit-visit-footprints.svg)
+
+沿用前面的五步路径，选取 t=0、1、2、4 的快照。蓝点是当前位置，青色圆面积表示资格。末步奖励到来时，橙条给出 α=0.1 的价值增量；先使用这次反馈，随后才清空迹。
 
 记固定预测为 $v_t=v_w(S_t)$。将前向递推减去 $v_t$，把一项 $\gamma v_{t+1}$ 加入并减去，便能用 TD 误差替代整段奖励。反复展开直到边界，就得到误差和。
 
@@ -277,6 +317,18 @@ $$
 
 这里是固定线性特征的 accumulating TD(λ)。每步更新立即生效。小步长时与某些冻结近似的差别可能较小，但不能将近似写成任意步长下的精确等价。
 
+只展开相邻两个误差，就能找到失配的位置。前一步把 $S_{t+1}$ 当作尾部预测时用 $w_t$，后一步减去当前预测时已经用 $w_{t+1}$。两个值的状态相同，参数却不同：
+
+$$
+\begin{aligned}\delta_t+\gamma\delta_{t+1}={}&R_{t+1}+\gamma R_{t+2}+\gamma^2v_{w_{t+1}}(S_{t+2})-v_{w_t}(S_t)\\&+\gamma\{v_{w_t}(S_{t+1})-v_{w_{t+1}}(S_{t+1})\}.\end{aligned}
+$$
+
+末行是冻结推导中原本相消的部分。固定线性特征也会出现它；神经网络还会增加输出梯度版本的差异。True-online 要处理的是整个在线前向算法的这种时序，而非只为旧资格选择另一衰减率。
+
+![同一个后继状态在相邻两次TD计算中分别使用1.0和1.4的预测，正负色带长度不同；未能相消的部分解释在线TD误差和与冻结目标的差。](../assets/crl-figures/credit-version-cancellation.svg)
+
+色带长度表示同一个 $S_1$ 在两次误差中的贡献。若参数不变，正负两项等长；这里更新把预测从 1.0 改成 1.4，留下 $\gamma(1.0-1.4)=-0.36$。图使用给定预测快照检验上式。
+
 若使用状态相关 continuation，必须区分到达当前状态的 $\gamma_t$ 与离开当前状态的 $\gamma_{t+1}$。前者衰减旧迹，后者构造 bootstrap。真正终止的 $\gamma_{t+1}=0$ 不意味着应当在使用终点奖励之前删除过去资格。
 
 $$
@@ -340,6 +392,10 @@ $$
 这些处理可以沿上面的算例分别检查。冻结表示后，比较两条迹是否重合；只更换目标网络时，观察梯度差异是否仍在；保存输入重算时，则记录增加的内存和求导次数。这样一次受控改变对应一个具体问题，学习曲线也更容易解释。
 
 配套实验从六步链开始。奖励只在第六步出现，成功概率为 0.7，折扣为 0.9；每个非终止状态的真值是 0.7 乘以到奖励的相应折扣幂。输入是位置的两个数值特征，网络是 2–6–1 tanh。这个例子没有状态混叠、策略变化或离策略比率，因而能先隔离非线性信用与更新协议。
+
+实际 `neural_td_trace.py` 在每次交互中先用 `value_gradient(x)` 得到当前预测和梯度，再用同一旧网络计算 `next_value`。`trace_step(trace, gradient, gamma_in, 0.8)` 把数值梯度加入资格；`net.add([delta*z for z in trace], .03)` 才真正改写参数。它使用普通 SGD 形式，没有把一步 TD 平方误差交给自动求导后误当成长资格更新。末步的 `gamma_out=0` 只去掉尾值，当前更新完成后才清迹。
+
+这个顺序也说明诊断量的范围。程序把上一输入再送入新网络，记录其梯度与上次存值的差，测到的是相邻两次参数版本的差异；它没有保存整段历史来计算上式的完整重算资格。实验中的解析真值只用于报告全状态预测误差，既不进入 TD target，也不替代实际采到的末步随机奖励。
 
 | 入口 | 更新与资源协议 | 读结果时要回答什么 |
 | --- | --- | --- |
@@ -556,6 +612,8 @@ python3 implementations/classic/true_online_td.py --steps 1200 --seeds 0 1 2 3 4
 
 ## SwiftTD：信用长度、坐标步长与有效更新率必须分别控制
 
+深入阅读：进一步分开信用长度、坐标步长和实际更新率，阅读 SwiftTD 的设计。
+
 前面的 true-online 方法处理过去预测应得到多少信用。另一个问题是，给定这些信用，这次更新究竟改变预测多少？若每个权重都有自己的步长，仅检查每一个步长是否很小并不够。先暂时去掉旧迹与自举，考虑线性预测 $v=w^\top x$ 和本次固定的标签 y。
 
 $$
@@ -620,6 +678,8 @@ True-online 第二步的荷兰迹为 $1+(1-0.5\times1)=1.5$。当前预测为 0.
 <a id="lesson-prefix-walkthrough"></a>
 
 ## 从两步到三步：同一经验流上的预测版本
+
+深入阅读：逐步追踪在线前缀中的预测版本，核对主文的前向与后向计算。
 
 把刚才的重复特征例子扩成两维，就能同时看见重访与共享。给定已观察到的三条转移 $A\xrightarrow{1}B\xrightarrow{0}A\xrightarrow{2}\bot$，取 $x(A)=(1,0)$、$x(B)=(1,1)$、$x(\bot)=0$，初值 $w_0=(0,0)$，$\gamma=1$、$\lambda=\alpha=1/2$。这里只规定这一条经验记录，不用它推断状态的全部转移规律。先预测：第二条转移的奖励为零，是否意味着两种在线方法都不再更新？
 
@@ -715,6 +775,8 @@ def control_trace_step(q, trace, state, action, reward, next_state, next_action,
 
 ## 从可靠预测到控制：Swift-Sarsa 保留了哪些额外依赖
 
+深入阅读：将预测机制用于控制，检查策略变化和动作采样带来的新依赖。
+
 Swift-Sarsa（2025 扩展摘要）把 SwiftTD 的机制用于 true-online Sarsa。它的 operant-conditioning 问题让少数观测信号与延迟奖励相关，大量无关信号的出现分布漂移。这个设定把“给相关特征分配学习率”与复杂探索分开，不意味着已经解决一般视觉控制。
 
 $$
@@ -744,6 +806,8 @@ $$
 $$
 
 空乘积为一，所以当前一步误差不乘后续动作比率。终止时动作期望为零；非终止窗口保留尾部期望。这里的c是信用传播系数，不是折扣，也不是奖励。
+
+这里的“期望”只枚举已到达的 $S_{t+1}$ 上的下一动作。$R_{t+1}$ 与 $S_{t+1}$ 仍是当前实际动作产生的一次样本；完整 Bellman 备份还需对 $p(s',r\mid s,a)$ 平均。动作价值已经条件在当前 $A_t$ 上，所以当前一步不再乘 $\rho_t$；状态价值还要将当前动作也按目标策略平均。后面 V-trace 的状态误差因此需要当前动作比率。这个对象差别决定了比率的位置。
 
 这不是把未来奖励简单相加。每个 $\delta_k^\pi$ 已经减去实际动作的当前Q，并加入目标动作期望。传播系数再决定沿行为轨迹采到的后续误差可以传多远。交换求和后，旧预测梯度在到达当前动作时乘 $\gamma c_t$。
 
@@ -864,6 +928,8 @@ def clipped_policy(target, behavior, rho_cap):
 
 ## 9. 两种不同的选择：Q(σ)的动作期望与V-trace的策略校正
 
+深入阅读：分别展开 Q(σ) 的采样与期望混合，以及 V-trace 的策略校正。
+
 $\lambda$ 混合回报长度，$\sigma$ 混合后继动作的采样与期望。先取on-policy、冻结Q的情形。记 $\bar Q_{t+1}$ 为目标策略动作期望。Q(σ)的一步误差和多步传播同时改变，而不是只修改其中一个。
 
 $$
@@ -904,6 +970,8 @@ IMPALA作者代码先计算行为与目标动作log-prob的差，再用反向sca
 
 ## 多步控制变量：期望备份为何还需要真实路径
 
+深入阅读：用控制变量分析期望备份与真实采样路径的关系。
+
 Q(σ)选择采样与期望的混合程度；De Asis 与 Sutton 的另一篇 2018 年工作问：已经采到长回报，能否减去其中可由当前价值解释的波动？答案是逐决策加入条件均值为零的控制变量。
 
 $$
@@ -939,6 +1007,22 @@ $$
 $$
 
 到达当前状态的γtλt衰减旧资格；离开当前状态的γt+1λt+1形成前向延续。终止折扣为零会删除尾值，但终止奖励仍要乘此前已经存在的资格。
+
+这已经给出了 [GVF](gvf.md) 的信用接口。把 R 换成某个问题的累积量 $C^q$，把策略换成 $\pi_q$，并令 continuation 为 $\gamma^q$，每个问题就有自己的目标与资格。无比率递推要求数据来自 $\pi_q$；同一行为流学习不同目标策略时，还需前面讲过的离策略校正。若问题是“下次到门口之前共用多少步”，可以每步取 $C^q=1$，到门口令 $\gamma^q=0$。到门口这一步仍计入时长；随后问题迹的旧信用被切断，机器人和其他问题继续运行。问题定义使回报有界或可积，学习时选择的 λ 不能代替这一存在性条件。
+
+技能停止也要按所预测的对象处理。预测一个 option 内部的累计量时，停止函数 $\beta_o$ 可以进入 $\gamma^q_{t+1}=\gamma_{t+1}(1-\beta_o(S_{t+1}))$，结束这项内部回报。评价上层控制器调用技能的价值时，同一停止却是下次决策的开始：历时 $\tau$ 的目标通常保留 $\gamma^\tau V(S_{t+\tau})$。只有环境真正终止才把这个控制尾值置零。因此每项资格应跟随自己的预测／控制目标，不能用一个 option-done 标记统一清空所有学习对象。
+
+持续交互还可以改用平均奖励准则。在有限、不可约且奖励可积的固定策略链中，设每步奖励率为 $\bar r_\pi$，差分价值为 $H_\pi$，它满足 $H_\pi(s)=\mathbb E[R_{t+1}-\bar r_\pi+H_\pi(S_{t+1})\mid s]$，并需选择一个加性常数规范。先固定奖励率参照 $\bar r$ 和预测参数 w，在有限观察窗口内定义：
+
+$$
+\begin{aligned}G_t^{(n),\rm diff}&=\sum_{j=0}^{n-1}(R_{t+j+1}-\bar r)+H_w(S_{t+n}),\\\delta_t^{\rm diff}&=R_{t+1}-\bar r+H_w(S_{t+1})-H_w(S_t),\\G_t^{\lambda,\rm diff}-H_w(S_t)&=\sum_{k=t}^{T-1}\lambda^{k-t}\delta_k^{\rm diff},\qquad z_t=\lambda z_{t-1}+\nabla_wH_w(S_t).\end{aligned}
+$$
+
+前向目标仍按本章的有限窗口几何混合；末端保留差分尾值。恒等式对任何固定奖励率参照成立，只有参照等于真实奖励率时才对应所述差分 Bellman 真值。窗口边界本身不清迹。
+
+在线算法再用当前 $\bar r_t,w_t$ 形成误差，并执行 $w_{t+1}=w_t+\alpha\delta_t^{\rm diff}z_t$。奖励率也会学习时，必须另行规定它的更新；若用新的同一个奖励率重算旧目标，第 n 步目标就会整体改变 $-n\,\Delta\bar r$。因此固定参照的总和等价没有证明在线变参、变奖励率的每前缀等价。$\lambda<1$ 在有界梯度下给资格几何衰减；$\lambda=1$ 的持续非终止任务通常没有有限的完整 Monte Carlo return，中心化也不保证随机无限和收敛。完整奖励率估计与差分学习见[平均奖励章](average.md)。
+
+配套 `variable_lambda_equivalence` 使用 `discounts[t]` 衰减旧迹、`discounts[t+1]` 构造目标；传入中心化奖励和全一折扣还可核对上述有限差分目标。它只检查冻结总增量。教程的 `differential_td_onpolicy.update` 则从同一个旧误差同时更新当前状态价值与奖励率，是一步方法；把它与长迹组合需要明确定义新的在线规则。[完整架构的逐步循环](architectures.md#lesson-cycle-real-step)采用另一项明确分工：迹学习技能内的奖励预测，高层另用完整技能后果学习差分控制；模型规划不向这条真实迹添加访问。
 
 在可精确表示的表格问题中，不同合法λ可以共享真实价值固定点。投影和函数逼近介入后，λ会影响逼近解，因而不能只把它解释为优化速度参数。在线适应λ还会使目标随学习改变；在旧状态分布上估计得很好的长度函数，在变化后的分布上可能已经过时。
 
@@ -995,6 +1079,8 @@ def greedy_lambda(bias_squared, return_variance):
 <a id="lesson-expected-traces"></a>
 
 ## 11. Expected Eligibility Traces：信用能否复用于另一条过去路径？
+
+深入阅读：进一步学习条件于当前状态的平均迹，研究信用如何在不同过去路径间复用。
 
 普通迹只包含本次走过的状态。设两条路径在同一个状态汇合，后面的随机奖励与此前走哪条路径无关。当前奖励可以同时更新那些可能到达汇合状态的路径。期望资格迹学习的是“到达此状态时，过去资格通常是什么”，不是预测未来奖励的successor feature。
 
@@ -1053,6 +1139,8 @@ def expected_trace_enumeration(hidden_history=False):
 <a id="lesson-gradient-traces"></a>
 
 ## 12. 深度梯度资格迹：目标、辅助预测与三条递推
+
+深入阅读：展开非线性资格方向、辅助预测和梯度迹的三条递推。
 
 半梯度TD把bootstrap目标当常数，用 $\delta_tz_t$ 更新预测。非线性、off-policy和bootstrap组合时，这个方向不一定来自一个稳定的整体目标。Elelimy等的2025年工作先指定广义投影Bellman误差，再推导多步梯度算法。下面先取固定策略、on-policy、固定 $\gamma,\lambda$ 的情形；这是能够逐项检验的起点。
 
@@ -1185,6 +1273,8 @@ python3 implementations/extended_classic/gradient_eligibility_traces.py --steps 
 
 ## Stream-X 与梯度资格迹：变稳的两条路线不能混为一谈
 
+深入阅读：比较改变信用算子与限制实际更新两条稳定化路线。
+
 流式深度学习至少有两种不同的修复对象。一种保留半梯度方向，控制每次更新的尺度与表示数值；Stream-X 属于这条路线。另一种先改变价值估计的目标，再推导辅助网络和梯度校正；Deep RL with Gradient Eligibility Traces（RLC 2025）属于后者。
 
 $$
@@ -1249,13 +1339,17 @@ def actor_trace_equivalence(scores, rewards, values, gamma, lam):
 
 深度实现每步先计算主网络当前输出的梯度，再将数值梯度加入独立的资格缓冲。普通半梯度迹不保留历史自动求导图；否则内存会随时间增长。共享actor／critic主干时，两个目标的方向要明确组合。对过去各条梯度先分别做Adam变换，再累加，与先累加资格方向后交给Adam通常不同；优化器选择属于算法定义。
 
-若输入是递归状态 $h_t=f_\theta(h_{t-1},u_t)$，当前输出的梯度还要经过状态构造。RTRL 保存 $E_t=\partial h_t/\partial\theta$。它回答旧输入通过递归计算怎样影响当前输出；资格迹则进一步把不同输出时刻的梯度按回报信用组合。两种记忆不能互相替代。
+若输入是递归状态 $h_t=f_\theta(h_{t-1},u_t)$，当前输出的梯度还要经过状态构造。先固定输入序列、参数和与参数无关的初始活动，定义 $\mathsf S_t=\mathrm dh_t/\mathrm d\theta$。RTRL 用链式法则逐步计算这个状态敏感度。若有 n 个活动坐标、p 个参数，它是 $n\times p$ 矩阵；价值资格则是 p 维向量，汇集不同预测时刻的梯度。
 
 $$
-\begin{aligned}E_t&=\frac{\partial f_\theta}{\partial h_{t-1}}E_{t-1}+\left.\frac{\partial f_\theta}{\partial\theta}\right|_{h_{t-1}},\\g_t&=E_t^\top\nabla_hv_\theta(h_t)+\left.\nabla_\theta v_\theta(h_t)\right|_{h_t},\\z_t&=\gamma\lambda z_{t-1}+g_t.\end{aligned}
+\begin{aligned}\mathsf S_t&=\frac{\partial f_\theta}{\partial h_{t-1}}\mathsf S_{t-1}+\left.\frac{\partial f_\theta}{\partial\theta}\right|_{h_{t-1}},\\g_t&=\mathsf S_t^\top\nabla_hv_\theta(h_t)+\left.\nabla_\theta v_\theta(h_t)\right|_{h_t},\\z_t&=\gamma_t\lambda_tz_{t-1}+g_t.\end{aligned}
 $$
 
-这些导数以固定参数的计算图为精确参照。训练中参数不断改变时，过去活动与梯度均有其生成时刻；TBPTT 的 detach 又会截断部分路径。不能因保存了长资格迹，就认定被截断的递归参数梯度已经恢复。
+第一行沿状态构造的计算路径求导，第二行形成当前输出梯度，第三行才按回报长度组合过去的输出梯度。对固定参数程序，RTRL 与完整 BPTT 计算同一导数；TBPTT 的 detach 会删掉第一行中的部分历史路径，第三行的长资格不能恢复被删掉的导数。
+
+收到新经验后，还要防止把下一状态的敏感度误用到当前预测。缓存当前 $h_t,\mathsf S_t,g_t$，再从它们形成 $h_{t+1},\mathsf S_{t+1}$ 与下一预测；用 $R_{t+1}+\gamma_{t+1}v_\theta(h_{t+1})-v_\theta(h_t)$ 形成误差，向资格加入的仍是 $g_t$。半梯度 TD 固定这个 bootstrap 标签，所以不在本次方向中另加 $\gamma_{t+1}\nabla_\theta v_\theta(h_{t+1})$。若改为对 TD 残差完整求导，才同时使用当前与后继导数，并得到另一个更新目标。
+
+参数逐步改变后，活动已经由不同版本产生。继续携带同样形式的敏感度递推，可以解释为对已记录的各次参数使用共同加一个微小偏移、同时固定参数日程的导数；它一般不等于用当前参数重跑所有旧输入的导数。若还要评价步长或学习规则，则需对含权重、活动、资格和优化器的整个学习器状态求导。那条元敏感度还会经过参数更新本身，见[状态章的版本算例](state.md#lesson-online-versions)与[元学习章](meta.md#lesson-trace-sensitivity)。
 
 最小例子：$h_t=0.5h_{t-1}+bu_t$，$h_0=0$，输入依次为 1、0、0。最终 $h=0.25b$，所以 $\partial h/\partial b=0.25$。取 $b=0.2$、目标 1，平方损失梯度为 $(0.05-1)0.25=-0.2375$。若在第一次输入后 detach，保留的活动仍是 0.05，但后两步输入为零，截断梯度变成零。
 
@@ -1979,6 +2073,8 @@ python3 examples/credit_assignment_lab.py all
 - [Schulman等 · High-Dimensional Continuous Control Using Generalized Advantage Estimation · ICLR 2016](https://arxiv.org/html/1506.02438)：TD误差和的优势解释、bias–variance及折扣目标约定；GAE不等于完整actor迹学习协议。
 
 - [Elelimy等 · Real-Time Recurrent Learning using Trace Units in Reinforcement Learning · NeurIPS 2024](https://arxiv.org/html/2409.01449)：特定递归结构的在线敏感度、固定参数精确导数与变参时过时问题。
+
+- [Williams & Zipser · Gradient-Based Learning Algorithms for Recurrent Networks and Their Computational Complexity · 1995](https://web.stanford.edu/class/psych209a/ReadingsByDate/02_25/Williams%20Zipser95RecNets.pdf)：固定权重下的精确求导定义，以及式 (31)–(34) 的状态敏感度、初始化和当前误差读取；持续运行时还须规定参数更新时序。
 
 - [RTU作者递归实现](https://github.com/esraaelelimy/rtus/blob/main/src/nets/rtus/non_linear_rtus.py)：FwdRealTimeNonLinearRTUs推进活动与grad_memory；自定义求导使用已存敏感度。
 

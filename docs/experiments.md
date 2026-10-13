@@ -202,7 +202,7 @@ python3 examples/deep_textbook_lab.py test
 
 [源码](../examples/deep_textbook_lab.py)
 
-## [深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)
+## [深度 RL 的训练循环：经验、目标与更新](../foundations/deep/practice.md)
 
 本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。
 
@@ -345,9 +345,9 @@ python examples/lifelong_algorithms_lab.py average
 
 [源码](../examples/lifelong_algorithms_lab.py)
 
-## [Agent state：部分可观测性、递归记忆与在线信用分配](../textbook/state.md)
+## [智能体状态：从经验学习怎样记住](../textbook/state.md)
 
-Bayes 过滤、标量 RTRL/BPTT/TBPTT、重置式监督提示实验、单个线性 RTU 风格旋转块；不是原论文 RL 基准复现。
+深入阅读的 Bayes 过滤、RTRL/BPTT/TBPTT、重置式监督提示实验与 RTU 风格旋转块；主线无重置写入门另有单文件入口。
 
 ```bash
 python3 examples/state_meta_lab.py state
@@ -451,7 +451,7 @@ python3 examples/state_meta_lab.py meta
 
 [源码](../examples/state_meta_lab.py)
 
-## [目标与子任务：条件控制、经验重用与技能设计](../textbook/goals.md)
+## [子目标构建：从经验到技能与规划](../textbook/goals.md)
 
 目标重标记、子任务 TD 与有限目标课程的表格实验；深度方法另附原论文和作者工程。
 
@@ -532,9 +532,9 @@ python examples/lifelong_algorithms_lab.py exploration
 
 [源码](../examples/lifelong_algorithms_lab.py)
 
-## [持续智能体架构：模块接口、更新调度与长期评价](../textbook/architectures.md)
+## [持续智能体架构：从一次经验到下一次行动](../textbook/architectures.md)
 
-六状态、双动作、手工记忆的集成教学骨架；不是完整 OaK/STOMP 性能复现。
+深入阅读中的六状态、双动作、手工记忆骨架；主线七位置环的单文件程序在“沿运行记录走完同一次学习循环”一节下载。二者均不是完整 OaK/STOMP 性能复现。
 
 ```bash
 python examples/lifelong_algorithms_lab.py architectures

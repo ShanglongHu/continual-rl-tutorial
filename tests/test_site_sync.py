@@ -11,6 +11,21 @@ sync=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sync)
 
 class PublicExport(unittest.TestCase):
+    def test_first_task_directory_matches_rewritten_commands(self):
+        names=['bandit_tracking_walkthrough.py','gae_ppo_walkthrough.py','compare_continual_runs.py']
+        intro='以下练习只需 Python 3 标准库。将所列文件保存到同一目录，在文件所在目录运行命令。'
+        source='<a id="practice-first-run"></a>\n\n'+intro+'\n\n'+'\n\n'.join('### 任务\n\n```bash\npython3 '+name+'\n```' for name in names)
+        with tempfile.TemporaryDirectory() as directory, patch.object(sync,'ROOT',Path(directory)):
+            published={'tutorials/'+name for name in names}
+            output=sync.rewrite_markdown(source,'practice-routes.md','docs/practice-routes.md',{},set(),published_tutorials=published)
+            self.assertIn('在教程仓库根目录运行命令',output)
+            self.assertIn('raw-runs.zip 从下方链接下载，也放在仓库根目录',output)
+            self.assertNotIn('在文件所在目录',output)
+            for name in names:self.assertIn('python3 tutorials/'+name,output)
+            self.assertEqual(sync.rewrite_markdown(output,'practice-routes.md','docs/practice-routes.md',{},set(),published_tutorials=published),output)
+            unrelated=sync.rewrite_markdown(source,'other.md','docs/other.md',{},set(),published_tutorials=published)
+            self.assertIn(intro,unrelated)
+
     def test_original_figure_first_sync_rewrites_without_an_existing_asset(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(sync, 'ROOT', Path(directory)):

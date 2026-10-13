@@ -28,7 +28,7 @@
 - [第 3 章 · 策略更新的尺度：TRPO 与 PPO](deep/trust-region.md)
 - [第 4 章 · 连续动作的价值优化：DDPG 与 TD3](deep/deterministic-control.md)
 - [第 5 章 · 最大熵连续控制：SAC 的价值、密度与温度](deep/entropy-control.md)
-- [第 6 章 · 深度 RL 的机制接口：模型、记忆、离线数据与实验](deep/practice.md)
+- [第 6 章 · 深度 RL 的训练循环：经验、目标与更新](deep/practice.md)
 - [第 7 章 · 大规模训练：算法与系统怎样共同设计](deep/systems.md)
 - [不完全可观测：信念状态、信息行动与递归记忆](deep/partial-observability.md)
 - [探索与不确定性：后验、乐观估计和时间一致行动](deep/exploration.md)

@@ -8,6 +8,12 @@
 - 从目标函数推导 replay、EWC、策略蒸馏与 CLEAR，并把算法落实为完整存储/采样/更新流程。
 - 用固定内存、相同数据与计算预算设计保留—适应对照，而不让“存得更多”掩盖算法贡献。
 
+## 阅读这条论证
+
+先固定要保留的知识及其评价分布，才能区分遗忘与问题本身的变化。经验重放保存学习材料，功能克隆保存旧答案，参数约束近似保存旧损失的几何结构。最后检查这些旧知识在预测、技能和规划中是否仍有原来的含义。
+
+[定义保留与遗忘](../textbook/retention.md#lesson-setting) → [从历史分布到重放更新](../textbook/retention.md#lesson-derive) → [结合旧经验与旧答案](../textbook/retention.md#lesson-clear) → [由功能变化到参数约束](../textbook/retention.md#lesson-ewc) → [核对实际更新](../textbook/retention.md#lesson-code) → [保持知识的含义与用途](../textbook/retention.md#lesson-agent-memory)
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -73,11 +79,15 @@ $\theta$ 为当前参数，$\theta_{\rm ref}$ 是历史参考，$L_{\rm now}$ �
 
 关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
 
-- 组合不同学习问题 · [可塑性与特征更新](../textbook/plasticity.md)：保留测旧能力下降，可塑性测新学习速度；两者可能同时出现但需不同对照。
+- 组合不同学习问题 · [可塑性与特征更新](../textbook/plasticity.md)：保持要求可能限制新目标所需的方向；分别测只读旧功能和固定预算的新学习，再比较撤掉约束后的变化。
 
-- 组合不同学习问题 · [转移模型与后果模型](../textbook/models.md)：模型/SF也可保留结构知识，但模型过期与重估成本须另测。
+- 组合不同学习问题 · [通用价值函数与预测知识](../textbook/gvf.md)：保留一个答案要固定累积信号、目标策略、延续规则和评价分布；问题改变后的误差不直接等于遗忘。
 
-- 改变信息或数据协议 · [流式更新与稳定性](../textbook/streaming.md)：原始经验replay超出严格不重放协议，参数统计和功能约束也需记入预算。
+- 组合不同学习问题 · [Options 与技能发现](../textbook/options.md)：旧技能与旧后果模型有不同用途；内部策略或停止改变后，旧模型需按新行为重新学习。
+
+- 组合不同学习问题 · [平均奖励与差分价值](../textbook/average.md)：差分价值只在加性常数意义下确定，功能克隆前应对齐规范；策略改变还会改变奖励率与bias。
+
+- 改变信息或数据协议 · [流式更新与稳定性](../textbook/streaming.md)：严格不重放协议不能靠旧经验重建被删功能；参数锚、重要性和教师统计仍属于持久预算。
 
 <a id="problem-solution"></a>
 
@@ -91,11 +101,15 @@ $\theta$ 为当前参数，$\theta_{\rm ref}$ 是历史参考，$L_{\rm now}$ �
 
 先确定未来需保留什么，再用预算内的经验、局部几何或教师输出近似其约束。
 
-1. [选择代表的历史经验分布](../textbook/retention.md#lesson-derive)：因为FIFO与reservoir保留不同年龄分布，明确保存与训练采样规则，匹配所需历史评价。
+1. [固定保留对象与评价分布](../textbook/retention.md#lesson-setting)：先把同一问题上的功能退化与输入分布、目标本身的改变分开，再决定哪些旧答案仍需保持。
 
-2. [纠偏历史学习并约束功能漂移](../textbook/retention.md#lesson-clear)：因为旧行为与当前策略不同，CLEAR用V-trace处理旧经验并用旧输出克隆限制漂移，两项目的分开。
+2. [让旧证据继续影响更新](../textbook/retention.md#lesson-derive)：由buffer上的样本梯度推到历史混合；保存规则决定覆盖，TD重放可重算新标签，而教师输出保留旧答案。
 
-3. [以局部参数几何压缩历史](../textbook/retention.md#lesson-ewc)：因为不能总保留数据，EWC保存锚点与对角Fisher近似；检查边界触发、容量和局部近似误差。
+3. [连接历史纠偏与功能克隆](../textbook/retention.md#lesson-clear)：CLEAR以V-trace利用旧行为数据，以教师到学生的KL和价值克隆拉回输出；奖励更新仍可改善旧策略。
+
+4. [由局部功能变化构造参数约束](../textbook/retention.md#lesson-ewc)：从旧后验和KL曲率说明Fisher近似，再落实锚点恢复力；对角压缩丢掉相关方向，首次锚点更新的惩罚梯度为零。
+
+5. [检查旧知识的消费者](../textbook/retention.md#lesson-agent-memory)：预测、技能模型与差分价值各有问题规格、版本和规范；共享表示变化后，保存数值未必保存了原来的用途。
 
 结论与条件：reservoir的时间索引保留概率可精确检验；EWC是局部曲率代理，CLEAR依赖覆盖和off-policy条件，均不提供任意变化任务的无遗忘保证。
 
@@ -113,6 +127,16 @@ $\theta$ 为当前参数，$\theta_{\rm ref}$ 是历史参考，$L_{\rm now}$ �
 ## 1 · 保留的对象与评价目标
 
 共享参数让新经验影响许多状态，也可能改变很久没有访问的状态上的行为。考虑一个曾学会走左门的导航智能体。门的开关暂时改变，之后又恢复；若新训练破坏了旧技能，回来时就要重新付出学习代价。知识保留关心怎样减少这种代价。但若门永久封死，保留旧动作偏好反而妨碍适应。因此首先要说明历史知识以后在哪些条件下仍有用，再选择保留的数据、参数约束或模型。
+
+先把“旧知识还在”变成一个可比较的量。记 $q$ 为固定问题的规格，包括评价所用的环境规律或标签规则；$d$ 为固定评价输入分布，$L_{q,d}(\theta)=\mathbb E_{x\sim d}[\ell_q(f_\theta(x),x)]$ 为只读评价损失。对于 GVF，$q$ 还包含 cumulant、目标策略和 continuation；对于技能，还要包含内部策略与停止规则。保存时刻为 $a$，后来的时刻为 $b$，则 $F_{a\to b}^{q,d}=L_{q,d}(\theta_b)-L_{q,d}(\theta_a)$ 测量同一问题、同一分布上的功能退化。正值表示损失增加；评价过程冻结参数、运行统计与问题规格。
+
+$$
+\begin{aligned}L_{q,d_b}(\theta_b)-L_{q,d_a}(\theta_a)&=\underbrace{L_{q,d_a}(\theta_b)-L_{q,d_a}(\theta_a)}_{\text{固定分布上的参数影响}}\\&\quad+\underbrace{L_{q,d_b}(\theta_b)-L_{q,d_a}(\theta_b)}_{\text{固定参数下的评价分布改变}}.\end{aligned}
+$$
+
+这个加减同一项的恒等式说明，在线误差变大可以来自学到的函数改变，也可以来自访问了更难的状态。若问题 q 自身也变了，还需单独比较目标变化；用新门锁规则测试旧开门答案，并没有在测同一项知识的保持。
+
+控制性能还多了一层依赖：参数改变策略，策略改变后续状态分布。固定一批历史输入能隔离输出漂移，却没有测到新的动作会把智能体带到哪里。旧环境上的冻结策略评测回答技能是否仍可用，独立副本上的重新学习曲线回答恢复要付出多少经验，在线生命期收益回答这些保持和恢复是否值得。三个对象各自有用途。
 
 用 A→B→A 的重复环境可以观察保留，但它只是一个研究协议：是否给任务 ID、是否外部 reset、每段多长、是否重新初始化优化器，都影响解释。真实 single-life 不能随时回 A 测试；可以用独立评测副本诊断，但副本不能向在线 agent 提供额外训练数据或重置其主状态。
 
@@ -134,6 +158,8 @@ $$
 <a id="lesson-shared-switch"></a>
 
 ### 同一反转问题：忘得更多，也可能学得更快
+
+深入阅读：在固定反转问题上分别测量旧知识下降和新知识学习速度。
 
 先把回报、探索和数据覆盖暂时拿开，只看一次目标反转。仪器给出左右线索 $x\in\{-1,+1\}$，两者等权；旧条件 A 的反馈为 $y=x$，新条件 B 为 $y=-x$。预测器是两层标量网络 $f_{u,v}(x)=v(ux)$，没有偏置或激活函数。它对输入仍是线性的，对两个待学习权重则是双线性的。本例给定已经准确预测 A 的检查点 $(u,v)=(1,1)$，不模拟其先前训练史。
 
@@ -179,6 +205,8 @@ python3 tutorials/retention_plasticity_walkthrough.py
 
 ## 2 · 经验重放与历史采样分布
 
+若还保存着旧问题的数据 $(x_i,y_i)$，最直接的做法是继续让它们约束当前预测。先考虑固定标签回归：$\widehat L_B(\theta)=|B|^{-1}\sum_{i\in B}\ell(f_\theta(x_i),y_i)$。从 buffer 均匀抽取索引 $I$，便有 $\mathbb E[\nabla\ell_I\mid B,\theta]=\nabla\widehat L_B(\theta)$。这条等式只说明当前 buffer 的样本梯度；buffer 是否代表希望保留的输入，仍由保存规则决定。
+
 Replay 使已经不再出现的状态继续影响梯度。FIFO buffer 强调近期数据；reservoir sampling 则在固定容量 $M$ 下，让前 $t$ 条样本具有相同的保留概率。两者代表的训练分布不同，应由未来评价需求决定。
 
 **算法：Reservoir sampling；保存分布与训练时的采样分布分别定义**
@@ -194,10 +222,12 @@ Replay 使已经不再出现的状态继续影响梯度。FIFO buffer 强调近�
 当 $t>M$ 时，新样本被接收的概率为 $M/t$。任一旧样本此前被保留的概率为 $M/(t-1)$，本步被替换的条件概率为 $1/t$；于是存活概率为 $[M/(t-1)](https://yingwen.io/zh/continual-rl/download/1-1/t)=M/t$。均匀的是时间索引，并不意味着每个任务、状态或稀有事件等权。固定的是样本槽位数；无限运行时精确计数 $t$ 的位数仍会增长。严格固定字节协议须给出最大寿命或有限精度与溢出规则，不能把这两个资源声明混为一谈。
 
 $$
-\mathbb E[\widehat g]= (1-\omega)\mathbb E_{d_t}[\nabla\ell]+\omega\mathbb E_{d_B}[\nabla\ell]
+\mathbb E[\widehat g\mid\theta,B]= (1-\omega)\mathbb E_{d_t}[\nabla\ell]+\omega\mathbb E_{d_B}[\nabla\ell]
 $$
 
-dB 由保存与采样共同决定。损失权重、batch 中新旧比例和重用次数都能改变实际有效权重，不能只报告 buffer 容量。
+这里固定当前参数、buffer 和新样本抽样分布，再对所抽索引取期望；不把与历史数据有关的在线参数当成独立随机量。dB 由保存与采样共同决定。损失权重、batch 中新旧比例和重用次数都改变实际有效权重。
+
+在 TD 中，旧转移通常只保存观测、行动、奖励和后继；目标 $y=R+\gamma\hat v_{\theta^-}(S')$ 由当前采用的目标参数重新计算。因此 replay 是再次使用一条关于世界的证据，而非总在重复当年的预测答案。每个更新内将 $y$ 停止梯度，可以得到固定标签损失的偏梯度；跨更新的自举过程仍不是最小化同一个固定监督目标。相反，保存旧网络输出再做蒸馏，才明确要求保留当年的答案。
 
 强化学习还有一个监督学习没有的困难：旧 transition 由旧策略 μ 产生，当前要改进的是 π。旧奖励和转移样本在平稳环境中仍可有效，但策略梯度与多步 bootstrap 需要处理行为差异；环境动力学若也变了，动作重要性比并不能把旧世界样本变成新世界样本。
 
@@ -239,6 +269,8 @@ python3 implementations/continual/reservoir_replay.py --steps 1200 --seeds 0 1 2
 
 CLEAR 结合三类更新：当前经验支持适应；历史经验通过 off-policy actor–critic 继续改善价值与行为；旧状态上的策略和价值克隆约束输出漂移。为此，存储项除转移外还包含旧策略分布与旧价值输出。该方法不要求任务边界，但保留效果取决于 replay 覆盖。
 
+先看克隆项为何能保护输出。给定一个保存的状态与教师策略 $\mu$，学生 logits 为 $z$，$\pi=\operatorname{softmax}(z)$。$D_{\rm KL}(\mu\Vert\pi)=\sum_a\mu_a\log\mu_a-\sum_a\mu_a\log\pi_a$ 的第一项与学生无关，对 $z_a$ 求导得到 $\pi_a-\mu_a$。教师概率较大的动作会被拉回，但这个方向不读取新奖励。值克隆同样把当前输出拉回保存值。要继续改进旧策略，还需在相同经验上计算奖励驱动的 RL 项。
+
 $$
 \begin{aligned}\bar\rho_t&=\min(\rho_{\max},\pi(A_t\mid S_t)/\mu(A_t\mid S_t)),\\c_t&=\min(c_{\max},\pi(A_t\mid S_t)/\mu(A_t\mid S_t)),\\d_t&=\bar\rho_t[R_{t+1}+\gamma V(S_{t+1})-V(S_t)],\\v_s^{\rm trace}&=V(S_s)+\sum_{t=s}^{s+n-1}\gamma^{t-s}\!\left(\prod_{i=s}^{t-1}c_i\right)d_t.\end{aligned}
 $$
@@ -267,13 +299,33 @@ RL 项应用于新旧数据，cloning 项用于 replay；再按原配置加入�
 
 ## 4 · EWC：用参数曲率近似旧知识
 
-无法保存旧数据时，可以保留旧解 $\theta_A$ 与每个参数的重要性。若旧损失在 $\theta_A$ 的梯度近似为零，二阶展开中的 Hessian 描述沿哪些方向移动代价大。EWC 用对角 Fisher 近似这种局部几何，从而让重要参数较难改变。
+若保存不了旧输入，还能否估计新更新对旧问题的代价？设旧损失在 $\theta_A$ 附近已经达到一个驻点，把候选参数写成 $\theta_A+\Delta$。Taylor 展开的线性项因旧梯度为零而消失，剩下的二次项描述离开旧解的局部代价。EWC 将这份几何压缩成每个参数一个非负数，再把近似旧损失与当前损失相加。
 
 $$
 \begin{aligned}L_A(\theta)&\approx L_A(\theta_A)+\tfrac12(\theta-\theta_A)^\top H_A(\theta-\theta_A),\\L_{\rm EWC}(\theta)&=L_B(\theta)+\frac{\kappa}{2}\sum_iF_i(\theta_i-\theta_{A,i})^2,\\\nabla_iL_{\rm EWC}&=\nabla_iL_B+\kappa F_i(\theta_i-\theta_{A,i}).\end{aligned}
 $$
 
 Fisher 来自指定概率模型的 score 外积期望：$F_i=\mathbb E[(\partial_{\theta_i}\log p_\theta(y\mid x))^2]$。真实 Fisher 在模型分布上取期望；经验 Fisher 改用观测标签。两者与实际 RL 损失的 Hessian 不普遍相等，因此样本、动作及分布都是估计器定义的一部分。
+
+为何引入 Fisher？在给定参数后条件独立的数据集 $D_A,D_B$ 与固定概率模型下，$p(\theta\mid D_A,D_B)\propto p(D_B\mid\theta)p(\theta\mid D_A)$。把旧后验在众数附近近似为 Gaussian，就得到对旧参数偏移的二次惩罚；EWC 进一步用 Fisher 的对角近似构造精度。这里“概率后验→局部 Gaussian→对角 Fisher”是三步不同的假设，$\kappa$ 还吸收数据规模与人为保留权重。RL 中的平方 TD 误差并不会自动提供这个概率解释。
+
+$$
+\mathbb E_{x\sim d_A}D_{\rm KL}\!\left(p_{\theta_A}(\cdot\mid x)\Vert p_{\theta_A+\Delta}(\cdot\mid x)\right)=\tfrac12\Delta^\top F_A\Delta+o(\|\Delta\|^2).
+$$
+
+在可微、支持不变且可交换微分与期望的概率模型中，KL 在相同参数处为零、梯度为零，二阶项为真实 Fisher。因而 Fisher 也描述旧分布上的局部输出变化。仅保存对角项会丢掉不同参数之间互相抵消的方向。
+
+这项等价可由概率归一化检查。记 score 为 $s_\theta=\nabla_\theta\log p_\theta$；对 $\sum_y p_\theta(y\mid x)=1$ 求一次导数得 $\mathbb E_{p_\theta}[s_\theta]=0$，再求一次得 $-\mathbb E_{p_\theta}[\nabla_\theta^2\log p_\theta]=\mathbb E_{p_\theta}[s_\theta s_\theta^\top]$。KL 对第二个参数的 Hessian 正是左边，于是得到上式。将期望换成任意实际标签分布时，这个归一化论证便不再直接成立。
+
+例如参数沿相关方向一起移动时，旧输出可以不变，而每个坐标单独移动都会改变它；对角近似会把这条可用方向也罚掉。另一方面，在锚点 $\theta=\theta_A$ 上，惩罚梯度恰好为零，所以 EWC 的第一次普通 SGD 更新与不加惩罚相同。其后偏移才产生恢复力。把 EWC 说成“从第一步就给每个权重降低学习率”，会误读实际更新。
+
+**算法：对应 ewc_update；它接收已经估计的 F，不负责从神经网络或轨迹估计 Fisher。**
+
+1. 给定锚点 $\theta_A$、冻结的重要性 $F$、强度 $\kappa$ 与步长 $\alpha$
+1. 读当前 $\theta$；仅由当前任务计算 $g_B$
+1. 对每个坐标计算 $g_i=g_{B,i}+\kappa F_i(\theta_i-\theta_{A,i})$
+1. 用同一旧参数同步写入 $\theta_i\leftarrow\theta_i-\alpha g_i$
+1. 只有知识整合规则触发时才更新锚点与重要性
 
 完整流程是：在约定的 consolidation 时刻保存 θA；在相应数据分布上估计并冻结 F；后续每步把二次惩罚加入当前损失。若没有任务边界，要定义 consolidation 的触发或连续累计规则。每个任务另存一个 F 与参数快照会随任务数增长；online EWC 将历史重要性折叠成固定规模统计，但其遗忘系数与近似误差需要评估。
 
@@ -311,9 +363,37 @@ python3 implementations/continual/ewc.py --steps 1200 --seeds 0 1 2 3 4 --out re
 
 [源码](../implementations/continual/ewc.py) · [逐种子记录](https://yingwen.io/crl-code/results/ewc/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/ewc/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/ewc/curves.json)
 
+<a id="lesson-credit-constraints"></a>
+
+### 进一步推导：历史信用怎样成为参数约束
+
+深入阅读：比较沿参数路径累计贡献的 SI 与限制更新方向的 GEM，区分它们与时间资格迹。
+
+EWC 在锚点估计局部敏感性。Synaptic Intelligence（SI）改为沿学习路径记录哪些坐标参与了损失下降。先固定一个可微损失 $L_A$：$dL_A=\sum_i\partial_iL_A\,d\theta_i$。对路径积分后，各坐标的贡献之和恰好等于首尾损失差。将积分离散化，得到可随更新累计的量：
+
+$$
+\omega_i\approx-\sum_{t\in A}g_{i,t}\Delta\theta_{i,t},\qquad\Omega_i\leftarrow\Omega_i+\frac{\omega_i}{(\theta_{A,i}-\theta_{{\rm start},i})^2+\xi},\qquad\xi>0.
+$$
+
+分子估计沿路径减少的损失，分母把它除以总位移的平方，构造以后使用的二次惩罚权重。实际配置还需规定负重要性的处理；带动量、噪声或其他正则时，每个坐标的贡献未必非负。
+
+小步、完整梯度对应的是同一个势函数的路径积分。随机梯度乘上由它产生的更新时，即使真实平均梯度很小，$-g_i\Delta\theta_i=\alpha g_i^2$ 仍可很大；因此噪声会被累计进“重要性”。在 RL 中，bootstrap 标签或目标策略不断改变，还会出现目标本身的漂移。这份优化路径信用与[资格迹](../textbook/credit.md)的时间信用不同：前者记录一个参数曾怎样参与拟合，后者把后来到达的预测误差分配给较早的访问。
+
+若保留少量旧数据，也可以直接约束本步的方向。令 $g=\nabla L_B$、$g_A=\nabla L_{A,\rm memory}$，实际步为 $-\alpha\widetilde g$。一阶展开给出 $L_{A,\rm memory}(\theta-\alpha\widetilde g)-L_{A,\rm memory}(\theta)\approx-\alpha g_A^\top\widetilde g$。GEM 因而把当前梯度投影到所有旧记忆梯度定义的半空间中。只有一条非零约束时，解可直接写出：
+
+$$
+\widetilde g=\arg\min_{z:\,g_A^\top z\geq0}\tfrac12\|z-g\|^2=\begin{cases}g,&g_A^\top g\geq0,\\g-\dfrac{g_A^\top g}{\|g_A\|^2}g_A,&g_A^\top g<0.\end{cases}
+$$
+
+若 gA=0，本条一阶约束不限制方向；这时二阶损失仍可能上升。多个旧任务需联立约束。保证的只是参考样本上一阶项不增，有限步长、未保存状态与变化中的 TD 标签仍须另查。
+
+EWC/SI 改变优化目标，GEM 改变允许的更新方向，replay 改变用于求方向的样本。这些选择都会影响新目标的改进速度。若约束把新任务所需方向去掉，低新任务性能可以来自明示的保持要求；诊断可塑性时应在副本中分别保留与撤掉这项要求。本页代码实现 EWC 和 replay 数值核，SI 与 GEM 在这里用于比较推导，并未接入训练器。
+
 <a id="lesson-model-memory"></a>
 
 ## 5 · DRAGO：保留世界模型，而非只保留旧策略
+
+深入阅读：将保留对象从价值和策略扩展到动力学模型，考察生成回放的额外假设。
 
 如果任务改变的只是奖励与起点，不同任务会让智能体看到同一世界的不同区域。此时值得保留的是动力学知识：旧任务的最优策略未必适用于新任务，但旧房间的布局仍然有效。DRAGO（Fu 等，ICML 2025）研究这一设定，允许已知任务切换、当前任务 buffer，以及一个旧模型快照；不保存往期任务的原始数据。
 
@@ -343,6 +423,8 @@ $$
 <a id="lesson-example"></a>
 
 ## 6 · 稳定性与适应性的二次例子
+
+深入阅读：用二次损失逐项计算保护旧知识与适应新目标的取舍。
 
 ![新旧任务的两个抛物线损失，以及保留权重零、一、五对应的三个参数位置。](../assets/crl-figures/concept-research-retention-conflict.svg)
 
@@ -446,14 +528,40 @@ python examples/lifelong_algorithms_lab.py test
 
 脚本检查固定容量、零容量、二次目标的驻点、教师与学生相同时的零克隆损失，以及 V-trace 的目标策略零概率边界。完整 CLEAR 还包含序列收集、分布式 actor 与神经网络更新；这些应在机制函数正确后逐层加入。
 
+| 实现入口 | 读入和写入 | 没有隐含实现的部分 |
+| --- | --- | --- |
+| reservoir_insert | seen 已包含本条样本；原地改固定容量 buffer | 不自动使任务等权，也不定义训练采样权重 |
+| ewc_update / ewc_scalar_optimum | 前者用当前梯度与冻结锚点写一次 SGD；后者解标量驻点 | 不估计 Fisher、不检测任务边界 |
+| clone_loss | 读取完整教师/学生概率及标量值，返回两个损失 | 不运行策略网络或 actor 梯度 |
+| vtrace_target | 读取 n 条奖励、n 个比率、n+1 个旧价值，返回首状态目标 | 常数折扣数值核；不自动处理循环状态、变折扣和终止 mask |
+
 - 最小研究矩阵：online-only、FIFO replay、reservoir replay、replay+clone、EWC；固定总字节数与每步梯度计算。
 - 评价至少三项：当前适应曲线、旧任务保持/重学速度、全生命期累计收益；另记真实回访与诊断评测的区别。
 - 当环境永久改变，增加“有意遗忘”的对照：统一历史 replay 是否持续施加过时约束？
 - 把任务 ID、教师 checkpoint、离线旧数据访问列为显式资源，不与无需这些信息的方法直接混淆。
 
+<a id="lesson-agent-memory"></a>
+
+## 保留的预测怎样继续服务整个智能体
+
+回到最初的门。旧策略告诉智能体过去怎样到达它；旧预测回答采用某个行为以后会发生什么；旧模型让规划器比较还没有执行的行为。奖励改变时，这三项知识的有效期可以不同。因此要保留的是带问题规格和使用条件的答案，随后才选择保存原始经验、参数统计还是教师输出。
+
+| 知识与消费者 | 保持评价固定什么 | 应随经验重新学习什么 |
+| --- | --- | --- |
+| GVF → 状态、探索或控制 | cumulant、目标策略、continuation 与参考输入分布 | 问题规格或真实后果改变后的答案 |
+| Option model → 高层规划 | 同一内部策略、停止规则及原子时间单位 | 技能改变后的奖励、时长和终点后果 |
+| 差分价值 → 平均奖励控制 | 同一策略/环境及同一加性规范；比较奖励率与相对价值 | 新策略的 gain 与 bias，不能克隆成旧策略的数值 |
+| 共享特征 → 多个预测头 | 输入或历史及各个读出头的功能 | 表示改变后所有受影响的读出和递归状态 |
+
+[平均奖励](../textbook/average.md)尤其能看出“保存数值”与“保存知识”的区别。$h$ 和 $h+c$ 表示同一个 bias 解；若直接克隆未经对齐的 $h$，会惩罚没有决策意义的常数漂移。另一方面，改变 option 的内部策略就改变了 [option model](../textbook/options.md#lesson-option-models) 的预测对象，即使旧模型误差为零，也应收集该新行为的后果。
+
+共享表示还要求版本一致。只保存旧隐状态并交给新网络，可能把旧坐标当成新坐标；保存观测序列并重新展开递归网络可以恢复一部分一致性，却增加存储、计算和前缀要求。严格流式条件通常只能留下有限状态与统计，因此参数保持和特征再生要同时处理预测头、资格迹和优化器状态。[下一章](../textbook/plasticity.md)研究怎样恢复学习通路，以及恢复时会删去哪部分旧功能。
+
 <a id="lesson-branches"></a>
 
 ## 8 · 数据、参数、功能、模块与快慢学习
+
+深入阅读：比较保留数据、参数几何、功能与独立模块的不同代价。
 
 | 条线 | 保存对象和更新机制 | 主要代价 |
 | --- | --- | --- |
@@ -945,7 +1053,7 @@ python examples/lifelong_algorithms_lab.py retention
 
 ## 参考文献与实现
 
-- [Sutton & Barto · Reinforcement Learning: An Introduction · §9.3–9.4](http://incompleteideas.net/book/the-book-2nd.html)：固定目标的梯度更新；线性函数逼近中的“线性”指相对于待学习权重。本章双线性参数算例为原创。
+- [Sutton & Barto · Reinforcement Learning: An Introduction · §9.3–9.4、§17.1–17.2](http://incompleteideas.net/book/the-book-2nd.html)：固定目标的梯度更新、GVF 的问题规格及预测知识的使用者。本章双线性参数算例和跨模块保持分析为原创推导。
 
 - [Lyle et al. · Understanding Plasticity in Neural Networks · §2–3](https://proceedings.mlr.press/v202/lyle23b.html)：区分旧任务遗忘与后续任务学习能力；明确探针目标、优化器和固定更新预算。
 
@@ -954,6 +1062,10 @@ python examples/lifelong_algorithms_lab.py retention
 - [Espeholt et al. · IMPALA](https://proceedings.mlr.press/v80/espeholt18a.html)：V-trace 原始推导及裁剪系数所控制的偏差、方差与目标策略。
 
 - [Kirkpatrick et al. · Overcoming catastrophic forgetting in neural networks](https://doi.org/10.1073/pnas.1611835114)：EWC 的概率解释与 Fisher 近似；注意不同 Fisher 估计器的语义。
+
+- [Zenke, Poole & Ganguli · Continual Learning Through Synaptic Intelligence](https://proceedings.mlr.press/v70/zenke17a.html)：沿参数路径累计损失下降贡献，构造二次保持代理；随机更新与有限步长限制积分解释。
+
+- [Lopez-Paz & Ranzato · Gradient Episodic Memory for Continual Learning](https://papers.nips.cc/paper/7225-gradient-episodic-memory-for-continual-learning)：记忆梯度的一阶不增约束与欧氏投影；不等于有限步长下所有旧状态的保持保证。
 
 - [Schwarz et al. · Progress & Compress](https://proceedings.mlr.press/v80/schwarz18a.html)：固定架构大小的 active/knowledge 双系统与 online EWC 压缩。
 

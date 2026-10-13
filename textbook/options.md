@@ -11,6 +11,12 @@
 - 沿同一经验流连接技能学习、模型更新与高层规划，识别版本失配和技能塌缩。
 - 按覆盖、可区分性、可预测性、主任务价值区分发现技能的算法线。
 
+## 阅读这条论证
+
+一步动作决定下一次转移，option 决定一段闭环行为。先规定何时可启动、如何行动、何时停止，再从原始步回报推到跨时长价值。随后分别学习内部动作、停止与高层选择，最后用技能后果模型进行规划。子任务信号和外部奖励在这个过程中各有用途。
+
+[规定技能行为](options.md#lesson-option-components) → [推导跨时长价值](options.md#lesson-derive) → [逐步学习技能价值](options.md#lesson-intra) → [学习行动与停止](options.md#lesson-critic) → [选择下一技能](options.md#lesson-high-level) → [从后果模型到规划](options.md#lesson-option-models) → [连成学习循环](options.md#lesson-option-loop) → [核对实现](options.md#lesson-code) → [选择技能发现准则](options.md#lesson-branches) → [由谱结构构造技能](options.md#lesson-eigenoptions)
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -19,7 +25,7 @@
 
 已掌握下面的概念即可直接阅读；需要回顾时再打开对应章节。
 
-- [目标与子任务：条件控制、经验重用与技能设计](goals.md)：区分目标规格与实现目标的行为。
+- [子目标构建：从经验到技能与规划](goals.md)：区分目标规格与实现目标的行为。
 - [TD 预测与控制：SARSA、Expected SARSA、Q-learning 和 Double Q](../foundations/tabular/temporal-difference.md)：掌握原子动作的控制更新，再处理可变时长行为。
 
 
@@ -84,11 +90,17 @@ $\mathcal O(s)$ 为在状态 $s$ 可启动的固定技能集合，$\gamma$ 按�
 
 关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
 
-- 特例：增加条件 · [持续控制与学习智能体比较](control.md)：相对完整持续控制，本章先限定Markov任务和具有启动、执行、停止接口的行为类；它在这个局部设定内再将一步动作推广为随机时长技能。
+- 特例：增加条件 · [持续控制与学习智能体比较](control.md)：本章先在Markov任务中规定可启动、闭环执行和停止的行为类，再比较该技能集合上的高层控制；完整持续控制还需计入发现与维护成本。
 
-- 组合不同学习问题 · [目标条件化与子任务构造](goals.md)：子任务给出行为评价标准，技能将它落实为策略、启动与停止。
+- 组合不同学习问题 · [目标条件化与子任务构造](goals.md)：子任务规定怎样评价内部行为；技能发现还要选择哪些子任务值得学习，内部信号与外部任务奖励分别使用。
 
-- 组合不同学习问题 · [转移模型与后果模型](models.md)：可执行技能还需后果模型才能用于模型规划；技能改变会改变模型题目。
+- 组合不同学习问题 · [通用价值函数与预测知识](gvf.md)：固定技能的内部策略与停止规则定义预测问题；段内奖励和折扣终点GVF共同提供高层需要的后果。
+
+- 组合不同学习问题 · [转移模型与后果模型](models.md)：规划读取当前技能版本的后果模型；策略、停止或表示改变时，旧模型和高层估值需要重新检查。
+
+- 改变评价目标 · [平均奖励与差分价值](average.md)：相同执行协议可改用长期奖励率，但模型和备份要保留未折扣奖励、真实时长与终点，按原始时间评价。
+
+- 组合不同学习问题 · [时间信用分配与资格迹](credit.md)：原始步与技能调用是两种信用时钟；同一λ在两种时钟上定义不同前向目标，技能停止也不等于外部回报终止。
 
 <a id="problem-solution"></a>
 
@@ -102,11 +114,17 @@ $\mathcal O(s)$ 为在状态 $s$ 可启动的固定技能集合，$\gamma$ 按�
 
 从原始回报按技能边界拆分，再把继续/停止分支展开为一步接口。
 
-1. [保留随机时长折扣](options.md#lesson-derive)：因为技能消耗多个原始步，SMDP标签使用内部折扣奖励与实际时长的尾折扣。
+1. [保留随机时长折扣](options.md#lesson-derive)：从完整原始回报拆出段内奖励与尾值，SMDP标签按真实持续时间折扣；固定策略评价之后再讨论高层控制。
 
-2. [每步估计相容技能](options.md#lesson-intra)：因为不用等技能完整结束，一步arrival value混合继续和高层重选，动作比率处理其他技能的行为差异。
+2. [每步估计相容技能](options.md#lesson-intra)：到达后的价值混合继续和高层重选，一步样本便可更新技能估计；动作比率只处理相应行为差异。
 
-3. [分别优化内部动作与停止](options.md#lesson-critic)：因为执行什么与何时交回高层是两种选择，Option-Critic用动作score与继续—切换优势构造不同梯度。
+3. [分别学习动作、停止与调用](options.md#lesson-critic)：内部动作使用score梯度，停止使用继续与重选的价值差；高层再在调用边界比较外部后果，各自遵守原始时间折扣。
+
+4. [把后果模型接到规划](options.md#lesson-option-models)：分别预测段内奖励与联合折扣终点，便能在尾值变化后复算备份；技能版本改变时重新检查模型含义。
+
+5. [连接逐步学习与边界提交](options.md#lesson-option-loop)：同一转移分别训练子任务并累计外部后果，技能结束后更新高层与模型，再提交新的可执行版本。
+
+6. [选择值得发现的行为](options.md#lesson-branches)：区分主任务回报、结构覆盖、可区分性与可预测后果；发现技能的价值要通过后续探索、规划或迁移及其成本检验。
 
 结论与条件：固定技能精确SMDP与相应表格学习有明确条件；Option-Critic为参数化目标的梯度结构，不保证技能多样性、全局最优或可迁移。
 
@@ -195,6 +213,8 @@ $$
 
 $d_g$ 表示子任务真正终止，包括到门口或已经定义的失败终点；环境真正结束也强制终止。$\gamma_g$ 属于这个子问题。到门口令子任务后续价值为零，并不令主任务的 $V(s')$ 为零；运行预算截断不是这两种终止中的任何一种。
 
+这个更新可以从子任务自己的回报读出来：先收下 $r_g$；若子任务结束，后面没有贡献；否则从 $s'$ 继续寻找最大的子任务回报。对这一关系取条件期望得到最优 Bellman 方程，以一条实际转移替代该期望，再用当前 $q_g$ 自举，就得到上面的 $\delta_g$。因此 $G,r_g,\gamma_g,d_g$ 是设计者给出的学习问题，$q_g$ 是学习到的答案，$\pi_g$ 才把答案变成可执行行为。技能数目或目标位置的选择还未被这一更新学到。
+
 不同起点怎样得到训练样本？可以在主任务的每条真实转移上同时更新多个给定子任务。在表格 Q-learning 中，当前行为不必正好执行该门口技能，但仍需要相关状态动作被充分访问。没有跨过门的数据，不能只靠增加技能名称得到可靠的穿门控制器。神经网络、离策略数据与自举的困难仍然存在。
 
 | 构造路线 | 谁给 I | 谁给内部策略 | 谁给 β | 不能据此声称什么 |
@@ -211,6 +231,8 @@ $d_g$ 表示子任务真正终止，包括到门口或已经定义的失败终�
 <a id="rlss-options-outcome-values"></a>
 
 ## 子目标不是只给一个地点：终点价值决定技能的代价取舍
+
+深入阅读：在给定子目标之外加入终点价值，分析沿途代价与停止收益的取舍。
 
 先区分行为对象与评价问题。Option 定义怎样行动、何时停止，以及允许从哪里启动。它本身不规定这个行为值得做。随机走动也可以是一个 option。只有再指定主奖励或某个子问题，才能讨论其价值。因此同一个 option 可以有不同的 $q_i(s,o)$；下标 i 标识评价问题，而不是第 i 个 option。把“option”直接译解为“已学会的有用技能”，会把本来需要学习和检验的有效性写进定义。
 
@@ -247,13 +269,19 @@ $$
 
 ## 2. SMDP：由原始回报推导跨多步更新
 
+先固定三元组与高层策略 $\mu$，只评价它们；下面的 $Q,V$ 因而分别是 $Q^\mu,V^\mu$。令 $\Omega_t$ 表示第 $t$ 个原始动作执行前正在运行的 option。给定 $S_t=s,\Omega_t=o$ 后至少执行一步，再按到达状态的停止规则结束，持续时间记为 $\tau$。这既描述合法启动，也定义了执行途中继续当前技能的价值；后者不要求当前状态再次属于启动集合。
+
 假设在 $t$ 启动 $o$，在 $t+\tau$ 停止。把回报沿这个边界拆开，前半段是执行 option 期间得到的奖励，后半段是从停止状态开始的后续回报。后半段隔了 $\tau$ 个原始步，因此乘 $\gamma^\tau$。持续时间可以随机；每次样本都使用其实际 $\tau$。
 
 $$
-\begin{aligned}G_t&=\sum_{k=0}^{\tau-1}\gamma^kR_{t+k+1}+\gamma^\tau G_{t+\tau}\\ Q(s,o)&=\mathbb E\!\left[\widehat R_o+\gamma^\tau V(S_{t+\tau})\mid S_t=s,O_t=o\right]\end{aligned}
+\begin{aligned}G_t&=\underbrace{\sum_{k=0}^{\tau-1}\gamma^kR_{t+k+1}}_{\widehat R_o}+\gamma^\tau(1-D)G_{t+\tau},\\ Q^\mu(s,o)&=\mathbb E\!\left[\widehat R_o+\gamma^\tau(1-D)V^\mu(S_{t+\tau})\mid S_t=s,\Omega_t=o\right],\\ V^\mu(x)&=\sum_{o'\in\mathcal O(x)}\mu(o'\mid x)Q^\mu(x,o').\end{aligned}
 $$
 
-第二行对第一行取条件期望。R̂_o 是本次 option 内的折扣奖励和，不是平均奖励，也不是子任务内在奖励，除非你明确改变了目标。
+$D=1$ 表示这次调用因环境真正终止而结束，终止后的回报约定为零。第一行逐路径成立；第二行先对停止时的状态取条件期望，再用固定 call-and-return 策略的 Markov 性。$\widehat R_o$ 是真实外部奖励的段内折扣和，包含最后一笔奖励。
+
+若模型未知，一次完整执行给出 $(s,o,\widehat R_o,\tau,s',D)$。用旧估计替换未知尾值，便得到可计算的样本标签 $y^\mu=\widehat R_o+\gamma^\tau(1-D)\sum_{o'}\mu(o'\mid s')\widehat Q(s',o')$，再令 $\widehat Q(s,o)\leftarrow\widehat Q(s,o)+\alpha[y^\mu-\widehat Q(s,o)]$。这是固定策略评价的随机近似：标签依赖旧估计，并非环境直接给出的真实 $Q^\mu$。在表格、固定技能、充分访问与适当递减步长下，可以研究其收敛；改变内部策略后，被评价的对象也随之改变。
+
+如果接下来要寻找更好的高层策略，停止后的加权平均可以改为对合法选项取最大值。这个替换改变了 Bellman 方程的求解对象，从给定策略的价值变成给定技能集合内的最优价值；它不是固定策略评价中省略的一步代数。
 
 $$
 Q(s,o)\leftarrow Q(s,o)+\alpha\left[\widehat R_o+\gamma^\tau\max_{o'\in\mathcal O(s')}Q(s',o')-Q(s,o)\right]
@@ -283,6 +311,8 @@ $$
   1. 否则保留当前 option；s=s′
 
 这种估值要等 option 结束才完成一次更新；长技能会延迟信用，几乎不停止的技能也可能妨碍高层探索。若每个 option 恰好执行一步，该算法退化为普通 Q-learning：段内外部奖励仅有一项，后续折扣恰为 $\gamma$。这个特例可以用来检查奖励和时间索引。
+
+这里拆分的是折扣回报。[平均奖励章](average.md#lesson-duration)保留相同的技能执行边界，但累计未折扣外部奖励，并按真实时长扣除奖励率；不能只把 γ 改成 1 就得到完整的平均奖励算法。另须区分技能规则规定的停止与采样预算截止：前者交回高层，后者可能只留下未完成片段，不能把片段冒充完整技能的回报与终点样本。
 
 <a id="experiment-neural_option_smdp"></a>
 
@@ -315,6 +345,241 @@ python3 implementations/streaming_composition/neural_option_smdp.py --steps 1200
 **继续实验。** 先只保留时长恒为1的技能，两种目标应相同。再手算从状态1启动技能1的两步奖励与后继项，核对代码中的累计折扣。最后改变最长时长，始终保持原始步预算相同。
 
 [源码](../implementations/streaming_composition/neural_option_smdp.py) · [逐种子记录](https://yingwen.io/crl-code/results/neural_option_smdp/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/neural_option_smdp/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/neural_option_smdp/curves.json)
+
+<a id="lesson-intra"></a>
+
+## 3. Intra-option：不等执行完，立即学习多个技能
+
+等待整段结束能直接得到当前起点的完整样本，但门口尚未到达时，已经观察到的动作后果也提供了信息。保持刚才的技能和高层策略不变，把同一回报改在第一个原始步之后拆开，便得到能够逐步更新的方程。
+
+到达 $s'$ 后，以概率 $1-\beta_o(s')$ 继续当前 $o$，以概率 $\beta_o(s')$ 结束并交回高层。对两个分支求平均，得到 arrival value $U$。因此它的定义直接来自 option 的执行规则。
+
+$$
+\begin{aligned}U(s',o)&=(1-\beta_o(s'))Q(s',o)+\beta_o(s')V(s')\\ Q(s,o)&=\sum_a\pi_o(a|s)\mathbb E\!\left[R+\gamma U(S',o)\mid s,a\right]\end{aligned}
+$$
+
+只走一个原始步，故这里乘一个 γ。β=0 恢复继续同一 option；β=1 恢复马上让高层选择。环境终止则 U=0，无论 β 预测多少。
+
+同一动作还可以提供其他技能的评价样本，但要先核对它是怎样被抽到的。令 $b_t(a\mid H_t)$ 为真实采样机制在动作前历史 $H_t$ 下的概率，历史包括正在执行的 option。若行为本身按 call-and-return 运行，通常应保存当前内部策略的概率，而不能只记录高层在边界选择技能的概率。下面简写为 $b(a\mid s)$，前提是已明确这种条件化。目标动作出现的地方必须有 $b_t>0$。
+
+$$
+\begin{aligned}\mathbb E_b[\rho_o\delta_o\mid H_t]&=\sum_{a:b_t(a\mid H_t)>0}b_t(a\mid H_t)\frac{\pi_o(a\mid s)}{b_t(a\mid H_t)}\mathbb E[\delta_o\mid s,a]\\ &=\sum_a\pi_o(a\mid s)\mathbb E[r+\gamma U(s',o)-Q(s,o)\mid s,a],\qquad s=S_t.\end{aligned}
+$$
+
+这里固定更新前的 $Q,\pi_o,\beta_o,\mu$，且环境在给定 $s,a$ 后的转移与行为如何选择动作无关。因此动作概率消去，右侧正是目标 option 的 Bellman 残差。它修正这一状态上的动作平均，不改变状态访问频率，也不学习内部策略。
+
+确定性 options 中，只有同样会选择刚才动作的候选有贡献，其他候选的比率为零。原始论文的确定性 intra-option Q-learning 直接更新这些动作相容的候选；按相容样本的访问时钟处理时，不必显式乘逆行为概率。下面则写成每个真实时间步上的重要性加权形式。两种写法的有效步长和噪声不同，不能把原论文的确定性定理直接称为所有随机、非线性实现的保证。
+
+$$
+\begin{aligned}\delta_o&=r+\gamma U(s',o)-Q(s,o)\\ Q(s,o)&\leftarrow Q(s,o)+\alpha\rho_o\delta_o,\qquad \rho_o=\frac{\pi_o(a|s)}{b(a|s)}\end{aligned}
+$$
+
+所有 target 先使用同一份旧 Q 计算，特别是 s=s′ 自环时。ρ 修正动作分布；访问不到的状态不会凭空学到，函数逼近与 off-policy 的稳定性也需另行处理。
+
+高层控制使用 $V(s')=\max_{o':s'\in I_{o'}}Q(s',o')$，最大值只遍历在 $s'$ 合法启动的 options。继续当前 option 的 $Q(s',o)$ 不受启动 mask 限制，因为它已在更早的合法位置开始执行；只有终止后重新选择的分支受限。若评价给定 $\mu$，则在合法集合上按 $\mu$ 求加权平均。Intra-option 更新的是固定技能的价值，内部策略是否有用、如何学习，还要由下一节解决。
+
+<a id="lesson-critic"></a>
+
+## 4. Option-Critic：内部动作与何时停止是两个梯度
+
+现在换一种构造路线：让多个技能直接改善递送任务的外部回报，由 critic 指导内部动作和停止时机。原始 [Option-Critic](https://arxiv.org/html/1609.05140) 固定技能数，并假设 $I_o=\mathcal S$，即所有技能在每个非终止状态都可启动。它学习 $\pi_o$ 与 $\beta_o$；启动集合是给定接口，技能是否形成门口、递送等可解释行为则由训练结果决定。
+
+为了学习内部动作，定义 $Q_U(s,o,a)$：当前处于 $o$ 时，先执行 $a$，再遵守 option 的继续、停止与高层选择规则的回报。它比 $Q(s,o)$ 多条件化了当前动作；$U$ 则描述到达下一状态后的混合价值。三者可以共享网络表示，但对应不同条件。
+
+$$
+\begin{aligned}Q_U(s,o,a)&=\mathbb E[R+\gamma U(S',o)\mid s,a]\\ Q(s,o)&=\sum_a\pi_{o,\theta}(a|s)Q_U(s,o,a)\end{aligned}
+$$
+
+第一式给 critic 的 TD target，第二式把内部策略的动作平均还原成 option 价值。实际工程也常用 r+γU 作为当前 $Q_U$ 的样本估计，未必单独存一个完整三维表。
+
+目标先固定为 $J(\theta,\vartheta)=Q^{\mu,\theta,\vartheta}(s_0,o_0)$，即从指定状态和正在执行的技能出发的外部折扣回报。环境规律与初始化不含待求导参数；求内部策略导数时固定 $\mu,\beta$，求停止导数时固定 $\mu,\pi$。有限状态、动作、技能，$\gamma<1$，以及参数在所考察邻域内可微且导数有界，使下面的递归展开成立。真实 $Q_U$ 也依赖这些参数；不能一开始就把这种未来依赖删除。
+
+记 $x=(s,o)$ 为“动作前”的扩展状态，$P(s'\mid s,a)$ 为到达非终止状态的环境转移概率。到达后先抽停止，再决定下一步仍执行 $o$ 还是按 $\mu$ 重选。这个顺序给出一个原始时间步的扩展转移核 $K$：
+
+$$
+\begin{aligned}M(o'\mid s',o)&=(1-\beta_o(s'))\mathbf1\{o'=o\}+\beta_o(s')\mu(o'\mid s'),\\ K((s,o),(s',o'))&=\sum_a\pi_o(a\mid s)P(s'\mid s,a)M(o'\mid s',o).\end{aligned}
+$$
+
+$K$ 只记录非终止后继；环境终止的概率质量使行和小于 1。$M$ 的第二项允许停止后再次选中同一个技能，因此 $o'=o$ 不代表这一步没有停止。
+
+现在对 $Q(s,o)=\sum_a\pi_o(a\mid s)Q_U(s,o,a)$ 用乘积法则。当前动作概率的导数产生直接项 $g_\theta$；$Q_U$ 的导数通过下一状态的继续与重选，把同一种未知导数传到以后。
+
+$$
+\begin{aligned}g_\theta(s,o)&=\sum_a\nabla_\theta\pi_o(a\mid s)Q_U(s,o,a),\\ \nabla_\theta Q&=g_\theta+\gamma K\nabla_\theta Q,\\ \nabla_\theta Q&=\sum_{t=0}^{n-1}(\gamma K)^t g_\theta+(\gamma K)^n\nabla_\theta Q\ \longrightarrow\ \sum_{t\geq0}(\gamma K)^t g_\theta.\end{aligned}
+$$
+
+矩阵只用来把递归写紧凑。因为 $K$ 的行和至多为 1，余项的最大范数至多为 $\gamma^n\|\nabla_\theta Q\|_\infty$，趋于零。于是未来影响没有被忽略，而是变成各扩展状态被访问的折扣权重。
+
+$$
+\begin{aligned}d_\gamma(s,o)&=\sum_{t\geq0}\gamma^t\Pr(S_t=s,\Omega_t=o\mid s_0,o_0),\\ \nabla_\theta J&=\sum_{s,o}d_\gamma(s,o)\sum_a\nabla_\theta\pi_{o,\theta}(a|s)\,Q_U(s,o,a),\\ \Delta\theta&=\alpha_\theta\nabla_\theta\log\pi_{o,\theta}(a|s)\,[\widehat Q_U(s,o,a)-b(s,o)].\end{aligned}
+$$
+
+$d_\gamma$ 是未归一化的占用质量，不是直接供抽样的概率分布。利用 log-derivative 可用动作样本替换内层求和；$\sum_a\nabla\pi_o(a\mid s)b(s,o)=b(s,o)\nabla1=0$ 说明动作无关 baseline 不改变该期望。这里的 $b(s,o)$ 是 baseline，和上一节行为概率 $b(a\mid s)$ 不同。
+
+若从起点生成整条 on-policy 轨迹，冻结参数并使用真实 $Q_U$，将各原始步的 score 项乘 $\gamma^t$ 后求和，其期望正是上式。若按归一化后的 $d_\gamma$ 抽一个状态-option 对，则需乘其总质量。普通逐步在线更新常省略外层折扣并使用近似 critic；它是实际访问分布下的 actor–critic 更新，不能仅凭局部 score 正确就称为指定起点 $J$ 的无偏梯度。停止梯度还会出现另一套时间权重。
+
+终止梯度可直接从混合式推导。保持当前 $Q$ 与 $V$ 不动，对 $U=(1-\beta)Q+\beta V$ 求终止参数导数，得到 $\nabla\beta(V-Q)$。当 $Q<V$ 时，增大停止概率能提高局部价值；反之应鼓励延续。递归展开这些贡献后得到终止梯度定理，其占用权重对应到达状态。
+
+$$
+\begin{aligned}A_\Omega(s',o)&=Q(s',o)-V(s'),\\ U_{\rm loc}(s',o;\vartheta)&=(1-\beta_{o,\vartheta}(s'))\operatorname{sg}(Q(s',o))+\beta_{o,\vartheta}(s')\operatorname{sg}(V(s')),\\ \nabla_\vartheta U_{\rm loc}(s',o;\vartheta)&=-\nabla_\vartheta\beta_{o,\vartheta}(s')\,\operatorname{sg}(A_\Omega(s',o)),\\ \Delta\vartheta&=-\alpha_\beta\nabla_\vartheta\beta_{o,\vartheta}(s')\,\widehat A_\Omega(s',o).\end{aligned}
+$$
+
+$\operatorname{sg}$ 表示在当前局部更新中固定 critic。这个局部偏导不是包含未来 $Q,V$ 参数依赖的完整 $\nabla_\vartheta U$。若 $\beta=\sigma(h)$，则 $\partial\beta/\partial h=\beta(1-\beta)$。当前 option 优势为负时，更新增大 $h$，使它更容易停止；优势为正时则鼓励继续。真实环境终止后不再存在继续与停止的选择。
+
+完整导数仍要保留两条未来路径。令 $F(s',o)=\nabla_\vartheta U(s',o)$，到达后的局部项为 $g_\beta(s',o)=-\nabla_\vartheta\beta_o(s')A_\Omega(s',o)$。当前到达状态处理完停止或重选后，再执行一个动作，才来到下一处需要停止选择的位置。
+
+$$
+\begin{aligned}F(s',o)&=g_\beta(s',o)+\gamma\sum_{o'}M(o'\mid s',o)\sum_a\pi_{o'}(a\mid s')\sum_yP(y\mid s',a)F(y,o'),\\ \nabla_\vartheta J&=\gamma\sum_a\pi_{o_0}(a\mid s_0)\sum_{s'}P(s'\mid s_0,a)F(s',o_0).\end{aligned}
+$$
+
+第一式从 $\nabla U=-\nabla\beta\,A_\Omega+(1-\beta)\nabla Q+\beta\nabla V$ 代入后续动作的 Bellman 导数得到。第二式提醒我们：从动作前的 $J$ 到第一次到达还隔着一个原始步。继续展开 $F$，每晚到一步便多一个 $\gamma$，得到下式。
+
+$$
+\nabla_\vartheta J=-\sum_{s',o}d_\gamma^{\rm arrival}(s',o)\,\nabla_\vartheta\beta_{o,\vartheta}(s')\,A_\Omega(s',o)
+$$
+
+$d_\gamma^{\rm arrival}(s',o)=\sum_{t\ge0}\gamma^{t+1}\Pr(S_{t+1}=s',\Omega_t=o)$ 是从指定初始化出发、在非终止到达状态上定义的未归一化折扣占用；$\Omega_t$ 表示正在执行的 option。该式把未来重复出现的局部终止选择展开后才得到完整目标梯度。求导时固定高层和内部动作策略参数；若共享参数，还需合并相应梯度路径。
+
+这里原始动作使用 $\gamma^t$，同一步到达后的停止使用 $\gamma^{t+1}$，两者都相对于最初的 $J$ 计时。若像原论文的终止梯度定理那样从指定到达对 $(s_1,o_0)$ 的 $U$ 开始计价，首个停止选择的权重就是 1。二者只差目标的起点，不能把到达目标的公式未经转换用于动作前目标。终止优势由继续与重选的真实差值产生，不能像动作 baseline 那样随意换一个数。
+
+| 到达后的比较 | 优势符号 | sigmoid 停止 logit 的上升方向 | 含义 |
+| --- | --- | --- | --- |
+| 继续当前技能比重新选择更好：$Q>V$ | $A_\Omega>0$ | 负：降低停止概率 | 保留当前技能 |
+| 继续当前技能更差：$Q<V$ | $A_\Omega<0$ | 正：增加停止概率 | 让高层有机会换技能 |
+| $Q=V$ | $A_\Omega=0$ | 基础局部终止梯度为零 | 收益目标本身没有偏好哪种持续时间 |
+
+这里的 $V$ 必须与高层目标一致。若高层采用随机策略，当前技能的 $Q$ 可以高于重新选择的平均值。若高层完全贪心，且当前技能也在可重新启动的集合内，则 $V=\max_{o'}Q(s',o')\geq Q(s',o)$，优势不会为正。没有切换成本时，频繁交回高层并不天然吃亏；因此“总在一步后终止”是必须检查的退化，而不是发现了多步技能的证据。
+
+另一个退化是多个技能学成同一个策略。当前外部回报可能允许许多等价分解，并不自动奖励语义差异或未来任务的覆盖性。动作熵可以影响探索，切换成本可以影响持续时间，多样性奖励可以影响技能差异；三者的目的不同，也都需要单独记录，不能统称为保证有用技能的正则化。
+
+**算法：算法伪代码**
+
+1. 初始化 $π_o,β_o,Q$ 或 $Q_U$；选择当前 option o
+1. 每一步：
+  1. 按旧 $π_o$ 行动，记录 s,o,a,r,s′ 与真实 terminal
+  1. 缓存旧 $Q(s^{\prime},o),V(s^{\prime}),β_o(s^{\prime})$，构造 $U$ 和 $y=r+γU$
+  1. 用 y 更新 critic（真实 terminal 时 y=r）
+  1. 用缓存的动作优势更新 $π_o$ 的 log-probability
+  1. 若非 terminal，用 $-∇β_o(s^{\prime})[Q(s^{\prime},o)-V(s^{\prime})]$ 更新停止参数
+  1. 按明确规定的 β 版本抽样停止；停止才按高层 μ 重新选 o
+  1. s=s′；持续记录技能长度、选择频率、动作熵与主任务回报
+
+实现中可先缓存更新前的 $\beta$ 与 critic，利用同一次转移构造两个 actor 的更新，再按缓存的终止概率决定是否换技能。这样执行规则和训练标签具有一致的时间顺序。动作熵、终止正则和切换代价可以减少技能塌缩或频繁切换，但它们改变的是优化目标，须与上面的基本梯度分别记录。
+
+<a id="experiment-option_critic"></a>
+
+### 实验：真正学习选项：内部动作、终止与高层选择分别更新
+
+学会技能内部动作后，还需要学何时停止吗？如何验证termination梯度与控制收益是两类证据？
+
+**环境与可用信息。** 六格链，状态0—5完全可观测，左右动作在边界截断；从0开始。到5奖励1并真正终止，其他步奖励−0.02；终止后新回合从0开始。两个option均可在非终止状态启动，内部动作由各自softmax策略给出，停止概率由到达状态的sigmoid参数给出。
+
+**设置。** 5个种子，各1200个原始步，γ=0.9。Q与动作critic零初始化；actor小随机初始化，初始β=0.5。每个原始步critic步长0.15，actor与termination各0.03。高层ε=0.2；对照仍学习内部策略与critic，只固定β=0.5。
+
+**检验的机制。** 到达后继续价值是 $(1-\beta)Q(s\prime,o)+\beta V(s\prime)$。停止logit的上升方向为 $-\beta(1-\beta)[Q(s\prime,o)-V(s\prime)]$，内部actor则使用所选动作的critic优势。两者读取旧critic；真正环境终止时跳过停止梯度与bootstrap。
+
+**测量。** 图为冻结当前参数、精确求解call-and-return过程的起点折扣回报。评价时高层改用确定性贪心，内部策略仍随机，因此不是训练生命期累计奖励。另检查平均β与option停止次数。
+
+```bash
+python3 implementations/extended_knowledge/option_critic.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
+```
+
+在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
+
+![实测学习曲线](https://yingwen.io/crl-code/results/option_critic/curves.svg)
+
+横轴：environment_steps。纵轴：冻结call-and-return起点折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
+
+**结果分析。** 最终学β为0.1947±0.0502，固定β为0.1925±0.0543。差异远小于种子间波动；这个实验未显示学习终止有明确性能优势。公式有限差分正确与任务上收益明显必须分别判断。
+
+**结论边界。** 这里是表格参数化，不是视觉深网Option-Critic。两个技能可能退化成相近策略；没有deliberation cost、技能多样性约束或长时长任务。
+
+**继续实验。** 增加一个必须连续执行多步才有回报的中间区域，先固定内部策略、只学β，再反过来固定β、只学内部策略。不要同时改变所有组件后将收益归给终止学习。
+
+[源码](../implementations/extended_knowledge/option_critic.py) · [逐种子记录](https://yingwen.io/crl-code/results/option_critic/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/option_critic/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/option_critic/curves.json)
+
+<a id="course-options-interruption"></a>
+
+## 规划跨度不等于执行承诺：为什么可以中断一个 option
+
+深入阅读：在 call-and-return 之外允许中途重选，重新分析价值与执行语义。
+
+Call-and-return 是一种执行协议：选中 option 后，按其内部策略行动，直到其停止规则交回控制。它不是使用时间抽象的唯一方式。还可以用完整 option 的后果模型做长时标规划，却在每个原始步重新检查是否继续。课程的 Planning and Action Selection in Options-based Agents 强调这一分工；这不应被读成“原始 options 定义不允许承诺执行”。
+
+先固定高层策略 $\mu$ 与全部 options，并假设有准确的 $Q^\mu$。到达 $s'$ 后，继续当前 option 的价值为 $Q^\mu(s',o)$；立即结束并按 $\mu$ 重选的价值为 $V^\mu(s')$。原停止规则给出的 arrival value 是两者按 $\beta_o(s')$ 的加权平均。
+
+$$
+U^\mu(s',o)=(1-\beta_o(s'))Q^\mu(s',o)+\beta_o(s')V^\mu(s').
+$$
+
+Q 中的“继续”至少包含下一原始步。立即重选必须在当前合法启动集合内进行；如果重新选择有成本或耗时，需要把这些量放入比较。
+
+$$
+\widetilde\beta_o(s')=\begin{cases}1,&V^\mu(s')>Q^\mu(s',o),\\\beta_o(s'),&\text{otherwise},\end{cases}\qquad \Delta U=(1-\beta_o(s'))[V^\mu(s')-Q^\mu(s',o)]\geq0
+$$
+
+最后的差值只针对触发新增中断的状态。对有限折扣问题，准确估值下的这个局部改善可以结合策略改善论证得到不差的价值。这是受条件约束的 interruption 结果，不是噪声 critic 下逐步重选总能改善的保证。
+
+手算：继续的价值为 4，立即交回高层为 7，原停止概率为 0.2。原 arrival value 为 4.6，强制停止后为 7，提高 2.4。这里没有改变任何真实奖励，也没有声称原 option 突然学得更好；改变的是何时让高层取得控制权。
+
+| 层次 | 建模的对象 | 真实执行时做什么 |
+| --- | --- | --- |
+| Option 模型 | 如果按该策略直到所定义的停止，会发生什么 | 保留完整的奖励/终点/时长条件 |
+| Call-and-return | 依照当前 option 直到停止 | 到达后抽样 β |
+| 带价值中断 | 模型仍描述原 option，可额外学修改版模型 | 到达后比较继续与重选 |
+| 每步 activation | 每步选择当前看起来最好的 option，再取其首个动作 | 下一步重新决策，未承诺执行到模型终点 |
+
+最容易写错的地方在模型样本。若声明的模型预测“完整执行到原停止规则”，一次外部中断不是该规则下的终点。不能把中断位置当成成功完成的终点更新原模型。可另建中断后行为的模型，或使用覆盖充分的原始转移进行明确目标策略下的 intra-option 学习；只把截断片段送入完整后果的 Monte Carlo 更新，会悄悄改掉模型的语义。
+
+近似估值使选择更困难。若两个 option 的估计差比误差还小，每步切换可能产生抖动；随机内部策略、隐藏状态和物理切换成本又会加剧这一问题。迟滞阈值、切换成本、最短承诺时间都是可研究的机制，但它们改变执行规则，应单独报告。具有长期承诺的探索也可能比逐步贪心更容易产生有效经验。
+
+一个对照实验应固定技能、模型和主奖励，只比较三种执行规则：原停止、准确模型估值下的中断、学习 critic 下的中断。记录收益、切换数、模型样本有效性和真实原始步成本。先检验准确值的改善结论，再加入估计误差，才能区分理论条件与工程失败。
+
+<a id="rlss-option-activation-hierarchy"></a>
+
+## 长时知识与逐步反应：activation 的递归必须有终点
+
+深入阅读：进一步讨论层级中的激活、递归调用和终止条件。
+
+Sutton 的 2025 讲座主张：为规划保留完整 option 后果，但每个原始步重新选择当前较好的 option，并只执行它此刻给出的动作。它是一种架构主张。前面的终止改善结论需要准确价值与相应条件，不能替这套近似系统提供无条件性能保证。
+
+若一个 option 的策略又选择另一个 option，当前动作需要沿层次继续解析，直到某层给出原始动作。该过程是同一真实时间步内的内部计算，不是环境已经向前走了多步。每层的选择和成本都应有记录。
+
+**算法：带解析边界的 activation 调度；不是新收敛定理**
+
+1. 在当前 agent state 上选主问题的候选 option。
+1. 令 active_path 为空；逐层解析所选策略：
+  1. 若输出原始动作，执行且结束本次内部解析。
+  1. 若输出子 option，记录依赖边并继续解析。
+  1. 检查循环、不可启动对象与内部计算预算。
+  1. 无法合法解析时，回退到预先定义的合法原始动作策略。
+1. 获得真实后继后，再更新预测、模型和选择依据。
+
+若高层选择低层、低层又选择高层，就可能在没有真实动作的情况下无限递归。限定无环依赖、显式最大深度或能证明终止的类型规则，都是可以检验的设计选择。即便解析会结束，层数也影响动作延迟；不能只报告环境步数。
+
+长时探索还需要另一种解释。每步根据略有波动的近似值重选，可能破坏 coherent exploration；承诺执行或引入意图状态能改善连续性，却改变策略类。讲座提出的“学习进展内在奖励”与多 option 意图模式是研究方向，不是由 activation 自动得到的完成算法。权重变化大小也受特征尺度、步长和噪声影响，不宜未经校准就当作有用知识增加量。
+
+<a id="lesson-high-level"></a>
+
+## 学到行为以后，谁决定这次该调用哪个技能？
+
+内部策略改善后，机器人更会到门口；停止函数改善后，它更会交回选择权。当前应当去东门、南门，还是先向左一步，仍由高层策略 $\mu$ 决定。先冻结刚学到的技能版本，就能把高层学习单独写清楚。高层读的是包含后续递送工作的外部 $Q$，而不是以到门口为终点的内部 $q_g$。
+
+若准确知道 $Q^\mu$，在每个合法启动集合中选择 $\mu'(s)\in\arg\max_{o\in\mathcal O(s)}Q^\mu(s,o)$，当前一次重选的期望价值至少与 $V^\mu(s)$ 一样高。将这个不等式沿完整 options 的边界继续展开，余项由 $\gamma^{t_k}$ 压到零，得到固定技能集合上的策略改善。这也是 SMDP Q-learning 在停止后使用最大值的依据；用有误差的 critic 贪心则不自动具有同一保证。
+
+高层也可以是可微的随机策略 $\mu_\eta$。令调用时刻为 $t_0=0$、$t_{k+1}=t_k+\tau_k$，此时选择 $O_k\sim\mu_\eta(\cdot\mid S_{t_k})$；段内动作与停止规律均固定且不含 $\eta$。整条路径概率中只有这些边界处的选择含 $\eta$，因此对数导数只在这些时刻出现。边界以前的奖励不依赖本次选择，条件期望下的 score 为零，留下边界以后回报。
+
+$$
+\begin{aligned}\nabla_\eta J_{\rm high}&=\mathbb E\!\left[\sum_{k:t_k<T}\gamma^{t_k}\nabla_\eta\log\mu_\eta(O_k\mid S_{t_k})\bigl(G_{t_k}-b_H(S_{t_k})\bigr)\right],\\ y_k&=\widehat R_k+\gamma^{\tau_k}(1-D_k)\widehat V(S_{t_{k+1}}),\\ \widehat\delta_k&=y_k-\widehat V(S_{t_k}),\qquad \Delta\eta=\alpha_H\gamma^{t_k}\nabla_\eta\log\mu_\eta(O_k\mid S_{t_k})\widehat\delta_k.\end{aligned}
+$$
+
+$J_{\rm high}$ 从给定初始状态分布、在 $t_0$ 抽样首个技能；$T$ 是环境终止时刻，持续问题取无穷。第一式是固定参数下的轨迹梯度恒等式，baseline $b_H$ 与当前技能无关。若 $\widehat V=V^{\mu_\eta}$，第二行的样本 target 使 $\widehat\delta_k$ 在给定起点和技能时的条件均值等于高层优势；使用近似 critic 后是 actor–critic 估计。
+
+两处折扣承担不同角色：$\gamma^{\tau_k}$ 把下一次重选的价值折回本次调用，而 $\gamma^{t_k}$ 把本次 actor 贡献折回整个目标的起点。不能用 $\gamma^k$ 替代后者，因为执行第三个技能可能已经经过十个原始时间步；只有所有技能都恰好一步时，两种时钟才重合。这与[策略梯度章](../foundations/approximation/policy-gradient.md)的外层折扣是同一个问题。
+
+本地 [表格 Option-Critic](https://yingwen.io/zh/continual-rl/code/option_critic/) 没有实现这个额外的高层 actor。它在技能边界按 $\epsilon=0.2$ 的贪心探索策略选择，critic 的重选值实际为 $0.8\max_oQ(s',o)+0.2\,\mathrm{mean}_oQ(s',o)$，与训练时的高层规则一致。记录的冻结评价则取消高层探索、保留内部动作和停止的随机性。因此训练 critic 所估计的对象与报告的冻结策略回报不同；逐步 actor 也没有乘起点折扣权重。
+
+模型已知时，高层还能直接比较各技能的预测后果。这样同一份技能知识就可回答多个后续价值查询，无须每次重新真实执行。下一节从完整调用的回报分解得到这个模型接口。
 
 <a id="lesson-option-models"></a>
 
@@ -380,7 +645,7 @@ $$
 
 这是一种表格、按完整 option 样本进行的模型学习。固定技能下可用递减步长估计期望；固定步长更强调追踪。对子任务成功事件的预测可以另学，但不能把那个成功标签混入 $r_o$。
 
-为什么原始步也能学习模型？把一个完整后果沿第一步拆开：第一步的真实奖励必定计入；若到达后停止，终点就是当前到达状态；否则由同一个 option 的后续模型继续预测。这与下一节 intra-option 价值学习使用的是同一种递归分解。
+为什么原始步也能学习模型？把一个完整后果沿第一步拆开：第一步的真实奖励必定计入；若到达后停止，终点就是当前到达状态；否则由同一个 option 的后续模型继续预测。这与前面 intra-option 价值学习使用的是同一种递归分解。
 
 $$
 \begin{aligned}r_o(s)&=\mathbb E_{a\sim\pi_o,\,s',R,d}\!\left[R+\gamma(1-d)(1-\beta_o(s'))r_o(s')\mid s\right],\\ p_o(s,x)&=\mathbb E_{a\sim\pi_o,\,s',d}\!\left[\gamma(1-d)\left\{\beta_o(s')\mathbf1\{s'=x\}+(1-\beta_o(s'))p_o(s',x)\right\}\mid s\right].\end{aligned}
@@ -412,182 +677,11 @@ $d$ 表示当前这一个原始转移是否真正终止环境。为写出统一�
 
 平均奖励规划需要另一套时间量：未折扣累计奖励的期望 $\bar r_o$、持续时间期望 $\bar\tau_o$ 和未折扣终点分布 $P_o$。相应目标是 $\bar r_o-\rho\bar\tau_o+\sum_xP_o(s,x)h(x)$。它不是把上面的 $\gamma$ 随手设为 1 后继续使用折扣收缩证明；后面的持续闭环代码采用的正是这一不同设定。
 
-<a id="lesson-intra"></a>
-
-## 3. Intra-option：不等执行完，立即学习多个技能
-
-到达 $s'$ 后，以概率 $1-\beta_o(s')$ 继续当前 $o$，以概率 $\beta_o(s')$ 结束并交回高层。对两个分支求平均，得到 arrival value $U$。因此它的定义直接来自 option 的执行规则。
-
-$$
-\begin{aligned}U(s',o)&=(1-\beta_o(s'))Q(s',o)+\beta_o(s')V(s')\\ Q(s,o)&=\sum_a\pi_o(a|s)\mathbb E\!\left[R+\gamma U(S',o)\mid s,a\right]\end{aligned}
-$$
-
-只走一个原始步，故这里乘一个 γ。β=0 恢复继续同一 option；β=1 恢复马上让高层选择。环境终止则 U=0，无论 β 预测多少。
-
-若真实行为的动作概率为 $b(a|s)$，用这个动作估计另一 option $\pi_o$ 的动作平均时，可乘 $\rho_o=\pi_o(a|s)/b(a|s)$。确定性 options 中，只有同样会选择刚才动作的候选有贡献，其他候选的比率为零。在表格、固定 options 的条件下，经验因而可在多个行为问题间共享。
-
-$$
-\begin{aligned}\delta_o&=r+\gamma U(s',o)-Q(s,o)\\ Q(s,o)&\leftarrow Q(s,o)+\alpha\rho_o\delta_o,\qquad \rho_o=\frac{\pi_o(a|s)}{b(a|s)}\end{aligned}
-$$
-
-所有 target 先使用同一份旧 Q 计算，特别是 s=s′ 自环时。ρ 修正动作分布；访问不到的状态不会凭空学到，函数逼近与 off-policy 的稳定性也需另行处理。
-
-高层控制使用 $V(s')=\max_{o':s'\in I_{o'}}Q(s',o')$，最大值只遍历在 $s'$ 合法启动的 options。继续当前 option 的 $Q(s',o)$ 不受启动 mask 限制，因为它已在更早的合法位置开始执行；只有终止后重新选择的分支受限。若评价给定 $\mu$，则在合法集合上按 $\mu$ 求加权平均。Intra-option 更新的是固定技能的价值，内部策略是否有用、如何学习，还要由下一节解决。
-
-<a id="lesson-critic"></a>
-
-## 4. Option-Critic：内部动作与何时停止是两个梯度
-
-现在换一种构造路线：让多个技能直接改善递送任务的外部回报，由 critic 指导内部动作和停止时机。原始 [Option-Critic](https://arxiv.org/html/1609.05140) 固定技能数，并假设 $I_o=\mathcal S$，即所有技能在每个非终止状态都可启动。它学习 $\pi_o$ 与 $\beta_o$；启动集合是给定接口，技能是否形成门口、递送等可解释行为则由训练结果决定。
-
-为了学习内部动作，定义 $Q_U(s,o,a)$：当前处于 $o$ 时，先执行 $a$，再遵守 option 的继续、停止与高层选择规则的回报。它比 $Q(s,o)$ 多条件化了当前动作；$U$ 则描述到达下一状态后的混合价值。三者可以共享网络表示，但对应不同条件。
-
-$$
-\begin{aligned}Q_U(s,o,a)&=\mathbb E[R+\gamma U(S',o)\mid s,a]\\ Q(s,o)&=\sum_a\pi_{o,\theta}(a|s)Q_U(s,o,a)\end{aligned}
-$$
-
-第一式给 critic 的 TD target，第二式把内部策略的动作平均还原成 option 价值。实际工程也常用 r+γU 作为当前 $Q_U$ 的样本估计，未必单独存一个完整三维表。
-
-固定 critic 作为局部评价器，对第二式中的当前动作概率求导，再将以后状态的递归影响展开，得到沿状态-option 占用分布加权的策略梯度。我们不需要显式微分环境转移，但必须在正确的轨迹/占用分布上采样。以下写出精确目标所对应的结构，再写常用的单样本方向。
-
-$$
-\begin{aligned}\nabla_\theta J&=\sum_{s,o}d_\gamma(s,o)\sum_a\nabla_\theta\pi_{o,\theta}(a|s)\,Q_U(s,o,a)\\ \Delta\theta&=\alpha_\theta\nabla_\theta\log\pi_{o,\theta}(a|s)\,[\widehat Q_U(s,o,a)-b(s,o)]\end{aligned}
-$$
-
-$d_\gamma$ 是从指定起点出发的折扣占用权重；$b$ 不依赖当前动作。第一式对应精确目标，第二式给出单个样本的更新方向；其无偏解释需要相应采样权重，普通逐步在线实现常以实际访问分布近似。
-
-终止梯度可直接从混合式推导。保持当前 $Q$ 与 $V$ 不动，对 $U=(1-\beta)Q+\beta V$ 求终止参数导数，得到 $\nabla\beta(V-Q)$。当 $Q<V$ 时，增大停止概率能提高局部价值；反之应鼓励延续。递归展开这些贡献后得到终止梯度定理，其占用权重对应到达状态。
-
-$$
-\begin{aligned}A_\Omega(s',o)&=Q(s',o)-V(s'),\\ U_{\rm loc}(s',o;\vartheta)&=(1-\beta_{o,\vartheta}(s'))\operatorname{sg}(Q(s',o))+\beta_{o,\vartheta}(s')\operatorname{sg}(V(s')),\\ \nabla_\vartheta U_{\rm loc}(s',o;\vartheta)&=-\nabla_\vartheta\beta_{o,\vartheta}(s')\,\operatorname{sg}(A_\Omega(s',o)),\\ \Delta\vartheta&=-\alpha_\beta\nabla_\vartheta\beta_{o,\vartheta}(s')\,\widehat A_\Omega(s',o).\end{aligned}
-$$
-
-$\operatorname{sg}$ 表示在当前局部更新中固定 critic。这个局部偏导不是包含未来 $Q,V$ 参数依赖的完整 $\nabla_\vartheta U$。若 $\beta=\sigma(h)$，则 $\partial\beta/\partial h=\beta(1-\beta)$。当前 option 优势为负时，更新增大 $h$，使它更容易停止；优势为正时则鼓励继续。真实环境终止后不再存在继续与停止的选择。
-
-$$
-\nabla_\vartheta J=-\sum_{s',o}d_\gamma^{\rm arrival}(s',o)\,\nabla_\vartheta\beta_{o,\vartheta}(s')\,A_\Omega(s',o)
-$$
-
-$d_\gamma^{\rm arrival}(s',o)=\sum_{t\ge0}\gamma^{t+1}\Pr(S_{t+1}=s',\Omega_t=o)$ 是从指定初始化出发、在非终止到达状态上定义的未归一化折扣占用；$\Omega_t$ 表示正在执行的 option。该式把未来重复出现的局部终止选择展开后才得到完整目标梯度。求导时固定高层和内部动作策略参数；若共享参数，还需合并相应梯度路径。
-
-| 到达后的比较 | 优势符号 | sigmoid 停止 logit 的上升方向 | 含义 |
-| --- | --- | --- | --- |
-| 继续当前技能比重新选择更好：$Q>V$ | $A_\Omega>0$ | 负：降低停止概率 | 保留当前技能 |
-| 继续当前技能更差：$Q<V$ | $A_\Omega<0$ | 正：增加停止概率 | 让高层有机会换技能 |
-| $Q=V$ | $A_\Omega=0$ | 基础局部终止梯度为零 | 收益目标本身没有偏好哪种持续时间 |
-
-这里的 $V$ 必须与高层目标一致。若高层采用随机策略，当前技能的 $Q$ 可以高于重新选择的平均值。若高层完全贪心，且当前技能也在可重新启动的集合内，则 $V=\max_{o'}Q(s',o')\geq Q(s',o)$，优势不会为正。没有切换成本时，频繁交回高层并不天然吃亏；因此“总在一步后终止”是必须检查的退化，而不是发现了多步技能的证据。
-
-另一个退化是多个技能学成同一个策略。当前外部回报可能允许许多等价分解，并不自动奖励语义差异或未来任务的覆盖性。动作熵可以影响探索，切换成本可以影响持续时间，多样性奖励可以影响技能差异；三者的目的不同，也都需要单独记录，不能统称为保证有用技能的正则化。
-
-**算法：算法伪代码**
-
-1. 初始化 $π_o,β_o,Q$ 或 $Q_U$；选择当前 option o
-1. 每一步：
-  1. 按旧 $π_o$ 行动，记录 s,o,a,r,s′ 与真实 terminal
-  1. 缓存旧 $Q(s^{\prime},o),V(s^{\prime}),β_o(s^{\prime})$，构造 $U$ 和 $y=r+γU$
-  1. 用 y 更新 critic（真实 terminal 时 y=r）
-  1. 用缓存的动作优势更新 $π_o$ 的 log-probability
-  1. 若非 terminal，用 $-∇β_o(s^{\prime})[Q(s^{\prime},o)-V(s^{\prime})]$ 更新停止参数
-  1. 按明确规定的 β 版本抽样停止；停止才按高层 μ 重新选 o
-  1. s=s′；持续记录技能长度、选择频率、动作熵与主任务回报
-
-实现中可先缓存更新前的 $\beta$ 与 critic，利用同一次转移构造两个 actor 的更新，再按缓存的终止概率决定是否换技能。这样执行规则和训练标签具有一致的时间顺序。动作熵、终止正则和切换代价可以减少技能塌缩或频繁切换，但它们改变的是优化目标，须与上面的基本梯度分别记录。
-
-<a id="experiment-option_critic"></a>
-
-### 实验：真正学习选项：内部动作、终止与高层选择分别更新
-
-学会技能内部动作后，还需要学何时停止吗？如何验证termination梯度与控制收益是两类证据？
-
-**环境与可用信息。** 六格链，状态0—5完全可观测，左右动作在边界截断；从0开始。到5奖励1并真正终止，其他步奖励−0.02；终止后新回合从0开始。两个option均可在非终止状态启动，内部动作由各自softmax策略给出，停止概率由到达状态的sigmoid参数给出。
-
-**设置。** 5个种子，各1200个原始步，γ=0.9。Q与动作critic零初始化；actor小随机初始化，初始β=0.5。每个原始步critic步长0.15，actor与termination各0.03。高层ε=0.2；对照仍学习内部策略与critic，只固定β=0.5。
-
-**检验的机制。** 到达后继续价值是 $(1-\beta)Q(s\prime,o)+\beta V(s\prime)$。停止logit的上升方向为 $-\beta(1-\beta)[Q(s\prime,o)-V(s\prime)]$，内部actor则使用所选动作的critic优势。两者读取旧critic；真正环境终止时跳过停止梯度与bootstrap。
-
-**测量。** 图为冻结当前参数、精确求解call-and-return过程的起点折扣回报。评价时高层改用确定性贪心，内部策略仍随机，因此不是训练生命期累计奖励。另检查平均β与option停止次数。
-
-```bash
-python3 implementations/extended_knowledge/option_critic.py --steps 1200 --seeds 0 1 2 3 4 --out results/MY_NEW_RUN
-```
-
-在[完整代码包](https://yingwen.io/crl-code/learning-code.zip)的根目录运行。
-
-![实测学习曲线](https://yingwen.io/crl-code/results/option_critic/curves.svg)
-
-横轴：environment_steps。纵轴：冻结call-and-return起点折扣回报。每种方法 1200 environment_steps；训练种子 0、1、2、3、4。曲线是种子均值，阴影是 ±1 个样本标准差，不是置信区间。相同交互量不保证相同计算量。
-
-**结果分析。** 最终学β为0.1947±0.0502，固定β为0.1925±0.0543。差异远小于种子间波动；这个实验未显示学习终止有明确性能优势。公式有限差分正确与任务上收益明显必须分别判断。
-
-**结论边界。** 这里是表格参数化，不是视觉深网Option-Critic。两个技能可能退化成相近策略；没有deliberation cost、技能多样性约束或长时长任务。
-
-**继续实验。** 增加一个必须连续执行多步才有回报的中间区域，先固定内部策略、只学β，再反过来固定β、只学内部策略。不要同时改变所有组件后将收益归给终止学习。
-
-[源码](../implementations/extended_knowledge/option_critic.py) · [逐种子记录](https://yingwen.io/crl-code/results/option_critic/raw-runs.zip) · [配置与来源](https://yingwen.io/crl-code/results/option_critic/manifest.json) · [绘图数据](https://yingwen.io/crl-code/results/option_critic/curves.json)
-
-<a id="course-options-interruption"></a>
-
-## 规划跨度不等于执行承诺：为什么可以中断一个 option
-
-Call-and-return 是一种执行协议：选中 option 后，按其内部策略行动，直到其停止规则交回控制。它不是使用时间抽象的唯一方式。还可以用完整 option 的后果模型做长时标规划，却在每个原始步重新检查是否继续。课程的 Planning and Action Selection in Options-based Agents 强调这一分工；这不应被读成“原始 options 定义不允许承诺执行”。
-
-先固定高层策略 $\mu$ 与全部 options，并假设有准确的 $Q^\mu$。到达 $s'$ 后，继续当前 option 的价值为 $Q^\mu(s',o)$；立即结束并按 $\mu$ 重选的价值为 $V^\mu(s')$。原停止规则给出的 arrival value 是两者按 $\beta_o(s')$ 的加权平均。
-
-$$
-U^\mu(s',o)=(1-\beta_o(s'))Q^\mu(s',o)+\beta_o(s')V^\mu(s').
-$$
-
-Q 中的“继续”至少包含下一原始步。立即重选必须在当前合法启动集合内进行；如果重新选择有成本或耗时，需要把这些量放入比较。
-
-$$
-\widetilde\beta_o(s')=\begin{cases}1,&V^\mu(s')>Q^\mu(s',o),\\\beta_o(s'),&\text{otherwise},\end{cases}\qquad \Delta U=(1-\beta_o(s'))[V^\mu(s')-Q^\mu(s',o)]\geq0
-$$
-
-最后的差值只针对触发新增中断的状态。对有限折扣问题，准确估值下的这个局部改善可以结合策略改善论证得到不差的价值。这是受条件约束的 interruption 结果，不是噪声 critic 下逐步重选总能改善的保证。
-
-手算：继续的价值为 4，立即交回高层为 7，原停止概率为 0.2。原 arrival value 为 4.6，强制停止后为 7，提高 2.4。这里没有改变任何真实奖励，也没有声称原 option 突然学得更好；改变的是何时让高层取得控制权。
-
-| 层次 | 建模的对象 | 真实执行时做什么 |
-| --- | --- | --- |
-| Option 模型 | 如果按该策略直到所定义的停止，会发生什么 | 保留完整的奖励/终点/时长条件 |
-| Call-and-return | 依照当前 option 直到停止 | 到达后抽样 β |
-| 带价值中断 | 模型仍描述原 option，可额外学修改版模型 | 到达后比较继续与重选 |
-| 每步 activation | 每步选择当前看起来最好的 option，再取其首个动作 | 下一步重新决策，未承诺执行到模型终点 |
-
-最容易写错的地方在模型样本。若声明的模型预测“完整执行到原停止规则”，一次外部中断不是该规则下的终点。不能把中断位置当成成功完成的终点更新原模型。可另建中断后行为的模型，或使用覆盖充分的原始转移进行明确目标策略下的 intra-option 学习；只把截断片段送入完整后果的 Monte Carlo 更新，会悄悄改掉模型的语义。
-
-近似估值使选择更困难。若两个 option 的估计差比误差还小，每步切换可能产生抖动；随机内部策略、隐藏状态和物理切换成本又会加剧这一问题。迟滞阈值、切换成本、最短承诺时间都是可研究的机制，但它们改变执行规则，应单独报告。具有长期承诺的探索也可能比逐步贪心更容易产生有效经验。
-
-一个对照实验应固定技能、模型和主奖励，只比较三种执行规则：原停止、准确模型估值下的中断、学习 critic 下的中断。记录收益、切换数、模型样本有效性和真实原始步成本。先检验准确值的改善结论，再加入估计误差，才能区分理论条件与工程失败。
-
-<a id="rlss-option-activation-hierarchy"></a>
-
-## 长时知识与逐步反应：activation 的递归必须有终点
-
-Sutton 的 2025 讲座主张：为规划保留完整 option 后果，但每个原始步重新选择当前较好的 option，并只执行它此刻给出的动作。它是一种架构主张。前面的终止改善结论需要准确价值与相应条件，不能替这套近似系统提供无条件性能保证。
-
-若一个 option 的策略又选择另一个 option，当前动作需要沿层次继续解析，直到某层给出原始动作。该过程是同一真实时间步内的内部计算，不是环境已经向前走了多步。每层的选择和成本都应有记录。
-
-**算法：带解析边界的 activation 调度；不是新收敛定理**
-
-1. 在当前 agent state 上选主问题的候选 option。
-1. 令 active_path 为空；逐层解析所选策略：
-  1. 若输出原始动作，执行且结束本次内部解析。
-  1. 若输出子 option，记录依赖边并继续解析。
-  1. 检查循环、不可启动对象与内部计算预算。
-  1. 无法合法解析时，回退到预先定义的合法原始动作策略。
-1. 获得真实后继后，再更新预测、模型和选择依据。
-
-若高层选择低层、低层又选择高层，就可能在没有真实动作的情况下无限递归。限定无环依赖、显式最大深度或能证明终止的类型规则，都是可以检验的设计选择。即便解析会结束，层数也影响动作延迟；不能只报告环境步数。
-
-长时探索还需要另一种解释。每步根据略有波动的近似值重选，可能破坏 coherent exploration；承诺执行或引入意图状态能改善连续性，却改变策略类。讲座提出的“学习进展内在奖励”与多 option 意图模式是研究方向，不是由 activation 自动得到的完成算法。权重变化大小也受特征尺度、步长和噪声影响，不宜未经校准就当作有用知识增加量。
-
 <a id="lesson-option-loop"></a>
 
 ## 把学习与调用接起来：同一条经验流中的模块和时序
 
-下面给出一个可以逐行落实的组合方案：子目标和终止规则先给定，低层用子任务 RL 学策略，高层用真实外部奖励学习，并利用学习到的 option 模型规划。它不是把所有方法叠加在一起。若采用 Option-Critic，应将低层子任务更新换成上一节的主任务 actor 与终止梯度，而不是无说明地同时优化两个不同奖励。
+下面给出一个可以逐行落实的组合方案：子目标和终止规则先给定，低层用子任务 RL 学策略，高层用真实外部奖励学习，并利用学习到的 option 模型规划。每个更新先按自己的问题求解，再由高层比较真实后果。若采用 Option-Critic，应将低层子任务更新换成前面推导的主任务 actor 与终止梯度；若还要联合使用两种奖励，则需要重新规定优化目标。
 
 | 收到什么经验 | 更新哪个对象 | 使用哪个信号 | 什么时候生效 |
 | --- | --- | --- | --- |
@@ -633,7 +727,7 @@ Sutton 的 2025 讲座主张：为规划保留完整 option 后果，但每个�
 
 第三个入口的低层目标是到达给定子目标，低层折扣为 $0.95$；高层却是持续平均奖励问题。它学习未折扣的段内奖励、时长和终点概率，并使用 $R_{\rm sum}-\rho\tau+\max Q(s',\cdot)$。不能把这个实现描述为本节带折扣终点核的复现。它会在部署策略改变时清除对应模型和高层 option 价值，但没有证明全部相关估值立刻恢复一致。
 
-三个入口可以按问题顺序阅读：先在固定技能下计算跨段 Bellman 目标，再学习内部动作与停止，最后把变化中的技能交给后果模型与规划器。每一步增加一个需要维护的对象，也给下一步提供一个可检查的参照。
+三个入口可以按问题顺序阅读：先在固定技能下计算跨段 Bellman 目标，再学习内部动作与停止，最后把变化中的技能交给后果模型与规划器。每一步增加一个需要维护的对象，也给下一步提供一个可检查的参照。若还不清楚这些更新怎样交错，先读[完整架构的一次技能执行](architectures.md#lesson-cycle-real-step)：固定技能的每步奖励先训练后果预测，停止后再进入平均奖励控制与规划，然后回到这里放开技能学习。
 
 <a id="lesson-neural-options"></a>
 
@@ -767,7 +861,7 @@ python3 tutorials/option_model_walkthrough.py --json
 
 四房间图的 [独立计算模块](https://yingwen.io/crl-code/figures/concept-options-credit.mjs) 提供逐步执行、精确后果模型和同步规划，所有格子与备份计数见 [完整数值](https://yingwen.io/crl-figures/concept-options-credit-data.json)。可以先把目标 Z 移到另一房间，再比较价值需要多少轮传到 A；改变技能本身时，要同时重新生成其模型。
 
-跨步 target、arrival value、多个 option 的一步估值、两种 actor 更新与技能内在奖励的最小实现。
+跨步 target、arrival value、多个 option 的一步估值、两种 actor 更新与技能内在奖励的机制核；采样与参数维护由调用者提供。
 
 ```python
 def option_target(rewards, gamma, next_value, terminal=False):
@@ -860,7 +954,7 @@ python3 examples/knowledge_algorithms_lab.py test
 
 运行结果对应前面的手算：跨步 target 为 $10.9$，arrival value 为 $3$，两个估值为 $[0.74,0.64]$，动作 logits 为 $[0.1,-0.1]$，终止 logit 为 $0.1$。还应检查启动集合：下一状态价值为 $[1,100]$、只有第一个 option 可启动时，重新选择的价值是 $1$；第二个 option 若早已开始且 $\beta=0$，继续执行的价值仍可为 $100$。代码中的 sigmoid 分支避免了极端 logit 的指数溢出。
 
-这份表格实现适合逐步观察更新顺序。进一步研究深度 Option-Critic 时，作者 Atari 仓库提供卷积网络、目标网络、策略与终止损失以及完整交互循环；可沿相同的三个接口阅读：跨步选技能、原始步选动作、到达状态判断停止。
+这段代码只执行给定数字的一次更新，没有环境采样器，也不维护完整训练过程。要观察学习如何改变后续经验，应进入前面的表格 Option-Critic 独立程序：它循环采样动作、缓存旧 critic 与停止概率、更新两个 actor 和 critic，再按缓存的停止概率决定是否重选。作者 Atari 仓库进一步提供卷积网络、目标网络和完整交互循环；阅读时仍可沿跨步选技能、原始步选动作、到达后判断停止三个接口核对。
 
 - 改动 A：把所有 β 设成 1，并限制一个 option 对应一个 primitive action；验证 target 退化到 Q-learning。
 - 改动 B：把当前 option 优势从 −4 改为 +4；停止 logit 应下降。再把其设为 0，更新应为零。
@@ -871,23 +965,41 @@ python3 examples/knowledge_algorithms_lab.py test
 
 ## 7. 技能发现首先要选择什么行为值得学习
 
-Option-Critic 直接用当前任务回报优化技能；另一类发现方法在没有当前任务奖励时，先积累覆盖环境或具有可区分效果的行为。它们与 option 形式兼容，但并不都学习可变的终止条件，也不都提供规划所需的 reward/end-state 模型。比较之前先问：发现信号是什么，技能怎样被调用，何时结束，下游需要什么接口？
+前面已经会为给定子任务学习策略，也会调节停止概率。但为什么先学到这个门口，而不是另一个位置？应该保留多少技能，又何时替换一个旧技能？这些问题要求选择要学习的行为，而不仅是在给定三元组里更新参数。
+
+设技能库为 Ω，高层从中选择行为。若所有原始动作仍可用，增加一个技能不会提高原 MDP 的理论最优值，因为原始动作已经能表达它的行为。它可能改善的是有限经验下的探索、有限计算下的规划或迁移速度。这些用途不能只用最终最优值来衡量；需要把发现技能、学习模型和后来调用的成本一起计入。若技能库取代了部分原始动作，则还改变了可表达的策略集合。
+
+自动发现通常仍保留一些设计选择：候选的参数化、容量、内在目标、数据收集方式和调用时长。Option-Critic 固定技能数及启动区域，用当前任务回报调节内部策略和停止；谱方法从转移结构生成新的子任务；无监督技能学习则选择彼此不同或后果可预测的行为。先说明改变哪一个对象，才能判断发现了什么。
 
 结构发现、互信息发现和任务回报优化回答的问题不同。图结构方法寻找能跨越环境大尺度区域的行为；DIAYN 寻找可被区分的行为；DADS 进一步要求行为后果可预测；Option-Critic 则直接改进当前任务回报。先看后两种无监督准则，再推导 Machado 一线如何从环境结构得到技能。
+
+DIAYN 先从固定先验 $p(z)$ 选择一个技能标识，再让条件策略产生状态。希望只看状态就能推断标识，于是最大化互信息 $I(S;Z)$。真实后验 $p(z\mid s)$ 不可直接计算，用判别器 $q_\phi(z\mid s)$ 代替：
+
+$$
+\begin{aligned}I(S;Z)&=\mathbb E[\log p(Z\mid S)-\log p(Z)]\\&=\mathbb E[\log q_\phi(Z\mid S)-\log p(Z)]\; +\mathbb E_S D_{\rm KL}(p(\cdot\mid S)\|q_\phi(\cdot\mid S))\\&\geq\mathbb E[\log q_\phi(Z\mid S)-\log p(Z)].\end{aligned}
+$$
+
+非负的 KL 散度给出下界。判别器拟合后验使界变紧，策略改变所访问的状态使界变大。这里的 S 按技能诱导的访问分布取样；有限时域实现必须说明从哪些时刻取样。
 
 $$
 r_{\rm DIAYN}(s,z)=\log q_\phi(z|s)-\log p(z)
 $$
 
-DIAYN 采样技能标识 z，让条件策略产生能被判别器区分的状态。qφ 猜“哪个技能产生了这个状态”，固定先验 p 保持技能使用多样性；策略训练还包含动作熵项。这里不是外部目标奖励，也不自动约束一个技能的终点。
+这个对数比成为内部学习信号；最大熵策略更新另外保留动作熵项。训练通常在一段交互中固定 z。若高层每 k 步重选，固定的 k 就是调用约定，尚未学习状态相关的停止函数。
 
 其最小训练循环是：采样 z 并固定一段交互；保存 (s,a,s′,z)；训练判别器预测 z；用当前判别器构造内在奖励训练条件策略；在统一外部任务上评价技能复用。需警惕技能仅凭无关背景区分、所有技能起点泄漏标签、判别器与策略相互追逐。技能可分辨并不自动意味着有用。
+
+如果下游要做模型规划，只能辨认“现在像哪个技能”还不够，还要预测“执行以后会去哪里”。DADS 用条件动力学 $q_\phi(s'\mid s,z)$ 拟合真实后果，再给可预测而彼此不同的转移更高内在奖励。它由 $I(S';Z\mid S)$ 出发，实际奖励采用下面的近似：
 
 $$
 r_{\rm DADS}(s,z,s')=\log q_\phi(s'|s,z)-\log\!\left(\sum_{z'}p(z')q_\phi(s'|s,z')\right)
 $$
 
-DADS 比较特定技能下状态变化的可预测性与混合技能模型。离散求和也可用先验采样近似；连续技能需要相应积分/采样。它同时学习技能动力学，因而比只有技能判别器更直接提供模型控制接口。
+离散求和可由先验采样近似，连续技能则用积分或样本平均。真实边缘后果分布使用 p(z|s)，实现中以先验 p(z) 替代；技能访问不同区域时，两者一般不同。因此这个实际奖励不能直接当作精确的条件互信息。
+
+DADS 的下游规划还需要外部奖励函数：预测候选技能序列造成的状态变化，用任务奖励评分，执行首段技能后重新规划。预测模型使无奖励预训练与有奖励控制之间有了明确接口。DIAYN 的判别器没有提供这种转移模型，但它的技能仍可由高层通过真实奖励学习如何组合。两种路线没有谁自动包含另一个。
+
+本地[表格 DIAYN 实现](https://yingwen.io/zh/continual-rl/code/diayn_tabular/)把标识 z 固定八步。它先用旧判别器计算到达状态的内在奖励，再训练判别器、soft critic 和条件 actor；时间进入状态，避免把八步问题误写成无限时域。冻结评价枚举状态与技能的真实联合分布来算互信息，不以训练判别器的准确率代替。这个指标测技能分离，尚未测外部任务复用。作者[DIAYN 工程](https://github.com/ben-eysenbach/sac/blob/master/DIAYN.md)提供神经 SAC 版本。
 
 | 准则 | 怎样学习 | 对 CRL 的价值与缺口 |
 | --- | --- | --- |
@@ -909,21 +1021,27 @@ $$
 
 A 是无向转移图的邻接权重，D 的对角线是节点度数。常数对应的平凡方向需按所用归一化转换后去除。低频特征在相连状态间变化缓慢，跨瓶颈却能形成明显差异；它描述的是图上的连通结构，而非观测像素距离。
 
-选定一个非平凡状态特征 $e_i(s)$ 后，把沿该特征上升定义为子任务。对正、负两个方向分别训练，可以得到向相反区域移动的技能。策略仍按 RL 学习，并不是直接对特征做梯度就能得到环境动作。
+这个选择可以从一个优化问题得到。令状态坐标为 $e=D^{-1/2}u$，则相邻状态变化的总量是 $\tfrac12\sum_{s,s'}A_{ss'}(e(s)-e(s'))^2=u^\top L_{\rm sym}u$。约束 $u^\top u=1$ 排除全部缩成零，再要求与平凡方向正交。拉格朗日驻点给出 $L_{\rm sym}u=\lambda u$；最小非平凡特征值选择最缓慢的变化方向。这里用的是规范化图坐标，不能把非正则图上的 u 与 e 混用。
+
+接下来须选定哪一种坐标作为奖励特征。2017 年原文直接使用规范化 Laplacian 的特征向量，本节记为 $u_i$；上面的 $e_i=D^{-1/2}u_i$ 用来解释平滑性，不能在非正则图上悄悄替换 $u_i$。把沿 $u_i$ 上升定义为子任务，并对正、负两个方向分别训练，就能得到向不同区域移动的技能。策略仍按 RL 学习，并不是直接对特征做梯度就能得到环境动作。
 
 $$
-r_i(s,a,s')=e_i(s')-e_i(s),\qquad Q_i(s,a)\leftarrow Q_i(s,a)+\alpha\left[r_i+\gamma_i\max_{b\in\mathcal A\cup\{\perp\}}Q_i(s',b)-Q_i(s,a)\right]
+r_i(s,a,s')=u_i(s')-u_i(s),\qquad Q_i(s,a)\leftarrow Q_i(s,a)+\alpha\left[r_i+\gamma_i\max_{b\in\mathcal A\cup\{\perp\}}Q_i(s',b)-Q_i(s,a)\right]
 $$
 
 终止动作 ⊥ 的后续收益规定为零；当所有继续动作的内在价值都不大于零时，可以选择停止。技能的启动区域是仍值得继续的状态。$γ_i$ 是该发现问题自己的折扣，未必等于主任务折扣。
 
 这里的差分奖励不是“保持原任务最优策略不变”的一般奖励塑形。策略不变塑形通常使用 $\gamma\Phi(s')-\Phi(s)$；eigenoption 则有意定义一个新的内在控制问题。它的价值在于生成长程行为，不在于保证该行为已经优化外部任务。
 
+发现三元组的步骤现在可以逐项对应：谱方向规定内在奖励；带停止动作的控制问题给出内部策略；继续价值决定启动集合和停止区域。两种符号方向给出两条技能，但并不保证它们都对当前任务有用。在仅部分图已访问的情况下，图也是待学习对象；每次把新区域加入图，方向及相关技能都可能改变。
+
+单文件 [discovery_mechanisms.py](../tutorials/discovery_mechanisms.py) 使用四节点路径图，独立核对规范化特征方程，再通过同步 Bellman 备份求内部继续/停止价值。输出包含状态坐标、内在奖励、启动集合、停止集合和从中间节点执行的轨迹。这里给定转移图，观察的是从结构到行为的计算，不把图构建成本算成零样本发现。
+
 **算法：Eigenoptions 的表格流程；图特征、技能学习与下游评价是三个不同阶段**
 
-1. 构造状态转移图，求低频非平凡特征 $e_i$
+1. 构造状态转移图，求低频非平凡特征 $u_i$
 1. 对每个特征及其相反方向：
-  1. 定义内在奖励 $r_i=e_i(s\prime)-e_i(s)$
+  1. 定义内在奖励 $r_i=u_i(s\prime)-u_i(s)$
   1. 加入收益为零的终止动作 $\perp$
   1. 用控制算法学习内部策略，并由继续价值决定停止区域
 1. 将学到的 options 加入行为集合
@@ -937,11 +1055,13 @@ $$
 
 这里采用包含当前状态的访问约定，$e_s$ 是当前状态的 one-hot 向量。神经表示用特征替换 one-hot，再学习其未来累计。SR 与转移算子共享适当的谱结构；与对称 Laplacian 的对应还需要可逆性或合适的对称化，不能对任意有向动力学直接当作同一个矩阵。
 
-由此得到一条清楚的变化：2017 年先有图再发现技能，2018 年开始从行为数据学习发现技能所需的结构。代价是表示依赖采样策略；没有访问过的房间，不会因为使用深度网络就自动出现在可靠的结构表示中。
+本节先用已知图解释谱目标，实际发现却不必从完整图开始。2017 年原文已将样本的特征差组成矩阵，用奇异值分解发现方向；2018 年进一步采用可由 TD 学习的多步后继表示及深度特征。两者都要面对经验覆盖：没有访问过的房间，不会因为使用深度网络就自动出现在可靠的结构表示中。
 
 <a id="lesson-discovery-cycle"></a>
 
 ## 9. 从静态特征到在线发现：ROD、DCEO 与 ALLO
+
+深入阅读：在技能表示随经验变化时，比较 ROD、DCEO 与 ALLO 的发现与维护方式。
 
 技能改变探索，探索又改变表示，因而“先学表示、以后永久冻结技能”的分阶段方案并非唯一选择。Machado、Barreto、Precup 与 Bowling 在 JMLR 2023 的 Temporal Abstraction with the Successor Representation 中把这条反馈链称为 representation-driven option discovery：经验形成表示，表示定义子任务，子任务产生 options，options 再改变后续经验。
 
@@ -969,6 +1089,8 @@ Proper Laplacian Representation Learning（ALLO，ICLR 2024）通过带次序的
 <a id="frontier-options-learned-termination"></a>
 
 ## Value-Aware Eigenoptions：停止边界的误差怎样放大成控制困难
+
+深入阅读：检查学习停止边界时，表示误差怎样影响控制。
 
 Value-Aware Eigenoptions（RLC 2025 workshop）不仅提出给 eigenoptions 学外部任务价值，也展示两种困难：在线发现改变后续访问分布；非线性技能的停止集合难以稳定。表格固定技能带来的信用收益，并未原样出现在所有深度配置中。
 
@@ -998,6 +1120,8 @@ $$
 <a id="lesson-skill-composition"></a>
 
 ## 10. 从单方向技能到可组合技能：METRA 与 Laplacian Keyboard
+
+深入阅读：从单个技能继续推到方向条件与技能组合。
 
 Eigenoptions 常把一个特征方向对应为一个技能。如果下游目标位于两个方向之间，或者需要先沿一条方向再沿另一条方向运动，应如何组合？可以离散切换已有 options，也可以把连续的方向向量作为低层策略输入。后者把技能库变成可查询的条件策略族，但还需要规定方向的意义与执行时长。
 
@@ -1046,6 +1170,8 @@ $$
 
 ## 从给定技能库到自动补齐行为基
 
+深入阅读：围绕缺少哪些有用行为，讨论自动扩充技能集合。
+
 Option-Critic 优化当前任务中的内部动作和停止；谱发现提供覆盖性的候选行为；Option Keyboard 则问已有行为怎样组合。这里还缺一个问题：组合器已经训练充分，却依然无法产生某个必要动作时，是组合学习不足，还是基础行为缺失？OKB（NeurIPS 2025）把这一区别变成增量构造行为基的准则。
 
 $$
@@ -1079,6 +1205,8 @@ A_Π 描述当前基础通过任意方向能表达的动作。论文用已训练
 <a id="research-options-directional-policy-contract"></a>
 
 ## 方向条件策略如何成为真正的时间抽象
+
+深入阅读：检查方向条件策略成为时间抽象时还需规定哪些对象。
 
 HILP（ICML 2024）从离线时间距离表示学方向条件行为。它与 METRA 都使用潜在位移的方向奖励，但表示来源不同：HILP 从离线目标价值约束距离，METRA 在技能交互中联合约束表示与行为。条件策略 π(a|s,z) 本身只定义当前动作，必须再规定调用、停止和时长，才能成为 planner 可使用的 option。
 

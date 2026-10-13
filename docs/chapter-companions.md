@@ -545,9 +545,9 @@ Procgen / MiniGrid 分离训练关卡和测试关卡；加入不可学习噪声�
 
 [配套阅读](https://yingwen.io/zh/continual-rl/library/?chapter=study-deep-entropy-control) · [相关学者](https://yingwen.io/zh/continual-rl/people/?chapter=study-deep-entropy-control) · [实验](https://yingwen.io/zh/continual-rl/labs/#foundation-study-deep-entropy-control)
 
-#### [深度 RL 的机制接口：模型、记忆、离线数据与实验](../foundations/deep/practice.md)
+#### [深度 RL 的训练循环：经验、目标与更新](../foundations/deep/practice.md)
 
-改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？
+一条真实经验怎样经过采样、保存、构造目标和求导，最后改变下一次行动？
 
 - [Rishabh Agarwal](https://yingwen.io/zh/continual-rl/resource/S109/)：深度 RL 的统计可靠性；从运行与采样单位理解结果比较。
 

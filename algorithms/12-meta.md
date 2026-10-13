@@ -9,6 +9,12 @@
 - 完整理解 MAML、RL²、PEARL、meta-gradient RL 与 learned update rules 的训练/测试循环及 reset 边界。
 - 用可运行的有限差分、手算与机制反例验证代码，并设计适用于持续交互而非仅任务重置的评测。
 
+## 阅读这条论证
+
+普通学习改变预测或策略，元学习改变产生这些更新的规则。先明确由哪一次更新后的表现评价规则，再沿连续更新应用链式法则。IDBD、TIDBD 和 Metatrace 逐步加入自举与时间信用；学习目标和更新规则的发现则扩大可学习的对象。
+
+[区分内层与外层目标](../textbook/meta.md#lesson-setting) → [传播学习过程的敏感度](../textbook/meta.md#lesson-derive) → [确定评价时刻](../textbook/meta.md#lesson-evaluation-timing) → [学习逐特征步长](../textbook/meta.md#lesson-idbd) → [处理自举目标](../textbook/meta.md#lesson-tidbd) → [处理时间信用](../textbook/meta.md#lesson-metatrace) → [学习目标的参数](../textbook/meta.md#lesson-meta-rl) → [发现更新规则](../textbook/meta.md#lesson-learned-rules) → [评价对整个智能体的影响](../textbook/meta.md#lesson-agent-coupling) → [对应实现与近似](../textbook/meta.md#lesson-code)
+
 <a id="chapter-prerequisites"></a>
 
 ## 预备知识与符号
@@ -54,13 +60,13 @@ $$
 
 ### 信息与数据权限
 
-内层状态 $w_t$ 含权重及影响更新的优化器/迹；经验 $\xi_t$ 已到达。跨任务训练允许声明的训练任务，测试任务未来不得参与外层选择。
+$W_t$ 表示内层完整持久状态，包含权重 $w_t$ 及影响下一次更新的优化器、资格迹和统计量；$\xi_t$ 是已到达经验。在线元参数及其敏感度还需另行保存。跨任务训练只使用声明的训练任务，测试任务未来不得参与外层选择。
 
 $$
-w_{t+1}=F_\eta(w_t,\xi_t),\qquad \min_\eta\mathcal J(\eta)=\mathbb E[J(w_{t+K},\xi_{t+K:t+K+M};\eta_{\rm eval})]
+W_{t+1}=F_\eta(W_t,\xi_t),\qquad \min_\eta\mathcal J(\eta)=\mathbb E[J(W_{t+K},\xi_{t+K:t+K+M};\eta_{\rm eval})]
 $$
 
-$\eta$ 为元参数，$F_\eta$ 为更新规则，$K$ 为适应长度，$M$ 为后续评价长度；$J$ 是外层损失（例如负回报），$\eta_{\rm eval}$ 固定评价约定。期望所覆盖的任务、随机性和生命周期必须声明；适应后表现与全程收益不同。
+$\eta$ 为元参数，$F_\eta$ 更新完整内层状态 $W$，$K$ 为适应长度，$M$ 为后续评价长度；$J$ 是外层损失（例如负回报），$\eta_{\rm eval}$ 固定评价约定。正文链式法则用小写 $w$ 简记参与求导的内层状态；具体算法只对权重求导时，需声明其他状态的导数处理。期望覆盖的任务、采样与生命周期分别规定。
 
 ### 成立条件与解的含义
 
@@ -78,11 +84,17 @@ $\eta$ 为元参数，$F_\eta$ 为更新规则，$K$ 为适应长度，$M$ 为�
 
 关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
 
-- 组合不同学习问题 · [时间信用分配与资格迹](../textbook/credit.md)：元敏感度追踪更新规则对后续学习的影响，不是过去预测的普通资格迹。
+- 组合不同学习问题 · [时间信用分配与资格迹](../textbook/credit.md)：资格分配当前误差对过去预测的更新，元敏感度追踪规则怎样影响后续学习；Metatrace还用另一条迹累计过去规则的作用。
 
-- 改变信息或数据协议 · [流式更新与稳定性](../textbook/streaming.md)：元梯度若缓存rollout或展开图，不自动满足严格流式；预算限制可用近似。
+- 改变信息或数据协议 · [流式更新与稳定性](../textbook/streaming.md)：前向敏感度消耗持久状态，反向展开保存或重算学习窗口；使用在线经验不自动满足严格流式预算。
 
-- 组合不同学习问题 · [奖励假设与奖励设计](../textbook/reward-design.md)：内在奖励或训练目标可作为元参数，由固定外部评价选择。
+- 组合不同学习问题 · [通用价值函数与预测知识](../textbook/gvf.md)：问题参数可通过预测更新、共享表示或答案读出影响后续控制；若消费者没有这条依赖，低预测误差不提供问题用途的信用。
+
+- 组合不同学习问题 · [奖励假设与奖励设计](../textbook/reward-design.md)：可学习训练信号、discount或目标生成器，同时固定外层评价；改变代理任务与改变最终目标是不同选择。
+
+- 组合不同学习问题 · [平均奖励与差分价值](../textbook/average.md)：持续控制的外层应保持原始时间上的奖励率或声明的代理；内层奖励率估计也是可能影响元导数的学习状态。
+
+- 组合不同学习问题 · [可塑性与特征更新](../textbook/plasticity.md)：评价学习能力需要让副本实际学习后再测结果；元步长能调整已有方向，但特征替换还改变表示与相关敏感度。
 
 <a id="problem-solution"></a>
 
@@ -96,11 +108,17 @@ $\eta$ 为元参数，$F_\eta$ 为更新规则，$K$ 为适应长度，$M$ 为�
 
 把内层全部状态纳入更新映射，先求完整敏感度，再声明哪些路径为降低成本而近似。
 
-1. [传播规则对未来状态的影响](../textbook/meta.md#lesson-derive)：因为元参数既直接改变本次更新又经旧状态间接传播，Jacobian递推包含两条路径。
+1. [传播规则对未来状态的影响](../textbook/meta.md#lesson-derive)：对完整更新应用链式法则，分别保留元参数的直接作用与经旧状态传播的作用，再分析窗口截断删掉的路径。
 
-2. [按在线预算压缩敏感度](../textbook/meta.md#lesson-idbd)：因为完整矩阵昂贵，IDBD保留对角，TIDBD/Metatrace还需处理bootstrap和迹；它们不是精确链式法则。
+2. [明确后续评价发生的时刻](../textbook/meta.md#lesson-evaluation-timing)：训练后复用同一样本与用新样本评价会产生不同元方向；固定数据导数还应与规则改变采样分布的导数分开。
 
-3. [对齐训练/测试适应单位](../textbook/meta.md#lesson-meta-rl)：因为MAML、context与学习更新规则改变不同内层对象，分别声明任务分布、reset和外层封存，独立评价适应。
+3. [在在线预算内学习步长](../textbook/meta.md#lesson-idbd)：IDBD将完整敏感度压成逐特征统计，TIDBD再处理自举与资格；需要逐项说明对角、半梯度和稳定化近似。
+
+4. [为学习规则分配时间信用](../textbook/meta.md#lesson-metatrace)：Metatrace累计每个过去时刻的输出梯度与当时敏感度，而非把当前敏感度乘上整条资格迹。
+
+5. [从调参数走向发现更新规则](../textbook/meta.md#lesson-learned-rules)：区分内层参数、目标生成器和固定外层表现；规则表示、发现预算及部署时继续适应的状态各自声明。
+
+6. [沿消费者评价规则的用途](../textbook/meta.md#lesson-agent-coupling)：问题、表示、技能与控制形成不同依赖路径；保持外部目标和资源预算后，才能判断规则改善了哪段学习过程。
 
 结论与条件：固定数据和元参数下完整敏感度递推是链式法则；截断/一阶/对角更新改变导数。没有相应采样路径估计时不能称为完整RL无偏元梯度。
 
@@ -199,6 +217,18 @@ $$
 
 这是固定元参数、固定经验序列下的精确前向敏感度。若 $F=w+f$，传播矩阵为 $I+\partial f/\partial w$，旧敏感度通常会被当前更新的 Jacobian 改变。
 
+为什么必须包含整个学习器状态？若更新使用动量 $v_{t+1}=\rho v_t+\nabla L_t(w_t)$，同一个 $w_t$ 配上不同 $v_t$，下一次权重便不同。此时应令 $W_t=(w_t,v_t)$，在联合状态上应用上式；固定 $v_t$ 只求权重导数，会漏掉步长经早期权重、后续梯度、动量再回到权重的路径。奖励率估计、目标网络和循环活动也要按同样原则处理。某个统计量若被停止梯度，仍须保留其前向数值，只是导数图把它当作给定输入。
+
+展开递推可以看见每次更新的贡献。记 $A_j=\partial F_\eta/\partial w_j$、$B_j=\partial F_\eta/\partial\eta$，暂令 $H_t=0$。第一次更新产生 $B_t$，经过第二次更新后变成 $A_{t+1}B_t$；第三次还会左乘 $A_{t+2}$。因此：
+
+$$
+H_{t+K}=\sum_{j=t}^{t+K-1}\left(A_{t+K-1}\cdots A_{j+1}\right)B_j.
+$$
+
+当 $j=t+K-1$ 时矩阵乘积取单位矩阵。保留窗口起点的敏感度还需加上 $(A_{t+K-1}\cdots A_t)H_t$。乘积决定早期规则选择会被后续学习放大、抵消还是转向；只累计 $B_j$ 相当于把所有 $A_j$ 当作单位矩阵。
+
+反向微分计算同一组依赖：从末端评价梯度 $a_{t+K}=\nabla_wJ$ 出发，逐步令 $a_j=A_j^\top a_{j+1}$，累加 $B_j^\top a_{j+1}$。前向敏感度需要随元参数维数增长的持久状态；反向展开通常保存或重算窗口内的学习器状态。截断在某处设 $H=0$，删掉的是该处以前的导数贡献，学习器的 $w$ 和动量可以继续保留。计算图的截断并不要求环境终止或遗忘已经学到的参数。
+
 $$
 \nabla_\eta J=H_{t+K}^{\top}\nabla_w J+\left.\nabla_\eta J\right|_w
 $$
@@ -244,9 +274,37 @@ def fixed_beta_training(beta, train_targets, validation_target, initial=0.0):
     return loss, hypergradient, trace
 ```
 
+<a id="lesson-evaluation-timing"></a>
+
+## 当前误差评价了哪一次更新
+
+一步元梯度还留下一个问题：训练样本和评价样本取自哪里？设要预测常数均值 $b$，观察为 $Y=b+\epsilon$，噪声均值为零、方差为 $\sigma^2$。暂把当前权重固定在正确均值 $w=b$，用一个样本执行 $w^+=w+\alpha(Y-w)=b+\alpha\epsilon$。此时任何移动都在拟合这次噪声。
+
+$$
+\begin{aligned}\mathbb E\left[\tfrac12(w^+-Y)^2\right]&=\tfrac12(1-\alpha)^2\sigma^2,\\\mathbb E\left[\tfrac12(w^+-Y')^2\right]&=\tfrac12(1+\alpha^2)\sigma^2.\end{aligned}
+$$
+
+$Y'$ 是均值相同、噪声独立的下一样本。第一行在原训练样本上评价更新后误差，第二行在新样本上评价；展开平方后，第二行的交叉项因独立零均值而消失。
+
+对 $\beta=\log\alpha$ 求导，两行分别给出 $\alpha(\alpha-1)\sigma^2$ 和 $\alpha^2\sigma^2$。在 $0<\alpha<1$ 时，复用样本鼓励增大步长，新样本鼓励减小步长。若当前还存在偏差 $d=w-b$，新样本的期望损失为 $[(1-\alpha)^2d^2+(1+\alpha^2)\sigma^2]/2$，最优一步步长为 $d^2/(d^2+\sigma^2)$（分母非零）。适应必须同时考虑尚未学会的信号和无法通过追踪消除的噪声。
+
+这并不要求在线算法把一半样本永久留作验证。IDBD 在第 $t$ 个样本到达时，先用尚未看过该样本的 $w_t$ 计算误差；旧 $h_t$ 把这项误差归因于过去的步长。随后同一样本仍可更新 $w_{t+1}$。评价过去更新与执行当前更新共用一个到达样本，和用当前样本先拟合、再评价自身，是两个时序。
+
+在 RL 中，相邻新样本可能相关；动作还决定以后能看到什么。若完整经验记录 $D$ 的分布为 $p_\eta(D)$，把更新后的评价写成 $\widehat J(\eta,D)$，则在可交换求导与期望的条件下有：
+
+$$
+\nabla_\eta\mathbb E_{D\sim p_\eta}[\widehat J(\eta,D)]=\mathbb E_D\left[\left.\nabla_\eta\widehat J(\eta,D)\right|_D+\widehat J(\eta,D)\nabla_\eta\log p_\eta(D)\right].
+$$
+
+第一项包括穿过学习更新的导数；第二项包括规则通过策略改变适应数据或评价数据的概率。环境转移规律若与 $\eta$ 无关，score 来自 agent 的随机选择。固定轨迹有限差分只检查第一项。
+
+因此要分别说明评价发生在更新前还是更新后、是否复用同一记录、是否重新采样，以及估计器是否包括采样分布路径。后文 MAML 的 Bernoulli 枚举将直接检验这两项；在线元梯度的近似则先在给定经验下讨论。
+
 <a id="lesson-trace-sensitivity"></a>
 
 ## 沿同一条经验流，区分资格与步长敏感度
+
+深入阅读：沿同一条轨迹逐项核对资格迹与步长敏感度，观察两种历史为何不同。
 
 把链式法则用到一个已经熟悉的学习器。信用分配章给定 $A\xrightarrow{1}B\xrightarrow{0}A\xrightarrow{2}\bot$，特征依次为 $(1,0),(1,1),(1,0),0$，初值为零，$\gamma=1$、$\lambda=1/2$。本节选择传统 accumulating TD(λ) 作为内层程序，三次更新共用一个固定步长 $\alpha=1/2$。先算清这个程序的导数，再讨论在线改变步长；不在这三步之中执行元更新。
 
@@ -303,6 +361,14 @@ $$
 精确敏感度是矩阵 $\partial w_j/\partial\beta_i$：改变一个权重会改变公共误差，再影响其他权重。IDBD 只保存 $h_i\approx\partial w_i/\partial\beta_i$，忽略 $i\ne j$ 的交叉影响。在固定 $\beta$ 的对角近似下，对权重更新求导得到保留因子 $1-\alpha_i x_i^2$，以及直接作用项 $\alpha_i\delta x_i$。
 
 $$
+\begin{aligned}D_\alpha&=\operatorname{diag}(\alpha_1,\ldots,\alpha_n),\qquad H_{ji}=\frac{\partial w_j}{\partial\beta_i},\\H^+&=(I-D_\alpha xx^\top)H+\operatorname{diag}(\alpha\odot\delta x),\\\nabla_\beta\tfrac12\delta^2&=-\delta H^\top x.\end{aligned}
+$$
+
+这里固定整段共用的 $\beta$，尚未作截断。因为 $\partial\delta/\partial w=-x^\top$，旧敏感度左乘 $I-D_\alpha xx^\top$；指数步长的直接导数只出现在相应对角位置。即使初始 $H=0$，共享误差也会在后续步骤产生非对角项。
+
+只保留矩阵对角项，外层方向才从 $\delta H^\top x$ 变成逐坐标的 $\delta x_i h_i$，递推才从矩阵乘法变成 $h_i(1-\alpha_i x_i^2)+\alpha_i\delta x_i$。再加入正截断，并用本次元更新后的步长执行权重更新，就得到下面的实际 IDBD。它把二次规模的敏感度存储缩为线性规模，也舍弃了一个坐标的步长经其他权重改变预测的影响。
+
+$$
 \begin{aligned}\beta_i^+&=\beta_i+\mu\delta x_i h_i,\qquad \alpha_i=e^{\beta_i^+},\\w_i^+&=w_i+\alpha_i\delta x_i,\\h_i^+&=h_i\max(0,1-\alpha_i x_i^2)+\alpha_i\delta x_i.\end{aligned}
 $$
 
@@ -320,6 +386,8 @@ $\delta$ 来自更新前的权重，$\beta$ 使用旧 $h$ 更新，之后才计�
 1. 用更新前误差评价当前样本，下一样本再评价学习后的预测。
 
 初始 $h=0$，第一步元更新为零，因为尚无过去步长影响当前权重的历史。普通权重更新产生非零 $h$ 后，后续误差才能评价这种影响。特征尺度、强相关性、噪声与过大的元步长 $\mu$ 都可能使适应不稳定，因此仍需监测步长及敏感度。
+
+在线 $\beta_t$ 不断改变时，这份 $h$ 也不是“只扰动今天的 $\beta_t$”的偏导数。原始推导考虑跨时间的共同微扰，并作坐标局部近似；若要微分整个元更新程序，则连 $\beta,h$ 的递推及其对过去元更新的依赖也要放进状态。这里的后续误差是在评价近似保存的过去学习影响。
 
 线性监督预测的 IDBD：保存旧误差与旧敏感度，依次更新对数步长、权重和敏感度。
 
@@ -476,6 +544,8 @@ $$
 
 若改为完整 TD-error 导数，外层方向涉及 $x_t-\gamma x_{t+1}$，$h$ 的传播因子也相应变化。目标导数约定、敏感度递推与步长归一化应成套指定。
 
+半梯度敏感度可以用一个明确的局部程序理解：在中心运行中先保存每一步的 bootstrap 数值 $b_t=\gamma w_t^\top x_{t+1}$，扰动步长重跑时仍使用这份数值，只重新计算 $R_{t+1}+b_t-w^\top x_t$。在单坐标、固定步长且正截断未触发时，TIDBD 的 $h$ 就是这个固定标签程序的导数。若扰动后也重算 $b_t$，检验对象已经换成完整 TD 更新，通常得到另一个导数。多坐标的 $h$ 还要加上对角近似的误差。
+
 当 $\gamma=0$、旧资格迹不再贡献且 $z=x$ 时，更新退化为 IDBD。真正 terminal 的 bootstrap 为零，可以将下一状态特征置零，在完成本次更新后清空 $z$；采样预算造成的 timeout 不自动等于 terminal。自适应步长本身也不改变 off-policy TD 的稳定性条件。
 
 TIDBD 的全部一转移更新。调用者负责真实 episode 的资格迹边界；脚本不自行猜任务变化。
@@ -502,6 +572,8 @@ def tidbd_step(weights, beta, history, eligibility, features, next_features,
     return new_weights, new_beta, new_history, new_z, delta
 ```
 
+实际交互入口 [continual/tidbd.py](../implementations/continual/tidbd.py) 的 update 保留了上述一般 γ、λ 更新，但 run 使用 γ=0 的两维回归流，因而其曲线检验的是 IDBD 退化情形。带 bootstrap 的导数由配套机制代码检查；不能把回归曲线读成带迹 TD 控制实验。
+
 <a id="lesson-metatrace"></a>
 
 ## 5. Metatrace：过去的哪些步长影响了今天的控制误差
@@ -527,6 +599,16 @@ $$
 $$
 
 外层目标对 return 采取半梯度约定；敏感度递推却使用 $\delta$ 对权重的完整导数，因为它要追踪实际更新怎样依赖步长。递推省略了 $\partial z_t/\partial w$，也未计算动作分布改变的采样路径。即使 critic 线性，策略对数概率一般仍非线性，因而整体不是精确超梯度。
+
+把省略项写出来能看清近似的位置。先固定共同 $\beta$、$q$ 与采样路径，并省去归一化和熵项，定义 $Z_t=\partial z_t/\partial\beta$。由 $z_t=qz_{t-1}+\nabla U_{w_t}$ 得：
+
+$$
+\begin{aligned}Z_t&=qZ_{t-1}+\nabla_w^2U_{w_t}\,h_t,\\h_{t+1}&=h_t+\alpha\left[\delta_tz_t+z_t(\nabla_w\delta_t)^\top h_t+\delta_t Z_t\right].\end{aligned}
+$$
+
+Metatrace 的局部敏感度忽略末项 $\alpha\delta_tZ_t$。这里 $Z_t$ 是“权重资格迹对步长”的导数；前面的 $z_{\beta,t}$ 则累计各时刻 $g_k^\top h_k$ 来分配元误差。两者有不同定义，不能互相替换。
+
+线性 critic 单独学习时 $\nabla^2U=0$，初始 $Z=0$ 会一直为零，所以固定步长下的 $h$ 可以精确匹配该程序的有限差分。加入 softmax actor 后，即使 logits 对权重线性，$\log\pi$ 仍有非零 Hessian。进一步恢复在线元更新和归一化时，若要对整个实际算法求精确导数，还必须传播 $\beta,u,v$ 的变化；论文的局部敏感度并未微分这些适应操作。
 
 **算法：无熵项、无归一化的标量步长 Metatrace 核心**
 
@@ -596,6 +678,8 @@ class LinearMetatrace:
             self.z = self.z_beta = 0.0
         return result
 ```
+
+对应的交互实现是 [extended_adaptation/metatrace.py](../implementations/extended_adaptation/metatrace.py)。它在可观察剩余时间的短链上执行线性 critic 与 softmax actor：ac_terms 在旧权重上同时算出 δ、∇U 与 ∇δ；step 先用旧 h 形成元资格，再调整并归一化步长，最后同步生成新 h 和新权重。真实终止后清空 z、zβ、u，下一回合继承 w、β、h、v。其独立测量是冻结贪心策略的回报，训练动作仍按随机策略抽样。
 
 <a id="experiment-extended-metatrace"></a>
 
@@ -722,6 +806,10 @@ def lambda_return_sensitivity(rewards, next_values, bootstrap, gamma=0.9, lam=0.
     return g, dg, dl
 ```
 
+实际 [meta_gradient.py](../implementations/extended_adaptation/meta_gradient.py) 将这条链落在五状态随机游走预测上。它固定策略、令 $\lambda=\sigma(\beta)$，用一条 train 轨迹计算 return；旧价值仅作为固定 bootstrap 数值，$\lambda$ 路径仍保留。内层对均方误差做一次步长 0.1 的 SGD，随后在另一条新 validation 轨迹上评价 $w^+$，外层固定 $\lambda_{\rm eval}=1$。反传到 $\beta$ 后，程序把新权重与元参数从计算图中分离，下一批从这些数值继续。
+
+这里的截断窗口恰好是一批内层更新。每批两条轨迹都耗费真实转移；每条最多 24 步，超时的尾值继续 bootstrap，真实端点尾值为零。若 validation 被截断，其尾值来自 $w^+$ 但在外层停止梯度。核对元梯度时，要固定中心运行的这份尾值；重新计算扰动后的尾值会加入实现有意删去的路径。这段代码验证固定策略的目标适应，策略依赖的采样项在这个环境协议中没有出现。
+
 <a id="experiment-extended-meta_gradient"></a>
 
 ### 实验：实验 · 对验证轨迹求元梯度，能否学出有用的 λ？
@@ -771,6 +859,8 @@ python3 implementations/extended_adaptation/meta_gradient.py --steps 1200 --seed
 <a id="lesson-maml"></a>
 
 ## 8. MAML：学习一个适合少量更新的初始化
+
+深入阅读：换到允许跨任务训练和重置的设定，推导适合少量更新的初始化。
 
 MAML 换了问题设定：从任务分布 $p(T)$ 采样任务，每个任务允许收集少量适应经验，再评价适应后策略。外层变量是共享初始化 $\theta$。每个任务从同一初值复制出 $w_i$，执行若干梯度更新；外层评价这些更新后的表现。直接平均各任务未适应的损失，则是不同的多任务学习目标。
 
@@ -842,6 +932,8 @@ def stochastic_adaptation(theta, alpha=0.2, target=1.0):
 <a id="lesson-context"></a>
 
 ## 9. RL² 与 PEARL：在活动状态中进行任务推断
+
+深入阅读：比较把适应保存在递归活动或任务后验中的方法，以及它们与参数更新的关系。
 
 另一种办法是把“学到了哪个任务”放进活动状态或潜变量，而把推断规则留在固定网络权重里。RL² 将前一动作、奖励和 episode 结束信号与当前观测输入 RNN；内层适应发生在 hidden state 的变化，外层用 RL 训练整条 trial 的累计表现。若一个 trial 包含同一任务的多个 episode，hidden state 在 episode 间保留，在新的任务 trial 开始才重置；这是任务协议的一部分。
 
@@ -921,6 +1013,18 @@ $$
 
 这是一个通用接口，具体方法的损失仍有差异。$m$ 为元学习器活动状态，$p_w$ 为 agent 的策略或辅助预测。target 对内层 $w$ 和外层 $\eta$ 的导数可以采用不同约定；整块 detach 会同时删除外层希望学习的通路。
 
+目标生成器为什么能从行为回报学到东西？先在一个更新内把 $w$、轨迹和规则活动固定，记生成目标为 $\widehat y_\eta$。内层对 $w$ 求偏导时保持目标不动，外层再对这一偏导的结果求导：
+
+$$
+\frac{\partial w^+}{\partial\eta}=-\alpha\frac{\partial^2\ell(p_w,\widehat y)}{\partial w\,\partial\widehat y}\frac{\partial\widehat y_\eta}{\partial\eta},\qquad\nabla_\eta J=\left(\frac{\partial w^+}{\partial\eta}\right)^\top\nabla_{w^+}J.
+$$
+
+这是一次更新的直接路径；多步时仍需传播旧 $H$、规则活动及允许通过的其他状态导数。外层若是期望回报，$\nabla_{w^+}J$ 需由相应的策略梯度估计，而不是对环境给出的奖励数值直接反传。
+
+以分类输出的 $D_{\rm KL}(\widehat p\Vert p_w)$ 为例，若直接把 logits 记为 $a$，内层梯度为 $p_a-\widehat p$，于是 $a^+=a-\alpha(p_a-\widehat p_\eta)$，固定旧 $a$ 时有 $\partial a^+/\partial\eta=\alpha\,\partial\widehat p_\eta/\partial\eta$。后续评价因此能告诉生成器，怎样移动目标分布有助于改善更新后的策略。最小化内层 KL 只说明 agent 更接近所给目标；目标是否有用要由这条后续评价路径决定。
+
+[LPG 原文 §3](https://arxiv.org/html/2007.08794#S3)采用更特定的接口：反向 LSTM 读取一段已到达轨迹，输出策略 score 的标量权重 $\widehat\pi$ 与预测分布目标 $\widehat y$。其内层方向是 $\widehat\pi\nabla_w\log\pi_w-\alpha_y\nabla_wD_{\rm KL}(y_w\Vert\widehat y)$。因此 LPG 的 $\widehat\pi$ 不是目标策略分布，辅助 KL 的方向也与下面 DiscoRL 的目标匹配式不同。外层用更新后策略的回报改进规则，实际在有限更新窗口内反传；一个 agent 的生命可跨越多个窗口。
+
 **算法：算法伪代码**
 
 1. 元训练：
@@ -958,9 +1062,35 @@ $$
 
 比较规则时，先固定新 agent 可用的交互步数、架构与计算，再分别报告规则发现的成本。跨环境迁移检验规则能否用于没参与发现的环境；长生命试验则检验同一 agent 遇到变化后还能否学习。前者成功后，仍可以继续问：奖励尺度改变、过去情境回归、训练长度远超发现时长度，是否改变了规则的作用？
 
+<a id="lesson-agent-coupling"></a>
+
+## 从调步长到发现问题：完整 agent 怎样评价学习规则
+
+同一个持续运行的 agent 可以学习状态、许多预测、技能及其模型，再用这些知识选择行动。元学习接收的评价取决于其中哪个消费者。一个预测器的误差下降，回答的是这个问题更容易被当前表示拟合；只有当它改变了后续状态、规划或控制，才能沿相应路径评价它对行为的作用。这也使“学习预测问题”和“学习预测问题的答案”成为两个不同层次。
+
+在 [GVF 章](../textbook/gvf.md) 中，问题由累积信号、延续规则和目标策略规定。若问题本身写成 $q_\eta=(C_\eta,\Gamma_\eta,\pi^q_\eta)$，答案参数为 $\nu$，共享表示参数为 $\theta$，则元参数可以经“问题 → 预测更新 → 表示 → 后续控制”获得评价。只最小化当前预测误差可能鼓励选择恒为零的信号；固定问题的可预测性与选择问题的用途需要不同的评价。
+
+$$
+\begin{aligned}(\theta^+,\nu^+)&=F_\eta(\theta,\nu,D_{\rm pred}),\\\nabla_\eta J_{\rm control}&=\left(\frac{\partial\theta^+}{\partial\eta}\right)^\top\nabla_{\theta^+}J_{\rm control}+\left(\frac{\partial\nu^+}{\partial\eta}\right)^\top\nabla_{\nu^+}J_{\rm control}.\end{aligned}
+$$
+
+此式先固定数据并假设外层无其他直接依赖。若预测头既不供控制器读取，也不改变共享表示，右侧对应路径为零；“多学一个预测”不会仅因名字而获得控制信用。把策略采样重新开放，还需前述分布导数。
+
+改变 $C,\Gamma$ 或目标策略会改变 GVF 的真值语义，因此旧答案、资格迹与模型的版本也要一起考虑。若保留问题不变，只学习其步长或损失权重，改变的则是求答案的规则。发现新问题时可以先固定消费者，比较候选启用前后的后续评价；把“问题更有用”与“分配了更多计算”分开。这里给出的是可检验的组合设计，不是 IDBD 或 DiscoRL 已经完成问题发现的结论。
+
+[Option 章](../textbook/options.md)还有类似区分。直接用行为回报更新技能内部策略或终止参数，是扩展策略的普通控制学习；学习“技能内部应优化什么子目标”或“以什么步长训练技能”，再经训练后的技能表现评价这些选择，才出现本章的外层。终止规则改变会同时改变技能数据、持续时间和后果模型，固定旧轨迹求导只能覆盖其中允许通过的路径。
+
+如果完整 agent 采用 [平均奖励准则](../textbook/average.md)，外层应继续按原始时间衡量奖励率，或明确有限窗口累计奖励作为其代理。学习一个辅助 discount 不应顺便改变外层控制目标。对随机持续时间 $\tau$ 的技能，在相应的稳态决策分布及有限正平均时长下，奖励率为 $\mathbb E[R_o]/\mathbb E[\tau]$；按技能次数平均奖励会给不同的偏好。内层奖励率估计也属于学习器状态，对差分误差 $\delta=R-\bar r+v'-v$ 求元导数时，是否保留 $-\partial\bar r/\partial\eta$ 必须声明。
+
+[知识保留](../textbook/retention.md)与[可塑性](../textbook/plasticity.md)进一步决定外层该看到多长的学习过程。只读旧知识的损失可以评价保持，却不能测量以后再学习的速度；要评价可塑性，需要让副本执行规定预算的新学习，再评价其结果。若更新规则把受损的梯度通路缩放得再大，也可能没有有效方向可用。元步长、特征替换和旧知识约束因而可以组合，但各自改变的状态、后续表现和计算成本要分别测量。
+
+从这些消费者回看方法，比较应沿四个维度进行：可改变的是步长、目标、初始化还是活动；后续评价来自预测、控制还是再次学习；导数保留了哪些状态、采样和时间路径；部署时哪些量继续变化。MAML 的初值、RL² 的活动、IDBD 的步长和 learned rule 的目标生成器可以放进同一框架，同时保留各自的数据权限与研究问题。[完整架构](../textbook/architectures.md#lesson-cycle-meta)把局部预测步长放进一条可运行的交互循环，再沿链式法则说明：若改用下游控制评价，还必须保留经过模型与规划的哪些导数。
+
 <a id="lesson-search-control"></a>
 
 ## 把规划计算用于哪里：元学习也可以选择经验
+
+深入阅读：把可学习对象扩展为模型查询分布，分析规划计算如何服务未来学习。
 
 模型已经能够生成经验时，下一项选择是从哪个状态开始模拟。把所有状态平均采样，可能反复更新已经准确的值，也可能过多使用有偏模型。Meta-Gradient Search Control（Burega 等，2024）学习这个查询分布：先用模型经验更新价值，再用真实经验给出继续学习的方向。
 
@@ -977,6 +1107,8 @@ $\Delta$ 是不含步长的半梯度 Q-learning 增量，$\hat P$ 是学习模�
 <a id="lesson-frontier"></a>
 
 ## 11. 前沿问题：元目标短视、规则表示与发现预算
+
+深入阅读：进一步比较元目标的时间范围、规则表示和发现成本。
 
 除了环境中的奖励延迟，还存在学习过程自身的时间范围。一次更新可能当前收益很小，却改变了以后能够学到什么。两种时间不能混用：一个是行动以后多久得到奖励，另一个是这次更新以后还会执行多少学习。
 
@@ -1657,6 +1789,8 @@ python3 examples/state_meta_lab.py meta
 
 ## 参考文献与实现
 
+- [Sutton & Barto · Reinforcement Learning: An Introduction, 2nd edition](http://incompleteideas.net/book/the-book-2nd.html)：第 9 章的表示与泛化、第 11 章的离策略目标，为逐坐标步长与 TD 元学习提供基础。
+
 - [配套章节：时间信用分配](../textbook/credit.md)：多步回报、资格迹与序列信用；区分权重更新的信用与元参数影响的信用。
 
 - [配套章节：流式学习](../textbook/streaming.md#lesson-output-steps)：数据与计算协议、Stream-X 和 Intentional 的完整尺度推导、实现与对照。
@@ -1703,6 +1837,8 @@ python3 examples/state_meta_lab.py meta
 
 - [DiscoRL 固定版本更新规则源码](https://github.com/google-deepmind/disco_rl/blob/9059a29f7121d60948f25ef165e08e050e9399c8/disco_rl/update_rules/disco.py)：重点读 agent 输出契约、规则输入、辅助预测目标与持久 meta-state。
 
+- [DiscoRL 固定版本内层训练源码](https://github.com/google-deepmind/disco_rl/blob/9059a29f7121d60948f25ef165e08e050e9399c8/disco_rl/agent.py)：learner_step 先生成 meta_out，再对以它为独立输入的损失求权重偏导；区别内层固定目标与外层目标路径。
+
 - [元学习图解的可运行计算源](https://yingwen.io/crl-code/figures/meta-learning.mjs)：一步步长元梯度、固定目标的规划分配导数和图示生成；与正文数值逐项对应。
 
 - [Burega、Martin、Kapeluck、Bowling：Meta-Gradient Search Control（2024）](https://arxiv.org/html/2406.19561v1)：第 3 节从模型查询分布推到停止梯度的元目标；第 4 节给出奖励变化的迷宫评价。
@@ -1722,5 +1858,3 @@ python3 examples/state_meta_lab.py meta
 - [MetaOptimize · 2025 定稿原文](https://arxiv.org/html/2402.02342v6)：采用 v6 而非仍只含早期实验的 2024 版本；元目标折扣不能与环境折扣混用。
 
 - [MetaOptimize · 作者实现](https://github.com/sabersalehk/MetaOptimize)：各 base/meta optimizer 组合对应不同实现；仍有元步长和配置选择。
-
-- [Sutton & Barto · Reinforcement Learning: An Introduction, 2nd edition](http://incompleteideas.net/book/the-book-2nd.html)：第 9 章的表示与泛化、第 11 章的离策略目标，为逐坐标步长与 TD 元学习提供基础。

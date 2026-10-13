@@ -9,7 +9,7 @@
 - [第 3 章 · 策略更新的尺度：TRPO 与 PPO](trust-region.md)
 - [第 4 章 · 连续动作的价值优化：DDPG 与 TD3](deterministic-control.md)
 - [第 5 章 · 最大熵连续控制：SAC 的价值、密度与温度](entropy-control.md)
-- [第 6 章 · 深度 RL 的机制接口：模型、记忆、离线数据与实验](practice.md)
+- [第 6 章 · 深度 RL 的训练循环：经验、目标与更新](practice.md)
 - [第 7 章 · 大规模训练：算法与系统怎样共同设计](systems.md)
 
 ## 并列研究分支

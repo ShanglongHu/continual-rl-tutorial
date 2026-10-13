@@ -7922,7 +7922,8 @@
       "CH-state-2"
     ],
     "chapterIds": [
-      "state"
+      "state",
+      "credit"
     ]
   },
   {
@@ -8754,14 +8755,14 @@
   },
   {
     "id": "CH-gvf-5",
-    "title": "McLeod et al. · Continual Auxiliary Task Learning（NeurIPS 2021）",
+    "title": "Kearney et al. · What Should I Know?（2022）",
     "kind": "论文",
     "topic": "prediction",
-    "description": "研究行为策略与辅助预测共同学习时的非平稳性，以及 successor features 的作用。",
+    "description": "在单一经验流中学习 GVF 的累积信号与目标策略，并将答案作为控制输入；阅读 §2–3 及附录的更新次序。",
     "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
     "links": [
       {
-        "url": "https://papers.nips.cc/paper/2021/hash/68331ff0427b551b68e911eebe35233b-Abstract.html",
+        "url": "https://arxiv.org/abs/2206.06485",
         "label": "原文入口"
       }
     ],
@@ -8775,6 +8776,27 @@
   },
   {
     "id": "CH-gvf-6",
+    "title": "McLeod et al. · Continual Auxiliary Task Learning（NeurIPS 2021）",
+    "kind": "论文",
+    "topic": "prediction",
+    "description": "研究行为策略与辅助预测共同学习时的非平稳性，以及 successor features 的作用。",
+    "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
+    "links": [
+      {
+        "url": "https://papers.nips.cc/paper/2021/hash/68331ff0427b551b68e911eebe35233b-Abstract.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
+    "sourceIds": [
+      "CH-gvf-6"
+    ],
+    "chapterIds": [
+      "gvf"
+    ]
+  },
+  {
+    "id": "CH-gvf-7",
     "title": "Modayil & Abbas — Nibbler（2023）",
     "kind": "论文",
     "topic": "prediction",
@@ -8792,7 +8814,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/omx-nibbler/",
     "sourceIds": [
-      "CH-gvf-6",
+      "CH-gvf-7",
       "omx-nibbler"
     ],
     "chapterIds": [
@@ -8802,7 +8824,7 @@
     ]
   },
   {
-    "id": "CH-gvf-7",
+    "id": "CH-gvf-8",
     "title": "Voelcker et al. · When does Self-Prediction Help?（RLC 2024）",
     "kind": "论文",
     "topic": "prediction",
@@ -8816,38 +8838,35 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-7"
+      "CH-gvf-8"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-8",
-    "title": "Understanding Auxiliary Tasks · 作者项目说明",
+    "id": "CH-gvf-9",
+    "title": "Understanding Auxiliary Tasks · 作者代码",
     "kind": "代码",
     "topic": "prediction",
-    "description": "对应 RLC 2024 论文；仓库目前只有项目说明，未提供可运行实验源码。论文中的线性分析和神经网络实验不能视为已在此仓库公开实现。",
+    "description": "论文附录链接的作者仓库，包含 aux_tasks、配置与实验脚本；项目名称保留仓库原有拼写。可由此阅读实现，运行依赖与论文实验复现需另行核对。",
     "question": "累积信号、延续条件和目标策略如何定义问题？预测怎样用于状态、控制或模型？",
     "links": [
       {
-        "url": "https://github.com/adaptive-agents-lab/understanding_auxiliary_tasks",
+        "url": "https://github.com/adaptive-agents-lab/understading_auxilliary_tasks",
         "label": "实现入口"
       }
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-8"
+      "CH-gvf-9"
     ],
     "chapterIds": [
-      "gvf",
-      "value",
-      "state",
-      "meta"
+      "gvf"
     ]
   },
   {
-    "id": "CH-gvf-9",
+    "id": "CH-gvf-10",
     "title": "Sutton et al. · Horde (2011)",
     "kind": "论文",
     "topic": "prediction",
@@ -8861,14 +8880,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-9"
+      "CH-gvf-10"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-10",
+    "id": "CH-gvf-11",
     "title": "Sutton et al. · Fast gradient-descent methods for TD learning (2009)",
     "kind": "论文",
     "topic": "prediction",
@@ -8882,14 +8901,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-10"
+      "CH-gvf-11"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-11",
+    "id": "CH-gvf-12",
     "title": "Sutton, Mahmood & White · An Emphatic Approach (2016)",
     "kind": "论文",
     "topic": "prediction",
@@ -8903,14 +8922,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-11"
+      "CH-gvf-12"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-12",
+    "id": "CH-gvf-13",
     "title": "Mahmood, Yu, White & Sutton · Emphatic Temporal-Difference Learning",
     "kind": "论文",
     "topic": "prediction",
@@ -8924,7 +8943,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-12"
+      "CH-gvf-13"
     ],
     "chapterIds": [
       "gvf",
@@ -8932,7 +8951,7 @@
     ]
   },
   {
-    "id": "CH-gvf-14",
+    "id": "CH-gvf-15",
     "title": "RLPark · GTDLambda.java 固定版本",
     "kind": "代码",
     "topic": "prediction",
@@ -8946,14 +8965,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-14"
+      "CH-gvf-15"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-15",
+    "id": "CH-gvf-16",
     "title": "RLPark · Horde.java",
     "kind": "代码",
     "topic": "prediction",
@@ -8967,14 +8986,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-15"
+      "CH-gvf-16"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-20",
+    "id": "CH-gvf-21",
     "title": "Janjua et al. · GVFs in the Real World · Machine Learning",
     "kind": "论文",
     "topic": "prediction",
@@ -8996,7 +9015,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/AB-WATER-GVF-2024/",
     "sourceIds": [
-      "CH-gvf-20",
+      "CH-gvf-21",
       "AB-WATER-GVF-2024"
     ],
     "chapterIds": [
@@ -9006,7 +9025,7 @@
     ]
   },
   {
-    "id": "CH-gvf-21",
+    "id": "CH-gvf-22",
     "title": "Yan et al. · GVFs for Remaining Useful Life and Failure-Mode Prediction",
     "kind": "论文",
     "topic": "prediction",
@@ -9020,14 +9039,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-21"
+      "CH-gvf-22"
     ],
     "chapterIds": [
       "gvf"
     ]
   },
   {
-    "id": "CH-gvf-26",
+    "id": "CH-gvf-27",
     "title": "NeurIPS 2020 原文",
     "kind": "论文",
     "topic": "prediction",
@@ -9049,7 +9068,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-26"
+      "CH-gvf-27"
     ],
     "chapterIds": [
       "gvf",
@@ -9058,7 +9077,7 @@
     ]
   },
   {
-    "id": "CH-gvf-27",
+    "id": "CH-gvf-28",
     "title": "Proper Value Equivalence · NeurIPS 2021",
     "kind": "论文",
     "topic": "prediction",
@@ -9072,7 +9091,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-27"
+      "CH-gvf-28"
     ],
     "chapterIds": [
       "gvf",
@@ -9081,7 +9100,7 @@
     ]
   },
   {
-    "id": "CH-gvf-29",
+    "id": "CH-gvf-30",
     "title": "Touati & Ollivier · Learning One Representation to Optimize All Rewards",
     "kind": "论文",
     "topic": "prediction",
@@ -9095,7 +9114,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-29"
+      "CH-gvf-30"
     ],
     "chapterIds": [
       "gvf",
@@ -9103,7 +9122,7 @@
     ]
   },
   {
-    "id": "CH-gvf-30",
+    "id": "CH-gvf-31",
     "title": "Modayil, White & Sutton — Multi-timescale Nexting",
     "kind": "论文",
     "topic": "prediction",
@@ -9125,7 +9144,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/omx-nexting/",
     "sourceIds": [
-      "CH-gvf-30",
+      "CH-gvf-31",
       "omx-nexting"
     ],
     "chapterIds": [
@@ -9135,7 +9154,7 @@
     ]
   },
   {
-    "id": "CH-gvf-31",
+    "id": "CH-gvf-32",
     "title": "Sutton et al. · Horde（AAMAS 2011）",
     "kind": "论文",
     "topic": "prediction",
@@ -9149,7 +9168,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-31"
+      "CH-gvf-32"
     ],
     "chapterIds": [
       "gvf",
@@ -9159,7 +9178,7 @@
     ]
   },
   {
-    "id": "CH-gvf-32",
+    "id": "CH-gvf-33",
     "title": "Wan et al. · Planning with Expectation Models",
     "kind": "论文",
     "topic": "prediction",
@@ -9173,7 +9192,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/predictive-knowledge/#lesson-sources",
     "sourceIds": [
-      "CH-gvf-32"
+      "CH-gvf-33"
     ],
     "chapterIds": [
       "gvf"
@@ -9439,7 +9458,8 @@
     ],
     "chapterIds": [
       "deep-value",
-      "study-deep-deep-value"
+      "study-deep-deep-value",
+      "study-deep-practice"
     ]
   },
   {
@@ -9482,7 +9502,8 @@
     ],
     "chapterIds": [
       "policy",
-      "study-deep-policy-gradient"
+      "study-deep-policy-gradient",
+      "study-deep-practice"
     ]
   },
   {
@@ -9504,7 +9525,8 @@
     ],
     "chapterIds": [
       "policy",
-      "study-deep-trust-region"
+      "study-deep-trust-region",
+      "study-deep-practice"
     ]
   },
   {
@@ -9592,7 +9614,8 @@
     ],
     "chapterIds": [
       "soft-control",
-      "study-deep-entropy-control"
+      "study-deep-entropy-control",
+      "study-deep-practice"
     ]
   },
   {
@@ -10112,7 +10135,7 @@
     ]
   },
   {
-    "id": "CH-credit-22",
+    "id": "CH-credit-23",
     "title": "RTU作者递归实现",
     "kind": "代码",
     "topic": "credit",
@@ -10126,14 +10149,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-22"
+      "CH-credit-23"
     ],
     "chapterIds": [
       "credit"
     ]
   },
   {
-    "id": "CH-credit-23",
+    "id": "CH-credit-24",
     "title": "Farr等 · Streaming RL under Partial Observability with RTRL · 2026 v2",
     "kind": "论文",
     "topic": "credit",
@@ -10151,7 +10174,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-23"
+      "CH-credit-24"
     ],
     "chapterIds": [
       "state",
@@ -10160,7 +10183,7 @@
     ]
   },
   {
-    "id": "CH-credit-25",
+    "id": "CH-credit-26",
     "title": "SwiftTD · 固定版本核心更新",
     "kind": "代码",
     "topic": "credit",
@@ -10174,14 +10197,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-25"
+      "CH-credit-26"
     ],
     "chapterIds": [
       "credit"
     ]
   },
   {
-    "id": "CH-credit-26",
+    "id": "CH-credit-27",
     "title": "SwiftTD · 作者交互演示",
     "kind": "论文",
     "topic": "credit",
@@ -10195,14 +10218,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-26"
+      "CH-credit-27"
     ],
     "chapterIds": [
       "credit"
     ]
   },
   {
-    "id": "CH-credit-27",
+    "id": "CH-credit-28",
     "title": "Javed & Sutton · Swift-Sarsa",
     "kind": "论文",
     "topic": "credit",
@@ -10216,14 +10239,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-27"
+      "CH-credit-28"
     ],
     "chapterIds": [
       "credit"
     ]
   },
   {
-    "id": "CH-credit-29",
+    "id": "CH-credit-30",
     "title": "Stream-X · 作者固定版本",
     "kind": "代码",
     "topic": "credit",
@@ -10241,7 +10264,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-29"
+      "CH-credit-30"
     ],
     "chapterIds": [
       "streaming",
@@ -10250,7 +10273,7 @@
     ]
   },
   {
-    "id": "CH-credit-30",
+    "id": "CH-credit-31",
     "title": "De Asis & Sutton · Per-decision Multi-step TD with Control Variates · UAI 2018",
     "kind": "论文",
     "topic": "credit",
@@ -10268,7 +10291,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-30"
+      "CH-credit-31"
     ],
     "chapterIds": [
       "credit",
@@ -10277,7 +10300,7 @@
     ]
   },
   {
-    "id": "CH-credit-31",
+    "id": "CH-credit-32",
     "title": "De Asis et al. · Multi-step Reinforcement Learning: A Unifying Algorithm · AAAI 2018",
     "kind": "论文",
     "topic": "credit",
@@ -10291,7 +10314,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/credit-assignment/#lesson-sources",
     "sourceIds": [
-      "CH-credit-31"
+      "CH-credit-32"
     ],
     "chapterIds": [
       "credit",
@@ -10342,6 +10365,27 @@
   },
   {
     "id": "CH-streaming-6",
+    "title": "Stream-AC · 2026 固定版本主循环",
+    "kind": "代码",
+    "topic": "streaming",
+    "description": "update_params 第 69–94 行保存旧 δ，分别求 actor/critic 输出梯度；main 第 109–122 行显示更新后再采样。截断保留 bootstrap，同时在更新后清迹。",
+    "question": "数据能否重复访问？每步存储和计算是否有界？归一化与输出尺度控制怎样影响一次更新？",
+    "links": [
+      {
+        "url": "https://github.com/mohmdelsayed/streaming-drl/blob/9326fc3e23a401f28087ae2e41b635888740586b/stream_ac_continuous.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
+    "sourceIds": [
+      "CH-streaming-6"
+    ],
+    "chapterIds": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "CH-streaming-7",
     "title": "Kingma & Ba · Adam: A Method for Stochastic Optimization",
     "kind": "论文",
     "topic": "streaming",
@@ -10355,14 +10399,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-6"
+      "CH-streaming-7"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-8",
+    "id": "CH-streaming-9",
     "title": "Elsayed, Vasan & Mahmood · Stream-X，2024 版",
     "kind": "论文",
     "topic": "streaming",
@@ -10376,14 +10420,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-8"
+      "CH-streaming-9"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-9",
+    "id": "CH-streaming-10",
     "title": "Stream-X · 2024 作者实现",
     "kind": "代码",
     "topic": "streaming",
@@ -10397,14 +10441,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-9"
+      "CH-streaming-10"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-10",
+    "id": "CH-streaming-11",
     "title": "Elsayed, Lupu, Vasan & Mahmood · Stream-X，2026 修订版",
     "kind": "论文",
     "topic": "streaming",
@@ -10422,7 +10466,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-10"
+      "CH-streaming-11"
     ],
     "chapterIds": [
       "streaming",
@@ -10431,7 +10475,7 @@
     ]
   },
   {
-    "id": "CH-streaming-11",
+    "id": "CH-streaming-12",
     "title": "Vitchutripop 等 · An Analysis of Streaming Deep Reinforcement Learning for Adaptive Continual Learning in Robotics",
     "kind": "论文",
     "topic": "streaming",
@@ -10445,14 +10489,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-11"
+      "CH-streaming-12"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-13",
+    "id": "CH-streaming-14",
     "title": "Welford · Note on a Method for Calculating Corrected Sums of Squares and Products",
     "kind": "论文",
     "topic": "streaming",
@@ -10466,14 +10510,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-13"
+      "CH-streaming-14"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-streaming-15",
+    "id": "CH-streaming-16",
     "title": "De Asis & Sutton · An Idiosyncrasy of Time-discretization in RL · RLC 2024",
     "kind": "论文",
     "topic": "streaming",
@@ -10499,7 +10543,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/OM-TIME-2024/",
     "sourceIds": [
-      "CH-streaming-15",
+      "CH-streaming-16",
       "OM-TIME-2024"
     ],
     "chapterIds": [
@@ -10510,7 +10554,7 @@
     ]
   },
   {
-    "id": "CH-streaming-16",
+    "id": "CH-streaming-17",
     "title": "Time-discretization · 原文式 (7)",
     "kind": "论文",
     "topic": "streaming",
@@ -10524,7 +10568,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-16"
+      "CH-streaming-17"
     ],
     "chapterIds": [
       "streaming",
@@ -10533,7 +10577,7 @@
     ]
   },
   {
-    "id": "CH-streaming-17",
+    "id": "CH-streaming-18",
     "title": "Kris De Asis · Design for Learning · 2025",
     "kind": "论文",
     "topic": "streaming",
@@ -10547,14 +10591,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/streaming/#lesson-sources",
     "sourceIds": [
-      "CH-streaming-17"
+      "CH-streaming-18"
     ],
     "chapterIds": [
       "streaming"
     ]
   },
   {
-    "id": "CH-meta-2",
+    "id": "CH-meta-3",
     "title": "Sutton · Adapting Bias by Gradient Descent: An Incremental Version of Delta-Bar-Delta",
     "kind": "论文",
     "topic": "meta",
@@ -10563,30 +10607,6 @@
     "links": [
       {
         "url": "https://cdn.aaai.org/AAAI/1992/AAAI92-027.pdf",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
-    "sourceIds": [
-      "CH-meta-2"
-    ],
-    "chapterIds": [
-      "meta",
-      "credit",
-      "streaming",
-      "experiments"
-    ]
-  },
-  {
-    "id": "CH-meta-3",
-    "title": "Kearney 等：TIDBD 2018 版本",
-    "kind": "论文",
-    "topic": "meta",
-    "description": "本页代码具体对应 Algorithm 1 的 semi-gradient、累积迹版本。",
-    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
-    "links": [
-      {
-        "url": "https://arxiv.org/abs/1804.03334",
         "label": "原文入口"
       }
     ],
@@ -10603,6 +10623,30 @@
   },
   {
     "id": "CH-meta-4",
+    "title": "Kearney 等：TIDBD 2018 版本",
+    "kind": "论文",
+    "topic": "meta",
+    "description": "本页代码具体对应 Algorithm 1 的 semi-gradient、累积迹版本。",
+    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1804.03334",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
+    "sourceIds": [
+      "CH-meta-4"
+    ],
+    "chapterIds": [
+      "meta",
+      "credit",
+      "streaming",
+      "experiments"
+    ]
+  },
+  {
+    "id": "CH-meta-5",
     "title": "Kearney 等：Learning Feature Relevance Through Step Size Adaptation",
     "kind": "论文",
     "topic": "meta",
@@ -10616,14 +10660,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-4"
+      "CH-meta-5"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-5",
+    "id": "CH-meta-6",
     "title": "Vivek Veeriah 的 IDBD 实验实现",
     "kind": "代码",
     "topic": "meta",
@@ -10637,14 +10681,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-5"
+      "CH-meta-6"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-6",
+    "id": "CH-meta-7",
     "title": "Young、Wang、Taylor：Metatrace Actor-Critic（IJCAI 2019）",
     "kind": "论文",
     "topic": "meta",
@@ -10658,7 +10702,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-6"
+      "CH-meta-7"
     ],
     "chapterIds": [
       "meta",
@@ -10668,7 +10712,7 @@
     ]
   },
   {
-    "id": "CH-meta-7",
+    "id": "CH-meta-8",
     "title": "Metatrace 扩展原文",
     "kind": "论文",
     "topic": "meta",
@@ -10682,14 +10726,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-7"
+      "CH-meta-8"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-8",
+    "id": "CH-meta-9",
     "title": "Xu、van Hasselt、Silver：Meta-Gradient Reinforcement Learning",
     "kind": "论文",
     "topic": "meta",
@@ -10703,17 +10747,18 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-8"
+      "CH-meta-9"
     ],
     "chapterIds": [
       "meta",
+      "architectures",
       "credit",
       "streaming",
       "experiments"
     ]
   },
   {
-    "id": "CH-meta-10",
+    "id": "CH-meta-11",
     "title": "Foerster 等：DiCE",
     "kind": "论文",
     "topic": "meta",
@@ -10727,14 +10772,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-10"
+      "CH-meta-11"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-11",
+    "id": "CH-meta-12",
     "title": "MAML-RL 作者源码",
     "kind": "代码",
     "topic": "meta",
@@ -10748,14 +10793,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-11"
+      "CH-meta-12"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-14",
+    "id": "CH-meta-15",
     "title": "PEARL 作者源码：agent.py",
     "kind": "代码",
     "topic": "meta",
@@ -10769,14 +10814,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-14"
+      "CH-meta-15"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-15",
+    "id": "CH-meta-16",
     "title": "PEARL 作者源码：sac.py",
     "kind": "代码",
     "topic": "meta",
@@ -10790,14 +10835,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-15"
+      "CH-meta-16"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-16",
+    "id": "CH-meta-17",
     "title": "Oh 等：Discovering Reinforcement Learning Algorithms",
     "kind": "论文",
     "topic": "meta",
@@ -10811,14 +10856,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-16"
+      "CH-meta-17"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-17",
+    "id": "CH-meta-18",
     "title": "Flennerhag 等：Bootstrapped Meta-Learning（ICLR 2022）",
     "kind": "论文",
     "topic": "meta",
@@ -10832,14 +10877,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-17"
+      "CH-meta-18"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-18",
+    "id": "CH-meta-19",
     "title": "RLJ 论文记录",
     "kind": "论文",
     "topic": "meta",
@@ -10861,7 +10906,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-18"
+      "CH-meta-19"
     ],
     "chapterIds": [
       "meta",
@@ -10872,7 +10917,7 @@
     ]
   },
   {
-    "id": "CH-meta-19",
+    "id": "CH-meta-20",
     "title": "How Should We Meta-Learn Reinforcement Learning Algorithms? · 作者实现",
     "kind": "代码",
     "topic": "meta",
@@ -10890,7 +10935,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-19"
+      "CH-meta-20"
     ],
     "chapterIds": [
       "meta",
@@ -10901,7 +10946,7 @@
     ]
   },
   {
-    "id": "CH-meta-20",
+    "id": "CH-meta-21",
     "title": "Discovering state-of-the-art reinforcement learning algorithms（Nature 2025）",
     "kind": "论文",
     "topic": "meta",
@@ -10919,7 +10964,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-20"
+      "CH-meta-21"
     ],
     "chapterIds": [
       "meta",
@@ -10933,7 +10978,7 @@
     ]
   },
   {
-    "id": "CH-meta-22",
+    "id": "CH-meta-23",
     "title": "DiscoRL 固定版本更新规则源码",
     "kind": "代码",
     "topic": "meta",
@@ -10947,7 +10992,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-22"
+      "CH-meta-23"
     ],
     "chapterIds": [
       "meta"
@@ -10955,6 +11000,27 @@
   },
   {
     "id": "CH-meta-24",
+    "title": "DiscoRL 固定版本内层训练源码",
+    "kind": "代码",
+    "topic": "meta",
+    "description": "learner_step 先生成 meta_out，再对以它为独立输入的损失求权重偏导；区别内层固定目标与外层目标路径。",
+    "question": "适应的是步长、初始化、上下文还是更新规则？内外层目标、敏感度与训练测试信息怎样区分？",
+    "links": [
+      {
+        "url": "https://github.com/google-deepmind/disco_rl/blob/9059a29f7121d60948f25ef165e08e050e9399c8/disco_rl/agent.py",
+        "label": "实现入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
+    "sourceIds": [
+      "CH-meta-24"
+    ],
+    "chapterIds": [
+      "meta"
+    ]
+  },
+  {
+    "id": "CH-meta-26",
     "title": "Burega、Martin、Kapeluck、Bowling：Meta-Gradient Search Control（2024）",
     "kind": "论文",
     "topic": "meta",
@@ -10976,17 +11042,18 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/omx-search-control/",
     "sourceIds": [
-      "CH-meta-24",
+      "CH-meta-26",
       "omx-search-control"
     ],
     "chapterIds": [
       "dyna",
       "planning",
-      "meta"
+      "meta",
+      "architectures"
     ]
   },
   {
-    "id": "CH-meta-25",
+    "id": "CH-meta-27",
     "title": "Osband：Planning to Learn（2026，预印本）",
     "kind": "论文",
     "topic": "meta",
@@ -11000,14 +11067,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-25"
+      "CH-meta-27"
     ],
     "chapterIds": [
       "meta"
     ]
   },
   {
-    "id": "CH-meta-26",
+    "id": "CH-meta-28",
     "title": "NeurIPS 2024 原文",
     "kind": "论文",
     "topic": "meta",
@@ -11029,7 +11096,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-26"
+      "CH-meta-28"
     ],
     "chapterIds": [
       "meta",
@@ -11038,7 +11105,7 @@
     ]
   },
   {
-    "id": "CH-meta-27",
+    "id": "CH-meta-29",
     "title": "作者论文 v3",
     "kind": "论文",
     "topic": "meta",
@@ -11052,7 +11119,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-27"
+      "CH-meta-29"
     ],
     "chapterIds": [
       "meta",
@@ -11061,7 +11128,7 @@
     ]
   },
   {
-    "id": "CH-meta-28",
+    "id": "CH-meta-30",
     "title": "Fast TRAC: A Parameter-Free Optimizer for Lifelong Reinforcement Learning · 作者实现",
     "kind": "代码",
     "topic": "meta",
@@ -11079,7 +11146,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-28"
+      "CH-meta-30"
     ],
     "chapterIds": [
       "meta",
@@ -11088,7 +11155,7 @@
     ]
   },
   {
-    "id": "CH-meta-29",
+    "id": "CH-meta-31",
     "title": "RLC 2025 原文",
     "kind": "论文",
     "topic": "meta",
@@ -11102,7 +11169,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-29"
+      "CH-meta-31"
     ],
     "chapterIds": [
       "meta",
@@ -11111,7 +11178,7 @@
     ]
   },
   {
-    "id": "CH-meta-31",
+    "id": "CH-meta-33",
     "title": "MetaOptimize · 2025 定稿原文",
     "kind": "论文",
     "topic": "meta",
@@ -11125,7 +11192,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/meta/#lesson-sources",
     "sourceIds": [
-      "CH-meta-31"
+      "CH-meta-33"
     ],
     "chapterIds": [
       "meta",
@@ -11307,7 +11374,7 @@
     "title": "Sutton et al. — Reward-Respecting Subtasks",
     "kind": "论文",
     "topic": "skills",
-    "description": "式(2)、(5)、(9)分别给出 return、TD target 和停止规则；式(12)之后另定义真实 option model。",
+    "description": "§2–5 与 §8：return、内部策略和停止、外部后果模型及规划；顺序学习的实验证据与同时更新、反馈选择特征的未实现扩展分开阅读。",
     "question": "这个技能的启动、策略和终止怎样定义？它在新目标上节省的是交互还是规划计算？",
     "links": [
       {
@@ -11963,7 +12030,29 @@
     ]
   },
   {
-    "id": "CH-models-3",
+    "id": "CH-models-2",
+    "title": "Wan, Naik & Sutton — Average-Reward Learning and Planning with Options",
+    "kind": "论文",
+    "topic": "models",
+    "description": "§5 式 (18)–(23)：奖励、时长、终点三类模型及其逐步学习；持续环境与固定技能的理论条件不同于本地变化环境原型。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://arxiv.org/html/2110.13855",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "sourceIds": [
+      "CH-models-2"
+    ],
+    "chapterIds": [
+      "models",
+      "planning"
+    ]
+  },
+  {
+    "id": "CH-models-4",
     "title": "Wan et al. — Planning with Expectation Models",
     "kind": "论文",
     "topic": "models",
@@ -11977,14 +12066,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-3"
+      "CH-models-4"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-4",
+    "id": "CH-models-5",
     "title": "Planning with Expectation Models for Control",
     "kind": "论文",
     "topic": "models",
@@ -11998,14 +12087,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-4"
+      "CH-models-5"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-6",
+    "id": "CH-models-7",
     "title": "DeepMind — Option Keyboard 作者工程",
     "kind": "代码",
     "topic": "models",
@@ -12019,7 +12108,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-6"
+      "CH-models-7"
     ],
     "chapterIds": [
       "models",
@@ -12030,7 +12119,7 @@
     ]
   },
   {
-    "id": "CH-models-7",
+    "id": "CH-models-8",
     "title": "Reward-Aware Proto-Representations in RL · NeurIPS 2025",
     "kind": "论文",
     "topic": "models",
@@ -12040,40 +12129,6 @@
       {
         "url": "https://arxiv.org/abs/2505.16217",
         "label": "原文入口"
-      },
-      {
-        "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
-        "label": "研究问题与方法导读"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
-    "sourceIds": [
-      "CH-models-7"
-    ],
-    "chapterIds": [
-      "reward-design",
-      "models",
-      "options",
-      "exploration",
-      "goals",
-      "gvf",
-      "planning",
-      "dyna",
-      "state",
-      "average"
-    ]
-  },
-  {
-    "id": "CH-models-8",
-    "title": "Reward-Aware Proto-Representations 作者实现",
-    "kind": "代码",
-    "topic": "models",
-    "description": "从默认转移和奖励构造 DR，比较奖励感知特征、奖励塑形与技能发现；读取数值求解与谱处理设置。",
-    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
-    "links": [
-      {
-        "url": "https://github.com/httse9/Reward-Aware-Proto-Representations",
-        "label": "实现入口"
       },
       {
         "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
@@ -12099,6 +12154,40 @@
   },
   {
     "id": "CH-models-9",
+    "title": "Reward-Aware Proto-Representations 作者实现",
+    "kind": "代码",
+    "topic": "models",
+    "description": "从默认转移和奖励构造 DR，比较奖励感知特征、奖励塑形与技能发现；读取数值求解与谱处理设置。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://github.com/httse9/Reward-Aware-Proto-Representations",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-reward-aware-proto-representations",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "sourceIds": [
+      "CH-models-9"
+    ],
+    "chapterIds": [
+      "reward-design",
+      "models",
+      "options",
+      "exploration",
+      "goals",
+      "gvf",
+      "planning",
+      "dyna",
+      "state",
+      "average"
+    ]
+  },
+  {
+    "id": "CH-models-10",
     "title": "DR 矩阵构造 — rep_utils.py",
     "kind": "代码",
     "topic": "models",
@@ -12112,14 +12201,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-9"
+      "CH-models-10"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-10",
+    "id": "CH-models-11",
     "title": "DR 在线表示与发现 — ROD_DR.py",
     "kind": "代码",
     "topic": "models",
@@ -12133,14 +12222,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-10"
+      "CH-models-11"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-11",
+    "id": "CH-models-12",
     "title": "Hafner et al. — DreamerV3",
     "kind": "论文",
     "topic": "models",
@@ -12154,7 +12243,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-11"
+      "CH-models-12"
     ],
     "chapterIds": [
       "models",
@@ -12164,7 +12253,7 @@
     ]
   },
   {
-    "id": "CH-models-13",
+    "id": "CH-models-14",
     "title": "Schrittwieser et al. — MuZero",
     "kind": "论文",
     "topic": "models",
@@ -12178,7 +12267,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-13"
+      "CH-models-14"
     ],
     "chapterIds": [
       "models",
@@ -12187,7 +12276,7 @@
     ]
   },
   {
-    "id": "CH-models-14",
+    "id": "CH-models-15",
     "title": "Sutton et al. — Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping（UAI 2008）",
     "kind": "论文",
     "topic": "models",
@@ -12201,14 +12290,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-14"
+      "CH-models-15"
     ],
     "chapterIds": [
       "models"
     ]
   },
   {
-    "id": "CH-models-23",
+    "id": "CH-models-24",
     "title": "NeurIPS 2023 原文",
     "kind": "论文",
     "topic": "models",
@@ -12218,33 +12307,6 @@
       {
         "url": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/b0cd0e8027309ea050951e758b70d60e-Abstract-Conference.html",
         "label": "原文入口"
-      },
-      {
-        "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
-        "label": "研究问题与方法导读"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
-    "sourceIds": [
-      "CH-models-23"
-    ],
-    "chapterIds": [
-      "models",
-      "planning",
-      "objectives"
-    ]
-  },
-  {
-    "id": "CH-models-24",
-    "title": "作者实现",
-    "kind": "代码",
-    "topic": "models",
-    "description": "原文第 7 节直接链接的实验代码。",
-    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
-    "links": [
-      {
-        "url": "https://github.com/tylerkastner/distribution-equivalence",
-        "label": "实现入口"
       },
       {
         "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
@@ -12263,6 +12325,33 @@
   },
   {
     "id": "CH-models-25",
+    "title": "作者实现",
+    "kind": "代码",
+    "topic": "models",
+    "description": "原文第 7 节直接链接的实验代码。",
+    "question": "模型预测什么、服务哪一种决策？模型误差和额外规划计算会怎样影响长期收益？",
+    "links": [
+      {
+        "url": "https://github.com/tylerkastner/distribution-equivalence",
+        "label": "实现入口"
+      },
+      {
+        "url": "/zh/continual-rl/research/#recent-distributional-model-equivalence",
+        "label": "研究问题与方法导读"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
+    "sourceIds": [
+      "CH-models-25"
+    ],
+    "chapterIds": [
+      "models",
+      "planning",
+      "objectives"
+    ]
+  },
+  {
+    "id": "CH-models-26",
     "title": "ICLR 2024 原文",
     "kind": "论文",
     "topic": "models",
@@ -12280,7 +12369,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-25"
+      "CH-models-26"
     ],
     "chapterIds": [
       "models",
@@ -12290,7 +12379,7 @@
     ]
   },
   {
-    "id": "CH-models-26",
+    "id": "CH-models-27",
     "title": "作者实现",
     "kind": "代码",
     "topic": "models",
@@ -12308,7 +12397,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-26"
+      "CH-models-27"
     ],
     "chapterIds": [
       "models",
@@ -12321,7 +12410,7 @@
     ]
   },
   {
-    "id": "CH-models-33",
+    "id": "CH-models-34",
     "title": "Sutton et al. · Dyna-Style Planning with Linear Function Approximation and Prioritized Sweeping",
     "kind": "论文",
     "topic": "models",
@@ -12335,7 +12424,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/models/#lesson-sources",
     "sourceIds": [
-      "CH-models-33"
+      "CH-models-34"
     ],
     "chapterIds": [
       "models",
@@ -12385,7 +12474,7 @@
     ]
   },
   {
-    "id": "CH-planning-7",
+    "id": "CH-planning-8",
     "title": "Google DeepMind — mctx",
     "kind": "代码",
     "topic": "models",
@@ -12399,14 +12488,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-7"
+      "CH-planning-8"
     ],
     "chapterIds": [
       "planning"
     ]
   },
   {
-    "id": "CH-planning-11",
+    "id": "CH-planning-12",
     "title": "Hansen, Su & Wang — TD-MPC2 · ICLR 2024",
     "kind": "论文",
     "topic": "models",
@@ -12420,7 +12509,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-11"
+      "CH-planning-12"
     ],
     "chapterIds": [
       "planning",
@@ -12431,7 +12520,7 @@
     ]
   },
   {
-    "id": "CH-planning-13",
+    "id": "CH-planning-14",
     "title": "Shehmar et al. — Laplacian Representations for Decision-Time Planning · ICML 2026",
     "kind": "论文",
     "topic": "models",
@@ -12445,7 +12534,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-13"
+      "CH-planning-14"
     ],
     "chapterIds": [
       "planning",
@@ -12455,7 +12544,7 @@
     ]
   },
   {
-    "id": "CH-planning-15",
+    "id": "CH-planning-16",
     "title": "Machado Research — ALPS 作者实现",
     "kind": "代码",
     "topic": "models",
@@ -12469,7 +12558,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-15"
+      "CH-planning-16"
     ],
     "chapterIds": [
       "planning",
@@ -12479,7 +12568,7 @@
     ]
   },
   {
-    "id": "CH-planning-16",
+    "id": "CH-planning-17",
     "title": "ALPS 高层路径 — planner/hierarchical.py",
     "kind": "代码",
     "topic": "models",
@@ -12493,14 +12582,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-16"
+      "CH-planning-17"
     ],
     "chapterIds": [
       "planning"
     ]
   },
   {
-    "id": "CH-planning-17",
+    "id": "CH-planning-18",
     "title": "ALPS 低层优化 — planner/optimizer.py",
     "kind": "代码",
     "topic": "models",
@@ -12514,7 +12603,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/planning/#lesson-sources",
     "sourceIds": [
-      "CH-planning-17"
+      "CH-planning-18"
     ],
     "chapterIds": [
       "planning"
@@ -12567,14 +12656,14 @@
   },
   {
     "id": "CH-retention-5",
-    "title": "Schwarz et al. · Progress & Compress",
+    "title": "Zenke, Poole & Ganguli · Continual Learning Through Synaptic Intelligence",
     "kind": "论文",
     "topic": "plasticity",
-    "description": "固定架构大小的 active/knowledge 双系统与 online EWC 压缩。",
+    "description": "沿参数路径累计损失下降贡献，构造二次保持代理；随机更新与有限步长限制积分解释。",
     "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
     "links": [
       {
-        "url": "https://proceedings.mlr.press/v80/schwarz18a.html",
+        "url": "https://proceedings.mlr.press/v70/zenke17a.html",
         "label": "原文入口"
       }
     ],
@@ -12588,6 +12677,48 @@
   },
   {
     "id": "CH-retention-6",
+    "title": "Lopez-Paz & Ranzato · Gradient Episodic Memory for Continual Learning",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "记忆梯度的一阶不增约束与欧氏投影；不等于有限步长下所有旧状态的保持保证。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://papers.nips.cc/paper/7225-gradient-episodic-memory-for-continual-learning",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "sourceIds": [
+      "CH-retention-6"
+    ],
+    "chapterIds": [
+      "retention"
+    ]
+  },
+  {
+    "id": "CH-retention-7",
+    "title": "Schwarz et al. · Progress & Compress",
+    "kind": "论文",
+    "topic": "plasticity",
+    "description": "固定架构大小的 active/knowledge 双系统与 online EWC 压缩。",
+    "question": "旧任务遗忘和新任务学习变慢，分别用什么实验区分？与重新初始化相比如何？",
+    "links": [
+      {
+        "url": "https://proceedings.mlr.press/v80/schwarz18a.html",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
+    "sourceIds": [
+      "CH-retention-7"
+    ],
+    "chapterIds": [
+      "retention"
+    ]
+  },
+  {
+    "id": "CH-retention-8",
     "title": "Fu et al. · Knowledge Retention in Continual Model-Based RL · ICML 2025",
     "kind": "论文",
     "topic": "plasticity",
@@ -12605,7 +12736,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-6"
+      "CH-retention-8"
     ],
     "chapterIds": [
       "retention",
@@ -12620,7 +12751,7 @@
     ]
   },
   {
-    "id": "CH-retention-7",
+    "id": "CH-retention-9",
     "title": "DRAGO 作者实现",
     "kind": "代码",
     "topic": "plasticity",
@@ -12638,7 +12769,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-7"
+      "CH-retention-9"
     ],
     "chapterIds": [
       "retention",
@@ -12653,7 +12784,7 @@
     ]
   },
   {
-    "id": "CH-retention-12",
+    "id": "CH-retention-14",
     "title": "ICLR 2024 原文",
     "kind": "论文",
     "topic": "plasticity",
@@ -12675,7 +12806,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-12"
+      "CH-retention-14"
     ],
     "chapterIds": [
       "plasticity",
@@ -12684,7 +12815,7 @@
     ]
   },
   {
-    "id": "CH-retention-13",
+    "id": "CH-retention-15",
     "title": "作者预印本",
     "kind": "论文",
     "topic": "plasticity",
@@ -12698,7 +12829,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-13"
+      "CH-retention-15"
     ],
     "chapterIds": [
       "retention",
@@ -12707,7 +12838,7 @@
     ]
   },
   {
-    "id": "CH-retention-14",
+    "id": "CH-retention-16",
     "title": "Addressing Loss of Plasticity and Catastrophic Forgetting in Continual Learning · 作者实现",
     "kind": "代码",
     "topic": "plasticity",
@@ -12725,7 +12856,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-14"
+      "CH-retention-16"
     ],
     "chapterIds": [
       "plasticity",
@@ -12734,7 +12865,7 @@
     ]
   },
   {
-    "id": "CH-retention-15",
+    "id": "CH-retention-17",
     "title": "NeurIPS 2024 原文",
     "kind": "论文",
     "topic": "plasticity",
@@ -12756,7 +12887,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-15"
+      "CH-retention-17"
     ],
     "chapterIds": [
       "plasticity",
@@ -12765,7 +12896,7 @@
     ]
   },
   {
-    "id": "CH-retention-16",
+    "id": "CH-retention-18",
     "title": "作者版本记录",
     "kind": "论文",
     "topic": "plasticity",
@@ -12779,7 +12910,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-16"
+      "CH-retention-18"
     ],
     "chapterIds": [
       "retention",
@@ -12788,7 +12919,7 @@
     ]
   },
   {
-    "id": "CH-retention-17",
+    "id": "CH-retention-19",
     "title": "Parseval Regularization for Continual Reinforcement Learning · 作者实现",
     "kind": "代码",
     "topic": "plasticity",
@@ -12806,7 +12937,7 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/retention/#lesson-sources",
     "sourceIds": [
-      "CH-retention-17"
+      "CH-retention-19"
     ],
     "chapterIds": [
       "plasticity",
@@ -13083,7 +13214,29 @@
     ]
   },
   {
-    "id": "CH-exploration-9",
+    "id": "CH-exploration-8",
+    "title": "Osband et al. · Deep Exploration via Bootstrapped DQN",
+    "kind": "论文",
+    "topic": "curriculum",
+    "description": "§3、§5：按回合保持一个采样 Q 头的状态条件策略；深度探索涉及多步信息后果，多个头不等于精确贝叶斯后验。",
+    "question": "课程在改变任务、目标还是经验分布？提高的是当前回报、新任务适应，还是能力覆盖？",
+    "links": [
+      {
+        "url": "https://arxiv.org/abs/1602.04621",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
+    "sourceIds": [
+      "CH-exploration-8"
+    ],
+    "chapterIds": [
+      "exploration",
+      "study-deep-exploration"
+    ]
+  },
+  {
+    "id": "CH-exploration-10",
     "title": "Ishfaq et al. · Langevin Soft Actor-Critic",
     "kind": "论文",
     "topic": "curriculum",
@@ -13097,14 +13250,14 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-9"
+      "CH-exploration-10"
     ],
     "chapterIds": [
       "exploration"
     ]
   },
   {
-    "id": "CH-exploration-10",
+    "id": "CH-exploration-11",
     "title": "LSAC 作者实现",
     "kind": "代码",
     "topic": "curriculum",
@@ -13118,14 +13271,35 @@
     ],
     "detailUrl": "/zh/continual-rl/algorithms/exploration/#lesson-sources",
     "sourceIds": [
-      "CH-exploration-10"
+      "CH-exploration-11"
     ],
     "chapterIds": [
       "exploration"
     ]
   },
   {
-    "id": "CH-architectures-9",
+    "id": "CH-architectures-6",
+    "title": "Wan, Naik & Sutton · Average-Reward Learning and Planning with Options",
+    "kind": "论文",
+    "topic": "architectures",
+    "description": "§3 式 (3–5) 与 (6–9) 区分采样时长直接扩展和期望时长归一化；正式收敛结果不覆盖本章变化技能、常步长的完整教学系统。",
+    "question": "状态、预测、目标、技能与模型哪些由人提供，哪些从经验学习？组件改进如何传递到长期行为？",
+    "links": [
+      {
+        "url": "https://papers.neurips.cc/paper_files/paper/2021/file/c058f544c737782deacefa532d9add4c-Paper.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
+    "sourceIds": [
+      "CH-architectures-6"
+    ],
+    "chapterIds": [
+      "architectures"
+    ]
+  },
+  {
+    "id": "CH-architectures-12",
     "title": "AgarCL 作者环境",
     "kind": "代码",
     "topic": "architectures",
@@ -13143,7 +13317,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-9"
+      "CH-architectures-12"
     ],
     "chapterIds": [
       "experiments",
@@ -13157,7 +13331,7 @@
     ]
   },
   {
-    "id": "CH-architectures-10",
+    "id": "CH-architectures-13",
     "title": "AgarCL 作者基线 · PPO 混合动作实现",
     "kind": "代码",
     "topic": "architectures",
@@ -13171,14 +13345,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-10"
+      "CH-architectures-13"
     ],
     "chapterIds": [
       "architectures"
     ]
   },
   {
-    "id": "CH-architectures-11",
+    "id": "CH-architectures-14",
     "title": "Mahmood & Sutton — Online Representation Search and Its Interactions with Unsupervised Learning",
     "kind": "论文",
     "topic": "architectures",
@@ -13192,7 +13366,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-11"
+      "CH-architectures-14"
     ],
     "chapterIds": [
       "architectures",
@@ -13200,7 +13374,7 @@
     ]
   },
   {
-    "id": "CH-architectures-12",
+    "id": "CH-architectures-15",
     "title": "Sutton et al. · Reward-Respecting Subtasks · Artificial Intelligence 2023",
     "kind": "论文",
     "topic": "architectures",
@@ -13214,7 +13388,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-12"
+      "CH-architectures-15"
     ],
     "chapterIds": [
       "architectures",
@@ -13226,7 +13400,7 @@
     ]
   },
   {
-    "id": "CH-architectures-13",
+    "id": "CH-architectures-16",
     "title": "An Analysis of Streaming Deep RL for Adaptive Continual Learning in Robotics",
     "kind": "论文",
     "topic": "architectures",
@@ -13240,14 +13414,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-13"
+      "CH-architectures-16"
     ],
     "chapterIds": [
       "architectures"
     ]
   },
   {
-    "id": "CH-architectures-14",
+    "id": "CH-architectures-17",
     "title": "Streaming robotics · 作者工程",
     "kind": "代码",
     "topic": "architectures",
@@ -13261,14 +13435,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-14"
+      "CH-architectures-17"
     ],
     "chapterIds": [
       "architectures"
     ]
   },
   {
-    "id": "CH-architectures-24",
+    "id": "CH-architectures-27",
     "title": "Pilarski · Creating an Exocerebellum（2024 讲座）",
     "kind": "论文",
     "topic": "architectures",
@@ -13282,14 +13456,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-24"
+      "CH-architectures-27"
     ],
     "chapterIds": [
       "architectures"
     ]
   },
   {
-    "id": "CH-architectures-25",
+    "id": "CH-architectures-28",
     "title": "Javed et al. — Physical Atari（RLC 2026）",
     "kind": "论文",
     "topic": "architectures",
@@ -13303,14 +13477,14 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-25"
+      "CH-architectures-28"
     ],
     "chapterIds": [
       "architectures"
     ]
   },
   {
-    "id": "CH-architectures-26",
+    "id": "CH-architectures-29",
     "title": "Keen Technologies — Physical Atari 作者硬件与代码",
     "kind": "代码",
     "topic": "architectures",
@@ -13328,7 +13502,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-26"
+      "CH-architectures-29"
     ],
     "chapterIds": [
       "architectures",
@@ -13337,7 +13511,7 @@
     ]
   },
   {
-    "id": "CH-architectures-27",
+    "id": "CH-architectures-30",
     "title": "Lupu et al. — The Open Ant（RLC 2026）",
     "kind": "论文",
     "topic": "architectures",
@@ -13359,7 +13533,7 @@
     ],
     "detailUrl": "/zh/continual-rl/resource/omx-open-ant/",
     "sourceIds": [
-      "CH-architectures-27",
+      "CH-architectures-30",
       "omx-open-ant"
     ],
     "chapterIds": [
@@ -13369,7 +13543,7 @@
     ]
   },
   {
-    "id": "CH-architectures-28",
+    "id": "CH-architectures-31",
     "title": "Openmind Research Institute — Open Ant 作者硬件与代码",
     "kind": "代码",
     "topic": "architectures",
@@ -13387,7 +13561,7 @@
     ],
     "detailUrl": "/zh/continual-rl/construction/architectures/#lesson-sources",
     "sourceIds": [
-      "CH-architectures-28"
+      "CH-architectures-31"
     ],
     "chapterIds": [
       "architectures",
@@ -13799,7 +13973,7 @@
     "title": "Sutton et al. · Policy Gradient Methods for Reinforcement Learning with Function Approximation",
     "kind": "论文",
     "topic": "foundations",
-    "description": "策略梯度与兼容函数逼近的原始论文。区分起点折扣权重和平均奖励平稳分布。",
+    "description": "§1 Theorem 1 分开平均奖励与起点折扣占用；§2 Theorem 2 的兼容导数与拟合误差正交条件；§3 解释优势和任意状态基线。",
     "question": "直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？",
     "links": [
       {
@@ -13841,7 +14015,7 @@
     "title": "Kakade · A Natural Policy Gradient",
     "kind": "论文",
     "topic": "foundations",
-    "description": "自然策略梯度的原始工作，连接策略空间的局部度量与兼容逼近。",
+    "description": "§2 用平均奖励平稳分布定义 Fisher；§3.1 将兼容平方拟合的正规方程接到自然梯度。本章折扣占用的归一化另行写明。",
     "question": "直接学习策略时，哪一个目标的梯度能由经验估计，近似从哪里进入？",
     "links": [
       {
@@ -13938,7 +14112,8 @@
       "CH-study-deep-policy-gradient-3"
     ],
     "chapterIds": [
-      "study-deep-policy-gradient"
+      "study-deep-policy-gradient",
+      "study-deep-practice"
     ]
   },
   {
@@ -14216,12 +14391,33 @@
     ]
   },
   {
-    "id": "CH-study-deep-practice-4",
+    "id": "CH-study-deep-practice-0",
+    "title": "Mnih et al. · Human-level control through deep reinforcement learning",
+    "kind": "论文",
+    "topic": "foundations",
+    "description": "主文标签与Methods训练算法：replay、冻结目标、误差导数裁剪的不同作用。教学循环采用自己的小任务、Adam与同步计时。",
+    "question": "一条真实经验怎样经过采样、保存、构造目标和求导，最后改变下一次行动？",
+    "links": [
+      {
+        "url": "https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf",
+        "label": "原文入口"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/foundations/deep/practice/#lesson-sources",
+    "sourceIds": [
+      "CH-study-deep-practice-0"
+    ],
+    "chapterIds": [
+      "study-deep-practice"
+    ]
+  },
+  {
+    "id": "CH-study-deep-practice-10",
     "title": "Kumar et al. · Conservative Q-Learning",
     "kind": "论文",
     "topic": "foundations",
     "description": "offline 分布偏移、保守价值目标及其条件。",
-    "question": "改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？",
+    "question": "一条真实经验怎样经过采样、保存、构造目标和求导，最后改变下一次行动？",
     "links": [
       {
         "url": "https://arxiv.org/abs/2006.04779",
@@ -14230,7 +14426,7 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/deep/practice/#lesson-sources",
     "sourceIds": [
-      "CH-study-deep-practice-4"
+      "CH-study-deep-practice-10"
     ],
     "chapterIds": [
       "study-deep-practice",
@@ -14238,12 +14434,12 @@
     ]
   },
   {
-    "id": "CH-study-deep-practice-5",
+    "id": "CH-study-deep-practice-11",
     "title": "Kumar · CQL",
     "kind": "代码",
     "topic": "foundations",
     "description": "作者实现；包含离散与连续控制实验入口。",
-    "question": "改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？",
+    "question": "一条真实经验怎样经过采样、保存、构造目标和求导，最后改变下一次行动？",
     "links": [
       {
         "url": "https://github.com/aviralkumar2907/CQL",
@@ -14252,7 +14448,7 @@
     ],
     "detailUrl": "/zh/continual-rl/foundations/deep/practice/#lesson-sources",
     "sourceIds": [
-      "CH-study-deep-practice-5"
+      "CH-study-deep-practice-11"
     ],
     "chapterIds": [
       "study-deep-practice",
@@ -14636,27 +14832,6 @@
     "detailUrl": "/zh/continual-rl/foundations/deep/exploration/#lesson-sources",
     "sourceIds": [
       "CH-study-deep-exploration-1"
-    ],
-    "chapterIds": [
-      "study-deep-exploration"
-    ]
-  },
-  {
-    "id": "CH-study-deep-exploration-2",
-    "title": "Osband et al. · Deep Exploration via Bootstrapped DQN",
-    "kind": "论文",
-    "topic": "curriculum",
-    "description": "§§2–5、§6.1 与附录 B：行为头时钟、各头目标、固定经验 mask 与共享数据版本。",
-    "question": "为什么每一步都随机，并不等于有效获取长期有用的信息？",
-    "links": [
-      {
-        "url": "https://arxiv.org/abs/1602.04621",
-        "label": "原文入口"
-      }
-    ],
-    "detailUrl": "/zh/continual-rl/foundations/deep/exploration/#lesson-sources",
-    "sourceIds": [
-      "CH-study-deep-exploration-2"
     ],
     "chapterIds": [
       "study-deep-exploration"
@@ -16982,6 +17157,30 @@
     "detailUrl": "/zh/continual-rl/research/#research-predictive-knowledge",
     "sourceIds": [
       "FRONTIER-auxiliary"
+    ],
+    "chapterIds": [
+      "value",
+      "gvf",
+      "state",
+      "meta"
+    ]
+  },
+  {
+    "id": "FRONTIER-CODE-auxiliary",
+    "title": "Voelcker et al. · When does Self-Prediction Help? · 作者仓库（仅论文说明）",
+    "kind": "代码",
+    "topic": "foundations",
+    "description": "公开 main 分支只有 README 与 .gitignore，没有可运行的实验源码。",
+    "question": "在足够精确的比较中，用途选择不比误差选择节省预定的经验量，就削弱该选择规则的主张。删除读出不改变行为只能限制当前显式读出解释，不能否定过去辅助训练已改变表示；无关目标同样有效则削弱特定预测语义的必要性。",
+    "links": [
+      {
+        "url": "https://github.com/adaptive-agents-lab/understanding_auxiliary_tasks",
+        "label": "作者仓库"
+      }
+    ],
+    "detailUrl": "/zh/continual-rl/research/#research-predictive-knowledge",
+    "sourceIds": [
+      "FRONTIER-CODE-auxiliary"
     ],
     "chapterIds": [
       "value",

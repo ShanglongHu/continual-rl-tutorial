@@ -576,7 +576,7 @@
           }
         ],
         "nonGoals": [
-          "保证在未知分布下每一步选择都最优。"
+          "在未知分布下，探索过程不能保证每一步选择都最优。"
         ],
         "solution": {
           "difficulty": "只利用当前估计可能错过好动作；试验其他动作又会消耗当前收益。",
@@ -960,7 +960,7 @@
           }
         ],
         "nonGoals": [
-          "把已写出 Bellman 方程等同于已有可计算、可收敛的学习算法。"
+          "写出 Bellman 方程，并不等于已经给出了可计算、可收敛的学习算法。"
         ],
         "solution": {
           "difficulty": "当前奖励不能直接比较动作的长期后果；直接枚举全部未来轨迹不可行。",
@@ -1348,7 +1348,7 @@
           }
         ],
         "nonGoals": [
-          "未知模型的样本复杂度或任意近似模型的真实性保证。"
+          "已知模型下的规划结论，不直接给出未知模型的样本复杂度，也不保证近似模型准确。"
         ],
         "solution": {
           "difficulty": "价值互相依赖，不能只按即时奖励贪心。",
@@ -2204,7 +2204,7 @@
           }
         ],
         "nonGoals": [
-          "在没有覆盖的数据中识别未观察行为的价值。"
+          "缺乏相应覆盖的数据，不能识别未观察行为的价值。"
         ],
         "solution": {
           "difficulty": "只能看到随机回报；行为策略不同还会改变样本分布。",
@@ -2786,7 +2786,7 @@
           }
         ],
         "nonGoals": [
-          "由一次 TD loss 降低推出策略收益提高。"
+          "一次 TD loss 降低，不足以推出策略收益提高。"
         ],
         "solution": {
           "difficulty": "完整未来尚不可用；控制还可能用带噪声的估计同时选择和评价动作。",
@@ -3358,7 +3358,7 @@
           }
         ],
         "nonGoals": [
-          "把更长备份等同于更无偏、更低方差或更好的控制。"
+          "更长备份不必然带来更小偏差、更低方差或更好的控制。"
         ],
         "solution": {
           "difficulty": "短备份依赖不准确的尾值；长备份增加等待、方差及离策略概率乘积。",
@@ -4362,7 +4362,7 @@
           }
         ],
         "nonGoals": [
-          "把模型 rollout 当作无成本的真实经验。"
+          "模型 rollout 消耗计算，也不增加真实交互证据。"
         ],
         "solution": {
           "difficulty": "计算预算不足以遍历全部状态；模型本身又可能过时或错误。",
@@ -4951,7 +4951,7 @@
           }
         ],
         "nonGoals": [
-          "认为共享参数后仍可独立改善每个状态。"
+          "共享参数时，一处更新可以同时改变多个状态的预测，不能再把它们视为独立的表格项。"
         ],
         "solution": {
           "difficulty": "更新一个状态会改变其他状态；自举目标也随参数变化。",
@@ -5715,7 +5715,7 @@
           }
         ],
         "nonGoals": [
-          "声称一般半梯度控制在任意共享表示下全局收敛。"
+          "一般半梯度控制并无任意共享表示下的全局收敛保证。"
         ],
         "solution": {
           "difficulty": "特征相似性可能帮助泛化，也可能把互相冲突的动作结果混在一起。",
@@ -6294,7 +6294,7 @@
           }
         ],
         "nonGoals": [
-          "用渐近奖励率概括所有有限生命期损失或不可逆风险。"
+          "渐近奖励率不能概括所有有限生命期损失或不可逆风险。"
         ],
         "solution": {
           "difficulty": "无折扣累计回报可能发散，价值的共同偏移也不可辨识。",
@@ -7312,7 +7312,7 @@
           }
         ],
         "nonGoals": [
-          "从离策略预测收敛推导深度最优控制收敛。"
+          "离策略预测的收敛结论，不直接推出深度最优控制收敛。"
         ],
         "solution": {
           "difficulty": "重要性采样能校正动作分布，却不自动使自举更新成为下降方向。",
@@ -8033,7 +8033,7 @@
           }
         ],
         "nonGoals": [
-          "把线性 true-online 等价直接推广到任意深度网络。"
+          "线性 true-online 的等价关系，不能直接推广到任意深度网络。"
         ],
         "solution": {
           "difficulty": "参数在数据到来时不断改变，冻结权重下的交换求和不再精确描述实际更新。",
@@ -8086,9 +8086,11 @@
         "meta"
       ],
       "objectives": [
-        "从轨迹概率推导带完整折扣权重的 REINFORCE。",
-        "证明动作无关基线不改变梯度，并定位 critic 引入的偏差。",
-        "区分普通梯度、自然梯度以及平均奖励目标的采样权重。"
+        "从Bellman导数沿轨迹展开，证明占用加权的策略梯度定理。",
+        "将状态动作求和逐步改写为当前策略的轨迹样本，再用完整回报构造REINFORCE。",
+        "在同一短轨迹上分开 MC 基线的方差作用与 TD critic 的近似误差。",
+        "用 score 正交条件解释兼容逼近，再推导局部策略距离下的自然梯度。",
+        "区分折扣目标与平均奖励目标各自的价值和采样权重。"
       ],
       "prerequisites": [
         {
@@ -8117,38 +8119,102 @@
             },
             {
               "kind": "p",
-              "text": "直接学习动作概率还有另一种用途。不同真实处境若在当前表示中不可区分，同一个确定动作可能在一处正确、在另一处错误。学习恰当的随机比例，有时比固定 ε 的探索规则更好。这里的随机性不仅是为了收集信息，也可能是受限策略类中的最好选择；本章后面的两步例子会把这一区别算清。"
+              "text": "直接学习动作概率还有另一种用途。不同环境状态若在当前表示中不可区分，同一个确定动作可能在一个状态正确、在另一个状态错误。学习恰当的随机比例，有时比固定 ε 的探索规则更好。这里的随机性不仅是为了收集信息，也可能是受限策略类中的最好选择；本章后面的两步例子会把这一区别算清。"
             },
             {
-              "kind": "math",
-              "tex": "p_\\theta(\\tau)=\\mu(S_0)\\prod_{t=0}^{T-1}\\pi_\\theta(A_t\\mid S_t)p(S_{t+1},R_{t+1}\\mid S_t,A_t).",
-              "explain": "起点分布与环境转移不依赖 $\\theta$，所以对轨迹对数概率求导时，只留下每一步的策略 score。环境无需可微。"
+              "kind": "p",
+              "text": "本章先在有限状态、有限动作的 Markov 问题中证明这一关系，$0\\le\\gamma\\le1$。$\\mu$ 是与参数无关的起点分布，$\\pi=\\pi_\\theta$ 是当前固定策略，$v_\\pi(s)$ 与 $q_\\pi(s,a)$ 是它的真实价值。真正终止后的价值取零；有限期限若影响后果，剩余时间也属于状态。下面的求导沿用可微性、回报可积及期望交换条件。"
+            },
+            {
+              "kind": "p",
+              "text": "贯穿例子只有两次选择。起点 $s_0$ 选动作 $0$、$1$，分别到 $s_1^{(0)}$、$s_1^{(1)}$；第二次选择后终止。第一步奖励为零，只有先选 $1$、再选 $0$ 才得到奖励一。环境保留了第一步结果，actor却在三个状态共用一个概率 $p=\\sigma(\\theta)$：每次都以 $p$ 选 $1$，以 $1-p$ 选 $0$。共享参数必须同时照顾“先选1”和“后选0”两项要求。"
             }
           ]
         },
         {
           "id": "lesson-derive",
-          "title": "2 · 从轨迹导数到 REINFORCE",
+          "title": "2 · 从 Bellman 递推证明策略梯度定理",
           "blocks": [
             {
+              "kind": "p",
+              "text": "改变起点的动作概率，会改变下一步到哪里；改变后续状态的动作概率，又会改变到达那里以后的收益。两种作用都要进入导数。先对固定策略的真实价值求导，再沿时间把尚未展开的后继导数逐步打开。"
+            },
+            {
               "kind": "math",
-              "tex": "\\nabla J=\\mathbb E\\left[\\left(\\sum_t\\psi_t\\right)\\left(\\sum_k\\gamma^kR_{k+1}\\right)\\right].",
-              "explain": "使用对数导数恒等式，将未知的环境依赖包含在采样轨迹中。此时一个动作的 score 似乎乘上了全部奖励。"
+              "tex": "\\begin{aligned}v_\\pi(s)&=\\sum_a\\pi_\\theta(a\\mid s)q_\\pi(s,a),\\\\q_\\pi(s,a)&=r(s,a)+\\gamma\\sum_{s'}P(s'\\mid s,a)v_\\pi(s').\\end{aligned}",
+              "explain": "$r(s,a)=\\mathbb E[R_{t+1}\\mid s,a]$ 是奖励均值，$P$ 是环境转移概率。求和只保留非终止后继；进入终点的奖励仍在 $r$ 中。环境核与奖励规则不直接依赖 $\\theta$。"
             },
             {
               "kind": "p",
-              "text": "发生在动作之前的奖励，与当前动作的随机选择无关。给定动作前历史，策略 score 的期望为零，因此这些过去奖励对期望梯度的贡献为零。去掉它们减少无用方差，得到 reward-to-go。"
+              "text": "第一式同时含有 $\\pi_\\theta$ 和 $q_\\pi$，二者都随策略参数变化。乘积法则给出两个项；第二式说明 $q_\\pi$ 的参数依赖来自后续策略，因此继续求导得到："
             },
             {
               "kind": "math",
-              "tex": "\\begin{aligned}G_t&=\\sum_{k=t}^{T-1}\\gamma^{k-t}R_{k+1},\\\\ \\nabla J&=\\mathbb E\\sum_{t=0}^{T-1}\\gamma^tG_t\\psi_t.\\end{aligned}",
-              "explain": "外层 $\\gamma^t$ 与回报内部的相对折扣不是同一个因子。本页目标是从起点计算的折扣和；只保留 $G_t$ 而漏掉外层因子，一般不再是它的梯度。"
+              "tex": "\\begin{aligned}\\nabla_\\theta v_\\pi(s)&=\\sum_a\\left[\\nabla_\\theta\\pi_\\theta(a\\mid s)q_\\pi(s,a)+\\pi_\\theta(a\\mid s)\\nabla_\\theta q_\\pi(s,a)\\right],\\\\\\nabla_\\theta q_\\pi(s,a)&=\\gamma\\sum_{s'}P(s'\\mid s,a)\\nabla_\\theta v_\\pi(s').\\end{aligned}",
+              "explain": "第一项改变当前动作的概率，第二项保留未来决策的改变；尚未丢弃任何一个依赖。"
+            },
+            {
+              "kind": "p",
+              "text": "记 $H(s)=\\nabla_\\theta v_\\pi(s)$，把当前概率直接改变的贡献记为 $u(s)$。再令 $P_\\pi(s'\\mid s)=\\sum_a\\pi_\\theta(a\\mid s)P(s'\\mid s,a)$，便可把上面两行合成一条递推："
             },
             {
               "kind": "math",
-              "tex": "\\begin{aligned}d_\\gamma^\\pi(s)&=\\sum_{t\\ge0}\\gamma^t\\Pr_\\pi(S_t=s,\\ t<T),\\\\ \\nabla J&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\nabla\\pi_\\theta(a\\mid s)q_\\pi(s,a).\\end{aligned}",
-              "explain": "这是策略梯度定理的占用权重表达。$s$ 只遍历非终止状态，$t<T$ 表示这一决策确实发生。$d_\\gamma$ 是期望折扣访问次数，不是概率分布。"
+              "tex": "\\begin{aligned}u(s)&=\\sum_a\\nabla_\\theta\\pi_\\theta(a\\mid s)q_\\pi(s,a),\\\\H(s)&=u(s)+\\gamma\\sum_{s'}P_\\pi(s'\\mid s)H(s').\\end{aligned}",
+              "explain": "$u(s)$ 已用动作价值评价当前选择的全部后果，$H(s')$ 则计算后续策略本身还怎样改变。一次展开先收下 $u(s)$，再沿实际可能的后继继续处理剩余导数。"
             },
+            {
+              "kind": "p",
+              "text": "再代入一次，收下的就不只有起点贡献，还包括下一状态的贡献；继续代入 $K$ 次，得到下式。指示量 $\\mathbf1\\{t<T\\}$ 只让真正发生的决策进入求和。"
+            },
+            {
+              "kind": "math",
+              "tex": "H(s)=\\sum_{t=0}^{K-1}\\gamma^t\\mathbb E_\\pi\\!\\left[u(S_t)\\mathbf1\\{t<T\\}\\mid S_0=s\\right]+\\gamma^K\\mathbb E_\\pi\\!\\left[H(S_K)\\mathbf1\\{K<T\\}\\mid S_0=s\\right].",
+              "explain": "左侧全部导数等于已展开的前K步贡献，加上尚未展开的尾部；各个访问概率由同一个当前策略产生。"
+            },
+            {
+              "kind": "p",
+              "text": "何时可以让尾部消失？有限期限中，$K$ 超过期限后没有剩余决策。有限状态、$\\gamma<1$ 且价值导数有界时，尾部被 $\\gamma^K$ 压到零；$\\gamma=1$ 时则要求当前策略从所列各状态都适当终止，且满足前述求导条件。有限状态的这种暂态链也使尾部趋零。于是沿轨迹出现的所有 $u(S_t)$ 都被收集进来。矩阵形式和全状态条件在下一节进一步核对。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\nabla_\\theta J=\\mathbb E_{S_0\\sim\\mu,\\pi}\\sum_{t=0}^{T-1}\\gamma^t u(S_t)=\\sum_s\\left[\\sum_{t\\ge0}\\gamma^t\\Pr_{\\mu,\\pi}(S_t=s,\\ t<T)\\right]u(s).",
+              "explain": "起点分布固定，所以先对各起点导数加权，再按“每次访问落在哪个状态”重组求和。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}d_\\gamma^\\pi(s)&=\\sum_{t\\ge0}\\gamma^t\\Pr_{\\mu,\\pi}(S_t=s,\\ t<T),\\\\\\nabla_\\theta J&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\nabla_\\theta\\pi_\\theta(a\\mid s)q_\\pi(s,a).\\end{aligned}",
+              "explain": "这就是起点折扣目标的策略梯度定理。$d_\\gamma^\\pi(s)$ 是期望折扣访问次数，可以大于一；它不是任意指定的状态分布。"
+            },
+            {
+              "kind": "p",
+              "text": "证明没有把状态分布对参数的影响置零。当前选择怎样改变以后访问哪里，已经沿Bellman导数的递推进入各状态的访问权重。若改用概率分布，令 $Z_\\gamma^\\pi=\\sum_s d_\\gamma^\\pi(s)$、$\\bar d_\\gamma^\\pi=d_\\gamma^\\pi/Z_\\gamma^\\pi$，在 $0<Z_\\gamma^\\pi<\\infty$ 时还要乘回这个总质量。定理仍要求使用当前策略对应的访问权重。"
+            },
+            {
+              "kind": "p",
+              "text": "回到两步任务。暂把两个决策位置的动作1概率分别写成 $p_0,p_1$，则 $J(p_0,p_1)=\\gamma p_0(1-p_1)$。只增加第一次的概率，会扩大获奖路径；只增加第二次的概率，则会缩小它。真实actor共享 $p_0=p_1=\\sigma(\\theta)$，两个偏导最后必须沿同一个参数相加："
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}\\frac{dJ}{d\\theta}&=\\left[\\frac{\\partial J}{\\partial p_0}+\\frac{\\partial J}{\\partial p_1}\\right]p(1-p)\\\\&=\\underbrace{\\gamma p(1-p)^2}_{\\text{第一次选择}}-\\underbrace{\\gamma p^2(1-p)}_{\\text{第二次选择}}.\\end{aligned}",
+              "explain": "第一次贡献包含“选1后还能选到0”的概率；第二次贡献还乘“第一步确实到达获奖可达状态”的概率。$\\theta=0.7,\\gamma=0.5$ 时两项约为 $+0.036784$、$-0.074073$，合计 $-0.037289$。"
+            },
+            {
+              "kind": "figure",
+              "src": "/crl-figures/policy-gradient-probability-flow.svg",
+              "alt": "两次独立动作抽样的概率面积：分别改变第一次与第二次动作1概率，再合成共享参数的梯度贡献。",
+              "caption": "把两次独立均匀抽样画成单位正方形：横向抽样小于 $p_0$ 时第一动作取1，纵向抽样小于 $1-p_1$ 时第二动作取0，所以获奖矩形面积为 $p_0(1-p_1)$。方块表示抽样概率空间。原创精确面积与解析梯度，$\\theta=0.7,\\gamma=0.5$。两个面板分别固定另一个概率；$\\Delta p=0.08$ 只把一阶变化带画宽，不表示同时作两次有限变化。底部三根有符号棒对应正贡献、负贡献与总梯度。"
+            },
+            {
+              "kind": "p",
+              "text": "图把两种影响画在同一块获奖面积上。右侧紫带的损失之所以较大，是因为当前 $p>1/2$：获奖可达状态较常出现，而一旦到达那里，更需要增加动作0。占用定理也给出同样的计算：$u(s_0)=\\gamma p(1-p)^2$，$u(s_1^{(0)})=0$，$u(s_1^{(1)})=-p(1-p)$，后两项按各自到达概率和外层折扣加权。"
+            }
+          ]
+        },
+        {
+          "id": "policy-occupancy-proof",
+          "level": 3,
+          "title": "2.1 · 深入：占用归一化与矩阵条件",
+          "blocks": [
             {
               "kind": "math",
               "tex": "\\begin{aligned}Z_\\gamma^\\pi&=\\sum_s d_\\gamma^\\pi(s)=\\mathbb E_\\pi\\sum_{t=0}^{T-1}\\gamma^t,\\qquad \\bar d_\\gamma^\\pi(s)=d_\\gamma^\\pi(s)/Z_\\gamma^\\pi,\\\\ \\nabla J&=Z_\\gamma^\\pi\\,\\mathbb E_{S\\sim\\bar d_\\gamma^\\pi,\\ A\\sim\\pi}[q_\\pi(S,A)\\nabla\\log\\pi_\\theta(A\\mid S)].\\end{aligned}",
@@ -8174,131 +8240,164 @@
             {
               "kind": "p",
               "text": "例如 A 一步终止，另有从 A 不可达的 B 永远自循环。若总从 A 开始，$\\mathbb E_\\mu[T]=1$，但完整非终止矩阵是 $P_\\pi=\\operatorname{diag}(0,1)$，$I-P_\\pi$ 仍奇异。从起点产生的有限轨迹没有排除未访问闭类；不能据此前者直接写出全状态的无折扣逆矩阵。"
-            },
-            {
-              "kind": "p",
-              "text": "例如一个动作先把智能体送到新区域，若只对当前动作奖励求导，就漏掉该区域里后续选择的后果。占用权重展开恰好把这些后果沿时间计入。策略梯度不是绕过了序列决策，只是把未知动力学的导数转成可以通过轨迹估计的统计量。"
             }
           ]
         },
         {
-          "id": "policy-baseline",
-          "title": "3 · 基线为何无偏，critic 何时有偏",
+          "id": "policy-sampling",
+          "title": "3 · 从状态动作遍历到策略轨迹采样",
           "blocks": [
             {
-              "kind": "math",
-              "tex": "\\sum_a\\pi_\\theta(a\\mid s)b(s)\\nabla\\log\\pi_\\theta(a\\mid s)=b(s)\\nabla\\sum_a\\pi_\\theta(a\\mid s)=0.",
-              "explain": "只要基线在给定状态或动作前历史后不依赖当前采样动作，减去它就不改变期望 score 梯度。策略更新时对基线和回报停止梯度，不能把它们当作额外可微目标。"
-            },
-            {
               "kind": "p",
-              "text": "动作无关是一项统计条件，不能只看网络输入中有没有动作。如果先用当前样本的回报把基线拟合好，再对同一样本计算策略更新，拟合后的参数可能已泄露当前动作的结果。单步例子中若把基线直接设为本次奖励，每个优势都为零，而两个动作奖励不同时真实梯度并不为零。用动作发生前已确定的基线，或用适当独立数据拟合，可保留上面的条件无偏解释；仅停止自动微分不会消除这种数据依赖。"
-            },
-            {
-              "kind": "p",
-              "text": "取基线为 $v_\\pi(s)$ 得到优势 $A_\\pi(s,a)=q_\\pi(s,a)-v_\\pi(s)$。状态价值是自然的选择，但不总是使所有参数方向总方差最小的基线；最优方差基线还可能依赖 score 的平方范数。"
+              "text": "定理写着对所有状态、所有动作求和。但这些状态未必能被逐项枚举，真实动作价值也通常未知。先解决求和怎样计算，再解决动作价值怎样获得。上一节的证明已经给出状态采样方法：让当前策略真正行动，一条轨迹就按正确的到达概率带来它访问过的状态。"
             },
             {
               "kind": "math",
-              "tex": "\\begin{aligned}\\delta_t&=R_{t+1}+\\gamma V_w(S_{t+1})-V_w(S_t),\\\\ \\Delta\\theta&=\\alpha_\\theta\\gamma^t\\delta_t\\psi_t.\\end{aligned}",
-              "explain": "当 $V_w=v_\\pi$ 且状态是合适的 Markov 状态时，条件期望 $\\mathbb E[\\delta_t\\mid S_t,A_t]=A_\\pi(S_t,A_t)$。近似 critic 不精确时，一步 bootstrap 通常带来策略梯度偏差。"
+              "tex": "\\sum_s d_\\gamma^\\pi(s)u(s)=\\mathbb E_{\\tau\\sim\\pi}\\!\\left[\\sum_{t=0}^{T-1}\\gamma^t u(S_t)\\right].",
+              "explain": "右侧每次实际访问记一项，并保留从起点计时的 $\\gamma^t$。这一步使用轨迹访问来估计状态求和；无须先知道每个 $d_\\gamma^\\pi(s)$ 的数值。"
             },
             {
               "kind": "p",
-              "text": "MC 基线只减去动作无关项，仍可保持策略梯度无偏；把完整回报换成近似 TD 目标则是另一项近似。两者常一起出现，但作用不同。训练 critic 的损失也不能简单加到策略损失后任其通过所有共享路径反传。共享表示需要明确各项梯度如何作用。"
+              "text": "在一个已经到达的状态 $s$，若知道所有动作的 $q_\\pi(s,a)$，可以直接计算 $u(s)=\\sum_a q_\\pi(s,a)\\nabla_\\theta\\pi_\\theta(a\\mid s)$。这是“全动作”计算。实际经验却只执行一个动作。要让这个动作承担同一项求和，就把每个被加的项乘上、再除以它被选中的概率："
             },
             {
               "kind": "math",
-              "tex": "\\begin{aligned}V_w(s)&=v_\\pi(s)+\\varepsilon(s),\\\\\\mathbb E[\\delta_t\\mid s,a]&=A_\\pi(s,a)+\\gamma\\mathbb E[\\varepsilon(S_{t+1})\\mid s,a]-\\varepsilon(s).\\end{aligned}",
-              "explain": "将近似 critic 分成真实价值与误差，代入 TD 残差。当前状态的 −ε(s) 是动作无关基线，其 score 期望为0；但后继误差一般依赖当前动作，因此会改变策略的期望更新方向。"
+              "tex": "\\begin{aligned}u(s)&=\\sum_a q_\\pi(s,a)\\nabla_\\theta\\pi_\\theta(a\\mid s)\\\\&=\\sum_a\\pi_\\theta(a\\mid s)\\left[q_\\pi(s,a)\\frac{\\nabla_\\theta\\pi_\\theta(a\\mid s)}{\\pi_\\theta(a\\mid s)}\\right]\\\\&=\\mathbb E_{A\\sim\\pi_\\theta(\\cdot\\mid s)}\\!\\left[q_\\pi(s,A)\\nabla_\\theta\\log\\pi_\\theta(A\\mid s)\\right].\\end{aligned}",
+              "explain": "乘入的 $\\pi$ 使求和具有动作期望的形式；除去的 $\\pi$ 保持原来的值。对这里的动作假设 $\\pi_\\theta(a\\mid s)>0$，且局部支持集固定；固定不可选动作可从求和中移除，其概率导数也为零。"
             },
             {
               "kind": "p",
-              "text": "一个可手算的失败情形：起点两个动作等概率，真实即时及未来奖励全为0。critic 却把动作1所到后继状态估为10，把动作0的后继估为0；γ=.9，起点预测为0。两动作 TD 误差分别为9和0。对动作1概率的 Bernoulli logit，期望更新系数为 .5×9×.5=2.25，尽管真实策略梯度为0。Actor 会追逐 critic 的错误，这不是 MC baseline 的无偏性所能排除的。"
+              "text": "这正是把加权求和变成采样平均的换测度关系。一般地，$\\sum_a F(a)=\\mathbb E_{A\\sim b}[F(A)/b(A)]$，要求 $b$ 覆盖非零项。此处 $F=q_\\pi\\nabla\\pi_\\theta$，取采样概率 $b=\\pi_\\theta$，除法自然变成 $\\nabla\\pi_\\theta/\\pi_\\theta=\\nabla\\log\\pi_\\theta$。广义重要性采样采用同一种原理；这里具体要计算的是概率导数，和后面两种策略之间的概率比 $\\pi_\\theta/b$ 分别有自己的用途。"
+            },
+            {
+              "kind": "p",
+              "text": "记 $\\psi(s,a)=\\nabla_\\theta\\log\\pi_\\theta(a\\mid s)$，它是动作对数概率的导数，称为策略score。常见动作出现得多，罕见动作出现得少；每次出现使用 $q\\nabla\\pi/\\pi$，其频率加权的期望才回到原来的全动作贡献。"
+            },
+            {
+              "kind": "p",
+              "text": "在两步任务的起点，动作0的价值为零，动作1的价值为 $\\gamma(1-p)$。若抽到1，这次全动作和的样本为 $\\gamma(1-p)(1-p)$；若抽到0，样本为零。前者以概率 $p$ 出现，所以平均正好为 $\\gamma p(1-p)^2$。在获奖可达的第二状态，抽到0时样本为 $-p$，抽到1时为零，按概率 $1-p,p$ 平均便得到 $-p(1-p)$。"
             },
             {
               "kind": "math",
-              "tex": "b^*(s)=\\frac{\\mathbb E[G_t\\|\\psi_t\\|^2\\mid S_t=s]}{\\mathbb E[\\|\\psi_t\\|^2\\mid S_t=s]}.",
-              "explain": "固定状态下，最小化 $\\mathbb E[(G-b)^2\\|\\psi\\|^2]$ 并对标量 $b$ 求导，得到使 score 估计总二阶矩最小的基线；分母须非零。只有相应加权关系成立时，它才等于 $v_\\pi(s)$。所以“动作无关则无偏”与“取价值函数最小方差”不是同一条结论。"
+              "tex": "\\nabla_\\theta J=\\mathbb E_{\\tau\\sim\\pi_\\theta}\\sum_{t=0}^{T-1}\\gamma^tq_\\pi(S_t,A_t)\\psi_t,\\qquad \\psi_t=\\nabla_\\theta\\log\\pi_\\theta(A_t\\mid S_t).",
+              "explain": "先以轨迹访问估计状态和，再以实际动作估计动作和；两个采样步骤共同产生这条轨迹期望。"
             },
             {
               "kind": "p",
-              "text": "从这里进入深度 actor–critic，应分别追问：critic 在哪个状态分布下准确；其后继误差是否诱导错误行动；策略改变后旧 critic 还能否使用。在持续流中，策略与表示会同时漂移。训练多做几轮可能减小当前拟合误差，也可能扩大与当前行为的数据失配，不能只把它当作免费的优化改进。"
-            }
-          ]
-        },
-        {
-          "id": "policy-algorithm",
-          "title": "4 · 数据、梯度与参数更新的顺序",
-          "blocks": [
+              "text": "为什么 Bellman 求导保留了动作价值的导数，到这里却把动作价值作为系数？上式已经是目标的完整一阶导数。动作价值对后续策略的依赖，已沿递推进入未来各处的贡献。现在是在当前参数处计算这条梯度：评价动作价值，再乘 score；再次对这个系数求导，会加入原表达式没有要求的导数。用实际回报替代它时，同样把回报作为当前梯度的系数。"
+            },
+            {
+              "kind": "p",
+              "text": "剩下的未知量是 $q_\\pi$。按它的定义，若当前动作之后继续遵循同一个策略，完整未来回报 $G_t$ 的条件期望正是 $q_\\pi(S_t,A_t)$。给定状态和动作后，score已经确定，因此可用条件期望把 $q_\\pi$ 换成实际回报："
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}G_t&=\\sum_{k=t}^{T-1}\\gamma^{k-t}R_{k+1},\\\\\\mathbb E_\\pi[G_t\\mid S_t,A_t,\\ t<T]&=q_\\pi(S_t,A_t),\\\\\\mathbb E_\\pi[G_t\\psi_t\\mid S_t,A_t,\\ t<T]&=q_\\pi(S_t,A_t)\\psi_t,\\\\\\nabla_\\theta J&=\\mathbb E_{\\tau\\sim\\pi_\\theta}\\sum_{t=0}^{T-1}\\gamma^tG_t\\psi_t.\\end{aligned}",
+              "explain": "这里使用Markov状态、同一后续策略及可交换求和与期望的可积条件。$q$ 已经平均了未来，$G_t$ 是一次未来的实现；二者的梯度项在期望上相同，逐样本不必相等。"
+            },
+            {
+              "kind": "p",
+              "text": "现在才得到本章回合任务可以执行的估计器。固定参数 $\\theta$，从同一初始分布独立取得 $N$ 条完整、几乎必然终止的轨迹，每条可以有自己的终止长度 $T_i$。先累加一条轨迹内的全部贡献，再在轨迹之间取平均；无限持续任务不能靠等待终点取得完整回报，需要另选截断与尾值估计。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\widehat g_N(\\theta)=\\frac1N\\sum_{i=1}^N\\sum_{t=0}^{T_i-1}\\gamma^tG_t^{(i)}\\nabla_\\theta\\log\\pi_\\theta(A_t^{(i)}\\mid S_t^{(i)}),\\qquad \\mathbb E[\\widehat g_N]=\\nabla_\\theta J.",
+              "explain": "采样与score使用同一组固定参数；相关乘积可积时，这个轨迹平均无偏。外层 $\\gamma^t$ 把相对回报换回起点目标的时间权重。回合随机变长时，再把每条轨迹除以自己的 $T_i$ 会改换估计对象。"
+            },
+            {
+              "kind": "p",
+              "text": "以 $\\theta\\leftarrow\\theta+\\alpha\\widehat g_N$ 更新策略参数，就是批量 REINFORCE；$N=1$ 是一回合版本。完整回报要等到终点，因此这个方法先采样、再更新参数。每次重新采样后，期望方向对应的是更新后的策略；一次有限步长或一条有噪声轨迹仍可能使真实收益降低。"
+            },
+            {
+              "kind": "p",
+              "text": "上述乘除的是同一个当前策略概率，动作本来就来自 $\\pi_\\theta$。若轨迹来自另一固定行为策略 $b$，这时还要校正目标与行为之间的差异。令 $g(\\tau)=\\sum_{t<T}\\gamma^tG_t\\psi_t$。相同起点与环境核、且 $b$ 覆盖目标策略的轨迹支持时，完整轨迹权重为 $W(\\tau)=\\prod_{t<T}\\pi_\\theta(A_t\\mid S_t)/b(A_t\\mid S_t)$，便可将 $\\mathbb E_\\pi[g(\\tau)]$ 改写为 $\\mathbb E_b[W(\\tau)g(\\tau)]$。这个权重恢复目标期望，但可能放大少见轨迹的贡献；可变长轨迹还会积累多个概率比，方差须另行检验。"
+            },
+            {
+              "kind": "p",
+              "text": "同一个两步任务能说明只乘当前动作比率遗漏了什么。令行为策略在两处都以概率 $\\beta=0.25$ 选动作1，即 $b(1\\mid s)=\\beta$，并记 $\\rho_t=\\pi_\\theta(A_t\\mid S_t)/b(A_t\\mid S_t)$。第一项的 $\\rho_0$ 修正了第一次动作，但得到奖励的后续动作0仍以行为概率 $1-\\beta$ 出现；第二项的 $\\rho_1$ 修正了第二次动作，但获奖可达状态仍以行为概率 $\\beta$ 到达。因此错误估计器的期望为："
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}\\mathbb E_b\\!\\left[\\sum_{t=0}^1\\gamma^t\\rho_tG_t^b\\psi_t\\right]&=\\underbrace{\\gamma p(1-p)(1-\\beta)}_{\\text{未来动作仍由行为策略产生}}-\\underbrace{\\gamma\\beta p(1-p)}_{\\text{当前状态仍由行为策略到达}}\\\\&=\\gamma p(1-p)(1-2\\beta).\\end{aligned}",
+              "explain": "$G_t^b$ 是行为轨迹的实际回报。取本页参数，错误期望为 $+0.0554282$，真实梯度却为 $-0.0372894$。即使用已知的 $q_\\pi$ 消除第一处未来失配，当前动作比率仍未把状态访问从行为策略变为目标策略。"
+            },
+            {
+              "kind": "p",
+              "text": "在这个带权 score 估计器中，轨迹权重与回报是当前梯度的系数，score 已经包含动作概率的导数。实现代理损失时应固定这些系数，再对动作 log-probability 求导；若又把权重与 score 一起反传，就加入了原估计器没有要求的导数。深度 PPO 进一步规定旧概率、优势与批内更新的关系。"
+            },
+            {
+              "kind": "figure",
+              "src": "/crl-figures/policy-gradient-sampling.svg",
+              "alt": "固定同一目标策略，用真实抽样估计梯度：同策略与完整轨迹IS接近解析期望，单动作比率趋向另一期望。",
+              "caption": "每种经验来源各抽样20000条两步轨迹，参数始终固定为 $\\theta=0.7,\\gamma=0.5,\\beta=0.25$；目标与行为随机流种子为2026、2027。完整IS和单动作比率使用同一批行为经验。末点均值依次为 $-0.0374554$、$-0.0367325$、$+0.0546005$；对应精确期望为 $-0.0372894$、$-0.0372894$、$+0.0554282$。这是梯度估计的抽样读数，策略参数始终没有更新。"
+            },
+            {
+              "kind": "p",
+              "text": "下载[独立标准库抽样脚本](/crl-code/tutorials/policy-gradient-sampling.py)，在文件所在目录运行下面的命令。输出包含四条精确路径、实际路径计数、抽样均值和支持集检查；[图的原始数据](/crl-figures/policy-gradient-sampling-data.json)保留此次完整读数。改变行为概率后，先用解析表达式预测错误估计器的方向，再运行核对。"
+            },
             {
               "kind": "code",
-              "code": "用当前固定策略采样一个完整回合，保存动作和采样时的策略信息\n从末尾递推 $G_t=R_{t+1}+\\gamma G_{t+1}$，真正终止处尾项为零\n在采样参数下计算 score 和动作无关基线\n累加 $g=\\sum_t\\gamma^t(G_t-b_t)\\nabla\\log\\pi_\\theta(A_t\\mid S_t)$\n执行一次策略更新；基线可用回报作为监督目标单独更新",
-              "caption": "回合批量 REINFORCE"
-            },
-            {
-              "kind": "p",
-              "text": "若在回合结束后对同一批数据做多次大幅策略更新，后续参数已偏离采样策略。原始在策略梯度等式不再自动适用，需要重要性修正、合适的近似目标或重新采样。本页实现返回梯度而不在枚举过程中改变策略，便于与解析导数比较。"
-            },
-            {
-              "kind": "p",
-              "text": "一步 actor–critic 则可以每步更新。它以更早反馈和较低方差换取 critic 近似误差，通常还有两个步长或时间尺度。优势标准化、熵奖励、梯度裁剪和目标网络都属于额外机制，应在这个基本估计器之外逐项解释。"
+              "code": "python3 policy-gradient-sampling.py\npython3 policy-gradient-sampling.py --json --episodes 20000 --seed 2026",
+              "caption": "固定参数下比较精确期望与抽样；不执行策略学习。",
+              "language": "bash"
             }
           ]
         },
         {
-          "id": "policy-continuous",
-          "title": "5 · 连续动作：高斯策略的两个 score",
+          "id": "policy-trajectory-proof",
+          "level": 3,
+          "title": "3.1 · 从整条轨迹概率独立证明同一估计器",
           "blocks": [
             {
+              "kind": "math",
+              "tex": "p_\\theta(\\tau)=\\mu(S_0)\\prod_{t=0}^{T-1}\\pi_\\theta(A_t\\mid S_t)p(S_{t+1},R_{t+1}\\mid S_t,A_t).",
+              "explain": "$\\tau$ 包含从起点到终点的动作与环境后果；$p_\\theta(\\tau)$ 是其概率，连续后果时相应使用密度。"
+            },
+            {
               "kind": "p",
-              "text": "连续动作可以使用高斯策略 $A\\sim\\mathcal N(\\mu_\\theta(s),\\sigma_\\theta(s)^2)$。均值控制偏好的动作，标准差控制随机程度。用对数标准差 $\\ell=\\log\\sigma$ 参数化，可保证标准差为正。"
+              "text": "再从轨迹整体检查一次。沿一条已确定轨迹求导时，轨迹中的奖励是固定的实现值，参数改变的是轨迹出现的概率。起点分布与环境核不直接依赖参数，所以只有动作概率留下导数。环境无需可微。"
             },
             {
               "kind": "math",
-              "tex": "\\begin{aligned}\\partial_\\mu\\log\\pi(a\\mid s)&=\\frac{a-\\mu}{\\sigma^2},\\\\ \\partial_\\ell\\log\\pi(a\\mid s)&=\\frac{(a-\\mu)^2}{\\sigma^2}-1.\\end{aligned}",
-              "explain": "把这两个局部导数通过均值与对数标准差网络继续链式求导，就得到策略 score。它们来自概率密度的导数，不要求奖励对动作可微。"
-            },
-            {
-              "kind": "p",
-              "text": "真实执行动作若经过裁剪或可逆变换，必须说明策略密度究竟定义在哪个动作变量上。可逆 tanh 变换需要密度的 Jacobian 修正；直接把裁剪后的动作代入未裁剪高斯密度，通常不是执行策略的正确似然。本页枚举实验使用离散策略，不实现连续控制训练。"
-            }
-          ]
-        },
-        {
-          "id": "rlss-policy-mixture",
-          "title": "策略梯度的适用范围由 score 决定，不由网络名称决定",
-          "blocks": [
-            {
-              "kind": "p",
-              "text": "策略梯度并不要求策略是 softmax 神经网络。它要求明确定义目标、轨迹分布和可计算的动作概率导数；还需要允许交换求导与积分、充分的矩条件及相应支持条件。相同 score 可以接收完整回报、差分回报或近似 TD 信号，但这不会使这些信号的偏差自动相同。"
-            },
-            {
-              "kind": "p",
-              "text": "考虑由固定行为组件 $\\pi_1,\\ldots,\\pi_K$ 构成的混合策略。只学习混合权重 $m_j=\\operatorname{softmax}(\\eta)_j$，令 $\\pi(a|s)=\\sum_jm_j(s)\\pi_j(a|s)$。固定组件可以代表不同探索尺度或不同已有技能；此处不对其内部参数求导。"
+              "tex": "\\nabla_\\theta p_\\theta(\\tau)=p_\\theta(\\tau)\\nabla_\\theta\\log p_\\theta(\\tau),\\qquad \\nabla_\\theta\\log p_\\theta(\\tau)=\\sum_{t<T}\\nabla_\\theta\\log\\pi_\\theta(A_t\\mid S_t).",
+              "explain": "沿用上一节的支持与期望交换条件。对所有轨迹的“概率×回报”求导，再用这个对数导数恒等式，把导数改写成轨迹上的期望。"
             },
             {
               "kind": "math",
-              "tex": "\\frac{\\partial\\log\\pi(a|s)}{\\partial\\eta_j}\n=\\underbrace{\\frac{m_j(s)\\pi_j(a|s)}{\\sum_km_k(s)\\pi_k(a|s)}}_{\\Pr(j\\mid s,a)}-m_j(s).",
-              "explain": "先对混合概率求导，再除以该概率。后验责任减去先验权重，就是这个层次的 score。它不同于直接把“被抽中的组件”的一热编码当作已观察动作的后验责任。"
+              "tex": "\\nabla J=\\mathbb E\\left[\\left(\\sum_t\\psi_t\\right)\\left(\\sum_k\\gamma^kR_{k+1}\\right)\\right].",
+              "explain": "使用对数导数恒等式，将未知的环境依赖包含在采样轨迹中。此时一个动作的 score 似乎乘上了全部奖励。"
             },
             {
               "kind": "p",
-              "text": "两种实现都可以严谨。若保存了实际抽中的组件编号，可对“先抽组件、再抽动作”的联合分布使用组件 score；若只保存最终动作，则上式是边缘动作分布的 score。它们在条件满足时估计同一目标梯度，但方差和需要记录的变量不同。混合离散动作点质量与连续密度时，还必须使用一致的测度，不能把数值概率与密度直接相加。"
+              "text": "当前动作不能改变已经收到的奖励。给定动作前历史，过去奖励已确定，策略 score 的条件期望为零，因此这些过去奖励对期望梯度的贡献为零。去掉这些项，得到从当前动作起的回报，即 reward-to-go，通常更便于估计；整体方差还取决于各时刻之间的协方差。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}G_t&=\\sum_{k=t}^{T-1}\\gamma^{k-t}R_{k+1},\\\\ \\nabla J&=\\mathbb E\\sum_{t=0}^{T-1}\\gamma^tG_t\\psi_t.\\end{aligned}",
+              "explain": "外层 $\\gamma^t$ 与回报内部的相对折扣不是同一个因子。本页目标是从起点计算的折扣和；只保留 $G_t$ 而漏掉外层因子，一般不再是它的梯度。"
             },
             {
               "kind": "p",
-              "text": "这条路线连接到 options，但尚不是完整时间抽象。每步重新混合组件只是一个平坦的随机策略；承诺执行某个组件多步，会改变轨迹分布和信用分配。若组件本身持续学习，混合权重、组件策略与 critic 又形成三个相互变化的对象。应分别记录“选谁”“选出的策略如何变化”“如何估值”，而非把它们都称为 actor 更新。"
+              "text": "把过去奖励去掉的理由可以逐项检查。令 $\\mathcal H_t$ 是这一步动作发生前的完整历史；过去奖励在给定 $\\mathcal H_t$ 后已确定，而当前动作的条件分布仍为 $\\pi_\\theta(\\cdot\\mid S_t)$。因此有："
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathbb E[\\psi_t\\mid\\mathcal H_t]=\\sum_a\\pi_\\theta(a\\mid S_t)\\nabla_\\theta\\log\\pi_\\theta(a\\mid S_t)=\\nabla_\\theta\\sum_a\\pi_\\theta(a\\mid S_t)=0.",
+              "explain": "每个更早奖励乘上本步score后，其条件期望为零；当前动作之后的奖励则会随该动作变化，必须保留。"
+            },
+            {
+              "kind": "p",
+              "text": "余下的起点折扣奖励为 $\\sum_{k=t}^{T-1}\\gamma^kR_{k+1}=\\gamma^tG_t$。于是这条证明也得到 $\\mathbb E\\sum_{t<T}\\gamma^tG_t\\psi_t$。Bellman证明先沿未来状态收集贡献，轨迹概率证明则先把每次动作的score作用于整条回报，再由因果性去掉过去；二者在同一目标和条件下给出同一个估计器。"
             }
           ]
         },
         {
           "id": "lesson-example",
-          "title": "6 · 四条轨迹的精确梯度检查",
+          "title": "4 · 四条轨迹怎样变成一个回合样本",
           "blocks": [
             {
               "kind": "p",
-              "text": "两步决策共用一个 Bernoulli 参数 $p=\\sigma(\\theta)$，每一步独立抽样。策略不读取阶段或先前动作，所以两步都以同一个概率 p 选择动作1，以 1−p 选择动作0。第一步奖励为0；只有动作序列 (1,0) 在第二步得到奖励1，其余三条轨迹奖励为0。"
+              "text": "继续使用开篇的两步任务。两次动作抽样独立，但由同一个参数控制；四种结果的概率来自两次条件概率相乘。先逐项写出回报和score，再检查轨迹的概率加权平均。"
             },
             {
               "kind": "math",
@@ -8308,6 +8407,45 @@
             {
               "kind": "p",
               "text": "取 $\\theta=0.7,\\gamma=0.5$，则 $p\\approx0.668188,J\\approx0.110856$，解析梯度约为 −0.0372894。对获奖轨迹，$G_0=0.5,G_1=1$，两次 score 都应乘上总权重 0.5。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "动作序列",
+                "轨迹概率",
+                "$(G_0,G_1)$",
+                "$g(\\tau)=\\sum_t\\gamma^tG_t\\psi_t$"
+              ],
+              "rows": [
+                [
+                  "(0,0)",
+                  "$(1-p)^2$",
+                  "$(0,0)$",
+                  "$0$"
+                ],
+                [
+                  "(0,1)",
+                  "$(1-p)p$",
+                  "$(0,0)$",
+                  "$0$"
+                ],
+                [
+                  "(1,0)",
+                  "$p(1-p)$",
+                  "$(\\gamma,1)$",
+                  "$\\gamma[(1-p)-p]=\\gamma(1-2p)$"
+                ],
+                [
+                  "(1,1)",
+                  "$p^2$",
+                  "$(0,0)$",
+                  "$0$"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "一次获奖轨迹的梯度样本约为 $-0.168188$；其出现概率约为 $0.221713$，所以概率加权平均为 $-0.0372894$。在 $N$ 条轨迹中，若获奖次数为 $n_{10}$，零基线估计器就是 $\\widehat g_N=(n_{10}/N)\\gamma(1-2p)$。真实采样只需记录实际发生的序列；遍历四条则给出核对它的精确期望。"
             },
             {
               "kind": "figure",
@@ -8332,7 +8470,7 @@
         {
           "id": "policy-occupancy-example",
           "level": 3,
-          "title": "6.1 · 同一个例子：占用怎样收集全部 score",
+          "title": "4.1 · 同一个例子：占用怎样收集全部 score",
           "blocks": [
             {
               "kind": "p",
@@ -8389,9 +8527,41 @@
           ]
         },
         {
+          "id": "policy-baseline",
+          "title": "5 · MC 回报与动作前基线",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "完整轨迹给出一个可采样的梯度，但不同轨迹的回报会使写入方向和大小波动。先保留这个回报估计器，只在动作发生前选一个比较基准：回报高于基准时强化该动作，低于基准时减弱它。这个比较能否保持原来的期望梯度，取决于基准与当前动作的关系。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\sum_a\\pi_\\theta(a\\mid s)b(s)\\nabla\\log\\pi_\\theta(a\\mid s)=b(s)\\nabla\\sum_a\\pi_\\theta(a\\mid s)=0.",
+              "explain": "只要基线在给定状态或动作前历史后不依赖当前采样动作，减去它就不改变期望 score 梯度。策略更新时对基线和回报停止梯度，不能把它们当作额外可微目标。"
+            },
+            {
+              "kind": "p",
+              "text": "动作无关是一项统计条件，不能只看网络输入中有没有动作。如果先用当前样本的回报把基线拟合好，再对同一样本计算策略更新，拟合后的参数可能已泄露当前动作的结果。单步例子中若把基线直接设为本次奖励，每个优势都为零，而两个动作奖励不同时真实梯度并不为零。用动作发生前已确定的基线，或用适当独立数据拟合，可保留上面的条件无偏解释；仅停止自动微分不会消除这种数据依赖。"
+            },
+            {
+              "kind": "p",
+              "text": "取基线为 $v_\\pi(s)$ 得到优势 $A_\\pi(s,a)=q_\\pi(s,a)-v_\\pi(s)$。状态价值是自然的选择，但不总是使所有参数方向总方差最小的基线；最优方差基线还可能依赖 score 的平方范数。"
+            },
+            {
+              "kind": "math",
+              "tex": "b^*(s)=\\frac{\\mathbb E[G_t\\|\\psi_t\\|^2\\mid S_t=s]}{\\mathbb E[\\|\\psi_t\\|^2\\mid S_t=s]}.",
+              "explain": "固定状态下，最小化 $\\mathbb E[(G-b)^2\\|\\psi\\|^2]$ 并对标量 $b$ 求导，得到使 score 估计总二阶矩最小的基线；分母须非零。只有相应加权关系成立时，它才等于 $v_\\pi(s)$。所以“动作无关则无偏”与“取价值函数最小方差”不是同一条结论。"
+            },
+            {
+              "kind": "p",
+              "text": "基线先解决如何减少回报样本的波动。它仍然需要等到未来奖励到来。若希望每次转移后就更新策略，下一步要改变的是回报估计器：用已经学习的后继价值替代尚未收到的奖励。"
+            }
+          ]
+        },
+        {
           "id": "policy-variance-example",
           "level": 3,
-          "title": "6.2 · 无偏、局部最小方差与整回合方差",
+          "title": "5.1 · 无偏、局部最小方差与整回合方差",
           "blocks": [
             {
               "kind": "p",
@@ -8476,9 +8646,60 @@
           ]
         },
         {
+          "id": "policy-algorithm",
+          "title": "5.2 · 先采样完整回合，再写入参数",
+          "blocks": [
+            {
+              "kind": "code",
+              "code": "用当前固定策略采样一个完整回合，保存动作和采样时的策略信息\n从末尾递推 $G_t=R_{t+1}+\\gamma G_{t+1}$，真正终止处尾项为零\n在采样参数下计算 score 和动作无关基线\n累加 $g=\\sum_t\\gamma^t(G_t-b_t)\\nabla\\log\\pi_\\theta(A_t\\mid S_t)$\n执行一次策略更新；基线可用回报作为监督目标单独更新",
+              "caption": "回合批量 REINFORCE"
+            },
+            {
+              "kind": "p",
+              "text": "若在回合结束后对同一批数据做多次大幅策略更新，后续参数已偏离采样策略。原始在策略梯度等式不再自动适用，需要重要性修正、合适的近似目标或重新采样。本页实现返回梯度而不在枚举过程中改变策略，便于与解析导数比较。"
+            }
+          ]
+        },
+        {
+          "id": "policy-critic",
+          "title": "6 · 用后继价值提早评价动作：Actor–Critic",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "完整回报给出当前动作的实际后果，却要等到回合结束。已经学得的价值函数可以预测剩余奖励，使一条转移本身就产生策略反馈。于是同一个价值预测有两项职责：当前状态预测作为基线，后继状态预测补上尚未发生的未来。只有后一项进入动作后果的估计；真正终止后的价值取零。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}\\delta_t&=R_{t+1}+\\gamma V_w(S_{t+1})-V_w(S_t),\\\\ \\Delta\\theta&=\\alpha_\\theta\\gamma^t\\delta_t\\psi_t.\\end{aligned}",
+              "explain": "当 $V_w=v_\\pi$ 且状态是合适的 Markov 状态时，条件期望 $\\mathbb E[\\delta_t\\mid S_t,A_t]=A_\\pi(S_t,A_t)$。近似 critic 不精确时，一步 bootstrap 通常带来策略梯度偏差。"
+            },
+            {
+              "kind": "p",
+              "text": "MC 基线只减去动作无关项，仍可保持策略梯度无偏；把完整回报换成近似 TD 目标则是另一项近似。两者常一起出现，但作用不同。训练 critic 的损失也不能简单加到策略损失后任其通过所有共享路径反传。共享表示需要明确各项梯度如何作用。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}V_w(s)&=v_\\pi(s)+\\varepsilon(s),\\\\\\mathbb E[\\delta_t\\mid s,a]&=A_\\pi(s,a)+\\gamma\\mathbb E[\\varepsilon(S_{t+1})\\mid s,a]-\\varepsilon(s).\\end{aligned}",
+              "explain": "将近似 critic 分成真实价值与误差，代入 TD 残差。当前状态的 −ε(s) 是动作无关基线，其 score 期望为0；但后继误差一般依赖当前动作，因此会改变策略的期望更新方向。"
+            },
+            {
+              "kind": "p",
+              "text": "一个可手算的失败情形：起点两个动作等概率，真实即时及未来奖励全为0。critic 却把动作1所到后继状态估为10，把动作0的后继估为0；γ=.9，起点预测为0。两动作 TD 误差分别为9和0。对动作1概率的 Bernoulli logit，期望更新系数为 .5×9×.5=2.25，尽管真实策略梯度为0。Actor 会追逐 critic 的错误，这不是 MC baseline 的无偏性所能排除的。"
+            },
+            {
+              "kind": "p",
+              "text": "一步 actor–critic 则可以每步更新。它以更早反馈和较低方差换取 critic 近似误差，通常还有两个步长或时间尺度。优势标准化、熵奖励、梯度裁剪和目标网络都属于额外机制，应在这个基本估计器之外逐项解释。"
+            },
+            {
+              "kind": "p",
+              "text": "从这里进入深度 actor–critic，应分别追问：critic 在哪个状态分布下准确；其后继误差是否诱导错误行动；策略改变后旧 critic 还能否使用。在持续流中，策略与表示会同时漂移。训练多做几轮可能减小当前拟合误差，也可能扩大与当前行为的数据失配，不能只把它当作免费的优化改进。"
+            }
+          ]
+        },
+        {
           "id": "policy-critic-example",
           "level": 3,
-          "title": "6.3 · 同一个 critic 误差何时只是基线，何时反转行动方向",
+          "title": "6.1 · 同一个 critic 误差何时反转行动方向",
           "blocks": [
             {
               "kind": "p",
@@ -8510,9 +8731,36 @@
           ]
         },
         {
-          "id": "policy-natural",
-          "title": "7 · 自然梯度与平均奖励的不同几何",
+          "id": "policy-compatible",
+          "title": "7 · 兼容逼近：哪些 critic 误差可以抵消",
           "blocks": [
+            {
+              "kind": "p",
+              "text": "兼容函数逼近进一步回答：critic 不完全准确时，能否仍给出准确的期望策略梯度？固定当前策略，令 $\\psi(s,a)=\\nabla_\\theta\\log\\pi_\\theta(a\\mid s)$，选择 $f_w(s,a)=w^\\top\\psi(s,a)$，并按同一策略梯度所用的占用权重拟合动作价值。关键要求是拟合误差在这些 score 方向上正交。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}0&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\pi(a\\mid s)\\psi(s,a)[q_\\pi(s,a)-f_w(s,a)],\\\\ F_d&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\pi(a\\mid s)\\psi(s,a)\\psi(s,a)^\\top,\\\\ \\nabla J&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\pi(a\\mid s)\\psi(s,a)f_w(s,a)=F_dw.\\end{aligned}",
+              "explain": "第一式是占用加权平方拟合在最优点的正规方程；将它从策略梯度定理中减去，便得到最后一行。因此需要精确的是相关误差矩，不必让每个动作价值都被精确表示。这是 Sutton 等 1999 年兼容逼近结果的线性 score 形式。"
+            },
+            {
+              "kind": "p",
+              "text": "由于每个状态下 $\\mathbb E_\\pi[\\psi\\mid s]=0$，$f_w$ 的动作均值为零，更适合解释为优势近似；加入任意状态基线不改变上述误差矩。若上一式的 Fisher 使用归一化占用，即 $F=F_d/Z_\\gamma^\\pi$，且矩阵可逆，则 $F^{-1}\\nabla J=Z_\\gamma^\\pi w$。省略归一化常数只能声称方向相同。有限数据、尚未拟合完成的 critic、错误的状态权重，或任意神经网络结构，都不会自动满足这项兼容条件。"
+            },
+            {
+              "kind": "p",
+              "text": "这给出一项比逐状态价值准确更具体的要求：critic 的误差必须与策略实际使用的 score 方向正交。该条件同时约束函数形式、拟合目标与状态动作权重。下面继续问，即使已经有了正确的梯度，参数空间中怎样的步子对应相同程度的策略变化。"
+            }
+          ]
+        },
+        {
+          "id": "policy-natural",
+          "title": "8 · 从参数距离到策略距离：自然梯度",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "现在固定当前策略及归一化占用 $\\bar d_\\gamma^\\pi$，记真实目标梯度为 $g=\\nabla J$。普通梯度把参数坐标的欧氏距离作为步子大小，但相同参数距离可能对应不同的动作概率变化。局部 KL 距离改为直接测量这些策略分布的变化。"
+            },
             {
               "kind": "math",
               "tex": "D_{\\mathrm{KL}}(\\pi_\\theta\\|\\pi_{\\theta+\\Delta\\theta})\\approx\\tfrac12\\Delta\\theta^\\top F\\Delta\\theta,\\\\ F=\\mathbb E[\\psi\\psi^\\top].",
@@ -8529,16 +8777,7 @@
             },
             {
               "kind": "p",
-              "text": "兼容函数逼近进一步回答：critic 不完全准确时，能否仍给出准确的期望策略梯度？固定当前策略，令 $\\psi(s,a)=\\nabla_\\theta\\log\\pi_\\theta(a\\mid s)$，选择 $f_w(s,a)=w^\\top\\psi(s,a)$，并按同一策略梯度所用的占用权重拟合动作价值。关键要求是拟合误差在这些 score 方向上正交。"
-            },
-            {
-              "kind": "math",
-              "tex": "\\begin{aligned}0&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\pi(a\\mid s)\\psi(s,a)[q_\\pi(s,a)-f_w(s,a)],\\\\ F_d&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\pi(a\\mid s)\\psi(s,a)\\psi(s,a)^\\top,\\\\ \\nabla J&=\\sum_s d_\\gamma^\\pi(s)\\sum_a\\pi(a\\mid s)\\psi(s,a)f_w(s,a)=F_dw.\\end{aligned}",
-              "explain": "第一式是占用加权平方拟合在最优点的正规方程；将它从策略梯度定理中减去，便得到最后一行。因此需要精确的是相关误差矩，不必让每个动作价值都被精确表示。这是 Sutton 等 1999 年兼容逼近结果的线性 score 形式。"
-            },
-            {
-              "kind": "p",
-              "text": "由于每个状态下 $\\mathbb E_\\pi[\\psi\\mid s]=0$，$f_w$ 的动作均值为零，更适合解释为优势近似；加入任意状态基线不改变上述误差矩。若上一式的 Fisher 使用归一化占用，即 $F=F_d/Z_\\gamma^\\pi$，且矩阵可逆，则 $F^{-1}\\nabla J=Z_\\gamma^\\pi w$。省略归一化常数只能声称方向相同。有限数据、尚未拟合完成的 critic、错误的状态权重，或任意神经网络结构，都不会自动满足这项兼容条件。"
+              "text": "上一节的 $F_d$ 使用未归一化折扣占用。若这里采用 $\\bar d_\\gamma=d_\\gamma/Z_\\gamma$ 的 Fisher，则 $F=F_d/Z_\\gamma$，兼容解对应 $F^{-1}\\nabla J=Z_\\gamma w$；采用 $F_d$ 则得到 $w$。固定当前策略时二者方向相同，步长尺度仍须声明。"
             },
             {
               "kind": "p",
@@ -8547,8 +8786,54 @@
           ]
         },
         {
+          "id": "policy-continuous",
+          "title": "9 · 连续动作：高斯策略的两个 score",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "连续动作可以使用高斯策略 $A\\sim\\mathcal N(\\mu_\\theta(s),\\sigma_\\theta(s)^2)$。均值控制偏好的动作，标准差控制随机程度。用对数标准差 $\\ell=\\log\\sigma$ 参数化，可保证标准差为正。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}\\partial_\\mu\\log\\pi(a\\mid s)&=\\frac{a-\\mu}{\\sigma^2},\\\\ \\partial_\\ell\\log\\pi(a\\mid s)&=\\frac{(a-\\mu)^2}{\\sigma^2}-1.\\end{aligned}",
+              "explain": "把这两个局部导数通过均值与对数标准差网络继续链式求导，就得到策略 score。它们来自概率密度的导数，不要求奖励对动作可微。"
+            },
+            {
+              "kind": "p",
+              "text": "真实执行动作若经过裁剪或可逆变换，必须说明策略密度究竟定义在哪个动作变量上。可逆 tanh 变换需要密度的 Jacobian 修正；直接把裁剪后的动作代入未裁剪高斯密度，通常不是执行策略的正确似然。本页枚举实验使用离散策略，不实现连续控制训练。"
+            }
+          ]
+        },
+        {
+          "id": "rlss-policy-mixture",
+          "title": "策略梯度的适用范围由 score 决定，不由网络名称决定",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "策略梯度并不要求策略是 softmax 神经网络。它要求明确定义目标、轨迹分布和可计算的动作概率导数；还需要允许交换求导与积分、充分的矩条件及相应支持条件。相同 score 可以接收完整回报、差分回报或近似 TD 信号，但这不会使这些信号的偏差自动相同。"
+            },
+            {
+              "kind": "p",
+              "text": "考虑由固定行为组件 $\\pi_1,\\ldots,\\pi_K$ 构成的混合策略。只学习混合权重 $m_j=\\operatorname{softmax}(\\eta)_j$，令 $\\pi(a|s)=\\sum_jm_j(s)\\pi_j(a|s)$。固定组件可以代表不同探索尺度或不同已有技能；此处不对其内部参数求导。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\frac{\\partial\\log\\pi(a|s)}{\\partial\\eta_j}\n=\\underbrace{\\frac{m_j(s)\\pi_j(a|s)}{\\sum_km_k(s)\\pi_k(a|s)}}_{\\Pr(j\\mid s,a)}-m_j(s).",
+              "explain": "先对混合概率求导，再除以该概率。后验责任减去先验权重，就是这个层次的 score。它不同于直接把“被抽中的组件”的一热编码当作已观察动作的后验责任。"
+            },
+            {
+              "kind": "p",
+              "text": "两种实现都可以严谨。若保存了实际抽中的组件编号，可对“先抽组件、再抽动作”的联合分布使用组件 score；若只保存最终动作，则上式是边缘动作分布的 score。它们在条件满足时估计同一目标梯度，但方差和需要记录的变量不同。混合离散动作点质量与连续密度时，还必须使用一致的测度，不能把数值概率与密度直接相加。"
+            },
+            {
+              "kind": "p",
+              "text": "这条路线连接到 options，但尚不是完整时间抽象。每步重新混合组件只是一个平坦的随机策略；承诺执行某个组件多步，会改变轨迹分布和信用分配。若组件本身持续学习，混合权重、组件策略与 critic 又形成三个相互变化的对象。应分别记录“选谁”“选出的策略如何变化”“如何估值”，而非把它们都称为 actor 更新。"
+            }
+          ]
+        },
+        {
           "id": "lesson-code",
-          "title": "8 · 完整枚举与数值梯度代码",
+          "title": "10 · 沿同一条轨迹核对代码",
           "blocks": [
             {
               "kind": "source",
@@ -8583,7 +8868,7 @@
         },
         {
           "id": "lesson-branches",
-          "title": "9 · 从经典 actor–critic 到深度与持续学习",
+          "title": "11 · 目标、估计器与更新几何怎样继续改变",
           "blocks": [
             {
               "kind": "p",
@@ -8601,8 +8886,16 @@
         },
         {
           "id": "lesson-check",
-          "title": "10 · 练习与答案",
+          "title": "12 · 练习与答案",
           "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "若直接按策略抽一个动作，使用 $q_\\pi(s,A)\\nabla\\pi_\\theta(A\\mid s)$，漏掉除以动作概率，会得到什么？答案：其期望为 $\\sum_a\\pi_\\theta(a\\mid s)q_\\pi(s,a)\\nabla\\pi_\\theta(a\\mid s)$，比定理多了一层动作概率权重。",
+                "为什么最终估计器不显式计算状态分布的导数？答案：Bellman 导数递归把后续每一次选择的变化都计入，得到访问质量 $d_\\gamma^\\pi$。实际轨迹再用出现频率和时间权重估计这个量，并非把它的参数依赖假定为零。",
+                "在两步例中，把行为概率改成 $\\beta=1/2$，错误单动作比率估计器的均值是什么？答案：零，因为 $1-2\\beta=0$；目标策略的真实梯度仍约为 $-0.0372894$。增加样本只能更准确地估计这个错误的均值。"
+              ]
+            },
             {
               "kind": "list",
               "items": [
@@ -8624,7 +8917,7 @@
         {
           "title": "Sutton et al. · Policy Gradient Methods for Reinforcement Learning with Function Approximation",
           "url": "https://proceedings.neurips.cc/paper_files/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html",
-          "note": "策略梯度与兼容函数逼近的原始论文。区分起点折扣权重和平均奖励平稳分布。"
+          "note": "§1 Theorem 1 分开平均奖励与起点折扣占用；§2 Theorem 2 的兼容导数与拟合误差正交条件；§3 解释优势和任意状态基线。"
         },
         {
           "title": "Greensmith, Bartlett & Baxter · Variance Reduction Techniques for Gradient Estimates in Reinforcement Learning",
@@ -8634,7 +8927,7 @@
         {
           "title": "Kakade · A Natural Policy Gradient",
           "url": "https://proceedings.neurips.cc/paper/2001/hash/4b86abe48d358ecf194c56c69108433e-Abstract.html",
-          "note": "自然策略梯度的原始工作，连接策略空间的局部度量与兼容逼近。"
+          "note": "§2 用平均奖励平稳分布定义 Fisher；§3.1 将兼容平方拟合的正规方程接到自然梯度。本章折扣占用的归一化另行写明。"
         }
       ],
       "executable": {
@@ -8645,18 +8938,17 @@
       "problem": {
         "setting": "用可微随机策略直接参数化动作分布，不通过对动作价值取最大值间接改变行为。",
         "given": [
-          "状态 $s\\in\\mathcal S$、动作 $a\\in\\mathcal A$；转移与奖励核 $p(s^{\\prime},r\\mid s,a)$。",
-          "初始分布 $d_0$、有界奖励 $R_{t+1}$、折扣 $0\\le\\gamma<1$；$J(\\pi)=\\mathbb E_{d_0,\\pi,p}[\\sum_{t\\ge0}\\gamma^tR_{t+1}]$。",
-          "策略 $\\pi_\\theta(a\\mid s)$、参数 $\\theta$；完整轨迹或 on-policy 多步样本。"
+          "Markov 状态 $s$、动作 $a$、有界奖励 $R_{t+1}$；起点分布 $\\mu$ 与环境转移核不直接依赖策略参数。",
+          "可微随机策略 $\\pi_\\theta(a\\mid s)$；终止时刻 $T$ 与折扣 $0\\le\\gamma\\le1$。先用固定策略产生完整回合，再估计该策略的梯度。"
         ],
-        "sought": "构造 $\\nabla_\\theta J(\\pi_\\theta)$ 的可用估计，并说明基线和 critic 如何改变估计性质。",
+        "sought": "构造 $\\nabla_\\theta J(\\pi_\\theta)$ 的经验估计，解释MC基线、TD critic、兼容逼近和自然梯度各改变什么。",
         "information": "无需知道或微分环境核；需要策略概率及其对参数的导数。",
         "objective": {
-          "tex": "\\max_\\theta J(\\pi_\\theta),\\qquad \\nabla_\\theta J=\\mathbb E\\!\\left[\\sum_{t\\ge0}\\gamma^t\\nabla_\\theta\\log\\pi_\\theta(A_t\\mid S_t)\\,G_t\\right]",
-          "explain": "$G_t$ 是从时刻 t 起的折扣回报。式中外层折扣对应初始状态分布下的目标；不能随意删掉再声称仍是同一精确梯度。"
+          "tex": "\\max_\\theta J(\\theta),\\qquad J(\\theta)=\\mathbb E_{\\mu,\\pi_\\theta}\\!\\left[\\sum_{t=0}^{T-1}\\gamma^tR_{t+1}\\right]",
+          "explain": "目标是从固定起点分布出发的期望回报。策略梯度定理把它的导数写成可由经验估计的形式；定理、采样估计与参数更新在下文依次推导。"
         },
         "assumptions": [
-          "允许交换微分与积分；策略支持与光滑性满足推导条件。",
+          "允许交换微分与期望；策略在所讨论参数邻域具有固定支持。折扣情形要求价值导数展开的尾项消失；无折扣回合情形另需适当终止与可积性，正文给出有限 MDP 下的条件。",
           "基线须满足给定状态后的 score 消去条件；用独立数据拟合或在本次动作采样前固定可满足通常条件。同一样本拟合可能引入统计依赖，停止梯度不能消除它；有偏 critic 也不因此无偏。"
         ],
         "success": "在可枚举轨迹上将估计器期望与有限差分梯度比较，再测量方差。",
@@ -8673,26 +8965,46 @@
           }
         ],
         "nonGoals": [
-          "随机梯度上升必然找到全局最优策略。"
+          "随机梯度上升不保证找到全局最优策略。"
         ],
         "solution": {
-          "difficulty": "动作改变未来分布，而环境通常不可微；完整回报又可能噪声很大。",
-          "insight": "对轨迹概率求导，用 score-function 把不可微环境留在采样过程中，再用基线和 critic 控制方差。",
+          "difficulty": "参数同时改变当前动作与未来访问。直接遍历全部状态、动作和未来结果，通常无法计算这个梯度。",
+          "insight": "先把价值导数沿时间展开，再依次用访问、动作和回报样本替代求和，得到能够从实际轨迹计算的梯度。",
           "steps": [
             {
               "sectionId": "lesson-derive",
-              "title": "从概率乘积导出梯度",
-              "explanation": "先得到完整表达，再用因果性去掉动作无法影响的过去奖励。"
+              "title": "沿未来决策展开价值导数",
+              "explanation": "每一处策略概率的变化都会影响回报，访问权重把这些局部贡献相加。"
+            },
+            {
+              "sectionId": "policy-sampling",
+              "title": "从所有状态动作到一条轨迹",
+              "explanation": "按策略访问状态，乘除动作概率，再用条件期望把 q 换成 G。"
+            },
+            {
+              "sectionId": "lesson-example",
+              "title": "在四条轨迹中核对",
+              "explanation": "直接导数、轨迹枚举和有限差分检查同一个目标。"
             },
             {
               "sectionId": "policy-baseline",
-              "title": "分开方差缩减与预测近似",
-              "explanation": "基线消去恒等式有明确条件，TD critic 的偏差需要另行分析。"
+              "title": "以动作前基线处理回报波动",
+              "explanation": "动作无关的基线不改变期望梯度，方差作用则需要计算。"
             },
             {
-              "sectionId": "policy-algorithm",
-              "title": "实现时固定采样与更新关系",
-              "explanation": "采样策略、回报计算和参数更新时间必须与估计器声明一致。"
+              "sectionId": "policy-critic",
+              "title": "用后继价值提前评价动作",
+              "explanation": "当前预测误差可作为基线抵消，动作相关的后继误差会进入更新。"
+            },
+            {
+              "sectionId": "policy-compatible",
+              "title": "检查 critic 误差与 score 正交",
+              "explanation": "兼容形式、拟合目标和占用权重共同保证相关误差矩为零。"
+            },
+            {
+              "sectionId": "policy-natural",
+              "title": "按局部策略距离选择步子",
+              "explanation": "Fisher 改变更新几何；归一化约定决定步长尺度。"
             }
           ],
           "guarantees": "无偏梯度估计的条件不等于非凸优化的全局收敛保证。",
@@ -9296,7 +9608,7 @@
           }
         ],
         "nonGoals": [
-          "把固定 target 下的回归下降解释为整个非平稳控制过程单调改善。"
+          "固定 target 下的回归误差下降，不保证整个非平稳控制过程单调改善。"
         ],
         "solution": {
           "difficulty": "自举目标、采样分布与网络参数同时变化，且最大化会选择正向估计噪声。",
@@ -9433,6 +9745,14 @@
           "id": "lesson-derive",
           "title": "2 · 对轨迹概率求导，不对环境求导",
           "blocks": [
+            {
+              "kind": "p",
+              "text": "先回到梯度如何由经验得到。对给定状态，策略梯度定理中的局部项是 $\\sum_a q_\\pi(s,a)\\nabla\\pi_\\theta(a\\mid s)$。逐项乘除 $\\pi_\\theta(a\\mid s)$，它便成为按策略抽取一个动作后的期望：$\\mathbb E_{A\\sim\\pi}[q_\\pi(s,A)\\nabla\\log\\pi_\\theta(A\\mid s)]$。继续按这项策略行动，所得回报 $G_t$ 的条件均值正是 $q_\\pi(S_t,A_t)$。状态访问频率由轨迹本身提供，再按目标保留外层时间权重 $\\gamma^t$，便得到逐轨迹的梯度估计。这里用采样替代求和，没有要求知道所有状态动作的价值；[基础章的概率面积图与完整推导](/zh/continual-rl/foundations/approximation/policy-gradient/#lesson-derive)展开了这些等式。"
+            },
+            {
+              "kind": "p",
+              "text": "神经网络改变了策略概率怎样由参数计算，没有改变上述概率恒等式。下面直接从整条轨迹的概率证明同一结果，再考察有限 rollout 和近似 critic 怎样改变估计。"
+            },
             {
               "kind": "math",
               "tex": "\\begin{gathered}p_\\theta(\\tau)=\\rho(s_0)\\prod_{t=0}^{T-1}\\pi_\\theta(a_t\\mid s_t)P(s_{t+1},r_{t+1}\\mid s_t,a_t),\\\\\\psi_t=\\left.\\nabla_\\theta\\log\\pi_\\theta(A_t\\mid S_t)\\right|_{\\theta_0},\\\\\\left.\\nabla J\\right|_{\\theta_0}=\\mathbb E_{\\pi_0}\\!\\left[G_0\\sum_{t=0}^{T-1}\\psi_t\\right].\\end{gathered}",
@@ -9791,7 +10111,7 @@
           }
         ],
         "nonGoals": [
-          "由 GAE 降方差推断估计必然无偏或策略必然改善。"
+          "GAE 降低方差，不意味着估计必然无偏或策略必然改善。"
         ],
         "solution": {
           "difficulty": "真实优势未知，长轨迹回报噪声大，截断窗口又留下未观察未来。",
@@ -10296,7 +10616,7 @@
           }
         ],
         "nonGoals": [
-          "声称 PPO clipping 严格限制所有状态的 KL 或保证单调提高收益。"
+          "PPO clipping 不严格限制所有状态的 KL，也不保证收益单调提高。"
         ],
         "solution": {
           "difficulty": "改变动作概率还会改变未来状态分布，旧数据只直接描述旧策略。",
@@ -10735,7 +11055,7 @@
           }
         ],
         "nonGoals": [
-          "保证 actor 找到 critic 的全局动作最大值，或 critic 准确描述未覆盖动作。"
+          "actor 更新不保证找到 critic 的全局动作最大值；critic 也可能错误估计未覆盖动作。"
         ],
         "solution": {
           "difficulty": "actor 会主动寻找 critic 估计高的位置，因此可能利用 critic 的误差。",
@@ -11206,7 +11526,7 @@
           }
         ],
         "nonGoals": [
-          "把自动温度当作任意任务都不需要调目标熵的保证。"
+          "自动温度仍依赖目标熵的设定，不免除这项选择。"
         ],
         "solution": {
           "difficulty": "策略既决定采样动作，也决定自己的密度惩罚；有界动作变换会改变密度。",
@@ -11247,12 +11567,13 @@
       "track": "deep",
       "order": 6,
       "path": "foundations/deep/practice/",
-      "title": "深度 RL 的机制接口：模型、记忆、离线数据与实验",
-      "question": "改变数据来源或 agent state 后，哪些推导和实现条件必须重新检查？",
+      "title": "深度 RL 的训练循环：经验、目标与更新",
+      "question": "一条真实经验怎样经过采样、保存、构造目标和求导，最后改变下一次行动？",
       "objectives": [
-        "由 Bellman 算子解释模型误差的放大。",
-        "区分 recurrent hidden state 与跨时间参数梯度。",
-        "识别离线外推问题，并设计可解释的 CRL 对照。"
+        "从回报目标推到 DQN 的样本标签与损失，定位停止梯度、终止处理和优化器写入。",
+        "沿实际 DQN、PPO、SAC 实现辨认行为参数、目标参数与批内固定量，解释下一次经验怎样改变。",
+        "分开环境步、梯度步、目标同步与冻结评价，并按原记录复算读数。",
+        "说明模型、递归记忆和离线数据各改变哪项接口，再选择必要的深入分支。"
       ],
       "prerequisites": [
         {
@@ -11269,9 +11590,10 @@
         }
       ],
       "bookSections": [
-        "Sutton & Barto §8、§11、§17",
-        "CQL §3–4",
-        "Deep RL at the Edge of the Statistical Precipice"
+        "Sutton & Barto §6.5、§9.2–9.3、§11.3、§16.5",
+        "DQN Methods；Double DQN目标",
+        "PPO §2–5；SAC Algorithms and Applications §4–6",
+        "Time Limits §2–3；CQL §3–4"
       ],
       "connectsTo": [
         "state",
@@ -11285,15 +11607,448 @@
       "sections": [
         {
           "id": "lesson-setting",
-          "title": "1 · 算法首先是一份数据与时间约定",
+          "title": "1 · 一条经验如何进入下一次行动",
           "blocks": [
             {
               "kind": "p",
-              "text": "前几章的深度方法把输入变成可学习的表示，再用这些表示预测和行动。在固定任务中，可以反复采样、重放和优化，直到找到较好的策略。若同一个学习器要长期运行，问题进一步改变：今天有用的表示明天可能需要扩充，旧预测可能对应已经改变的世界，而改进策略又会使原来常见的经验不再出现。学习能力本身必须在这些变化中保留下来。"
+              "text": "前几章已经给出价值网络与策略网络的更新。现在把它们放回实际交互：智能体先按当时的参数选动作，环境返回奖励和下一观测；学习器保存这条经验，用它构造目标并更新参数；新参数随后改变行动，进而改变以后收到的经验。损失函数只是这条循环中的一段。"
             },
             {
               "kind": "p",
-              "text": "DQN、PPO、TD3 与 SAC 的损失不能脱离数据采集过程理解。每条样本需要知道：动作来自哪个策略，下一观测是否属于同一个 episode，终止是否属于任务定义，参数何时更新。引入模型、recurrent 网络或离线数据时，改变的正是这些约定。"
+              "text": "先规定循环要改善什么。在一个 episode 内，令 $T$ 为真正终止的时刻，$R_{t+1}$ 为动作之后收到的奖励，$S_t$ 为能够预测后果的状态。初始状态分布固定，策略 $\\pi$ 决定行动；环境的奖励和转移规律决定结果。DQN 通过学习动作价值来改善策略，PPO 直接优化策略参数，二者仍须先有可比较的回报目标。"
+            },
+            {
+              "kind": "math",
+              "tex": "J_\\gamma(\\pi)=\\mathbb E_\\pi\\!\\left[\\sum_{t=0}^{T-1}\\gamma^tR_{t+1}\\right],\\qquad Q^*(s,a)=\\sup_\\pi\\mathbb E_\\pi\\!\\left[\\sum_{j=0}^{T-t-1}\\gamma^jR_{t+j+1}\\mid S_t=s,A_t=a\\right]",
+              "explain": "$J_\\gamma$ 评价从共同起点出发的策略；$Q^*$ 先指定当前动作，再比较之后的策略。有限期限包含在状态中，真正终止后的回报为零。本章的 DQN 取 $\\gamma=0.99$，PPO 取 $\\gamma=1$；冻结评价另报告未折扣奖励和。"
+            },
+            {
+              "kind": "p",
+              "text": "若状态满足马尔可夫条件、动作集合有限，最优动作价值满足下面的 Bellman 关系：先发生一次真实转移，再在后继状态选择价值最大的动作。学习器并不知道这个条件期望，也不知道 $Q^*$；网络输出 $Q_\\theta$ 只是估计。训练循环要解释的，就是怎样用已经收到的奖励和后继观察去改写这个估计。"
+            },
+            {
+              "kind": "math",
+              "tex": "Q^*(s,a)=\\mathbb E\\!\\left[R_{t+1}+\\gamma(1-D_{t+1})\\max_{a'}Q^*(S_{t+1},a')\\mid S_t=s,A_t=a\\right]",
+              "explain": "$D_{t+1}=1$ 表示这次转移使任务真正终止。最大值比较后继行动，条件期望平均环境可能产生的后果；二者承担不同的计算。将真实价值换成网络、将期望换成观测样本，才会得到后面的自举标签。"
+            },
+            {
+              "kind": "p",
+              "text": "本章沿已有 DeadlineChain 的 DQN/Double DQN 教学实现追踪这两次替换，再比较同一任务中的 PPO。连续动作 SAC 的实际更新核用于辨认另一条 actor 梯度路径。模型、递归记忆和离线数据分别改变循环中的一个接口，后面按这些改变进入相应分支。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "时钟或版本",
+                "在循环中何时改变",
+                "它决定什么"
+              ],
+              "rows": [
+                [
+                  "环境步 $t$",
+                  "每次 env.step 后加一",
+                  "新增一条真实转移；从零起算的循环索引 t 对应第 t+1 条转移"
+                ],
+                [
+                  "梯度步 $k$",
+                  "每次 optimizer.step 后加一",
+                  "在线网络与优化器状态各发生一次写入"
+                ],
+                [
+                  "在线参数 $\\theta_k$",
+                  "梯度更新之后",
+                  "下一次动作选择与当前 minibatch 的预测"
+                ],
+                [
+                  "目标参数 $\\bar\\theta$",
+                  "明确的同步事件之后",
+                  "后继价值标签使用哪一份延迟参数"
+                ],
+                [
+                  "采样时行为 $\\mu_t$",
+                  "动作发生时确定",
+                  "由动作当时的网络版本与探索规则决定；更新时可能已经过时"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "在单线程 DQN 中，动作 $A_t$ 读取的是 env.step 之前已完成的最新版本 $\\theta_{k(t)}$；该步收集经验之后才可能产生 $\\theta_{k(t)+1}$。这些计数器不必一起前进。尚未攒够 minibatch 时，可以继续收集经验而没有梯度步；复用同一批数据时，可以有多个梯度步而没有新环境步。删除 replay、增加优化次数或提前同步目标，分别改变数据复用、写入预算和标签变化速度。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-example",
+          "title": "2 · 先辨认环境真正返回的边界",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "内置任务有五个位置，动作是左或右，位置四为目标。到达目标奖励一，其余步骤奖励 −0.02。令位置为 $p_t$、剩余步数为 $n_t$，则本任务状态为 $S_t=(p_t,n_t)$，观察用五维 one-hot 加 $n_t/12$ 完整编码它。十二步是任务期限：同在位置零，剩余四步可以连续向右到达目标，剩余一步只能得到 −0.02。省略剩余时间，会把不同价值的状态混成同一个输入。最短四步到达的未折扣回报是 $-0.02-0.02-0.02+1=0.94$；折扣0.99下为 $-0.02(1+0.99+0.99^2)+0.99^3=0.910897$。"
+            },
+            {
+              "kind": "p",
+              "text": "这项十二步期限规定了回报在哪结束，耗尽时尾值为零。另一个常见情况是原任务仍会继续，但采样器因外部时间上限重置环境；那是截断（truncation），目标仍要读出截断前最后观测的价值。若把自动 reset 后的新起点保存成这条转移的 next_observation，就将两段不同经历错误连在了一起。Time Limits 原论文分别分析了这两种目标，不能只根据“timeout”这个接口名字判断。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "边界",
+                "bootstrap后继价值",
+                "GAE连接下一行",
+                "随后采样从哪里开始"
+              ],
+              "rows": [
+                [
+                  "到达目标或本任务十二步期限",
+                  "否；仍保留末步奖励",
+                  "否",
+                  "reset后的新起点"
+                ],
+                [
+                  "外部时长上限使一个仍可继续的任务重置",
+                  "是；使用重置前最后观测",
+                  "否；不跨接新episode",
+                  "reset后的新起点"
+                ],
+                [
+                  "PPO rollout恰在episode中间收满",
+                  "是；使用实际后继观测",
+                  "本批末尾不再读取下一批残差",
+                  "本任务保持当前状态继续"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "PPO 默认128步的 rollout 长度只是优化批次长度。它可以含多个完整 episode 和一个未完成的尾段；批次收满时不调用 reset。尾段最后的 TD 残差保留后继价值，优势递推则在本批末尾停止。代码用两个 mask 分开“任务还会不会产生回报”和“下一条残差是否属于本次连续片段”，后面的 PPO 节会逐项展开。"
+            },
+            {
+              "kind": "p",
+              "text": "下面的 deep_textbook_train.py 中，DQN 使用折扣0.99，PPO使用1。冻结评价都累加未折扣环境奖励，因此“训练采用什么目标”和“读数评价什么”也要分别说明。若要比较算法，应先统一目标、预算和评价规则；本章用这两个入口检查执行顺序。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_train.py",
+              "region": "environment",
+              "caption": "DeadlineChain 将剩余时间写入观察，十二步截止属于任务本身的真终止。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-algorithm",
+          "title": "3 · 采样、保存、构造目标、求导与更新",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "从 train_dqn 中的一次 env.step 开始。动作由当前在线网络的 ε-greedy 规则产生。环境返回的 next_observation、reward、terminated 与动作前观测、实际动作组成五元组，先进入 replay；若真正终止，下一次采样才从 reset 后的观察继续。这条转移保存的是终止前的后继观测，而非新回合的起点。"
+            },
+            {
+              "kind": "code",
+              "code": "按当前在线网络选择动作，执行一次 env.step\n保存 (observation, action, reward, next_observation, terminated)\n真正终止则准备新回合，否则保留后继观测\nreplay 至少有32条且零起算循环索引为偶数时，抽32条经验\n以当前在线参数计算已执行动作的预测；以目标参数构造尾值\n固定标签，反传当前预测的损失；裁剪梯度，调用 optimizer.step\n每100个真实环境步，把更新后的在线参数复制给目标网络\n随后用当前在线参数选择新的动作",
+              "caption": "deep_textbook_train.py 的 DQN/Double DQN 循环；一条新转移不保证马上被 replay 抽中。"
+            },
+            {
+              "kind": "p",
+              "text": "先固定这一批的记录 $(s_i,a_i,r_i,s'_i,d_i)$。$s_i$ 在此是观察所完整编码的 DeadlineChain 状态；$a_i$ 是采样时已经执行的动作。当前预测取 $Q_\\theta(s_i,a_i)$，不会把它替换成当前网络偏好的动作。普通 DQN 把前面的真实最优价值换成目标网络，再用这一条已观察转移替代环境条件期望；Double DQN 进一步分开后继动作的选择与评价。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}y_{k,i}^{\\rm DQN}&=r_i+0.99(1-d_i)\\max_aQ_{\\bar\\theta_k}(s'_i,a),\\\\a^*_{k,i}&=\\arg\\max_aQ_{\\theta_k}(s'_i,a),\\\\y_{k,i}^{\\rm Double}&=r_i+0.99(1-d_i)Q_{\\bar\\theta_k}(s'_i,a^*_{k,i}).\\end{aligned}",
+              "explain": "$\\bar\\theta_k$ 表示第 $k$ 次优化所读取的目标副本，未同步时相邻版本数值相同。两种标签都包含实际奖励与估计尾值；只有尾值估计恰当时，它们的条件平均才接近真正的 Bellman 目标。一次随机后果也不等于这个平均。"
+            },
+            {
+              "kind": "p",
+              "text": "得到32个标签以后，将它们作为本次优化的固定数值。为了区分“在哪个参数处生成标签”和“对哪个参数求导”，以下把损失写成 $L_k(\\theta)$，最后在 $\\theta=\\theta_k$ 处取梯度。脚本的 smooth_l1_loss 使用阈值一、批均值，等于下面的 Huber 损失。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}e_i(\\theta)=Q_\\theta(s_i,a_i)-\\operatorname{sg}(y_{k,i}),\\qquad L_k(\\theta)=\\frac1{32}\\sum_{i=1}^{32}h(e_i(\\theta)),\\\\h(e)=\\begin{cases}\\tfrac12e^2,&|e|\\le1,\\\\|e|-\\tfrac12,&|e|>1,\\end{cases}\\qquad h'(e)=\\operatorname{clip}(e,-1,1),\\\\g_k=\\left.\\nabla_\\theta L_k(\\theta)\\right|_{\\theta_k}=\\frac1{32}\\sum_i\\operatorname{clip}(e_i(\\theta_k),-1,1)\\nabla Q_{\\theta_k}(s_i,a_i).\\end{gathered}",
+              "explain": "$\\operatorname{sg}$ 保留标签数值、令它在这次求导中的导数为零。偏低的当前预测产生负残差，这条样本的负梯度贡献指向提高该预测的局部方向；合并其他样本并经过优化器后，实际变化还需另算。clip 在这里限制每条残差的导数，不等于裁剪奖励或限制整个网络的梯度范数。"
+            },
+            {
+              "kind": "p",
+              "text": "no_grad 包围的是整个标签计算，连 Double DQN 的在线后继动作选择也不参与反传。冻结目标网络参数控制它跨优化步怎样变化；停止梯度控制本次计算图经过哪些路径。即使只有一个网络、仍将同网络尾值 detach，得到的也是只对当前预测求导的半梯度更新。固定标签时，这个 g 是本次回归损失的完整偏梯度；下一次重新生成标签后，整个训练过程并没有在下降同一个固定监督目标。"
+            },
+            {
+              "kind": "p",
+              "text": "在本实现里，目标副本已requires_grad_(False)，离散argmax也不传递导数，因此仅删掉no_grad还不会使在线梯度沿目标返回。若改成由同一可更新网络提供可微尾值，并让它参与求导，才多出“改变后继预测以改变标签”的路径，优化对象也随之改变。对样本自举残差完整求导，还不自动得到平方期望Bellman残差的梯度：前者先平方再平均随机标签，后者先取条件平均再平方，两者相差标签的条件方差。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\tilde g_k=g_k\\min\\!\\left(1,\\frac{10}{\\|g_k\\|_2+10^{-6}}\\right),\\qquad(\\theta_{k+1},z_{k+1})=\\operatorname{AdamStep}(\\theta_k,z_k,\\tilde g_k;\\alpha=0.003)",
+              "explain": "脚本先将合并后的梯度全局范数裁到10，再调用 Adam；$z_k$ 是一阶矩、二阶矩和已完成更新数等优化器状态。单纯 SGD 才写成 $\\theta_{k+1}=\\theta_k-\\alpha\\tilde g_k$。零梯度时上式的缩放为一，公式中的小量对应实际裁剪的数值保护。"
+            },
+            {
+              "kind": "p",
+              "text": "这次写入会影响其他输入。对一个未在本批直接监督的 $(s,a)$，小更新下有 $\\Delta Q(s,a)\\approx\\nabla Q_{\\theta_k}(s,a)^\\top\\Delta\\theta$；共享表示使它可能上升、下降或几乎不变。因而“一个动作的标签正确”还没有说明其他动作排序怎样变化。target network 暂时延迟这项变化进入尾值，却不阻止在线预测、贪心动作或后续数据一起变化。"
+            },
+            {
+              "kind": "p",
+              "text": "再回到 train_dqn 的下一轮。若刚才终止，当前观察已经是位置零、剩余十二步；否则仍是刚收到的实际后继。ε-greedy 的贪心分支读取更新后的在线输出：在起点向右会到位置一并收到 −0.02，向左则留在位置零并收到 −0.02，后续可到达目标的时间因此不同。只有新输出改变动作排序且本次未选择探索分支时，参数写入才在这一步改变真实动作；学习率、replay损失或预测均值变化都不能单独断定动作已经改变。"
+            },
+            {
+              "kind": "p",
+              "text": "目标同步发生在该轮可能的优化之后。每100个环境步复制一次在线参数；同步不新增经验，也不再调用优化器。下一次抽到旧转移时，它的奖励和后继仍相同，但预测与重算标签可能不同。至此，一条数据被保存、重新解释、用于写入，并通过下一次行动回到新的环境经验。"
+            },
+            {
+              "kind": "p",
+              "text": "最后查看 evaluate：它新建评价环境，以当前网络的 argmax 动作累加未折扣外部奖励，并在 no_grad 下运行。它没有调用优化器，也不把转移放入 replay。得到的读数评价当前确定性策略；训练中的 ε-greedy 行为收益与学习成本需要由训练流另行计算。若扩展归一化器或递归网络，还须检查它们的统计量和活动状态是否在评价中改变。"
+            },
+            {
+              "kind": "p",
+              "text": "这个 DeadlineChain 的初始状态和转移都是确定的；同一个已冻结网络的十次 argmax评价通常给出相同回报。十次 episode 并没有产生十份独立的训练结果。独立训练种子对应不同学习过程，同一过程里的相邻窗口也没有成为新的独立试验。先固定训练预算、调参数据、失败规则和指标，再报告全部计划运行。rliable 的区间与汇总服务于这个比较，不替代信息权限和采样单位的定义。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_train.py",
+              "region": "dqn_update",
+              "caption": "对照上面的标签与损失：no_grad 固定目标，Huber loss 的梯度只写入在线网络，梯度裁剪后调用优化器。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_train.py",
+              "region": "dqn_train",
+              "caption": "再把更新放回完整循环：保存真实转移、抽取 minibatch，并每100个环境步同步目标网络。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-dqn-mechanisms",
+          "title": "3.1 · 为什么要分别控制数据、标签与求导路径",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "上面的循环用了 replay 和 target network，也能在 DQN 与 Double DQN 间切换。它们作用在不同位置。Replay 将一个已有转移再次提供给更新器；目标副本决定尾值何时接收新参数；Double DQN 决定用谁选择后继动作、用谁评价。只有先保持目标与预算一致，关闭一个机制后看到的差异才容易归因。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "循环中的机制",
+                "它改变哪项依赖",
+                "仍然留下的问题"
+              ],
+              "rows": [
+                [
+                  "均匀replay抽样",
+                  "本批来自有限buffer，减少连续邻接经验在更新中的直接相关，并允许重复使用",
+                  "buffer覆盖和年龄决定拟合权重；同一buffer的各批仍共享数据，世界变化后旧转移可能失配"
+                ],
+                [
+                  "冻结目标副本",
+                  "在线参数这一步的改变暂不进入目标网络尾值",
+                  "标签可能错误或过时；参数共享与离策略自举的困难仍在"
+                ],
+                [
+                  "标签停止梯度",
+                  "本次求导只经过当前预测，不经过尾值",
+                  "没有使标签独立于历史数据，也没有使标签成为真实价值"
+                ],
+                [
+                  "Double选择/评价",
+                  "在线网络选动作，延迟网络评价该动作",
+                  "两个网络相关且定期相等；没有普遍无偏或非线性收敛保证"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "为什么旧策略的转移还能供 Q-learning 使用？记录中的动作已固定，学习器要估计的是“执行这个动作之后”的条件后果。在同一 MDP 中，条件规律 $p(r,s',d\\mid s,a)$ 不因采样时用哪个策略而改变；目标中的后继贪心选择也不要求下一步照旧行为行动。因此普通一步 Q-learning 标签不需要乘旧动作的重要性比。行为策略仍决定哪些 $(s,a)$ 能进入 buffer，以及它们出现多少次。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\mathcal R_k(\\theta)=\\frac1{|\\mathcal D_t|}\\sum_{e\\in\\mathcal D_t}h\\!\\left(Q_\\theta(s_e,a_e)-\\operatorname{sg}(y_k(e))\\right),\\qquad\\mathbb E[g_k\\mid\\mathcal D_t,\\theta_k,\\bar\\theta_k]=\\left.\\nabla_\\theta\\mathcal R_k(\\theta)\\right|_{\\theta_k}",
+              "explain": "均匀、无放回抽取32条时，批均值梯度的条件期望等于当前有限buffer风险的偏梯度。这只认证这一次抽样对应什么平均；$\\mathcal D_t$ 的经验权重并不自动等于当前策略的访问权重或起点目标 $J_\\gamma$ 的梯度。"
+            },
+            {
+              "kind": "p",
+              "text": "函数逼近用有限参数同时拟合多个状态动作；改变 buffer权重，就可能改变这些误差之间的取舍。若观察缺少必要历史，同一个输入下的后果混合还可能随行为改变，此时前面的条件规律也不再由该输入完整确定。若真实动力学或奖励变了，旧转移则来自另一规律。离策略算法允许行为与目标策略不同，并没有将缺失状态、覆盖不足和外部变化一起解决。"
+            },
+            {
+              "kind": "p",
+              "text": "DQN 的最大值同时选择并评价高输出动作，估计误差可使偏高的输出更容易被选中。Double DQN用另一版本评价，缓解这项选择偏差；但在同步瞬间两个网络相同，两种标签也相同。同步之间，普通DQN对一条给定转移的标签保持固定，Double的在线argmax却仍可改变，带动标签跳到另一动作的目标输出。慢目标、固定标签和固定后继动作不是同一个条件。"
+            },
+            {
+              "kind": "p",
+              "text": "采用 Huber 又改变了残差如何参与拟合。平方损失的总体最小值对应标签条件均值，Huber 的一般条件是平均截断残差为零；对偏斜、含大误差的随机标签，它可能对应不同位置。DeadlineChain本身的后果确定，但网络估计和buffer分布仍在变化。不能把Huber只解释成数值实现，也不能用loss变小代替真实回报改善。"
+            },
+            {
+              "kind": "p",
+              "text": "原书§11.3把函数逼近、自举和离策略训练放在同一个稳定性问题中。Replay和目标副本在实际DQN中提供有用的时间尺度与采样选择，仍没有将这三项移除。判断某次失败，需要分别检查目标数值、行为覆盖、共享表示与更新尺度，而不只问是否“用了稳定化技巧”。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-ppo-loop",
+          "title": "3.2 · PPO：先完成一批经验，再固定其学习含义",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "同一DeadlineChain中的PPO改变了更新节奏。记第 $j$ 批开始时 actor 为 $\\pi_{\\eta_j}$、critic 为 $V_{\\psi_j}$。在128次真实交互完成之前，两组参数都不更新；采样仍可能经历多次任务终止与reset。每行保存观察、实际动作、旧动作log-probability、奖励、旧价值、实际后继价值和终止标志。保存log-probability足以在之后重建已采动作的旧概率，无须再用已更新的actor回算它。"
+            },
+            {
+              "kind": "p",
+              "text": "先用这批旧critic构造优势。令 $d_i$ 表示真终止，$b_i$ 表示连续片段边界：真终止、外部重置截断或本批末行都结束残差连接。bootstrap mask $1-d_i$ 决定是否读后继价值；trace mask $1-b_i$ 决定是否继续接下一行残差。这里先写一般 $\\gamma$，实际PPO入口取1。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}\\delta_i&=r_i+\\gamma(1-d_i)V_{\\psi_j}(s'_i)-V_{\\psi_j}(s_i),\\\\\\hat A_i&=\\delta_i+\\gamma\\lambda(1-b_i)\\hat A_{i+1},\\qquad\\lambda=0.95,\\\\\\hat R_i&=V_{\\psi_j}(s_i)+\\hat A_i.\\end{aligned}",
+              "explain": "从批末往前计算，末尾以 $\\hat A_B=0$ 起算。代码只把真终止传入 boundaries，本任务没有外部重置截断；初始化 carry=0 已使批末不跨接下一批。$\\hat R_i$ 是给critic的固定回归标签，不会随着批内critic更新重算。"
+            },
+            {
+              "kind": "p",
+              "text": "将递推展开，得到当前残差加上按 γλ衰减的后续残差，直到片段边界。λ=0只用一步残差，λ=1则将奖励展开到本片段末并保留必要尾值；一般λ混合不同等待长度。旧critic给了尚未收到的后果一个估计，因此真实回报与自举误差共同进入优势。detach只固定这次求导路径，无法去掉critic估计误差。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_lab.py",
+              "region": "advantages",
+              "caption": "对照两个mask进入delta和carry的位置；returns在优势标准化之前构造。"
+            },
+            {
+              "kind": "p",
+              "text": "进入ppo_update之后，旧log-probability、$\\hat A_i$ 和 $\\hat R_i$ 固定。代码只为actor将优势按本批均值与总体标准差标准化为 $\\tilde A_i=(\\hat A_i-\\overline A)/(\\sigma_A+10^{-8})$；critic标签仍使用原始 $\\hat A_i$。标准化改变有限批次的尺度与中心，不能把它和真实、未标准化优势的无偏梯度混为一个对象。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}\\rho_i(\\eta)=\\exp\\!\\left(\\log\\pi_\\eta(a_i\\mid s_i)-\\operatorname{sg}(\\log\\pi_{\\eta_j}(a_i\\mid s_i))\\right),\\\\L_{\\rm actor}(\\eta)=-\\frac1B\\sum_i\\min\\!\\left(\\rho_i(\\eta)\\tilde A_i,\\operatorname{clip}(\\rho_i(\\eta),0.8,1.2)\\tilde A_i\\right),\\\\L_{\\rm critic}(\\psi)=\\frac1B\\sum_i\\left(V_\\psi(s_i)-\\operatorname{sg}(\\hat R_i)\\right)^2.\\end{gathered}",
+              "explain": "优化器执行梯度下降，所以actor对要提高的代理取负号。只有当前动作log-probability向 $\\eta$ 求导；只有当前价值预测向 $\\psi$ 求导。本代码actor与critic参数分开：更新critic不会通过共享encoder直接改变actor。"
+            },
+            {
+              "kind": "p",
+              "text": "在批内第一次actor更新前，$\\rho_i=1$。尚未进入clip平坦区时，梯度下降方向为 $\\frac1B\\sum_i\\rho_i\\tilde A_i\\nabla_\\eta\\log\\pi_\\eta(a_i\\mid s_i)$，接回策略梯度的score路径；后续epoch重新计算 $\\rho_i$，而不是重新采动作、估优势或奖励。正优势在比率超过1.2后失去进一步增大的该项激励，负优势在比率低于0.8后失去进一步减小的该项激励。共享参数和其他样本仍会改变这个动作概率，所以clip没有强制所有比率留在区间内。"
+            },
+            {
+              "kind": "p",
+              "text": "旧概率比修正给定已采状态上的动作权重；状态依然来自旧策略访问。批内优化把这个有限数据代理改好，尚没有测到新策略的真实回报。下一批开始时，新actor成为采样策略，新的状态、动作、奖励与critic估计再产生一批新优势。若每个epoch把旧log-probability改成当前值，比率便反复回到一，失去“与采样时策略比较”的含义。"
+            },
+            {
+              "kind": "p",
+              "text": "实际核至多执行四次全批actor更新，每次写入前检查 $\\frac1B\\sum_i[\\rho_i-1-\\log\\rho_i]$ 是否超过0.03；超出则提前停止。这个非负样本估计用旧动作数据近似旧到新KL，不是所有状态上的精确KL。最后一次被允许的更新仍可能越过阈值，随后返回的 sample_kl 才测到更新后结果。critic另执行四次更新；actor提前停止不会减少这里的critic次数。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_train.py",
+              "region": "ppo_train",
+              "caption": "先冷读采样阶段：两网络版本固定，128步结束后才算GAE并调用更新。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_train.py",
+              "region": "ppo_update",
+              "caption": "再读批内阶段：旧量detach，actor和critic分别写入，最后重新计算sample_kl。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-sac-loop",
+          "title": "3.3 · SAC：旧转移训练critic，当前动作训练actor",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "SAC同时复用旧转移和学习随机连续策略，因此先改变价值含义。固定温度 $\\alpha>0$ 时，比较准则在奖励之外加入策略熵：$\\mathbb E\\sum_{t=0}^{T-1}\\gamma^t[R_{t+1}-\\alpha\\log\\pi_\\phi(A_t\\mid S_t)]$。连续动作的 $\\pi$ 是密度，熵与动作坐标有关。以下保持配套核的动作范围 $[-1,1]^2$；更完整的动作变换和温度约束见[熵正则控制章](/zh/continual-rl/foundations/deep/entropy-control/)。"
+            },
+            {
+              "kind": "p",
+              "text": "本章使用deep_textbook_train.py的sac_update核，对应两个在线critic、两个目标critic、一个当前actor和log_alpha。它没有在DeadlineChain上运行SAC，也没有给出SAC的完整环境采样器；小任务连续控制的完整循环在独立implementations/deep/入口。这里检查的是：同一个replay行在critic步骤与actor步骤中究竟被怎样读取。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}a'_i&=f_{\\phi_k}(\\epsilon'_i;s'_i),\\qquad\\epsilon'_i\\sim\\mathcal N(0,I),\\\\y_i&=r_i+\\gamma(1-d_i)\\left[\\min_{\\ell=1,2}Q_{\\bar\\omega_{\\ell,k}}(s'_i,a'_i)-\\alpha_k\\log\\pi_{\\phi_k}(a'_i\\mid s'_i)\\right],\\\\L_Q(\\omega_1,\\omega_2)&=\\frac1B\\sum_i\\sum_{\\ell=1,2}\\left[Q_{\\omega_\\ell}(s_i,a_i)-\\operatorname{sg}(y_i)\\right]^2.\\end{aligned}",
+              "explain": "$\\omega$ 是critic参数，$\\phi$ 是actor参数；$k$在这里标记一次sac_update调用的入口版本。critic拟合的是数据已执行动作 $a_i$；尾值动作 $a'_i$ 则由本次当前actor重新采样。no_grad固定整个标签，$\\gamma=0.99$，终止mask仍只作用于尾值。"
+            },
+            {
+              "kind": "p",
+              "text": "replay提供奖励和真实后继，当前actor提供从后继继续的行动分布。SAC的soft Q把当前奖励和以后行动的熵回报合起来，当前动作的熵由actor目标另行计算。两个critic取较小值是控制乐观估计的一项选择，仍可能有估计偏差；目标critic的慢版本也不使尾值正确。"
+            },
+            {
+              "kind": "math",
+              "tex": "a_i^{\\rm new}=f_\\phi(\\epsilon_i;s_i),\\qquad L_\\pi(\\phi)=\\frac1B\\sum_i\\left[\\alpha_k\\log\\pi_\\phi(a_i^{\\rm new}\\mid s_i)-\\min_{\\ell=1,2}Q_{\\omega_{\\ell,k+1}}(s_i,a_i^{\\rm new})\\right]",
+              "explain": "先完成critic写入，再以其更新后的参数指导actor。数据中的状态 $s_i$ 固定，actor重新生成动作，数据原动作 $a_i$ 不进入这个actor损失。代码将critic参数requires_grad置False，却保留函数对动作输入的导数。"
+            },
+            {
+              "kind": "p",
+              "text": "这里的f由Normal.rsample生成高斯变量，再用tanh映射动作；固定基础噪声时，动作可随actor参数连续变化。梯度既经过log-density，也经过critic对动作的导数再回到actor。冻结critic参数表示“不写critic”，不表示“critic输出对动作是常数”。若将整个actor目标包进no_grad，或将新动作detach，就切断这条路径。PPO使用旧数据动作的score，SAC在旧数据状态上为当前动作求路径导数，两种复用方式需要不同的保存量。"
+            },
+            {
+              "kind": "p",
+              "text": "温度步骤另用 $\\zeta=\\log\\alpha$ 保证正值。该核下降 $L_\\alpha(\\zeta)=-\\frac1B\\sum_i e^\\zeta\\operatorname{sg}(\\log\\pi_{\\phi_k}(a_i^{\\rm new}\\mid s_i)+\\mathcal H_{\\rm target})$，目标熵默认−2。这里的logp由本次actor写入之前的前向采样得到；actor写入后不重算它，只对温度求导。若该批估计熵低于目标，平均括号为正，下降会增大温度，提高下一次actor更新对熵的权重。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\bar\\omega_{\\ell,k+1}=(1-\\tau)\\bar\\omega_{\\ell,k}+\\tau\\omega_{\\ell,k+1},\\qquad\\tau=0.005",
+              "explain": "该核最后对两个critic目标参数作Polyak写入。这个事件与三个优化器的写入都没有产生新环境步；完整采样器下一次调用当前actor行动时，更新才影响真实经验。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_train.py",
+              "region": "sac_update",
+              "caption": "依次定位目标no_grad、critic写入、保留动作导数的critic冻结、actor写入、温度写入及目标同步。"
+            },
+            {
+              "kind": "p",
+              "text": "DQN和SAC的旧转移都能训练条件后果，但replay状态权重与当前策略访问权重仍有差别。SAC在这些状态上提高soft策略代理，不等于每步取得起点熵回报的无偏梯度；精确表格soft policy iteration的结论也不能直接赋给交替训练的非线性网络。下一节回到实际命令和记录，检查这些差别在输出中留下了哪些证据。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-code",
+          "title": "4 · 把循环中的位置对应到代码与记录",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "先在文件所在目录运行 python3 deep_textbook_lab.py test；可选 PyTorch 环境中运行 python3 deep_textbook_train.py test，检查目标、梯度和边界。deep_textbook_train.py 与 deep_textbook_lab.py 放在同一目录，依赖按 deep_requirements.txt 安装。实现检查先回答公式是否被按声明执行，后续训练才回答随机学习过程表现怎样。"
+            },
+            {
+              "kind": "code",
+              "code": "python3 deep_textbook_train.py dqn --steps 1600 --seed 0\npython3 deep_textbook_train.py ppo --epochs 16 --seed 0",
+              "caption": "已有小任务训练入口；输出 JSON。DQN 的1600是环境步，PPO的16轮各采128步，共2048环境步。",
+              "language": "bash"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "入口",
+                "数据与训练目标",
+                "输出怎样解释"
+              ],
+              "rows": [
+                [
+                  "deep_textbook_train.py / train_dqn",
+                  "γ=0.99；replay抽32条；每100环境步同步目标",
+                  "environment_steps 与 updates 分开；final_greedy_return 为同一冻结argmax策略的10次episode均值"
+                ],
+                [
+                  "deep_textbook_train.py / train_ppo",
+                  "γ=1、λ=0.95；默认128真实步形成一批；批内最多4次actor更新",
+                  "epochs 是采样轮数；返回的actor_updates仅为最后一批实际actor写入数"
+                ],
+                [
+                  "独立 implementations/deep/ppo.py 与已保存 deep-ppo 结果",
+                  "γ=1、λ=0.95；旧1200步在20个记录网格前更新，每批60步",
+                  "samples 是累计采样步；updated_batches 是累计采样批，value 为12次冻结argmax评价的均值"
+                ]
+              ]
+            },
+            {
+              "kind": "p",
+              "text": "这两个 PPO 入口使用相同小世界，但批次长度、评价次数与输出格式不同。独立实现的旧 CSV 能复算五个训练种子的同一评价点，却没有逐次 actor 更新计数；不能把另一个入口的最后一批计数补到旧记录。阅读 [PPO完整实现与旧结果](/zh/continual-rl/code/deep-ppo/) 时，以包内当时源码和 config 为依据。"
+            },
+            {
+              "kind": "p",
+              "text": "DQN的更新次数可以从循环规则独立复算：1600条环境转移对应零起算t=0至1599，第32条后buffer足够，首次满足偶数索引的是t=32；此后每隔二步写入一次，到t=1598共784次。目标同步16次。两项都不是1600，也不能由最后的loss反推出这一训练过程。PPO的16轮共2048环境步，actor每批实际写入数可变；脚本只返回最后一批计数，不能当成累计次数。"
+            },
+            {
+              "kind": "p",
+              "text": "标准库文件给出可直接复算的算子，PyTorch 文件给出小任务的真实采样与优化。模型、离线和递归控制的完整作者工程各有自己的训练器；这里的模型误差、正则项与敏感度核，用来检查对应接口，不能替代那些系统的完整实验。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-branches",
+          "title": "5 · 沿循环的接口选择下一项问题",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "读通一次采样与更新后，再问哪个条件需要改变：当前观察缺信息，就研究记忆；实际交互昂贵，就研究学得模型怎样参与计算；只能使用既有数据，就研究覆盖与外推。下面三条深入阅读各保留自己的推导，读者可按这项缺口选取。"
             },
             {
               "kind": "table",
@@ -11331,230 +12086,8 @@
             },
             {
               "kind": "p",
-              "text": "当环境、动作推理与梯度更新在不同机器上并行，这份约定还必须描述策略版本和经验等待时间。接续本章的 [大规模训练：算法与系统怎样共同设计](/zh/continual-rl/foundations/deep/systems/) 从 A3C、IMPALA 与 V-trace，讲到 OpenAI Five 的采样与推理分工、SEED RL 的集中推理，以及 GEAR 的经验存取；逐一解释吞吐、延迟、离策略与资源利用之间的关系。"
-            }
-          ]
-        },
-        {
-          "id": "lesson-derive",
-          "title": "2 · 模型误差为什么会沿自举放大",
-          "blocks": [
-            {
-              "kind": "p",
-              "text": "固定策略，真实 Bellman 算子为 $TV=r+\\gamma PV$，模型算子为 $\\hat TV=\\hat r+\\gamma\\hat PV$。若二者都是 sup 范数下的 $\\gamma$ 压缩映射，固定点分别为 $V,\\hat V$。假设模型在真实价值处的单步 Bellman 误差不超过 $\\epsilon$。"
+              "text": "在分布式系统中，经验还可能等待多个参数版本。采样策略、推理参数和学习参数的延迟由 [大规模训练](/zh/continual-rl/foundations/deep/systems/) 进一步展开。持续学习则同时评价当下收益、知识保持和以后还能否学会新目标；下表从具体失败选择干预。"
             },
-            {
-              "kind": "math",
-              "tex": "\\begin{aligned}\\|\\hat V-V\\|_\\infty&=\\|\\hat T\\hat V-TV\\|_\\infty\\\\&\\le\\|\\hat T\\hat V-\\hat TV\\|_\\infty+\\|\\hat TV-TV\\|_\\infty\\\\&\\le\\gamma\\|\\hat V-V\\|_\\infty+\\epsilon\\end{aligned}",
-              "explain": "第一步插入并减去同一项，第二步使用模型算子的压缩性与误差假设。"
-            },
-            {
-              "kind": "math",
-              "tex": "\\|\\hat V-V\\|_\\infty\\le\\frac{\\epsilon}{1-\\gamma}",
-              "explain": "这是固定策略、给定算子误差条件下的界，不是像素预测误差对所有控制算法的保证。"
-            },
-            {
-              "kind": "math",
-              "tex": "\\|\\hat TV-TV\\|_\\infty\\le\\epsilon_r+\\gamma\\epsilon_P\\|V\\|_\\infty,\\quad \\epsilon_P=\\sup_s\\sum_{s'}|\\hat P(s'\\mid s)-P(s'\\mid s)|",
-              "explain": "有限状态中，令奖励均值的最大误差为 $\\epsilon_r$，先用三角不等式，再对转移行的绝对误差求和，即得到这个单步条件。若 $|r|\\le R_{\\max}$，则 $\\|V\\|_\\infty\\le R_{\\max}/(1-\\gamma)$。平均训练误差小并不提供这里所有状态上的统一误差界。"
-            },
-            {
-              "kind": "p",
-              "text": "例如 $\\epsilon=0.02$ 时，$\\gamma=0.9$ 给出 0.2 的上界，$\\gamma=0.99$ 则为二。降低单步重建误差不一定同比降低 Bellman 误差，因为与奖励和决策有关的细小差异可能被重建指标掩盖。模型是否足够好，要看它用于什么预测与规划。"
-            },
-            {
-              "kind": "p",
-              "text": "Dyna 将模型生成的转移用于价值更新。Dreamer 在学得的潜在动力学中生成轨迹，用它们训练 actor–critic。TD-MPC2 则结合潜在模型、价值估计和在线动作序列规划。这些方法共享模型学习，但使用模型的计算位置不同：训练时想象与决策时规划不能混为一类 update。"
-            }
-          ]
-        },
-        {
-          "id": "lesson-memory",
-          "title": "3 · recurrent state 与时间梯度是两层对象",
-          "blocks": [
-            {
-              "kind": "math",
-              "tex": "\\begin{gathered}h_t=f_\\theta(h_{t-1},o_t,a_{t-1})\\\\E_t=\\frac{d h_t}{d\\theta}=\\frac{\\partial f_\\theta}{\\partial h_{t-1}}E_{t-1}+\\frac{\\partial f_\\theta}{\\partial\\theta}\\end{gathered}",
-              "explain": "$h$ 是当下的历史摘要，$E$ 是摘要对参数的敏感度。保留 $h$ 的数值并不表示保留了 $E$。"
-            },
-            {
-              "kind": "p",
-              "text": "完整 BPTT 保存一段前向计算图并向过去回传；RTRL 在线递推敏感度，但一般稠密网络的成本很高。TBPTT 在片段边界 detach hidden state，相当于截断更早参数影响，不是清空 hidden state 数值。两种 reset 不能互换。"
-            },
-            {
-              "kind": "p",
-              "text": "配套最小例子固定递归系数 $a$，学习输入系数 $\\theta$：$h_t=ah_{t-1}+\\theta x_t$，初始 $h_0=0$。于是 $E_t=aE_{t-1}+x_t$。取 $a=0.5,\\theta=0.2$，输入 $(1,0,0)$，得到状态 $(0.2,0.1,0.05)$ 与敏感度 $(1,0.5,0.25)$。对输入系数做中心差分即可检验最后的 0.25；若改为学习递归系数，直接导数项应变为 $h_{t-1}$。"
-            },
-            {
-              "kind": "figure",
-              "src": "/crl-figures/concept-depth-classic-memory-gradients.svg",
-              "alt": "完整梯度、截断梯度与清空记忆下，前向 hidden state 和参数敏感度的不同演化",
-              "caption": "在第一步之后施加边界操作，其他设置相同。蓝色是前向记忆；橙色圆面积表示对输入系数 $\\theta$ 的敏感度。detach 将已得到的 $h_1$ 当作常数，后两步的记忆数值仍为 0.1、0.05；清空记忆才使它们变成 0。参数在三步内保持不变，图中未做优化。[精确递推代码](/crl-code/figures/classic-visual-depth.mjs)。"
-            },
-            {
-              "kind": "p",
-              "text": "从 replay 抽取一段中途开始的序列，还需要解释其初始状态从哪里来。保存的状态由采集时的参数形成；当前网络若从历史起点重新展开，可能得到另一个状态。预热（burn-in）先读一段前缀，再在后缀计算损失，用来减轻这项起点失配。前缀如果没有包含必要线索，从零开始预热仍可能丢失决定动作的信息。"
-            },
-            {
-              "kind": "p",
-              "text": "损失从哪里开始与梯度在哪里截断，是两个独立决定。可以让后缀损失穿过整个预热段求导，也可以将预热末端状态保留为数值、截断其梯度。两者在这次前向计算中输出相同，却可能得到不同的参数更新。[递归回放算例](/zh/continual-rl/foundations/deep/partial-observability/#recurrent-replay-task)逐项比较保存状态、零状态和当前参数重建，并把它们接到实际动作与 TD 标签。"
-            }
-          ]
-        },
-        {
-          "id": "course-optimizer-memory",
-          "title": "3.1 · 学习器也有记忆：参数之外哪些状态会影响下一步",
-          "blocks": [
-            {
-              "kind": "table",
-              "headers": [
-                "状态",
-                "保存的信息",
-                "是否属于 agent 的输入记忆",
-                "改变后必须复查什么"
-              ],
-              "rows": [
-                [
-                  "recurrent hidden state",
-                  "已发生的观察与行动的压缩",
-                  "通常是",
-                  "能否区分影响行动的历史"
-                ],
-                [
-                  "价值、策略与 encoder 参数",
-                  "跨经验积累的预测和行为规律",
-                  "是慢速学习状态",
-                  "旧知识、泛化与新任务学习速度"
-                ],
-                [
-                  "资格迹",
-                  "过去参数或特征对当前误差的信用",
-                  "不等同于 hidden state",
-                  "历史梯度在当前表示下的意义"
-                ],
-                [
-                  "优化器一阶、二阶矩",
-                  "历史梯度方向及平方尺度",
-                  "不等同于世界记忆",
-                  "新梯度会被放大、压低还是反向覆盖"
-                ],
-                [
-                  "归一化统计与目标网络",
-                  "历史输入尺度与延迟的预测",
-                  "各有独立时间常数",
-                  "新旧输入、标签是否仍在相同单位"
-                ]
-              ]
-            },
-            {
-              "kind": "math",
-              "tex": "m_t=\\beta_1m_{t-1}+(1-\\beta_1)g_t,\\qquad\nv_t=\\beta_2v_{t-1}+(1-\\beta_2)g_t^2,\\qquad\n\\Delta\\theta_t=-\\alpha\\frac{\\hat m_t}{\\sqrt{\\hat v_t}+\\varepsilon}",
-              "explain": "这是逐坐标 Adam 的基本形式；帽子表示初始化偏差校正。这里 g 是所声明损失的梯度，不是 TD error 本身。"
-            },
-            {
-              "kind": "p",
-              "text": "手算：旧梯度一直为 $+1$，所以 $m_{t-1}\\approx1,v_{t-1}\\approx1$。目标变化后梯度变为 $-1$。若 $\\beta_1=0.9$，第一次新梯度到达后 $m_t=0.8$，更新仍沿负参数方向，和当前梯度下降方向相反。连续 n 次反向梯度后，$m=2(0.9)^n-1$，第七步才改变符号。"
-            },
-            {
-              "kind": "p",
-              "text": "这不证明 Adam 一般有害。动量可以抑制噪声、加快固定目标优化；这里显示的是历史信息与适应速度的取舍。二阶矩的长记忆还可能使同一绝对梯度在不同时间得到不同有效步长。因此“学习率没有改变”不等于更新尺度没有改变。"
-            },
-            {
-              "kind": "p",
-              "text": "若重新初始化部分神经元，需要一并决定相关优化器矩、资格迹、归一化统计和目标网络参数怎样处理。旧矩若附着到全新的参数功能上，会让重置后的第一步继承旧方向。重置全部统计也会丢掉有用尺度信息。两者都是算法选择，不应藏在实现细节中。"
-            },
-            {
-              "kind": "p",
-              "text": "最小诊断是在相同的新数据流上复制学习器，分别只重置优化器、只重置输出头、只更换低效特征，并保留“不重置”对照。若只在闭环任务中看回报，数据覆盖差异可能掩盖真正的优化问题。后续流式与元学习章节分别研究如何计算一次更新，以及如何根据经验调整更新规则。"
-            }
-          ]
-        },
-        {
-          "id": "lesson-offline",
-          "title": "4 · 为什么 off-policy 不自动等于 offline 可用",
-          "blocks": [
-            {
-              "kind": "p",
-              "text": "Off-policy 指学习目标策略与数据行为策略可以不同；offline 还要求数据固定，不再通过新行动纠正估计。Q-learning 或 SAC 在未见动作上高估时，在线环境可能提供反证，离线数据却可能永远没有该动作的结果。因而旧经验复用能力不等于离线控制的可靠性。"
-            },
-            {
-              "kind": "math",
-              "tex": "\\begin{gathered}L_{\\rm conservative}(Q)=\\log\\sum_a e^{Q(s,a)}-\\mathbb E_{a\\sim\\mathcal D(\\cdot\\mid s)}Q(s,a)\\\\\\frac{\\partial L_{\\rm conservative}}{\\partial Q(s,a)}=\\operatorname{softmax}(Q(s,\\cdot))_a-p_{\\mathcal D}(a\\mid s)\\end{gathered}",
-              "explain": "这是离散动作 CQL 型正则的核心形式。完整 CQL 还包含 Bellman loss、权重选择和相应理论条件；连续动作通常需要采样近似。"
-            },
-            {
-              "kind": "p",
-              "text": "若数据只含动作零，而 $Q(s,\\cdot)=(0,10)$，正则约为 $10.000045$。它对动作一的导数接近一，对动作零的导数接近负一。因此梯度下降压低未支持的高值，并相对提高数据动作。正则本身只约束相对偏好，不能替代奖励监督。"
-            },
-            {
-              "kind": "p",
-              "text": "保守性可能减少外推，也可能压制真正有用但数据很少的动作。对任意未覆盖结果都保持正确是不可能由损失形式单独保证的；数据覆盖和任务假设仍然重要。CRL 中的历史 replay 常兼有旧分布、策略覆盖不足和动力学变化，三种误差要分别诊断。"
-            }
-          ]
-        },
-        {
-          "id": "lesson-algorithm",
-          "title": "5 · 一个可审计的训练与评估过程",
-          "blocks": [
-            {
-              "kind": "code",
-              "code": "定义目标、动作单位、终止条件及允许 reset 的对象。\n固定训练预算、独立运行种子、调参数据与报告指标。\n记录每次真实转移与对应网络、归一化器、行为概率信息。\n按算法约定更新；单独计数真实步、模型步和梯度步。\n用独立环境评估；评估数据不回流到训练或调参。\n保存完整时间曲线与资源成本；报告失败运行和区间。\n若研究 CRL，再加入变化后的恢复、遗忘与长期在线收益。",
-              "caption": "评估策略可以冻结，但主训练过程是否继续适应必须独立说明。不能把冻结策略测试误写为单生命期学习表现。"
-            },
-            {
-              "kind": "p",
-              "text": "独立种子是不同学习过程。相邻时间窗口来自同一个不断变化的 agent，不能简单当作独立重复试验。跨任务汇总还需要可比的分数定义，并对不同任务和种子的变异分别处理。rliable 提供 bootstrap 区间、性能轮廓与稳健汇总入口，不替代实验协议。"
-            }
-          ]
-        },
-        {
-          "id": "lesson-example",
-          "title": "6 · 小环境的终止定义也是模型的一部分",
-          "blocks": [
-            {
-              "kind": "source",
-              "file": "deep_textbook_train.py",
-              "region": "environment",
-              "caption": "DeadlineChain 将剩余时间写入观察，十二步截止属于任务本身的真终止。"
-            },
-            {
-              "kind": "p",
-              "text": "内置任务有五个位置，动作是左或右，位置四为目标。到达目标奖励一，其余步骤奖励 −0.02。十二步是任务期限，因此必须在状态中保留剩余时间；不这样做，同一个位置的最优价值会因未观察的剩余步数不同而变化。最短四步到达的无折扣回报是 0.94。"
-            },
-            {
-              "kind": "p",
-              "text": "PPO 的 rollout 长度只是优化批次长度。batch 在 episode 中间结束时，代码保留环境状态并 bootstrap；它不凭空制造任务终止。与之相反，真实期限耗尽时 continuation value 为零。两类边界使用相同的 done 变量会导致错误标签。"
-            },
-            {
-              "kind": "p",
-              "text": "DQN 示例使用折扣 0.99，PPO 示例对这个有限时域任务使用一。二者用于各自流程教学，不构成控制变量的算法性能对比。若要比较，必须先统一优化目标、网络预算、采样预算与评估规则，再使用多个独立种子。"
-            }
-          ]
-        },
-        {
-          "id": "lesson-code",
-          "title": "7 · 从可复查算子到真实训练",
-          "blocks": [
-            {
-              "kind": "source",
-              "file": "deep_textbook_lab.py",
-              "region": "interfaces",
-              "caption": "recurrent 敏感度、CQL 型正则和模型 Bellman 误差界的数值核。"
-            },
-            {
-              "kind": "p",
-              "text": "标准库运行：python3 deep_textbook_lab.py demo 与 python3 deep_textbook_lab.py test。PyTorch 运行：python3 deep_textbook_train.py test；python3 deep_textbook_train.py dqn --steps 1600 --seed 0；python3 deep_textbook_train.py ppo --epochs 16 --seed 0。训练脚本和标准库脚本必须同目录，依赖由 deep_requirements.txt 固定。"
-            },
-            {
-              "kind": "p",
-              "text": "这套小实验包含实际 DQN/Double DQN 与 PPO 训练，VPG、DDPG、TD3、SAC 的可微更新核，TRPO 的数值 CG/回溯和 categorical Fisher 核。它不包含 Dreamer、TD-MPC2、完整 CQL 或 recurrent 深度训练流水线。后几类方法的原论文和作者代码用于继续研究，不能由单步核测试替代基准复现。"
-            }
-          ]
-        },
-        {
-          "id": "lesson-branches",
-          "title": "8 · 向持续强化学习迁移时的具体问题",
-          "blocks": [
             {
               "kind": "table",
               "headers": [
@@ -11672,7 +12205,7 @@
         },
         {
           "id": "course-plasticity-diagnosis",
-          "title": "8.1 · 保留旧知识与学会新知识是两个检验",
+          "title": "5.1 · 保留旧知识与学会新知识是两个检验",
           "blocks": [
             {
               "kind": "p",
@@ -11737,9 +12270,194 @@
           ]
         },
         {
+          "id": "lesson-derive",
+          "title": "6 · 模型分支：用预测后果构造更新",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "前面的目标读取真实经验中的后继。若改为读取模型预测的后继或生成一段想象经验，模型估计便进入标签和动作选择。先固定策略，才能单独分析这一项误差。"
+            },
+            {
+              "kind": "source",
+              "file": "deep_textbook_lab.py",
+              "region": "interfaces",
+              "caption": "这里及后两项分支共用的标准库数值核：模型Bellman误差界、递归敏感度与CQL型正则。它们检查算子，不提供模型控制的采样闭环。"
+            },
+            {
+              "kind": "p",
+              "text": "固定策略，真实 Bellman 算子为 $TV=r+\\gamma PV$，模型算子为 $\\hat TV=\\hat r+\\gamma\\hat PV$。若二者都是 sup 范数下的 $\\gamma$ 压缩映射，固定点分别为 $V,\\hat V$。假设模型在真实价值处的单步 Bellman 误差不超过 $\\epsilon$。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{aligned}\\|\\hat V-V\\|_\\infty&=\\|\\hat T\\hat V-TV\\|_\\infty\\\\&\\le\\|\\hat T\\hat V-\\hat TV\\|_\\infty+\\|\\hat TV-TV\\|_\\infty\\\\&\\le\\gamma\\|\\hat V-V\\|_\\infty+\\epsilon\\end{aligned}",
+              "explain": "第一步插入并减去同一项，第二步使用模型算子的压缩性与误差假设。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\|\\hat V-V\\|_\\infty\\le\\frac{\\epsilon}{1-\\gamma}",
+              "explain": "这是固定策略、给定算子误差条件下的界，不是像素预测误差对所有控制算法的保证。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\|\\hat TV-TV\\|_\\infty\\le\\epsilon_r+\\gamma\\epsilon_P\\|V\\|_\\infty,\\quad \\epsilon_P=\\sup_s\\sum_{s'}|\\hat P(s'\\mid s)-P(s'\\mid s)|",
+              "explain": "有限状态中，令奖励均值的最大误差为 $\\epsilon_r$，先用三角不等式，再对转移行的绝对误差求和，即得到这个单步条件。若 $|r|\\le R_{\\max}$，则 $\\|V\\|_\\infty\\le R_{\\max}/(1-\\gamma)$。平均训练误差小并不提供这里所有状态上的统一误差界。"
+            },
+            {
+              "kind": "p",
+              "text": "例如 $\\epsilon=0.02$ 时，$\\gamma=0.9$ 给出 0.2 的上界，$\\gamma=0.99$ 则为二。降低单步重建误差不一定同比降低 Bellman 误差，因为与奖励和决策有关的细小差异可能被重建指标掩盖。模型是否足够好，要看它用于什么预测与规划。"
+            },
+            {
+              "kind": "p",
+              "text": "Dyna 将模型生成的转移用于价值更新。Dreamer 在学得的潜在动力学中生成轨迹，用它们训练 actor–critic。TD-MPC2 则结合潜在模型、价值估计和在线动作序列规划。这些方法共享模型学习，但使用模型的计算位置不同：训练时想象与决策时规划不能混为一类 update。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-memory",
+          "title": "7 · 记忆分支：重新构造样本所需的状态",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "前面的五元组用当前观察即可计算价值。若动作需要更早线索，一条孤立转移便缺少状态构造的输入。此时还要规定历史前缀、递归初态和片段边界。下面先让同一组参数生成整段递归状态，以分开信息保留与参数信用。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}h_t=f_\\theta(h_{t-1},o_t,a_{t-1})\\\\E_t=\\frac{d h_t}{d\\theta}=\\frac{\\partial f_\\theta}{\\partial h_{t-1}}E_{t-1}+\\frac{\\partial f_\\theta}{\\partial\\theta}\\end{gathered}",
+              "explain": "$h$ 是当下的历史摘要，$E$ 是摘要对参数的敏感度。保留 $h$ 的数值并不表示保留了 $E$。"
+            },
+            {
+              "kind": "p",
+              "text": "完整 BPTT 保存一段前向计算图并向过去回传；RTRL 在线递推敏感度，但一般稠密网络的成本很高。TBPTT 在片段边界 detach hidden state，相当于截断更早参数影响，不是清空 hidden state 数值。两种 reset 不能互换。"
+            },
+            {
+              "kind": "p",
+              "text": "配套最小例子固定递归系数 $a$，学习输入系数 $\\theta$：$h_t=ah_{t-1}+\\theta x_t$，初始 $h_0=0$。于是 $E_t=aE_{t-1}+x_t$。取 $a=0.5,\\theta=0.2$，输入 $(1,0,0)$，得到状态 $(0.2,0.1,0.05)$ 与敏感度 $(1,0.5,0.25)$。对输入系数做中心差分即可检验最后的 0.25；若改为学习递归系数，直接导数项应变为 $h_{t-1}$。"
+            },
+            {
+              "kind": "figure",
+              "src": "/crl-figures/concept-depth-classic-memory-gradients.svg",
+              "alt": "完整梯度、截断梯度与清空记忆下，前向 hidden state 和参数敏感度的不同演化",
+              "caption": "在第一步之后施加边界操作，其他设置相同。蓝色是前向记忆；橙色圆面积表示对输入系数 $\\theta$ 的敏感度。detach 将已得到的 $h_1$ 当作常数，后两步的记忆数值仍为 0.1、0.05；清空记忆才使它们变成 0。参数在三步内保持不变，图中未做优化。[精确递推代码](/crl-code/figures/classic-visual-depth.mjs)。"
+            },
+            {
+              "kind": "p",
+              "text": "从 replay 抽取一段中途开始的序列，还需要解释其初始状态从哪里来。保存的状态由采集时的参数形成；当前网络若从历史起点重新展开，可能得到另一个状态。预热（burn-in）先读一段前缀，再在后缀计算损失，用来减轻这项起点失配。前缀如果没有包含必要线索，从零开始预热仍可能丢失决定动作的信息。"
+            },
+            {
+              "kind": "p",
+              "text": "损失从哪里开始与梯度在哪里截断，是两个独立决定。可以让后缀损失穿过整个预热段求导，也可以将预热末端状态保留为数值、截断其梯度。两者在这次前向计算中输出相同，却可能得到不同的参数更新。[递归回放算例](/zh/continual-rl/foundations/deep/partial-observability/#recurrent-replay-task)逐项比较保存状态、零状态和当前参数重建，并把它们接到实际动作与 TD 标签。"
+            }
+          ]
+        },
+        {
+          "id": "course-optimizer-memory",
+          "title": "7.1 · 学习器也有记忆：参数之外哪些状态会影响下一步",
+          "blocks": [
+            {
+              "kind": "table",
+              "headers": [
+                "状态",
+                "保存的信息",
+                "是否属于 agent 的输入记忆",
+                "改变后必须复查什么"
+              ],
+              "rows": [
+                [
+                  "recurrent hidden state",
+                  "已发生的观察与行动的压缩",
+                  "通常是",
+                  "能否区分影响行动的历史"
+                ],
+                [
+                  "价值、策略与 encoder 参数",
+                  "跨经验积累的预测和行为规律",
+                  "是慢速学习状态",
+                  "旧知识、泛化与新任务学习速度"
+                ],
+                [
+                  "资格迹",
+                  "过去参数或特征对当前误差的信用",
+                  "不等同于 hidden state",
+                  "历史梯度在当前表示下的意义"
+                ],
+                [
+                  "优化器一阶、二阶矩",
+                  "历史梯度方向及平方尺度",
+                  "不等同于世界记忆",
+                  "新梯度会被放大、压低还是反向覆盖"
+                ],
+                [
+                  "归一化统计与目标网络",
+                  "历史输入尺度与延迟的预测",
+                  "各有独立时间常数",
+                  "新旧输入、标签是否仍在相同单位"
+                ]
+              ]
+            },
+            {
+              "kind": "math",
+              "tex": "m_{k+1}=\\beta_1m_k+(1-\\beta_1)g_k,\\qquad\nv_{k+1}=\\beta_2v_k+(1-\\beta_2)g_k^2,\\qquad\n\\theta_{k+1}-\\theta_k=-\\alpha\\frac{\\hat m_{k+1}}{\\sqrt{\\hat v_{k+1}}+\\varepsilon}",
+              "explain": "这是逐坐标 Adam 的基本形式。$k$ 计优化步骤，不计环境交互；$g_k$ 是本次损失在 $\\theta_k$ 处的梯度，不是 TD error 本身。初始 $m_0=v_0=0$，帽子表示按已完成的 $k+1$ 次更新作初始化偏差校正。"
+            },
+            {
+              "kind": "p",
+              "text": "手算：旧梯度一直为 $+1$，所以 $m_k\\approx1,v_k\\approx1$。目标变化后梯度变为 $-1$。若 $\\beta_1=0.9$，第一次新梯度到达后 $m_{k+1}\\approx0.8$，更新仍沿负参数方向，和当前梯度下降方向相反。把旧一阶矩取为 1，连续 $n$ 次反向梯度后，$m=2(0.9)^n-1$，第七次优化才改变符号。"
+            },
+            {
+              "kind": "p",
+              "text": "这不证明 Adam 一般有害。动量可以抑制噪声、加快固定目标优化；这里显示的是历史信息与适应速度的取舍。二阶矩的长记忆还可能使同一绝对梯度在不同时间得到不同有效步长。因此“学习率没有改变”不等于更新尺度没有改变。"
+            },
+            {
+              "kind": "p",
+              "text": "若重新初始化部分神经元，需要一并决定相关优化器矩、资格迹、归一化统计和目标网络参数怎样处理。旧矩若附着到全新的参数功能上，会让重置后的第一步继承旧方向。重置全部统计也会丢掉有用尺度信息。两者都是算法选择，不应藏在实现细节中。"
+            },
+            {
+              "kind": "p",
+              "text": "最小诊断是在相同的新数据流上复制学习器，分别只重置优化器、只重置输出头、只更换低效特征，并保留“不重置”对照。若只在闭环任务中看回报，数据覆盖差异可能掩盖真正的优化问题。后续流式与元学习章节分别研究如何计算一次更新，以及如何根据经验调整更新规则。"
+            }
+          ]
+        },
+        {
+          "id": "lesson-offline",
+          "title": "8 · 离线分支：停止取得新的真实经验",
+          "blocks": [
+            {
+              "kind": "p",
+              "text": "前面的闭环仍能执行新动作，收到反证后再修正预测。固定数据集撤掉这条反馈路径：学习器可以多做优化，却不能主动获得数据没有包含的行动后果。"
+            },
+            {
+              "kind": "p",
+              "text": "Off-policy 指学习目标策略与数据行为策略可以不同；offline 还要求数据固定，不再通过新行动纠正估计。Q-learning 或 SAC 在未见动作上高估时，在线环境可能提供反证，离线数据却可能永远没有该动作的结果。因而旧经验复用能力不等于离线控制的可靠性。"
+            },
+            {
+              "kind": "math",
+              "tex": "\\begin{gathered}L_{\\rm conservative}(Q)=\\log\\sum_a e^{Q(s,a)}-\\mathbb E_{a\\sim\\mathcal D(\\cdot\\mid s)}Q(s,a)\\\\\\frac{\\partial L_{\\rm conservative}}{\\partial Q(s,a)}=\\operatorname{softmax}(Q(s,\\cdot))_a-p_{\\mathcal D}(a\\mid s)\\end{gathered}",
+              "explain": "这是离散动作 CQL 型正则的核心形式。完整 CQL 还包含 Bellman loss、权重选择和相应理论条件；连续动作通常需要采样近似。"
+            },
+            {
+              "kind": "p",
+              "text": "若数据只含动作零，而 $Q(s,\\cdot)=(0,10)$，正则约为 $10.000045$。它对动作一的导数接近一，对动作零的导数接近负一。因此梯度下降压低未支持的高值，并相对提高数据动作。正则本身只约束相对偏好，不能替代奖励监督。"
+            },
+            {
+              "kind": "p",
+              "text": "保守性可能减少外推，也可能压制真正有用但数据很少的动作。对任意未覆盖结果都保持正确是不可能由损失形式单独保证的；数据覆盖和任务假设仍然重要。CRL 中的历史 replay 常兼有旧分布、策略覆盖不足和动力学变化，三种误差要分别诊断。"
+            }
+          ]
+        },
+        {
           "id": "lesson-check",
           "title": "9 · 练习与答案",
           "blocks": [
+            {
+              "kind": "list",
+              "items": [
+                "问：旧replay转移被再用时，什么保持不变、什么重新计算？答：记录中的观察、实际动作、奖励、后继和终止标志不变；当前预测、后继选择及网络尾值按本次版本重算。",
+                "问：已用no_grad生成标签，为何还要目标副本？答：no_grad决定这次不沿标签求导；副本延迟在线参数变化进入后续标签。两者控制不同时间上的依赖。",
+                "问：PPO批次在episode中间结束，是否清零尾值？答：不清零；末行残差保留实际后继价值，GAE只停止跨入下一批。",
+                "问：SAC更新actor时冻结critic，梯度如何经过critic？答：critic参数不写入，但保留输出对新动作的导数，继续沿动作生成器回到actor参数。",
+                "练习：不运行训练，沿train_dqn复算1600环境步的写入与同步。答：从零索引t=32到1598的偶数索引共784次优化，目标网络按第100、200……1600条转移共同步16次。"
+              ]
+            },
             {
               "kind": "list",
               "items": [
@@ -11753,6 +12471,36 @@
         }
       ],
       "sources": [
+        {
+          "title": "Mnih et al. · Human-level control through deep reinforcement learning",
+          "url": "https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf",
+          "note": "主文标签与Methods训练算法：replay、冻结目标、误差导数裁剪的不同作用。教学循环采用自己的小任务、Adam与同步计时。"
+        },
+        {
+          "title": "van Hasselt et al. · Deep Reinforcement Learning with Double Q-learning",
+          "url": "https://arxiv.org/abs/1509.06461",
+          "note": "DQN、Double Q-learning与Double DQN段落：后继动作选择与评价分开，原实验与非线性保证分开。"
+        },
+        {
+          "title": "Schulman et al. · Proximal Policy Optimization Algorithms",
+          "url": "https://arxiv.org/abs/1707.06347",
+          "note": "§2–3、§5：有限批代理、比率clip与采样/优化交替；本章对应实际全批教学核。"
+        },
+        {
+          "title": "Schulman et al. · High-Dimensional Continuous Control Using Generalized Advantage Estimation",
+          "url": "https://arxiv.org/abs/1506.02438",
+          "note": "§3：多步优势与残差加权；两mask及批末边界由本任务实现单独规定。"
+        },
+        {
+          "title": "Haarnoja et al. · Soft Actor-Critic Algorithms and Applications",
+          "url": "https://arxiv.org/abs/1812.05905",
+          "note": "§4–5：双critic、当前actor的路径导数、温度对偶与Polyak目标；soft迭代理论与神经近似分开。"
+        },
+        {
+          "title": "Pardo et al. · Time Limits in Reinforcement Learning",
+          "url": "https://proceedings.mlr.press/v80/pardo18a.html",
+          "note": "§2–3：任务有限期限需要剩余时间；外部截断保留实际后继的bootstrap。"
+        },
         {
           "title": "Hafner et al. · Mastering Diverse Domains through World Models",
           "url": "https://arxiv.org/abs/2301.04104",
@@ -11825,66 +12573,82 @@
         "scope": "本文件用标准库核验数值；deep_textbook_train.py 提供 DQN/PPO 小任务训练与连续控制更新核，连续控制完整教学训练见 implementations/deep/ 的独立实现。"
       },
       "problem": {
-        "setting": "将数学更新映射到有数据缓存、模型状态、终止标志和优化器的可执行学习器。",
+        "setting": "在已有有限期限小世界中，让真实采样、数据保存、目标构造和参数更新共同产生下一次行动。",
         "given": [
-          "完整实现状态 $z_t$，包括参数、优化器、记忆、缓存和随机数状态。",
-          "转移输入 $e_t$ 与更新算子 $F$；预算、初始化和评测协议固定。"
+          "初始分布、奖励、真正终止时刻 $T$ 与训练折扣 $\\gamma$；DeadlineChain 将剩余时间计入观察，任务期限是12步。",
+          "环境时钟 $t$、优化时钟 $k$、在线参数 $\\theta_k$、目标参数 $\\bar\\theta$；一次环境步可对应零次或多次优化。",
+          "数据批 $\\mathcal B_k$、采样时行为策略与按算法固定的标签；参数、优化器和缓存共同决定实际写入。"
         ],
-        "sought": "实现与所声明更新语义一致的学习过程，并定位模型、记忆和离线数据带来的额外误差。",
-        "information": "训练数据、评估数据和目标网络有明确读写时刻；测试环境信息不得泄漏回训练选择。",
+        "sought": "将收益目标落实为有明确定义的数据和更新循环，分清局部损失下降、当前策略评价和学习期间收益。",
+        "information": "行为决定真实经验，replay只能复用已发生后果；标签使用声明的参数版本；冻结评价在独立环境中运行，不写入主训练流。",
         "objective": {
-          "tex": "z_{t+1}=F(z_t,e_t),\\qquad F^{(T)}(z_0,e_{0:T-1})=F^{(T-k)}(z_k,e_{k:T-1})",
-          "explain": "右式表示完整状态恢复后应与不间断运行一致，在同样输入和随机性条件下比较。它是实现正确性要求，不是算法效能结论。"
+          "tex": "\\max_\\theta J_\\gamma(\\pi_\\theta)=\\mathbb E_{\\pi_\\theta}\\!\\left[\\sum_{t<T}\\gamma^tR_{t+1}\\right],\\qquad g_k=\\left.\\nabla_\\theta L_k(\\theta;\\mathcal B_k,\\xi_k)\\right|_{\\theta=\\theta_k}",
+          "explain": "左侧规定控制所追求的收益，右侧在当前参数处计算本次批次损失的梯度；ξ包含此次固定的目标、旧概率或优势。DQN的回归损失、PPO的代理目标各由自己的推导与数据条件联系到收益，二者不直接等于收益函数。后面的SAC还将策略熵加入收益准则，须相应重定义价值和更新目标。"
         },
         "assumptions": [
-          "数值容差或逐位一致标准须预先选择。",
-          "数据协议改变时，需要重新检查目标估计，而不只是让张量维度正确。"
+          "环境终止、采样截止和目标同步分别处理；停止梯度固定本次求导的对象，不保证目标估计准确。",
+          "目标、采样权限、更新次数与评价策略须明确；数据协议改变时重新检查估计条件。"
         ],
-        "success": "通过小问题、梯度、边界和状态恢复测试；算法收益另用独立实验评价。",
+        "success": "能从一条真实转移追到标签、梯度和下一参数版本，并从原始记录解释独立评价。边界、梯度与完整状态恢复用于检验实现，控制收益另作独立实验。",
         "relations": [
           {
             "kind": "composition",
             "target": "experiments",
-            "explanation": "把估计量、实验随机单位与实现检查接在一起。"
+            "explanation": "把更新语义、评价对象、独立学习过程与预算接在一起。"
           },
           {
             "kind": "protocol",
             "target": "state",
-            "explanation": "递归记忆的读写和截断决定实际可用历史与梯度。"
+            "explanation": "递归状态与历史重建改变网络可使用的信息，梯度截断另行规定。"
           }
         ],
         "nonGoals": [
-          "用测试通过替代论文效能复现或算法比较。"
+          "损失下降或实现检查通过，不能替代原论文效能复现。"
         ],
         "solution": {
-          "difficulty": "同一个公式可能因版本、终止、缓存或梯度路径不同而实现成不同算法。",
-          "insight": "把每个更新视为显式状态转移，分别验证输入、时序、边界和输出。",
+          "difficulty": "控制目标规定希望得到的后果，却没有直接给出网络能计算的梯度。算法必须说明怎样用实际数据构造目标，以及哪条求导路径联系到要改进的预测或动作。",
+          "insight": "先从 Bellman 关系推到 DQN 的一次更新，再比较 PPO 与 SAC 改变了哪些数据、目标和梯度条件。",
           "steps": [
             {
-              "sectionId": "lesson-derive",
-              "title": "量化模型误差如何影响备份",
-              "explanation": "模型预测误差需要通过规划目标解释，不能只看预测 loss。"
+              "sectionId": "lesson-setting",
+              "title": "从行为目标得到可学习的关系",
+              "explanation": "奖励回报规定控制问题；Bellman 关系连接当前动作与后继价值，再用真实转移形成样本目标。"
             },
             {
-              "sectionId": "lesson-memory",
-              "title": "分开记忆递推和参数信用",
-              "explanation": "前向保留历史与反向传播到历史是两件事。"
+              "sectionId": "lesson-example",
+              "title": "确认保存的是哪个后继与边界",
+              "explanation": "任务期限在状态内；rollout 截止不产生真正终止，重置后的首观测不是上一转移的后继。"
             },
             {
               "sectionId": "lesson-algorithm",
-              "title": "分层验证完整训练过程",
-              "explanation": "先机制测试，再短运行，再冻结协议做独立评价。"
+              "title": "沿经验推到下一次参数更新",
+              "explanation": "分开环境步与优化步；推导固定标签的梯度，再对照目标副本、裁剪和优化器的实际次序。"
+            },
+            {
+              "sectionId": "lesson-ppo-loop",
+              "title": "说明旧轨迹怎样用于新策略",
+              "explanation": "旧概率、旧价值与优势各有来源；比率校正当前动作，不自动把旧轨迹变成新策略轨迹。"
+            },
+            {
+              "sectionId": "lesson-sac-loop",
+              "title": "区分两种动作及其梯度",
+              "explanation": "旧转移用于 critic，当前策略另采样动作用于 actor；熵项改变了目标，actor 还需要沿动作经过 critic 求导。"
+            },
+            {
+              "sectionId": "lesson-code",
+              "title": "把推导对应到实现与记录",
+              "explanation": "教材训练脚本与独立算法旧结果各用自己的参数、批次和评价定义。"
             }
           ],
-          "guarantees": "测试只对已覆盖输入和属性提供证据；没有测试到的分布变化仍可能失败。",
+          "guarantees": "实现核对验证已检查的更新和边界；当前损失改善不保证闭环收益改善或长期适应。",
           "alternatives": [
             {
-              "name": "单元测试 / 学习实验",
-              "difference": "分别检验算子语义与随机交互中的表现。"
+              "name": "局部损失 / 策略收益",
+              "difference": "分别评价本次优化批与按策略产生的后果。"
             },
             {
               "name": "参数 checkpoint / 完整状态恢复",
-              "difference": "后者还需优化器、记忆、缓存、计数器与随机状态。"
+              "difference": "完整恢复还包括优化器、记忆、缓存、计数与随机状态，是实现核验手段。"
             }
           ]
         }
@@ -13215,7 +13979,7 @@
           }
         ],
         "nonGoals": [
-          "以记忆长度或重构准确率直接证明控制充分性。"
+          "记忆长度或重构准确率，不能直接证明所保留的信息对控制充分。"
         ],
         "solution": {
           "difficulty": "相同观测可能来自需要不同动作的情境，反应式策略无法区分。",
@@ -13786,7 +14550,7 @@
           }
         ],
         "nonGoals": [
-          "保证任意新奇访问都能改善任务收益。"
+          "访问新奇状态不一定改善任务收益。"
         ],
         "solution": {
           "difficulty": "长程有用试验需要连续一致的动作，逐步随机可能反复取消自己的计划。",
@@ -14597,7 +15361,7 @@
           }
         ],
         "nonGoals": [
-          "把 return variance 当作后验 epistemic uncertainty。"
+          "return variance 不等同于后验 epistemic uncertainty。"
         ],
         "solution": {
           "difficulty": "Bellman 备份后的分布未必仍落在有限参数表示中。",
@@ -15090,7 +15854,7 @@
           }
         ],
         "nonGoals": [
-          "仅凭固定数据确定任意未访问动作的真实效果。"
+          "仅凭固定数据，通常不能确定任意未访问动作的真实效果。"
         ],
         "solution": {
           "difficulty": "策略改进会偏好估计高但缺乏证据的动作，且无法在线纠正。",
@@ -15565,7 +16329,7 @@
           }
         ],
         "nonGoals": [
-          "用一步预测误差低证明长程规划可靠。"
+          "一步预测误差低，不足以证明长程规划可靠。"
         ],
         "solution": {
           "difficulty": "规划越积极，越可能利用模型误差；长虚拟轨迹会累积分布偏移。",
@@ -15997,7 +16761,7 @@
           }
         ],
         "nonGoals": [
-          "从平均约束满足推出零事故或逐步安全保证。"
+          "平均约束得到满足，不意味着零事故或逐步安全。"
         ],
         "solution": {
           "difficulty": "最高收益策略可能不可行；固定惩罚难以事先对应指定预算。",

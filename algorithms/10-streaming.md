@@ -1,13 +1,19 @@
 # 流式强化学习：交互协议与更新稳定性
 
-机器人刚获得一条经验，下一次行动已经快到了：学习器能保存什么，还能算几次？从相同数据流、两步 TD 与中途恢复的算例出发，理解原始经验、活动状态、权重、资格迹和尺度统计怎样影响下一次更新。
+一条经验处理完就会离开，延迟结果怎样改变过去的预测，又怎样影响下一次行动？从样本 TD 推到资格迹和 actor–critic，再检查深度更新、学习器状态，以及 GVF、技能与平均奖励在同一条流中的时间和资源接口。
 
 ## 本章内容
 
-- 明确流式数据权限、单步计算与持久内存预算，区分流式协议、持续任务和不可重置生命期。
-- 在流式协议中实现 TD(λ)，检查痕迹与终止时序；将时间信用分配与更新稳定性分开分析。
-- 逐项恢复或重置活动状态、权重、资格迹与优化器统计，复算受到影响的下一次更新。
-- 推导并比较 ObGD、StreamingOptimizer 与 Intentional Updates 的尺度机制、保证范围和失败条件。
+- 明确流式数据权限、单步计算与持久内存预算，区分在线、离策略、流式协议和不可重置生命期。
+- 从样本半梯度与有限前向目标推导资格迹，区分冻结参数恒等式和变参非线性执行。
+- 推导 critic 误差用于行动学习的条件，并沿实际 Stream-AC 主循环检查旧参数、更新和下一动作的时序。
+- 比较更新尺度控制与元信用，逐项恢复学习器状态，并说明 GVF、option 与平均奖励怎样共享经验而保留各自问题。
+
+## 阅读这条论证
+
+流式学习规定经验怎样被使用，并不另设一种收益目标。先把给定预测问题写成逐步更新，再让 critic 的误差改变策略。接着检查尺度、终止、学习器记忆和计算预算，最后把预测、技能与平均奖励接入同一条经验流。
+
+[规定数据与计算条件](../textbook/streaming.md#lesson-setting) → [从样本到资格更新](../textbook/streaming.md#lesson-derive) → [分析更新尺度](../textbook/streaming.md#lesson-scale) → [从误差到下一次行动](../textbook/streaming.md#lesson-streamx) → [保存完整学习过程](../textbook/streaming.md#lesson-learner-state) → [连接预测、技能与长期目标](../textbook/streaming.md#lesson-components) → [对应实际实现](../textbook/streaming.md#lesson-code)
 
 <a id="chapter-prerequisites"></a>
 
@@ -73,11 +79,17 @@ $\xi_t$ 是刚收到的经验，$M_t$ 是全部持久学习状态，$U$ 是更�
 
 关系类型描述本章相对于所链接问题的变化。“特例”表示本章增加条件；“推广”表示本章放宽条件。目标、近似方法和数据协议的改变另行区分。
 
-- 改变信息或数据协议 · [时间信用分配与资格迹](../textbook/credit.md)：流式预算允许迹这种统计机制，却限制长窗口、重放和完整反传。
+- 改变信息或数据协议 · [时间信用分配与资格迹](../textbook/credit.md)：资格迹用持久统计承接延迟反馈；前向目标、在线参数变化和实际终止仍决定这条统计怎样更新。
 
-- 组合不同学习问题 · [元学习与学习规则的适应](../textbook/meta.md)：预设尺度控制可逐步执行；依据后续表现学习规则还需额外敏感度和资源。
+- 组合不同学习问题 · [元学习与学习规则的适应](../textbook/meta.md)：预设尺度控制限制本次更新，元学习根据后续表现改规则；后者还需保存规则敏感度并核算每步成本。
 
-- 改变信息或数据协议 · [持续控制与学习智能体比较](../textbook/control.md)：完整控制比较需加入流式资源约束；无重置与无重放是两项独立权限。
+- 改变信息或数据协议 · [通用价值函数与预测知识](../textbook/gvf.md)：一条新经验可即时服务多个预测，但每个问题保留自己的cumulant、continuation、目标策略和学习状态。
+
+- 改变信息或数据协议 · [Options 与技能发现](../textbook/options.md)：技能可用有限累加器保存段内后果；高层边界更新与原始步更新是不同调度，停止技能不终止外部控制。
+
+- 组合不同学习问题 · [平均奖励与差分价值](../textbook/average.md)：平均奖励另定义奖励率和差分价值；逐步中心化使用哪个率、技能耗时按哪个时钟计量，都需与更新时序一致。
+
+- 改变信息或数据协议 · [持续学习的智能体架构](../textbook/architectures.md)：完整智能体要合计行动、预测、模型和规划成本，保存全部会改变下一次更新的状态；无重置与无重放分别规定。
 
 <a id="problem-solution"></a>
 
@@ -91,13 +103,15 @@ $\xi_t$ 是刚收到的经验，$M_t$ 是全部持久学习状态，$U$ 是更�
 
 用可递推统计保留信用并按声明的局部尺度限制更新，分别检验协议和任务表现。
 
-1. [以迹替代保存训练历史](../textbook/streaming.md#lesson-derive)：因为预算禁止重取转移，资格迹保存过去方向统计并在新误差到来时更新。
+1. [从样本目标推到资格更新](../textbook/streaming.md#lesson-derive)：先由固定策略的Bellman关系构造停止梯度标签，再把有限多步目标变成可递推资格；在线变参时另查等价条件。
 
-2. [定位尺度与过冲](../textbook/streaming.md#lesson-scale)：因为同一名义步长随特征尺度产生不同输出变化，先在线性例上推有效步长，再辨认ObGD的范数代理条件。
+2. [定位尺度与过冲](../textbook/streaming.md#lesson-scale)：由特征、误差和资格计算一次更新造成的输出变化，说明范数缩放控制了什么以及其局部前提。
 
-3. [选择可检查的尺度控制器](../textbook/streaming.md#lesson-current-streamx)：因为整体代理与逐坐标边界处理的量不同，对照2026控制器的参数位移界与Intentional Updates的输出线性化。
+3. [让critic误差影响下一次行动](../textbook/streaming.md#lesson-streamx)：在声明的策略梯度条件下构造actor方向，按旧参数计算critic与actor信号，再共同写入并选择下一动作。
 
-4. [按输出变化解释学习尺度](../textbook/streaming.md#lesson-output-steps)：因为参数步长未直接指定预测改变，Intentional方法利用梯度内积决定局部尺度，非线性与统计近似仍需测量。
+4. [保存能重现下一步的学习状态](../textbook/streaming.md#lesson-learner-state)：权重之外，资格、优化器和运行统计也决定更新；逐项规定终止、恢复和单独重置时哪些状态保留。
+
+5. [在同一条流上组合多个问题](../textbook/streaming.md#lesson-components)：GVF各守预测规格，技能各守执行边界，平均奖励按原始时间中心化；模块共享经验而分别计入状态和计算预算。
 
 结论与条件：有限增量和正稳定项下可检验逐坐标位移界；线性固定标签的输出关系只约束本次更新。Stream-X/Intentional深度组合不提供无条件长期收敛。
 
@@ -127,6 +141,7 @@ $\xi_t$ 是刚收到的经验，$M_t$ 是全部持久学习状态，$U$ 是更�
 | 名称回答的问题 | 允许的选择 | 一个具体组合 |
 | --- | --- | --- |
 | Online：训练时还有新交互吗？ | 策略与环境继续产生数据，并在交互过程中学习 | PPO 可以在线收集 rollout，再做批更新 |
+| Off-policy：学习谁的后果？ | 目标策略 π 可不同于实际行为 b | 当前转移可以立即用于学习另一策略的 GVF，无需 replay |
 | Batch：一次更新用多少条样本？ | 一条，或将多条梯度求和、平均 | 同一批可只使用一次，也可优化多轮 |
 | Replay：旧样本会被重新读取吗？ | 保留转移，之后抽取并重算学习目标 | 每次只抽一条的 replay 仍然是 replay |
 | 严格一步 streaming：何时用、用几次、保留什么？ | 本章规定即到即用一次，不积攒训练批次，不留原始转移供重放 | 固定维参数、资格迹与运行统计可以跨步保留 |
@@ -136,6 +151,8 @@ $\xi_t$ 是刚收到的经验，$M_t$ 是全部持久学习状态，$U$ 是更�
 内存限制关心保存了什么及其大小。权重保存已经学到的预测，RNN 隐状态概括当前历史，资格迹保存过去预测的参数敏感性，优化器统计保存更新尺度。这些状态都要计入持久内存预算。以十万个 float32 参数为例，权重和一条同维资格迹各占 0.4 MB；若再有两条优化器统计，总计 1.6 MB。相比之下，十万张单通道 84×84 字节图像仅像素就占 705.6 MB，还没有算动作、奖励与索引。这里使用十进制 MB，比较的是明确给定的存储内容。
 
 保存摘要也决定以后还能提出什么问题。保留原始图像，可以用更新后的编码器重新计算特征；只保留旧特征或梯度统计，则承诺以后通过这些摘要使用经验。流式限制因此同时是计算限制和信息限制。资格迹选择保留信用分配需要的敏感性，在线元学习还可以保留学习规则的敏感性；它们占用同一份资源预算，却回答不同的问题。
+
+更完整的约定是：在固定架构下，持久学习状态的大小 $M_t\le B$，每条转移的处理成本 $C_t\le C_{\max}$，两项上界都不随已活过的步数 $t$ 增长。环境还可以给出墙钟截止时间 $\Delta$。$O(d)$ 的资格向量说明内存随参数数目 $d$ 增长，尚未说明这台设备能否在 $\Delta$ 内完成。固定网络的精确 RTRL 也可与生命期长度无关，却可能因状态—参数敏感度矩阵太大而超出给定预算。[状态构建章](../textbook/state.md)讨论该矩阵的计算；本章的限制须同时报出 $d,B,C_{\max}$ 与实际延迟。
 
 | 约束或对象 | 保存内容或度量 | 边界 |
 | --- | --- | --- |
@@ -218,7 +235,17 @@ $$
 
 ## 2 · 流式协议中的资格迹
 
-限制原始样本保留后，延迟奖励仍然需要影响较早的预测。资格迹的办法是：每次作出预测，就把它对参数的敏感性汇入一个可递推的向量；新的 TD 误差到来时，用这个向量分配更新。先从固定参数下的多步目标看，这个摘要为什么会出现。
+先固定一个 Markov 状态表示、策略 $\pi$ 和折扣 $0\le\gamma<1$，预测其回报。Bellman 方程需要对可能的奖励和后继状态求期望，流式学习器实际只收到一条 $(S_t,A_t,R_{t+1},S_{t+1})$。用旧网络构造标签，再固定这个标签求导，得到可立即执行的一步更新：
+
+$$
+\begin{aligned}y_t&=R_{t+1}+\gamma_{t+1}\hat v(S_{t+1};w_t),\\\ell_t(w;y_t)&=\tfrac12[y_t-\hat v(S_t;w)]^2,\\-\nabla_w\ell_t(w_t;y_t)&=\delta_t\nabla_w\hat v(S_t;w_t),\qquad\delta_t=y_t-\hat v(S_t;w_t).\end{aligned}
+$$
+
+只在本次求导时固定 y；下一条经验用新参数产生新标签。若沿后继预测也求导，就改变了更新方向。
+
+它为什么与所要预测的价值有关？把 $w$ 作为固定的分析参数，从 $s$ 按 $\pi$ 采样一步，则 $\mathbb E_\pi[\delta(w)\mid S=s]=(\mathcal T_\pi\hat v_w)(s)-\hat v_w(s)$。表格表示时，各状态的平均更新在寻找 Bellman 方程的零点。共享参数时，实际方向是残差乘特征的加权和，不同状态可能彼此抵消；这连接到 [GVF 章的投影固定点](../textbook/gvf.md)。该等式解释固定预测器上的一步采样，尚未给变化参数、相关数据下的整条学习轨迹一个收敛证明。
+
+一步目标可以立即计算，但终点奖励传回很早的状态可能需要多次再访问。限制原始样本保留后，资格迹选择保存过去输出的梯度摘要。为看清摘要为何是指数衰减，先冻结整条轨迹上的价值参数，比较多步目标。
 
 $$
 G_t^{(n)}=\sum_{k=1}^{n}\gamma^{k-1}R_{t+k}+\gamma^n v(S_{t+n})
@@ -240,7 +267,15 @@ $$
 
 无限混合式先取 $0\le\lambda<1$，并要求回报和右侧级数收敛；$\lambda=1$ 用相应极限或完整回报定义，不直接代入第一行的零乘无限和。有限回合让最后一个 Monte Carlo return 承接剩余权重。$\lambda=0$ 退化为一步 TD，接近 1 则使较远的 TD error 参与信用分配。
 
-前向视角考虑未来哪些 $\delta$ 影响当前预测；后向视角在误差到来时，给过去相关的预测分配信用。交换求和顺序，就需要保存过去梯度按 $\gamma\lambda$ 衰减后的总和。对于线性 $v=w^\top x$，梯度就是特征 $x$；对于网络则使用各时刻参数下的输出梯度。
+前向视角考虑未来哪些 $\delta$ 影响当前预测；后向视角在误差到来时，给过去相关的预测分配信用。为避免无限求和的额外条件，取终止于 $T$ 的有限轨迹，令 $g_t=\nabla_w\hat v(S_t;w)$，参数 $w$ 始终冻结。将每个预测的前向增量相加，并按误差到达时刻重新分组：
+
+$$
+\begin{aligned}\sum_{t=0}^{T-1}(G_t^\lambda-\hat v_w(S_t))g_t&=\sum_{t=0}^{T-1}\sum_{k=t}^{T-1}(\gamma\lambda)^{k-t}\delta_k g_t\\&=\sum_{k=0}^{T-1}\delta_k\underbrace{\sum_{t=0}^{k}(\gamma\lambda)^{k-t}g_t}_{z_k},\\z_k&=\gamma\lambda z_{k-1}+g_k.\end{aligned}
+$$
+
+同一个误差只需乘一个递推向量。这个冻结参数的总方向恒等式也适用于可微非线性预测器；它没有在求和中途改变网络。
+
+现在把该递推用作在线算法：每收到一条经验就计算当前梯度并更新参数。线性固定特征下 $g_t=x_t$；神经网络下 $g_t=\nabla_w\hat v(S_t;w_t)$ 随参数版本改变。可执行的普通 accumulating TD(λ) 为：
 
 $$
 \begin{aligned}z_t&=\gamma_t\lambda z_{t-1}+\nabla_w v(S_t;w_t),\\\delta_t&=R_{t+1}+\gamma_{t+1}v(S_{t+1};w_t)-v(S_t;w_t),\\w_{t+1}&=w_t+\alpha_t\delta_t z_t.\end{aligned}
@@ -260,6 +295,10 @@ $$
   1. 更新 $z\leftarrow\gamma_{\rm current}\lambda z+x$
   1. 更新 $w\leftarrow w_{\rm old}+\alpha\delta z$
 1. 新回合开始时令 $z=0$
+
+因此网络里的 $z_t=\sum_{k=0}^{t}(\gamma\lambda)^{t-k}\nabla_w\hat v(S_k;w_k)$，通常不等于把旧输入全部放进当前网络所得的 $\sum_{k=0}^{t}(\gamma\lambda)^{t-k}\nabla_w\hat v(S_k;w_t)$。例如 $\hat v(x;a,b)=b\tanh(ax)$，对 $a$ 的梯度为 $b[1-\tanh^2(ax)]x$；即使只更新 $b$，同一旧输入对 $a$ 的梯度也变了。保存数值资格保留了当时的信用方向，重算旧输入则需要额外信息与计算。[信用分配章](../textbook/credit.md#lesson-online)进一步展开变参导致的望远镜余项与 true-online 修正。
+
+若行为是 $b$、预测的是 $\pi$，当前样本也可立即构造 $\rho_t=\pi(A_t\mid S_t)/b(A_t\mid S_t)$。普通状态价值 IS 迹改为 $z_t=\rho_t[\gamma_t\lambda z_{t-1}+g_t]$，要求行为覆盖目标动作。这个比率修正动作来源，行为的状态访问权重仍然存在；共享函数逼近下的离策略稳定性需要另行处理。GTD 与 emphatic 方法改变的正是目标几何或状态权重，它们也可以增量执行。
 
 | 方法 | 保存的痕迹 | 关键限制 |
 | --- | --- | --- |
@@ -384,9 +423,23 @@ python3 implementations/extended_adaptation/obgd2024.py --steps 1200 --seeds 0 1
 
 <a id="lesson-streamx"></a>
 
-## 4 · Stream-X：流式深度控制的组件组合
+## 4 · 从 critic 误差到 Stream-AC 的下一次行动
 
-Stream-X 是将同一组稳定化机制应用到不同基础学习器的方法。2024 版使用 ObGD、资格迹、在线观测与奖励尺度统计、无可学习仿射参数的 LayerNorm，以及稀疏初始化。2026 修订版保留这一组织方式，但更换了更新控制器并修改初始化；两版的优化器需要分别理解。
+机器人不仅预测固定策略，还要改变行为。令 actor 的参数为 $\theta$，critic 的参数为 $w$。先冻结 $\pi_\theta$ 并假设 critic 恰好是它的真实价值，则一次转移的条件平均误差为优势：
+
+$$
+\begin{aligned}\mathbb E[\delta\mid S=s,A=a]&=q_{\pi_\theta}(s,a)-v_{\pi_\theta}(s),\\\mathbb E[\delta\nabla_\theta\log\pi_\theta(A\mid s)\mid S=s]&=\sum_a\nabla_\theta\pi_\theta(a\mid s)q_{\pi_\theta}(s,a).\end{aligned}
+$$
+
+第二行使用 π∇logπ=∇π，以及状态基线乘 ∇Σaπ(a|s)=0。动作之外的奖励与后继仍是随机样本。
+
+这说明当前 $\delta$ 为什么可用于加强或减弱刚执行的动作。若 $\hat v_w=v_\pi+e$，第一行还多出 $\gamma\mathbb E[e(S')\mid s,a]-e(s)$；当前状态的基线误差在动作平均中抵消，后继误差一般不会。即使动作刚由当前 actor 产生，critic 的逼近误差仍会偏移 actor 的平均方向。
+
+在整个任务上，仍须说明状态怎样加权。指定初始分布的折扣目标 $J(\theta)=\mathbb E[\sum_{t\ge0}\gamma^tR_{t+1}]$ 需要相应的折扣访问权重；逐时刻写成轨迹和时含 $\gamma^t$。Stream-AC 的实际增量循环没有这个从回合起点累计的外层因子，并加入资格迹、熵和更新缩放。因此上式用于解释局部信号，不将完整实现称为该固定起点目标的无偏梯度。平均奖励的状态权重与差分 critic 在后面的接口节另行规定。
+
+先忽略熵和缩放，actor 与 critic 各保存一条迹：$z_t^v=\gamma\lambda_vz_{t-1}^v+\nabla_w\hat v_w(S_t)$、$z_t^\pi=\gamma\lambda_\pi z_{t-1}^\pi+\nabla_\theta\log\pi_\theta(A_t\mid S_t)$，分别以 $\alpha_v\delta_tz_t^v$ 和 $\alpha_\pi\delta_tz_t^\pi$ 更新。它们利用同一反馈，却对不同输出分配信用。actor 改变以后，下一次采样的行动概率变化，critic 追踪的策略也随之变化；固定轨迹预测算例只覆盖了这个闭环的一部分。
+
+Stream-X 在这类基础更新外加稳定化组件。2024 版使用 ObGD、资格迹、在线观测与奖励尺度统计、无可学习仿射参数的 LayerNorm，以及稀疏初始化。2026 修订版保留这一组织方式，但更换了更新控制器并修改初始化；两版的优化器需要分别理解。
 
 $$
 \bar o_{t,i}=\frac{o_{t,i}-\mu_{t,i}}{\sqrt{\sigma_{t,i}^2+\varepsilon}},\qquad U_t=\gamma U_{t-1}+r_t,\qquad \bar r_t=\frac{r_t}{\sqrt{\operatorname{Var}_t(U)+\varepsilon}}
@@ -400,18 +453,34 @@ LayerNorm 在单个观测的一层预激活上计算均值和方差，因而不�
 
 | 分支 | 当前误差或方向 | 必须保留的时序 |
 | --- | --- | --- |
-| Stream TD(λ) | 固定策略 δ=r+γv′−v | 价值输出梯度累积后再 ObGD |
+| Stream TD(λ) | 固定策略 δ=r+γv′−v | 价值输出梯度累积，再交给对应版本的更新控制器 |
 | Stream Sarsa(λ) | δ=r+γq(s′,a′)−q(s,a) | 下一动作来自实际目标策略 |
 | Stream Q(λ) | max 下一动作目标；Watkins 痕迹语义 | 执行非贪心动作时截断此前不再匹配贪心延续的痕迹 |
 | Stream AC(λ) | critic δ 配合 ∇logπ 的 actor trace | 行为动作按更新前策略采样；actor/critic 采用同一旧 δ，熵项另核对 |
 
 Stream-X 的 2026 修订版在模拟 Ant 实验中反复切换两种地面摩擦；实体机器人航向跟踪则按 120 秒回合重置，并保留学习状态。前者考察反复变化后的恢复，后者展示传感与控制闭环中的在线学习。这两种实验都可满足无重放协议，环境重置权限则按各自实验设置记录。
 
-作者 2024 实现先对 $-v$ 和负 log-probability 求梯度，再由 optim.py 做减法；本文采用正输出梯度加更新，两种符号约定一致。应避免先对平方 TD 损失求导，再把 $\delta$ 额外乘入优化器。原 actor 的熵项还含 $\operatorname{sign}(\delta)$，经本步乘误差后，其即时熵方向与 $|\delta|$ 成比例；这与直接加一个固定权重熵梯度不同。
+作者 2024 实现先对 $-v$ 和负 log-probability 求梯度，再由 optim.py 做减法；2026 实现改为正输出梯度和加更新。应避免先对平方 TD 损失求导，再把 $\delta$ 额外乘入优化器。actor 的熵项还含 $\operatorname{sign}(\delta)$，经本步乘误差后，其即时熵方向与 $|\delta|$ 成比例；这与直接加一个固定权重熵梯度不同。
+
+**算法：对应固定提交的 2026 stream_ac_continuous.py 与 optimizer.py。两网络独立；共享 trunk 时需另行规定合并梯度和写入时刻。**
+
+1. 初始化独立 actor、critic，以及各自的资格与尺度统计
+1. 获取并因果归一化当前观察；每条真实转移：
+  1. 用当前 actor 采样动作并执行，收到新观察、原始奖励、terminated、truncated
+  1. 更新新观察与奖励的运行统计，得到本次学习输入
+  1. 用旧 critic 计算当前值和后继值；只有 terminated 才将后继值置零
+  1. 保存同一个 δ；求当前价值梯度和含 sign(δ) 熵项的 actor 输出梯度
+  1. actor 与 critic 各自积累资格、计算完整增量和尺度，分别写入参数
+  1. terminated 或 truncated 时，完成更新后清迹，再重置环境
+  1. 否则沿新观察继续；下一动作由已经更新的 actor 采样
+
+其中 δ 在任何参数写入前已保存；不能先更新 critic，再把新的 δ 给 actor。当前归一化观察沿上一轮传入，作者并未保存原始旧观察再用新统计重新归一化。2026 实现对时间截断保留尾值，但因后续环境重置而清迹；2024 入口把 terminated 与 truncated 合成 done 并一同去掉尾值。这个版本差异会改变学习目标，复现时须与对应环境的时限含义一起检查。
 
 <a id="lesson-current-streamx"></a>
 
 ## 5 · 2026 更新控制器：从整体缩放到逐坐标边界
+
+深入阅读：在理解 actor–critic 的逐步循环后，进一步检查逐坐标更新边界及其成立条件。
 
 ObGD 用全网 $\|z\|_1$ 形成一个共同步长。若许多坐标同时具有非零痕迹，网络越大，每个坐标获得的更新可能越小。修订版 StreamingOptimizer 转而对完整增量 $u_t=\delta_t z_t$ 的每个坐标维护衰减最大值：
 
@@ -445,6 +514,8 @@ $$
 <a id="lesson-output-steps"></a>
 
 ## 6 · Intentional Updates：按输出变化选择步长
+
+深入阅读：从参数位移转向预测输出的改变，推导 Intentional Updates 的局部尺度选择。
 
 Intentional-AC 属于 ICML 2026 的 Intentional Updates for Streaming Reinforcement Learning。其起点是输出变化：已选定参数方向 $d$，希望标量输出 $y(w)$ 改变 $\Delta$。一阶展开给出 $y(w+\alpha d)-y(w)\approx\alpha\nabla y^\top d$，因此可以反解步长。这里不追踪参数对过去步长的敏感度，也不建立元参数的资格迹；“步长依数据变化”与“元梯度学习步长”是不同机制。
 
@@ -634,6 +705,8 @@ python3 implementations/extended_adaptation/intentional.py --steps 1200 --seeds 
 
 活动状态按 $h_t=\tfrac12h_{t-1}+o_t$ 递推，取 $h_{-1}=0$，因此活动依次为 $1,0.5,0.25$。预测是 $\hat v_t=w_th_t$。这里递推系数固定，只学习读出权重 $w$，所以当前输出对 $w$ 的梯度为 $h_t$；并未训练递归网络，也不需要计算活动对递归参数的敏感度。活动 $h$ 决定本次预测使用什么特征，资格迹 $z$ 决定当前误差分给哪些过去的读出梯度。
 
+把这些量连同尺度统计合记为学习器状态 $L_t$，规则可写为 $L_{t+1}=F_\eta(L_t,\xi_t)$；$\xi_t$ 是本次到来的经验，$\eta$ 控制规则。例如 $\eta$ 可以决定步长。若在给定经验流上保持同一个 $\eta$，在规则的可微处，对学习过程求导需要 $H_t=\partial L_t/\partial\eta$，并递推 $H_{t+1}=(\partial F_\eta/\partial L_t)H_t+\partial F_\eta/\partial\eta$。这与累积输出梯度的资格 $z_t$ 是不同导数；仅让分母 $b_t$ 随数据变化没有执行这个递推。非线性学习器常需近似或截断该敏感度，真实控制还要考虑行为改变采样的路径，见[元学习章](../textbook/meta.md)。本节恢复实验仅继续原有更新规则。
+
 沿用逐坐标最大值更新器的一维形式，记尺度统计为 $b$，对应代码中的 max_v。取 $\gamma=0.9$、$\lambda=0.8$、$\alpha=0.1$、$\beta=0.9$，并取方便手算的 $\varepsilon=0.1$。这组数值服务于本节算例，不是作者默认配置。所有预测使用更新前的同一个 $w_t$，终点预测设为零。
 
 $$
@@ -674,9 +747,25 @@ $$
 
 中途保存一个活动与统计摘要，是让原更新过程继续；从保存的旧转移重新形成目标，则增加了经验使用权限。本节据此检查学习器在给定协议下执行了什么。信用分配章进一步讨论误差应影响哪些过去的量，元学习章进一步讨论怎样改变学习规则。完整学习器的表现还要回到[生命期评价](../textbook/objectives.md#lesson-maze-evaluation)，观察这些更新怎样改变后续行动和真实奖励；[带噪声的完整生命期算例](../textbook/objectives.md#lesson-noisy-lifetime)进一步比较在线学习期间的所得与最后冻结状态的得分。
 
+<a id="lesson-components"></a>
+
+## 9 · 同一条经验流中的预测、技能与长期目标
+
+现在让机器人在同一次行动后学习多个对象：外部奖励价值、到达充电点的预测，以及当前技能的后果。真实经验仍只到来一次。各模块从这次经验形成自己的目标，随后释放原始转移；是否符合预算取决于模块总数、各自的状态与计算成本。一个模块的更新次数不能代表整个智能体的成本。
+
+对于第 $j$ 个 [GVF](../textbook/gvf.md)，先给定 cumulant $C^j$、continuation $\gamma^j$ 和目标策略 $\pi_j$，再从同一行为 $b$ 的样本形成 $\delta_t^j=C_{t+1}^j+\gamma_{t+1}^j\hat v_j(S_{t+1};W_t)-\hat v_j(S_t;W_t)$。普通 IS 半梯度例使用各自的 $z_t^j=\rho_t^j[\gamma_t^j\lambda_jz_{t-1}^j+\nabla_W\hat v_j(S_t;W_t)]$。若共享网络，先用同一个旧 $W_t$ 算齐各方向，固定步长时再写入 $\Delta W_t=\sum_j\alpha_j\delta_t^jz_t^j$。这正是已有共享 GVF 小实现的时序，不等于具有线性 GTD 保证的神经算法。某个预测在充电点令 continuation 为零，只终止它自己的累计，其他预测与真实控制仍然继续。
+
+[Option](../textbook/options.md) 则改变高层决策时刻。固定技能执行期间，可只保留累计奖励 $C=0$、累计折扣 $\Gamma=1$ 与时长 $\tau=0$；每条原始转移依次执行 $C\leftarrow C+\Gamma R$、$\Gamma\leftarrow\Gamma\gamma_{\rm next}$、$\tau\leftarrow\tau+1$。技能停止时，用 $C+\Gamma\sum_{o'}\mu(o'\mid S')Q(S',o')$ 评价给定高层策略 $\mu$。技能停止允许继续选择，只有外部问题真的终止才去掉尾值。累计摘要不要求保存整段转移，但完整段 SMDP 更新等待技能结束；若协议要求每个原始步就修正高层估计，还需 intra-option 备份。学习内部策略、停止规则和技能模型又各有自己的更新。
+
+若任务按[平均奖励](../textbook/average.md)评价，令奖励率估计为 $\hat g_t$，差分价值为 $\hat h$。Differential TD 使用 $\delta_t=R_{t+1}-\hat g_t+\hat h(S_{t+1};w_t)-\hat h(S_t;w_t)$，价值与奖励率都用同一个旧误差更新。对持续 $\tau$ 步的完整技能，冻结一个奖励率参照 $g$ 才得到段目标 $\sum_{k=1}^{\tau}R_{t+k}-g\tau+\hat h(S_{t+\tau})$；奖励单位是每原始时间步，不能用一次技能调用替代 $\tau$。若逐步记录时用的是不断变化的 $\hat g_{t+k-1}$，累计的是另一组中心化奖励，不能不加说明地当作最后一个奖励率下的段目标。
+
+这时目标的 continuation 可为 1，仍可选 $\lambda<1$ 使资格衰减；$\lambda$ 控制信用范围，不重新定义长期奖励率。冻结 gain 与价值时可建立有限前向关系，在线同时变化时再分析其偏差。把折扣 Stream-AC 的 $\gamma$ 直接改成 1，既没有指定奖励率学习器，也没有解决差分价值的加性规范；完整推导由平均奖励章承担。
+
+这些接口最后要落实为下一次行动的读取规则：哪些预测进入 actor 输入，哪些技能价值影响高层选择，哪些后果模型进入规划？模型产生的额外备份不增加真实经验，却占用学习时钟；因此还要明确协议是否允许固定次数的模型计算。共享表示更新也会同时改变预测、策略与模型的输入，冻结一个 head 并未冻结其完整函数。[持续智能体架构](../textbook/architectures.md)沿同一交互安排这些写入与读取，并以实际外部收益检查组合结果。
+
 <a id="lesson-code"></a>
 
-## 9 · 机制实验与作者实现
+## 10 · 机制实验与作者实现
 
 下载下方脚本后运行；仅标准库。分数算术逐项检查中途恢复、单状态重置、终点时序与 replay。
 
@@ -778,6 +867,8 @@ python3 examples/meta_frontier_lab.py test
 
 IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归一化。它接收网络梯度与旧 TD 误差，不包含神经网络和环境；无迹线性特例用于检查输出变化，带迹与熵项的测试用于检查更新顺序。完整控制结果需使用下方作者训练入口。
 
+要追踪实际非线性执行，可打开[六步链神经 TD(λ)](../implementations/streaming_composition/neural_td_trace.py)及其[网络与资格递推](../implementations/streaming_composition/_common.py)：value_gradient 用旧网络返回当前值与全部参数梯度，旧后继值形成 δ，trace_step 用进入当前状态的折扣更新数值资格，net.add 一次应用完整方向，最后才处理终止。网络为 2–6–1 tanh，学习输入不含真值；全状态解析误差只进入诊断。它没有 actor 或 Stream-X 优化器。共享 GVF、冻结 trunk 与 option 时长对照的范围和入口见[流式组合实现说明](https://yingwen.io/crl-code/streaming-composition.md)。
+
 - 诊断量一：每步 |δ|、trace 的 L1/L2 norm、实际参数更新 norm 和 αused/α，分别看是目标、历史累积还是步长造成尖峰。
 - 诊断量二：原始及归一化观测/奖励的分位数，LayerNorm 前后的激活统计；不要只记录平均值。
 - 诊断量三：峰值内存、单步 p50/p95/p99 延迟；用严格相同计算预算比较是否允许 replay 的方法。
@@ -785,7 +876,9 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 
 <a id="lesson-branches"></a>
 
-## 10 · 从局部更新到持续学习问题
+## 11 · 从局部更新到持续学习问题
+
+深入阅读：把流式协议带入机器人适应等研究，比较经验使用权限、预算和评价窗口。
 
 局部算例解释了一次更新如何完成，机器人研究还要回答改变之后能否恢复。Vitchutripop 等（2026）的模拟实验先用 PPO 得到预训练策略，再经热启动切换到新的身体、环境或目标条件，并观察 150 万步适应。五个随机种子的断腿场景中，AdaptiveObGD 的平均峰值成功率为 96.8%，适应期均值为 74.7%；二者分别回答“曾恢复到多高”和“这段时间总体表现如何”。
 
@@ -803,16 +896,18 @@ IntentionalStep 实现梯度缩放、资格迹、误差裁剪和 actor 误差归
 
 <a id="lesson-check"></a>
 
-## 11 · 习题与答案线索
+## 12 · 习题与答案线索
 
 - 为什么不把资格迹等同于 Adam 的一阶矩？答：痕迹积累的是输出梯度；当前 δ 到来时才分配误差。Adam 的矩积累的是各个时刻已经乘各自误差的 loss gradient。
 - 为什么 terminal 的 γnext=0 不应清掉本步全部历史信用？答：terminal 奖励属于刚结束的这一串决策，仍应沿到达当前状态的历史痕迹传播。
-- 为何一个方法没有 buffer，却可能不满足固定预算？答：RTRL 的敏感性矩阵、长历史重算或无界模型增长可能消耗随规模增长的内存和时间。
+- 为何一个方法没有 buffer，却可能不满足给定预算？答：固定架构 RTRL 不随生命期扩张，但大敏感性矩阵仍可能超出设备预算；长历史重算或无界模型增长还可能随生命期增加成本。
 - 能否用归一化证明长期稳定？答：归一化只控制部分尺度，目标漂移、off-policy 投影、非线性与策略反馈仍然存在。
 
 动手题：在两步链加入第三个延迟状态，手算起点更新为 $α(γλ)^2$；再将特征整体乘 10，比较固定 α、按平方缩放 α 与 ObGD。将同一样本误差改变量和长期预测误差分开画，观察它们何时不一致。
 
 恢复题：B 处只清活动与只加载权重，第二次更新都保持原权重，为什么第三次更新不同？答：前者还保存资格，终点误差仍可沿历史资格更新；后者资格也清零。再把 max_v 保留而清零计数 k，本例会改变参数位移吗？答：不会，因为本例没有偏差校正；换为使用计数的优化器时需重新计算。
+
+接口题：机器人走到充电点，能耗 GVF 停止累计，当前 option 停止，环境继续运行。哪些尾值应置零？答：该 GVF 用零 continuation；高层技能价值仍保留下一次选择的尾值；外部持续控制没有因这两个内部边界而终止。再检查下一步哪些资格需要清除，并说明规则来自哪个预测或控制目标。
 
 ## 本章的实验设计
 
@@ -1454,6 +1549,8 @@ python examples/lifelong_algorithms_lab.py streaming
 - [Intentional-AC 作者 actor–critic 主循环](https://github.com/sharifnassab/Intentional_RL/blob/e86e26fd8613ac212e9a52c3fed8a01d0a31f685/intentional_ac.py#L79)：update_params 用旧 critic 构造 TD 误差；actor 熵项乘该误差的符号，随后将合成梯度送入独立的 policy 优化器。
 
 - [Sutton & Barto — Reinforcement Learning: An Introduction，第二版](http://incompleteideas.net/book/the-book-2nd.html)：§2.5 非平稳追踪、§8.4–8.5 模型与规划分布、§10.3–10.4 平均奖励、§17.3 状态与未来方向。
+
+- [Stream-AC · 2026 固定版本主循环](https://github.com/mohmdelsayed/streaming-drl/blob/9326fc3e23a401f28087ae2e41b635888740586b/stream_ac_continuous.py)：update_params 第 69–94 行保存旧 δ，分别求 actor/critic 输出梯度；main 第 109–122 行显示更新后再采样。截断保留 bootstrap，同时在更新后清迹。
 
 - [Kingma & Ba · Adam: A Method for Stochastic Optimization](https://arxiv.org/abs/1412.6980)：Algorithm 1 与 §2–3：一阶矩、二阶矩和更新计数共同决定偏差校正；只保存参数没有保存优化器的继续过程。
 

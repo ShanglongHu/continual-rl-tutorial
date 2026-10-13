@@ -165,6 +165,13 @@ def rewrite_markdown(text: str, source: str, target: str, links: dict[str, str],
                 paragraph = paragraph.replace('将这个单文件保存为 ' + name, '仓库中的文件为 `tutorials/' + name + '`')
         paragraphs[index] = paragraph
     text = '\n\n'.join(paragraphs)
+    # The shared introduction precedes three separate first-task sections, so
+    # it is not adjacent to one command. Match this declared guide only.
+    first_tasks = {'bandit_tracking_walkthrough.py', 'gae_ppo_walkthrough.py', 'compare_continual_runs.py'}
+    if source == 'practice-routes.md' and '<a id="practice-first-run"></a>' in text and first_tasks <= rewritten_tutorials:
+        text = text.replace(
+            '以下练习只需 Python 3 标准库。将所列文件保存到同一目录，在文件所在目录运行命令。',
+            '以下练习只需 Python 3 标准库。在教程仓库根目录运行命令；第三项练习的 raw-runs.zip 从下方链接下载，也放在仓库根目录。')
     # This parity check needs a website-only JSON, not a bundled repo asset.
     # Keep that source boundary explicit while making the checkout command run.
     comparison_block = (
